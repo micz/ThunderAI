@@ -230,19 +230,31 @@ export function readRouterOutput(parsed, allowList, options = {}) {
 }
 
 /**
- * Ask the router, with one correction attempt: `send(prompt)` resolves the raw answer of one
- * special command call. An answer that is not JSON gets the prompt again with ROUTER_CORRECTION
- * appended; a second one that is not JSON either rejects with RouterJsonError (errorType 'json',
- * the second raw answer kept). Errors of `send` itself are passed on unchanged.
+ * Ask a Smart bar special command for a JSON object, with one correction attempt: `send(prompt)`
+ * resolves the raw answer of one special command call. An answer that is not a JSON object (or
+ * that `check(parsed, raw)` refuses by throwing a RouterJsonError) gets the prompt again with
+ * `correction` appended; a second failure rejects with RouterJsonError (errorType 'json', the
+ * second raw answer kept). Errors of `send` itself are passed on unchanged. Shared by the router
+ * and the generative operations (js/mzta-smartbar-execute.js).
  * @returns {Promise<{ parsed: object, raw: string, attempts: number }>}
  */
-export async function askRouter(prompt, send) {
+export async function askJsonObject(prompt, send, { correction = ROUTER_CORRECTION, check = () => {} } = {}) {
+    const read = raw => {
+        const parsed = parseRouterResponse(raw);
+        check(parsed, raw);
+        return parsed;
+    };
     const first = await send(prompt);
     try {
-        return { parsed: parseRouterResponse(first), raw: first, attempts: 1 };
+        return { parsed: read(first), raw: first, attempts: 1 };
     } catch (e) {
         if (!(e instanceof RouterJsonError)) throw e;
     }
-    const second = await send(prompt + '\n\n' + ROUTER_CORRECTION);
-    return { parsed: parseRouterResponse(second), raw: second, attempts: 2 };
+    const second = await send(prompt + '\n\n' + correction);
+    return { parsed: read(second), raw: second, attempts: 2 };
+}
+
+/** Ask the router, with one correction attempt (askJsonObject() with ROUTER_CORRECTION). */
+export async function askRouter(prompt, send) {
+    return askJsonObject(prompt, send, { correction: ROUTER_CORRECTION });
 }

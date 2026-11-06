@@ -1,6 +1,9 @@
 // claude-spec/10-smartbar.md "Operation registry" (js/mzta-smartbar-registry.js):
-//  - three operations in this version, tag / summarize / translate, each a valid entry (id,
-//    description, params schema, requirements, multiple false, risk, dependsOn, run);
+//  - four operations in this version, tag / summarize / translate / compose, each a valid entry
+//    (id, description, params schema, requirements, multiple false, risk, dependsOn, run);
+//  - compose ("Compose"): a required type among reply / reply_all / forward / new, no recipient
+//    accepted, single instance, direct, runLast, deliverInChat, available with the
+//    smartbar_execute connection; in a mixed instruction its line is planned and run last;
 //  - listAvailable(env): an operation only when its requirements hold (feature on, permission,
 //    usable connection); a throwing requirement counts as unavailable;
 //  - validateParams(): unknown parameters refused, lossless coercions only, empty = absent, enum;
@@ -37,8 +40,8 @@ function deferred() {
 const tick = () => new Promise(r => setImmediate(r));
 const plan = (ops, ids, routed = ids.map(id => ({ id }))) => R.planOperations(R.createSmartbarRegistry(ops), ids, routed);
 
-k.test('default-ops', 'the three operations of this version, valid, single-instance', () => {
-    assert.deepEqual(reg.all().map(op => op.id), ['tag', 'summarize', 'translate']);
+k.test('default-ops', 'the four operations of this version, valid, single-instance', () => {
+    assert.deepEqual(reg.all().map(op => op.id), ['tag', 'summarize', 'translate', 'compose']);
     for (const op of R.DEFAULT_OPERATIONS) {
         assert.deepEqual(R.operationProblems(op), [], op.id);
         assert.equal(op.multiple, false, op.id);
@@ -53,12 +56,12 @@ k.test('default-ops', 'the three operations of this version, valid, single-insta
 
 k.test('run-executor', 'an operation runs through the executor of its id', async () => {
     const calls = [];
-    const executors = Object.fromEntries(['tag', 'summarize', 'translate'].map(id => [id, async ctx => {
+    const executors = Object.fromEntries(['tag', 'summarize', 'translate', 'compose'].map(id => [id, async ctx => {
         calls.push([id, ctx.params]);
         return { state: 'done' };
     }]));
     for (const op of reg.all()) await op.run({ params: { p: op.id }, executors });
-    assert.deepEqual(calls, [['tag', { p: 'tag' }], ['summarize', { p: 'summarize' }], ['translate', { p: 'translate' }]]);
+    assert.deepEqual(calls, [['tag', { p: 'tag' }], ['summarize', { p: 'summarize' }], ['translate', { p: 'translate' }], ['compose', { p: 'compose' }]]);
 });
 
 k.test('invalid-entry', 'an invalid entry or a duplicated id is refused at creation', () => {
@@ -67,18 +70,25 @@ k.test('invalid-entry', 'an invalid entry or a duplicated id is refused at creat
     assert.throws(() => R.createSmartbarRegistry([fake('a', { params: { x: { type: 'number' } } })]), /unknown type/);
     assert.throws(() => R.createSmartbarRegistry([fake('A b')]), /lowercase identifier/);
     assert.throws(() => R.createSmartbarRegistry([fake('a', { multiple: 'no' })]), /multiple/);
+    assert.throws(() => R.createSmartbarRegistry([fake('a', { runLast: 1 })]), /runLast/);
+    assert.throws(() => R.createSmartbarRegistry([fake('a', { deliverInChat: 'yes' })]), /deliverInChat/);
+    assert.throws(() => R.createSmartbarRegistry([fake('a', { params: { x: { type: 'string', required: 'yes' } } })]), /required/);
 });
 
 k.test('availability', 'listAvailable() keeps only the operations whose requirements hold', () => {
-    assert.deepEqual(reg.listAvailable(ALL_AVAILABLE).map(op => op.id), ['tag', 'summarize', 'translate']);
+    assert.deepEqual(reg.listAvailable(ALL_AVAILABLE).map(op => op.id), ['tag', 'summarize', 'translate', 'compose']);
     assert.deepEqual(reg.listAvailable({}).map(op => op.id), []);
     assert.deepEqual(reg.listAvailable(null).map(op => op.id), []);
     const noTagPermission = { ...ALL_AVAILABLE, permissions: { add_tags: false } };
-    assert.deepEqual(reg.listAvailable(noTagPermission).map(op => op.id), ['summarize', 'translate']);
+    assert.deepEqual(reg.listAvailable(noTagPermission).map(op => op.id), ['summarize', 'translate', 'compose']);
     const translateOff = { ...ALL_AVAILABLE, features: { ...ALL_AVAILABLE.features, translate: false } };
-    assert.deepEqual(reg.listAvailable(translateOff).map(op => op.id), ['tag', 'summarize']);
+    assert.deepEqual(reg.listAvailable(translateOff).map(op => op.id), ['tag', 'summarize', 'compose']);
     const summaryUnusable = { ...ALL_AVAILABLE, usable: { ...ALL_AVAILABLE.usable, summarize: false } };
-    assert.deepEqual(reg.listAvailable(summaryUnusable).map(op => op.id), ['tag', 'translate']);
+    assert.deepEqual(reg.listAvailable(summaryUnusable).map(op => op.id), ['tag', 'translate', 'compose']);
+    // compose has no feature switch of its own: the smartbar_execute connection is all it needs.
+    const executeUnusable = { ...ALL_AVAILABLE, usable: { ...ALL_AVAILABLE.usable, smartbar_execute: false } };
+    assert.deepEqual(reg.listAvailable(executeUnusable).map(op => op.id), ['tag', 'summarize', 'translate']);
+    assert.deepEqual(reg.listAvailable({ usable: { smartbar_execute: true } }).map(op => op.id), ['compose']);
     const throwing = R.createSmartbarRegistry([fake('a', { requirements: () => { throw new Error('x'); } }), fake('b')]);
     assert.deepEqual(throwing.listAvailable({}).map(op => op.id), ['b']);
 });
@@ -112,6 +122,98 @@ k.test('describe', 'describeOperations() lists each id, its description and its 
     assert.ok(text.includes('"tags": list of strings'));
     assert.ok(text.includes('"language": string'));
     assert.ok(text.includes('params: none ({})'));
+    assert.ok(text.includes('"type": string (one of: reply, reply_all, forward, new), required'));
+});
+
+k.test('compose-entry', 'compose: a required type among the four, single instance, direct, runLast, deliverInChat', () => {
+    const compose = reg.get('compose');
+    assert.deepEqual(Object.keys(compose.params), ['type']);
+    assert.equal(compose.params.type.type, 'string');
+    assert.deepEqual(compose.params.type.enum, ['reply', 'reply_all', 'forward', 'new']);
+    assert.equal(compose.params.type.required, true);
+    assert.equal(compose.multiple, false);
+    assert.equal(compose.risk, 'direct');
+    assert.equal(compose.runLast, true);
+    assert.equal(compose.deliverInChat, true);
+    assert.deepEqual(compose.dependsOn([{ id: 'tag', index: 0 }, { id: 'compose', index: 1 }], 1), []);
+    // The other operations run in the user's order.
+    for (const id of ['tag', 'summarize', 'translate']) assert.notEqual(reg.get(id).runLast, true, id);
+    // The description tells the router reply by default, reply_all only when asked.
+    assert.match(compose.description, /"reply" by default/);
+    assert.match(compose.description, /"reply_all" only when the user explicitly asks/);
+});
+
+k.test('compose-params', 'compose params: the type is required and checked, no recipient is accepted', () => {
+    const compose = reg.get('compose');
+    for (const type of ['reply', 'reply_all', 'forward', 'new']) {
+        assert.deepEqual(R.validateParams(compose, { type }), { ok: true, params: { type } });
+    }
+    assert.deepEqual(R.validateParams(compose, { type: ' forward ' }), { ok: true, params: { type: 'forward' } });
+    assert.match(R.validateParams(compose, {}).error, /"type" is required/);
+    assert.match(R.validateParams(compose, { type: '' }).error, /"type" is required/);
+    assert.match(R.validateParams(compose, { type: 'replyToList' }).error, /one of reply, reply_all, forward, new/);
+    assert.match(R.validateParams(compose, { type: 'forward', to: 'Marco' }).error, /unknown parameter "to"/);
+    assert.match(R.validateParams(compose, { type: 'reply', recipients: ['a@b.c'] }).error, /unknown parameter "recipients"/);
+    const { lines, reports } = R.planOperations(reg, ['compose', 'compose'], [{ id: 'compose', params: { type: 'reply' } }, { id: 'compose', params: { type: 'new' } }]);
+    assert.deepEqual(lines.map(l => [l.id, l.params.type]), [['compose', 'reply']]);
+    assert.deepEqual(reports, [{ kind: 'duplicate', id: 'compose' }]);
+    const missing = R.planOperations(reg, ['compose'], [{ id: 'compose', params: {} }]).lines[0];
+    assert.deepEqual([missing.state, missing.errorType], ['error', 'params']);
+});
+
+k.test('plan-run-last', 'planOperations(): a runLast line goes after the others, the others keep the user\'s order', () => {
+    const ids = ['tag', 'summarize', 'translate', 'compose'];
+    const { lines } = R.planOperations(reg, ids, [
+        { id: 'compose', params: { type: 'reply' } },
+        { id: 'translate', params: { language: 'German' } },
+        { id: 'tag', params: { tags: ['urgent'] } },
+    ]);
+    assert.deepEqual(lines.map(l => [l.index, l.id, l.runLast]), [[0, 'translate', false], [1, 'tag', false], [2, 'compose', true]]);
+    const own = plan([fake('a', { runLast: true }), fake('b'), fake('c', { runLast: true }), fake('d')], ['a', 'b', 'c', 'd']);
+    assert.deepEqual(own.lines.map(l => l.id), ['b', 'd', 'a', 'c']);
+});
+
+k.test('run-last', 'runPlanned(): a runLast line starts once every other line has ended, failed ones included', async () => {
+    const { lines } = plan([fake('a'), fake('b'), fake('z', { runLast: true })], ['z', 'a', 'b'],
+        [{ id: 'z' }, { id: 'a' }, { id: 'b' }]);
+    assert.deepEqual(lines.map(l => l.id), ['a', 'b', 'z']);
+    const gates = { a: deferred(), b: deferred() };
+    const started = [];
+    const run = R.runPlanned({
+        lines, limit: 3,
+        start: async (line) => {
+            started.push(line.id);
+            if (gates[line.id]) await gates[line.id].promise;
+            if (line.id === 'b') return { state: 'error', error: 'boom' };
+            return { state: 'done' };
+        },
+    });
+    await tick();
+    assert.deepEqual(started, ['a', 'b'], 'the runLast line waits although a slot is free');
+    gates.a.resolve();
+    await tick();
+    assert.deepEqual(started, ['a', 'b']);
+    gates.b.resolve();
+    await run;
+    assert.deepEqual(started, ['a', 'b', 'z']);
+    assert.deepEqual(lines.map(l => l.state), ['done', 'error', 'done']);
+});
+
+k.test('run-last-abort', 'runPlanned(): a runLast line waiting for the others is cancelled when the instruction stops', async () => {
+    const { lines } = plan([fake('a'), fake('z', { runLast: true })], ['a', 'z']);
+    const ac = new AbortController();
+    const gate = deferred();
+    const started = [];
+    const run = R.runPlanned({
+        lines, limit: 2, signal: ac.signal,
+        start: async (line) => { started.push(line.id); await gate.promise; return { state: 'cancelled' }; },
+    });
+    await tick();
+    ac.abort();
+    gate.resolve();
+    await run;
+    assert.deepEqual(started, ['a']);
+    assert.deepEqual(lines.map(l => l.state), ['cancelled', 'cancelled']);
 });
 
 k.test('plan-order-reports', 'planOperations(): user order kept, unknown / unavailable / duplicate reported', () => {

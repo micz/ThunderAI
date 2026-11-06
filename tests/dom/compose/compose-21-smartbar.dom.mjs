@@ -8,11 +8,13 @@
 // the bar at once; the state of the message comes from smartbar_get_state at load.
 // Spec 10 "Keyboard": Enter sends, Shift+Enter is a new line, a key during an IME composition does
 // nothing, no key typed in the bar reaches the page (Thunderbird's single-key shortcuts), ArrowUp in
-// an empty bar recalls the last instruction, Escape closes the compact bar.
+// an empty bar recalls the last instruction, Escape closes the compact bar; an instruction carries
+// the selected text (the compose operation's selected_text).
 // Spec 10 "Result lines": one line per operation with its state, Stop on a running one, Retry /
 // Remove on an error (Open in chat for a json error), the reports, the unrecognized part, "nothing
 // matched" with the available operations; an update with an older seq or for another message is
-// ignored.
+// ignored. Spec 10 "Compose": the compose line named by its type, "compose window opened" with the
+// recipient to add as a reminder.
 
 import { after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -130,7 +132,7 @@ k.test('enter-sends', S_KEYS, 'Enter sends the instruction to run, the bar empti
     await type('  riassumi la mail  ');
     const e = await key('Enter');
     assert.equal(e.defaultPrevented, true);
-    assert.deepEqual(lastSent('smartbar_run'), { command: 'smartbar_run', headerMessageId: ID, instruction: 'riassumi la mail', hasSelection: false });
+    assert.deepEqual(lastSent('smartbar_run'), { command: 'smartbar_run', headerMessageId: ID, instruction: 'riassumi la mail', hasSelection: false, selection: '' });
     assert.equal(textarea().value, '');
 });
 
@@ -203,7 +205,7 @@ k.test('error-line', S_LINES, 'an operation in error: Retry and Remove name the 
     assert.deepEqual(lines(), [msg('smartbar_line_error', [msg('smartbar_op_tag'), 'boom'])]);
     assert.equal(button(0, 'chat'), null);
     await ctx.click(button(0, 'retry'));
-    assert.deepEqual(lastSent('smartbar_retry'), { command: 'smartbar_retry', headerMessageId: ID, recordId: 2, index: 0, hasSelection: false });
+    assert.deepEqual(lastSent('smartbar_retry'), { command: 'smartbar_retry', headerMessageId: ID, recordId: 2, index: 0, hasSelection: false, selection: '' });
     await ctx.click(button(0, 'remove'));
     assert.deepEqual(lastSent('smartbar_dismiss'), { command: 'smartbar_dismiss', headerMessageId: ID, recordId: 2, what: 0 });
 });
@@ -230,11 +232,60 @@ k.test('nothing-matched', S_LINES, 'nothing matched: the line lists the operatio
     assert.deepEqual(lines(), [msg('smartbar_nothing_matched') + ' ' + msg('smartbar_available_operations', [msg('smartbar_op_summarize')])]);
 });
 
+k.test('compose-lines', S_LINES, 'compose: a line named by its type; done says the compose window opened, with the recipient to add', async () => {
+    await update(record({ id: 6, state: 'running', operations: [
+        { index: 0, id: 'tag', state: 'done', result: { tags: ['urgent'] } },
+        { index: 1, id: 'compose', params: { type: 'reply_all' }, state: 'running' },
+    ] }), { running: true });
+    assert.deepEqual(lines(), [msg('smartbar_result_tags_added', ['urgent']), msg('smartbar_line_running', [msg('smartbar_op_compose_reply_all')])]);
+    const done = [
+        { index: 0, id: 'compose', params: { type: 'reply' }, state: 'done', result: { type: 'reply', recipient: '' } },
+        { index: 1, id: 'compose', params: { type: 'reply_all' }, state: 'done', result: { type: 'reply_all', recipient: '' } },
+        { index: 2, id: 'compose', params: { type: 'forward' }, state: 'done', result: { type: 'forward', recipient: 'Marco' } },
+        { index: 3, id: 'compose', params: { type: 'new' }, state: 'done', result: { type: 'new', recipient: 'the supplier' } },
+    ];
+    await update(record({ id: 7, operations: done }));
+    assert.deepEqual(lines(), [
+        msg('smartbar_result_compose_opened', [msg('smartbar_op_compose_reply')]),
+        msg('smartbar_result_compose_opened', [msg('smartbar_op_compose_reply_all')]),
+        msg('smartbar_result_compose_opened_recipient', [msg('smartbar_op_compose_forward'), 'Marco']),
+        msg('smartbar_result_compose_opened_recipient', [msg('smartbar_op_compose_new'), 'the supplier']),
+    ]);
+    assert.equal(lines()[1], 'Reply to all: compose window opened');
+    assert.equal(lines()[2], 'Forward: compose window opened — recipient to add: Marco');
+});
+
+k.test('compose-json-error', S_LINES, 'a compose line in json error: Retry, Remove and Open in chat with the instruction', async () => {
+    await update(record({ id: 8, instruction: 'reply nicely', state: 'error', operations: [
+        { index: 0, id: 'compose', params: { type: 'reply' }, state: 'error', error: 'not JSON', errorType: 'json' },
+    ] }));
+    assert.deepEqual(lines(), [msg('smartbar_line_error', [msg('smartbar_op_compose_reply'), 'not JSON'])]);
+    assert.ok(button(0, 'retry'));
+    await ctx.click(button(0, 'chat'));
+    assert.deepEqual(lastSent('smartbar_open_chat'), { command: 'smartbar_open_chat', headerMessageId: ID, text: 'reply nicely', selection: '' });
+});
+
 k.test('stale-updates', S_LINES, 'an update with an older seq, or for another message, is ignored', async () => {
     const shown = lines();
     await broadcast({ command: 'smartbar_update', headerMessageId: ID, seq: seq - 1, record: record({ id: 9, state: 'error', errorType: 'api', error: 'old' }) });
     await broadcast({ command: 'smartbar_update', headerMessageId: OTHER, seq: ++seq, record: record({ id: 9, messageId: OTHER, state: 'error', errorType: 'api', error: 'other' }) });
     assert.deepEqual(lines(), shown);
+});
+
+k.test('selection-sent', S_KEYS, 'with text selected in the mail, the instruction carries the selection and its text', async () => {
+    const mail = ctx.document.querySelector('.moz-text-html');
+    const range = ctx.document.createRange();
+    range.setStart(mail.firstChild, 7);
+    range.setEnd(mail.firstChild, 11);
+    const sel = ctx.document.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    ctx.document.dispatchEvent(new ctx.window.Event('selectionchange'));
+    await type('reply about this');
+    await key('Enter');
+    assert.deepEqual(lastSent('smartbar_run'), { command: 'smartbar_run', headerMessageId: ID, instruction: 'reply about this', hasSelection: true, selection: 'this' });
+    sel.removeAllRanges();
+    ctx.document.dispatchEvent(new ctx.window.Event('selectionchange'));
 });
 
 k.test('disabled', S_BAR, 'the feature turned off removes the bar', async () => {

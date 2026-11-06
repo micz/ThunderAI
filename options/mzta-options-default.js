@@ -340,8 +340,8 @@ export const prefs_default = {
     smartbar_retention_max_records: 500,     // the oldest records beyond this count are removed; 0 = no limit
     smartbar_retention_error_days: 7,        // records holding an error older than this are removed first; 0 = no limit
     smartbar_parallel_limit: 3,              // operations of one instruction run at once
-    smartbar_max_body_length: 0,             // used from the compose operation (phase 2); 0 = no limit
-    smartbar_additional_instructions: '',    // used from the compose operation (phase 2)
-    smartbar_signature: '',                  // used from the compose operation (phase 2)
+    smartbar_max_body_length: 0,             // compose: characters of the email sent (quoted part cut first); 0 = no limit
+    smartbar_additional_instructions: '',    // compose: free text added to every writing request
+    smartbar_signature: '',                  // compose: the signature added when the instruction asks to sign without saying how ('' = default_sign_name)
     ...generated_prefs
 }

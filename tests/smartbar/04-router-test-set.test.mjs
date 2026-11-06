@@ -7,7 +7,9 @@
 //    every line out of error;
 //  - every context id is one the router may pick (the allow list), never selected_text (added by
 //    the add-on with a selection) nor an excluded id;
-//  - the set covers every operation of the registry and both languages it is written in.
+//  - the set covers every operation of the registry and both languages it is written in;
+//  - compose: every type, a forward naming a recipient (never unrecognized), and in every mixed
+//    case the plan runs compose last, whatever the router's order (runLast).
 // The model's actual answers are not tested here (no model at level 1): the file is also a manual
 // check of a router connection.
 
@@ -57,8 +59,9 @@ k.test('operations-valid', 'every expected operation is known, available, valid 
         assert.deepEqual(lines.filter(l => l.state === 'error').map(l => l.error), [], c.instruction);
         assert.equal(lines.length, c.expected.operations.length, c.instruction);
         // The parameters are already in their normalized form: nothing for validateParams() to change.
-        for (const [i, line] of lines.entries()) {
-            assert.deepEqual(line.params, c.expected.operations[i].params, c.instruction);
+        for (const line of lines) {
+            const expected = c.expected.operations.find(op => op.id === line.id);
+            assert.deepEqual(line.params, expected.params, c.instruction);
         }
     }
 });
@@ -92,6 +95,35 @@ k.test('coverage', 'the set covers every operation, a selection, an unavailable 
     assert.ok(cases.some(c => c.expected.context.length > 0));
     assert.ok(cases.some(c => /\b(riassumi|traduci|tagga)\b/.test(c.instruction)), 'Italian');
     assert.ok(cases.some(c => /\b(summarize|translate|tag)\b/.test(c.instruction)), 'English');
+});
+
+const composeOf = c => c.expected.operations.find(op => op.id === 'compose');
+
+k.test('compose-types', 'compose: every type, reply vs reply to all, a forward naming a recipient, a new email', () => {
+    const types = new Set(cases.map(composeOf).filter(Boolean).map(op => op.params.type));
+    assert.deepEqual([...types].sort(), ['forward', 'new', 'reply', 'reply_all']);
+    const typeOf = instruction => composeOf(cases.find(c => c.instruction === instruction))?.params.type;
+    assert.equal(typeOf('rispondi'), 'reply');
+    assert.equal(typeOf('rispondi a tutti che arrivo alle 10'), 'reply_all');
+    assert.equal(typeOf('rispondi ringraziando tutti per il lavoro'), 'reply', '"tutti" alone is not a reply to all');
+    // A recipient is never a parameter, and never unrecognized: the compose step reminds it.
+    const forwards = cases.filter(c => composeOf(c)?.params.type === 'forward');
+    assert.ok(forwards.some(c => /\bMarco\b|@/.test(c.instruction)));
+    for (const c of cases.filter(composeOf)) {
+        assert.deepEqual(Object.keys(composeOf(c).params), ['type'], c.instruction);
+        assert.equal(c.expected.unrecognized, '', c.instruction);
+    }
+});
+
+k.test('compose-last', 'in every mixed case the plan runs compose last, whatever the router\'s order', () => {
+    const mixed = cases.filter(c => composeOf(c) && c.expected.operations.length > 1);
+    assert.ok(mixed.length >= 2);
+    assert.ok(mixed.some(c => c.expected.operations[0].id === 'compose'), 'one case where the user asks compose first');
+    for (const c of mixed) {
+        const { lines } = R.planOperations(reg, c.available ?? ALL_IDS, c.expected.operations);
+        assert.equal(lines.at(-1).id, 'compose', c.instruction);
+        assert.deepEqual(lines.map(l => l.index), lines.map((_, i) => i), c.instruction);
+    }
 });
 
 k.coverage();

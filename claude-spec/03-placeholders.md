@@ -757,6 +757,14 @@ instruction when they exist (custom ones included). A new built-in placeholder j
 itself unless its type is 2; one that must never be picked by the router goes into
 `ROUTER_EXCLUDED_PLACEHOLDERS`.
 
+The compose operation ([10-smartbar.md](10-smartbar.md) "Compose") is the user of that context: each
+id (a dynamic one with its parameter) is rendered by `getPlaceholdersValues()` on the displayed
+message, a custom placeholder expanded first (`replaceCustomPlaceholders()`), with the default
+values (an unknown value is `''`, never a literal token), and `selected_text` is the text the bar
+read when the instruction was sent. The values go to a context section of the prompt delimited as
+data; a placeholder the user typed is replaced in the instruction by a reference to it, never by
+its value.
+
 The bar's input offers the same `{%…%}` autocomplete as the prompt editors (type 1, a message being
 read), with the list from the background (`smartbar_placeholders`: the enabled placeholders, without
 `additional_text`).

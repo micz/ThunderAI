@@ -107,6 +107,12 @@ export function mailModel(o = {}) {
         windows: [],
         /** The replies opened (compose.beginReply()): {messageId, replyType, details, tabId}. */
         replies: [],
+        /** The forwards opened (compose.beginForward()): {messageId, forwardType, details, tabId}. */
+        forwards: [],
+        /** The new messages opened (compose.beginNew()): {messageId, details, tabId}. */
+        newMessages: [],
+        /** How many of the next compose.begin*() calls throw (a window that cannot open). */
+        failComposeOpen: 0,
         menus: new Map(),
         /** Every menus.create() of a duplicate id, and every update/remove of a missing one. */
         menuErrors: [],
@@ -395,10 +401,22 @@ export function installApis(browser, m) {
         },
     }, u);
 
-    // Only the format of a compose window (isPlainTextCompose()) and the opening of a reply
-    // (chatgpt_replyMessage): what the compose script does with what it is sent is the compose
-    // area's. A reply opens a reachable messageCompose tab of the given format (`replyPlainText`
-    // on the model), already loaded.
+    // Only the format of a compose window (isPlainTextCompose()) and the opening of a reply, a
+    // forward or a new message (chatgpt_replyMessage, the Smart bar's compose operation): what the
+    // compose script does with what it is sent is the compose area's. Each opens a reachable
+    // messageCompose tab of the given format (`replyPlainText` on the model), already loaded;
+    // `failComposeOpen` makes the next ones throw.
+    const composeTab = () => {
+        const tabId = m.addTab({ type: 'messageCompose', windowId: 50 + m.replies.length + m.forwards.length + m.newMessages.length, isPlainText: m.replyPlainText === true });
+        return tabId;
+    };
+    const composeTabInfo = tabId => ({ ...tabInfo(m.tab(tabId)), status: 'complete', url: 'chrome://messenger/content/messengercompose/messengercompose.xhtml' });
+    const failOpen = () => {
+        if (m.failComposeOpen > 0) {
+            m.failComposeOpen--;
+            throw new Error('The compose window could not be opened');
+        }
+    };
     browser.compose = strict('browser.compose', {
         async getComposeDetails(tabId) {
             rec('compose.getComposeDetails', [tabId]);
@@ -408,10 +426,28 @@ export function installApis(browser, m) {
         },
         async beginReply(messageId, replyType, details) {
             rec('compose.beginReply', [messageId, replyType, details]);
+            failOpen();
             if (!m.messages.has(messageId)) throw new Error('Message not found: ' + messageId);
-            const tabId = m.addTab({ type: 'messageCompose', windowId: 50 + m.replies.length, isPlainText: m.replyPlainText === true });
+            const tabId = composeTab();
             m.replies.push({ messageId, replyType, details: clone(details), tabId });
-            return { ...tabInfo(m.tab(tabId)), status: 'complete', url: 'chrome://messenger/content/messengercompose/messengercompose.xhtml' };
+            return composeTabInfo(tabId);
+        },
+        async beginForward(messageId, forwardType, details) {
+            rec('compose.beginForward', [messageId, forwardType, details]);
+            failOpen();
+            if (!m.messages.has(messageId)) throw new Error('Message not found: ' + messageId);
+            const tabId = composeTab();
+            m.forwards.push({ messageId, forwardType, details: clone(details), tabId });
+            return composeTabInfo(tabId);
+        },
+        // beginNew([messageId], [details]): the background passes the details alone.
+        async beginNew(...args) {
+            rec('compose.beginNew', args);
+            failOpen();
+            const [messageId, details] = typeof args[0] === 'object' ? [undefined, args[0]] : args;
+            const tabId = composeTab();
+            m.newMessages.push({ messageId, details: clone(details), tabId });
+            return composeTabInfo(tabId);
         },
     }, u);
 

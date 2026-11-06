@@ -1668,7 +1668,7 @@ HTML.** These places cooperate, and all of them are required:
   plain text window. Writing `body` there makes Thunderbird convert the HTML down to text,
   undoing the line structure again.
 - `chatgpt_replyMessage` **omits** `isPlainText` from `compose.beginReply` rather than forcing
-  `false`, so the reply follows the identity's own format; `_insertReply()` then reads the
+  `false`, so the reply follows the identity's own format; `_insertComposeAnswer()` then reads the
   format back off the created tab, and on a plain text reply the answer is converted and
   inserted as text before everything, with a blank line (*Writing a reply*).
 
@@ -1781,9 +1781,14 @@ inserted, as the editor command does.
 
 ### Writing a reply
 
-`chatgpt_replyMessage` opens the reply (`compose.beginReply`, *Writing into a plain text compose
-window* for the format), waits for the tab to load, and 500 ms later runs `_insertReply()`
-(`mzta-background.js`). It reads the window's format with `isPlainTextCompose()`, converts the
+`chatgpt_replyMessage` opens the reply with `_beginComposeWindow()` (`compose.beginReply`, *Writing
+into a plain text compose window* for the format), which waits for the tab to load, and
+`COMPOSE_SCRIPT_LOAD_DELAY_MS` (500 ms) later runs `_insertComposeAnswer()` (`mzta-background.js`).
+The Smart bar's compose operation opens its reply, forward or new email through the same two
+functions ([10-smartbar.md](10-smartbar.md) "Compose", "Delivery"): `beginForward()` with no forward
+type and `beginNew()` with a subject, never a recipient nor a body, the text going in the same way
+(`insertReply` puts it above the first quote, `.moz-forward-container` or signature, so a forward's
+note sits above the forwarded content). `_insertComposeAnswer()` reads the window's format with `isPlainTextCompose()`, converts the
 answer with `stripHtmlKeepLines()` on a plain text window or passes it through `sanitizeBlockHtml()`
 on an HTML one (as *Replacing text in a compose window*: it ends in `insertHTML`), and sends **`insertReply`**
 `{text, isPlainText}` to the compose script, which inserts it through `insertIntoEditor()` — the
@@ -2216,6 +2221,7 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-smartbar-script.js` | The Smart bar in the message display (classic content script, shadow DOM `#mzta-smartbar-host`), see [10-smartbar.md](10-smartbar.md) |
 | `js/mzta-smartbar-registry.js` | The Smart bar's operation registry: availability, parameter checks, plan and run of an instruction |
 | `js/mzta-smartbar-router.js` | The Smart bar router: its prompt (never the email body) and the checks of its answer |
+| `js/mzta-smartbar-execute.js` | The Smart bar's compose operation: its prompt (the email delimited as data, cut to the length limit), the checks of its answer, its signature and HTML |
 | `js/mzta-smartbar-store.js` | The Smart bar records (one per instruction) and their states, over the `smartbar` store of `taStorage` |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |

@@ -391,6 +391,30 @@ prefixes (`smartbar_router`, `smartbar_execute`, `smartbar_chat`). Any other id 
 that `buildSummaryPrompt()` pastes into `prompt_summarize`, never run as prompts of their own, so
 they have no connection to resolve.
 
+### Smart bar prompts: router and execute
+
+The Smart bar's prompts are run by the add-on as special commands, never from a menu, and their
+editable text is only the first part of what is sent ([10-smartbar.md](10-smartbar.md)):
+
+- **`prompt_smartbar_router`** (default `prompt_smartbar_router_full_text`): the variables
+  `{OPERATIONS}`, `{PLACEHOLDERS}` and `{LANGUAGE_RULE}` are substituted, and one the text lacks has
+  its content appended; then the locked JSON section and the instruction with the metadata, never
+  the email body (10 "Router").
+- **`prompt_smartbar_execute`** (default `prompt_smartbar_execute_full_text`): the prompt of the
+  generative operations that have no prompt of their own, the compose operation today. Its text
+  holds the writing rules only (the email is data, only the new text and no quote, no sign-off nor
+  signature, `[...]` for what is missing, the forward's note, the new email's subject) and **no
+  variable**: no `{…}` and no `{%…%}` is substituted in it. The add-on appends the locked JSON
+  section and the message it builds: the email between delimiters, the instruction, the operation
+  and its type, the context, the additional instructions and the signature, the language rule
+  (10 "Compose", "Generation"). Placeholders reach the model through the context, never through
+  this text.
+- **`prompt_smartbar_chat`**: the chat destination's prompt record (its connection); its text is
+  not used yet.
+
+None of them has a response format of its own in the prompt checks (`{}` in the table of
+`js/mzta-prompts.js`): the JSON sections are the add-on's.
+
 ### Calendar event / task: link to the original email
 
 With `calendar_append_email_link` (events) or `task_append_email_link` (tasks) on, `js/mzta-menus.js` appends a link to the source email to the `description` of the parsed object (`calendar_event_data_obj` / `task_data_obj`), after date normalization and the timezone block, just before `JSON.stringify` and the hand-off to Sparks. It is done **by code, after the response**: the link is never sent to the AI, the prompt texts (`prompt_get_calendar_event_full_text`, `prompt_get_task_full_text`) do not mention it, and the AI JSON contract is unchanged.

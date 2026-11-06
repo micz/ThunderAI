@@ -23,12 +23,20 @@ Each case has:
 - `instruction`: what the user types;
 - `hasSelection`: whether text is selected in the message (default `false`). With a selection,
   `selected_text` is added by the add-on, never by the router, so it never appears in `context`;
-- `available`: the operations available (default: all three). An operation that is not available
+- `available`: the operations available (default: all four). An operation that is not available
   must not appear in `operations`: what the user asked for goes to `unrecognized` instead;
 - `expected`: the router's answer.
 
 Free-text values (a tag name, a language) are written as the user wrote them, in the language of
 the instruction (`ROUTER_LANGUAGE_RULE`); the comparison is case-insensitive on those values.
+
+The compose operation always has a `type`: `reply` for any reply, `reply_all` only when the user
+says so explicitly, `forward` to send the email on, `new` for an email not threaded to this one. A
+recipient the user names is never a parameter (the add-on never fills the recipients): it belongs
+to the compose operation, so it is not `unrecognized` either (the compose step shows it as a
+reminder). The router gives the operations in the user's order, even when compose comes first:
+the add-on runs compose last (`runLast`, [10-smartbar.md](10-smartbar.md) "Operation registry"),
+which the test checks on every mixed case.
 
 ```json
 [
@@ -96,7 +104,66 @@ the instruction (`ROUTER_LANGUAGE_RULE`); the comparison is case-insensitive on 
   },
   {
     "instruction": "summarize and forward it to Marco",
-    "expected": { "operations": [{ "id": "summarize", "params": {} }], "context": [], "unrecognized": "forward it to Marco" }
+    "expected": {
+      "operations": [{ "id": "summarize", "params": {} }, { "id": "compose", "params": { "type": "forward" } }],
+      "context": [], "unrecognized": ""
+    }
+  },
+  {
+    "instruction": "rispondi",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "reply" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "reply saying I agree",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "reply" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "rispondi a tutti che arrivo alle 10",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "reply_all" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "reply to all thanking them",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "reply_all" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "rispondi ringraziando tutti per il lavoro",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "reply" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "inoltra a marco.rossi@example.com chiedendogli un parere",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "forward" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "scrivi una nuova mail al fornitore per chiedere un preventivo su questo",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "new" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "tag urgent and reply confirming",
+    "expected": {
+      "operations": [{ "id": "tag", "params": { "tags": ["urgent"] } }, { "id": "compose", "params": { "type": "reply" } }],
+      "context": [], "unrecognized": ""
+    }
+  },
+  {
+    "instruction": "rispondi che ci penso e poi traduci in inglese",
+    "expected": {
+      "operations": [{ "id": "compose", "params": { "type": "reply" } }, { "id": "translate", "params": { "language": "inglese" } }],
+      "context": [], "unrecognized": ""
+    }
+  },
+  {
+    "instruction": "reply mentioning the attachments",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "reply" } }], "context": ["mail_attachments_info"], "unrecognized": "" }
+  },
+  {
+    "instruction": "reply to the selected question",
+    "hasSelection": true,
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "reply" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "reply to all",
+    "available": ["tag", "summarize", "translate"],
+    "expected": { "operations": [], "context": [], "unrecognized": "reply to all" }
   },
   {
     "instruction": "riassumi e cancella la mail",

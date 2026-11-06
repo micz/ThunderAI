@@ -484,6 +484,30 @@ export function htmlBodyToPlainText(htmlString) {
 	return globalThis.mztaNormalizePlain(textContent);
 }
 
+// Where the quoted part of a received HTML mail starts: Thunderbird's citation and forward
+// containers, Gmail's quote, Outlook's reply header. The first match in document order wins.
+export const QUOTE_START_SELECTOR =
+  'blockquote[type="cite"], .moz-cite-prefix, .moz-forward-container, .gmail_quote, #divRplyFwdMsg';
+
+// A received HTML mail as two plain texts: what its author wrote and the quoted part below it
+// (claude-spec/10-smartbar.md "Compose": smartbar_max_body_length cuts the quoted part first).
+// The document is cut at the first QUOTE_START_SELECTOR match: everything from there to the end,
+// at every nesting level, is the quoted part. Each half is read by htmlBodyToPlainText(), so both
+// follow the {%mail_text_body%} contract. No match: the whole mail is the author's own text.
+export function splitQuotedHtml(htmlString) {
+  const doc = new DOMParser().parseFromString(String(htmlString ?? ''), 'text/html');
+  const start = doc.body.querySelector(QUOTE_START_SELECTOR);
+  if (!start || !doc.body.lastChild) {
+    return { own: htmlBodyToPlainText(doc.body.innerHTML), quoted: '' };
+  }
+  const range = doc.createRange();
+  range.setStartBefore(start);
+  range.setEndAfter(doc.body.lastChild);
+  const holder = doc.createElement('div');
+  holder.appendChild(range.extractContents());
+  return { own: htmlBodyToPlainText(doc.body.innerHTML), quoted: htmlBodyToPlainText(holder.innerHTML) };
+}
+
 export function removeMozMainHeader(root) {
   for (const table of root.querySelectorAll('table.moz-main-header')) {
     let sibling = table.previousElementSibling;

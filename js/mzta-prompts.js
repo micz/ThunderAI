@@ -421,8 +421,9 @@ const specialPrompts = [
     },
     // The three prompts of the Smart bar (claude-spec/10-smartbar.md). Never in a menu: the bar
     // runs them. The router decides which operations an instruction asks for; its JSON format is
-    // appended by the add-on (js/mzta-smartbar-router.js), never part of this text. execute and
-    // chat are data only until the versions that use them.
+    // appended by the add-on (js/mzta-smartbar-router.js), never part of this text. execute writes
+    // the emails of the compose operation (js/mzta-smartbar-execute.js: its JSON section and the
+    // email are appended by the add-on too); chat is data only until the chat mode.
     {
         id: 'prompt_smartbar_router',
         name: "__MSG_prompt_smartbar_router__",
@@ -619,8 +620,9 @@ const SPECIAL_PROMPT_TEXT_CONTRACT = {
         responseKeys: ['subject', 'body', 'status'],
         contentPlaceholders: ['mail_html_body', 'mail_text_body'],
         requiredPlaceholders: ['thunderai_translate_lang'] },
-    // The Smart bar prompts carry no response format of their own: the router's JSON section is
-    // appended by the add-on (js/mzta-smartbar-router.js), and they never receive the message.
+    // The Smart bar prompts carry no response format of their own: the router's and execute's
+    // JSON sections are appended by the add-on (js/mzta-smartbar-router.js,
+    // js/mzta-smartbar-execute.js), and so is the message execute receives, after the text.
     prompt_smartbar_router: {},
     prompt_smartbar_execute: {},
     prompt_smartbar_chat: {},

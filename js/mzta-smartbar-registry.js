@@ -20,17 +20,20 @@
  *  The Smart bar's operation registry (claude-spec/10-smartbar.md "Operation registry").
  *
  *  An operation is one entry:
- *    id            stable string ('tag', 'summarize', 'translate'; later 'compose', 'deliver_draft')
+ *    id            stable string ('tag', 'summarize', 'translate', 'compose'; later 'deliver_draft')
  *    description   for the router model: what it does and when to pick it (English)
- *    params        { name: { type: 'string' | 'string[]' | 'boolean', enum?, description } }: what
- *                  the router may pass; every parameter is optional
+ *    params        { name: { type: 'string' | 'string[]' | 'boolean', enum?, required?, description } }:
+ *                  what the router may pass; a parameter is optional unless `required`
  *    requirements  (env) => boolean: whether it can run now (feature on, connection usable,
  *                  permissions granted); env is what availabilityEnv() in the background builds
  *    multiple      whether more than one instance may appear in one instruction (false for all)
  *    risk          'direct' or 'confirm' ('confirm' waits for the user's Confirm)
+ *    runLast       optional: the operation runs after every other operation of the instruction
+ *                  has ended (compose: its window opens at the end and steals no focus mid-way)
  *    dependsOn     (ops, index) => indices of the operations of the same instruction this one
  *                  waits for: a static rule, never the model's decision
- *    deliverInChat optional, reserved for the compose operation in chat mode
+ *    deliverInChat optional, reserved for the deferred delivery of phase 3 (chat mode); compose
+ *                  sets it, and in this version always delivers by opening its compose window
  *    run           (ctx) => Promise<{ state: 'done' | 'error', result, error, errorType,
  *                  rawResponse, retryAt }>: ctx = { message, params, signal, groupId, index,
  *                  report(partial), source, executors }
@@ -82,6 +85,25 @@ export const DEFAULT_OPERATIONS = Object.freeze([
         dependsOn: () => [],
         run: (ctx) => ctx.executors.translate(ctx),
     },
+    {
+        id: 'compose',
+        description: 'Write a new email from this one and open it in a compose window, where the user reviews it ' +
+            'and adds the recipients: a reply, a reply to all, a forward with a note, or a brand-new email about it. ' +
+            'Pick it whenever the user wants to answer, reply, forward or write an email. "type": "reply" by default ' +
+            'for any reply; "reply_all" only when the user explicitly asks to reply to all ("reply to all", ' +
+            '"rispondi a tutti"); "forward" when the user wants to send this email on to someone else; "new" when the ' +
+            'user wants a fresh email, not threaded to this one. Never put recipients in the params.',
+        params: {
+            type: { type: 'string', enum: ['reply', 'reply_all', 'forward', 'new'], required: true, description: 'the kind of email to write' },
+        },
+        requirements: (env) => !!env?.usable?.smartbar_execute,
+        multiple: false,
+        risk: 'direct',
+        runLast: true,
+        deliverInChat: true,
+        dependsOn: () => [],
+        run: (ctx) => ctx.executors.compose(ctx),
+    },
 ]);
 
 const RISKS = ['direct', 'confirm'];
@@ -97,6 +119,7 @@ export function operationProblems(op) {
         for (const [name, schema] of Object.entries(op.params)) {
             if (!PARAM_TYPES.includes(schema?.type)) problems.push(`param ${name}: unknown type`);
             if (schema?.enum !== undefined && !Array.isArray(schema.enum)) problems.push(`param ${name}: enum must be an array`);
+            if (schema?.required !== undefined && typeof schema.required !== 'boolean') problems.push(`param ${name}: required must be a boolean`);
         }
     }
     for (const fn of ['requirements', 'dependsOn', 'run']) {
@@ -104,6 +127,9 @@ export function operationProblems(op) {
     }
     if (typeof op.multiple !== 'boolean') problems.push('multiple must be a boolean');
     if (!RISKS.includes(op.risk)) problems.push('risk must be "direct" or "confirm"');
+    for (const flag of ['runLast', 'deliverInChat']) {
+        if (op[flag] !== undefined && typeof op[flag] !== 'boolean') problems.push(flag + ' must be a boolean');
+    }
     return problems;
 }
 
@@ -111,7 +137,8 @@ export function operationProblems(op) {
  * Validate and normalize the parameters the router gave an operation.
  * Unknown parameters are refused; types are coerced only where nothing can be lost (a number
  * to a string, a single string to a one-item list, "true"/"false" to a boolean); an empty value
- * is the same as an absent one; an enumeration is checked.
+ * is the same as an absent one; an enumeration is checked; a required parameter must be there
+ * once the empty values are dropped.
  * @returns {{ ok: true, params: object } | { ok: false, error: string }}
  */
 export function validateParams(op, params) {
@@ -152,6 +179,9 @@ export function validateParams(op, params) {
             if (bad !== undefined) return { ok: false, error: `"${name}" must be one of ${schema.enum.join(', ')}` };
         }
         out[name] = v;
+    }
+    for (const [name, schema] of Object.entries(op.params || {})) {
+        if (schema?.required === true && out[name] === undefined) return { ok: false, error: `"${name}" is required` };
     }
     return { ok: true, params: out };
 }
@@ -198,11 +228,13 @@ export function describeOperations(ops) {
         if (params.length === 0) {
             lines.push('  params: none ({})');
         } else {
-            lines.push('  params (all optional):');
+            const someRequired = params.some(([, schema]) => schema.required === true);
+            lines.push(someRequired ? '  params:' : '  params (all optional):');
             for (const [name, schema] of params) {
                 const type = schema.type === 'string[]' ? 'list of strings' : schema.type;
                 const enumText = Array.isArray(schema.enum) ? ' (one of: ' + schema.enum.join(', ') + ')' : '';
-                lines.push(`    - "${name}": ${type}${enumText}, ${schema.description}`);
+                const need = someRequired ? (schema.required === true ? ', required' : ', optional') : '';
+                lines.push(`    - "${name}": ${type}${enumText}${need}, ${schema.description}`);
             }
         }
         return lines.join('\n');
@@ -211,7 +243,8 @@ export function describeOperations(ops) {
 
 /**
  * The operations a validated router output asks for, ready to run: the registry's checks
- * applied, in the order the router gave them (the user's order).
+ * applied, in the order the router gave them (the user's order), but the runLast operations,
+ * which go after the others (their own order kept): a line's index is its run order.
  *
  *   - an id the registry does not know: dropped, reported ('unknown');
  *   - an operation the user cannot run now (its requirements fail): dropped, reported
@@ -221,7 +254,7 @@ export function describeOperations(ops) {
  *
  * @param {Array} routed   the router's operations ([{ id, params }])
  * @returns {{ lines: Array, reports: Array<{ kind, id }> }}
- *   lines: [{ index, id, params, state, error, errorType, dependsOn, risk }]
+ *   lines: [{ index, id, params, state, error, errorType, dependsOn, risk, runLast }]
  */
 export function planOperations(registry, availableIds, routed) {
     const lines = [];
@@ -253,8 +286,12 @@ export function planOperations(registry, availableIds, routed) {
             errorType: checked.ok ? null : 'params',
             dependsOn: [],
             risk: op.risk,
+            runLast: op.runLast === true,
         });
     }
+    // The runLast operations after the others: a static rule of the registry, never the model's.
+    lines.sort((a, b) => Number(a.runLast) - Number(b.runLast) || a.index - b.index);
+    lines.forEach((line, i) => { line.index = i; });
     // Static rules, never the model's: each operation names the earlier ones it waits for.
     for (const line of lines) {
         const op = registry.get(line.id);
@@ -274,6 +311,8 @@ export function planOperations(registry, availableIds, routed) {
  *     'done';
  *   - a 'confirm' line goes to 'pending_confirmation' and waits for confirm(line), WITHOUT
  *     holding a slot: true runs it, false cancels it;
+ *   - a runLast line starts only once every other line before it has ended, in whatever state
+ *     (planOperations() puts the runLast lines last); it does not hold a slot meanwhile;
  *   - a line already in 'error' (invalid params) is left as it is;
  *   - once `signal` aborts, a line not started yet is cancelled.
  *
@@ -307,8 +346,12 @@ export async function runPlanned({ lines, limit = 3, start, confirm = async () =
     const finals = [];
     for (const line of lines) {
         const deps = line.dependsOn.map(i => finals[i]);
+        const before = line.runLast === true
+            ? lines.filter(l => l.runLast !== true && l.index < line.index).map(l => finals[l.index])
+            : [];
         finals[line.index] = (async () => {
             if (line.state === 'error') return line;
+            await Promise.all(before);
             const depLines = await Promise.all(deps);
             if (depLines.some(d => d.state !== 'done') || aborted()) {
                 set(line, { state: 'cancelled', finishedAt: Date.now() });

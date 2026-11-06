@@ -11,6 +11,10 @@ The modules under test:
   of an instruction and how its lines run (limit, dependencies, confirmation, abort);
 - `js/mzta-smartbar-router.js`: the router prompt (never the email body), the placeholder allow list,
   the context, the reading of the answer and the one correction attempt;
+- `js/mzta-smartbar-execute.js`: the prompt of the compose operation (the email delimited as data,
+  the fixed order of its sections), the email cut to the length limit (quoted part first), the typed
+  placeholders as references, the language rule, the reading of the answer with its correction
+  attempt, the signature the add-on adds, the body as HTML;
 - `js/mzta-smartbar-store.js` with the `smartbar` store of `js/mzta-storage.js`: the record, its
   derived state, the caps, the non-mirrored store, the startup interruption, the three retention rules.
 
@@ -37,11 +41,12 @@ tests/
 ├── helpers/known-issues/smartbar.mjs   the known issues, their shape (validateKnown()), and caseTests()
 ├── helpers/plugins/smartbar.mjs        the settings page, for openPage()
 └── smartbar/
-    ├── context.mjs                     smartbarContext(): the core background plus the three modules
+    ├── context.mjs                     smartbarContext(): the core background plus the Smart bar modules
     ├── 01-registry.test.mjs            registry, availability, params, plan, runPlanned()
     ├── 02-router.test.mjs              prompt, allow list, context, answer, correction attempt
     ├── 03-store.test.mjs               records, states, caps, the smartbar store and its cleanup
     ├── 04-router-test-set.test.mjs     claude-spec/10-smartbar-router-tests.md against the registry
+    ├── 05-execute.test.mjs             the compose prompt, the email cut, the answer, the signature
     └── 99-harness-known-issues.test.mjs   the known-issue entries themselves
 ```
 

@@ -1004,7 +1004,8 @@ sent.
   rejects with an error named `AbortError` (`err.aborted = true`). The summary and translation jobs
   pass their registry entry's signal (`taJobRegistry`, spec 01 "In-flight jobs"), so a Smart bar
   Stop or replacement ends their call at once; a job body that sees an abort resolves `cancelled`.
-- **JSON mode:** a caller may pass `jsonMode: true` (the Smart bar router). It is asked only where
+- **JSON mode:** a caller may pass `jsonMode: true` (the Smart bar router and its compose
+  operation, which pass their signal too). It is asked only where
   the provider has a reliable one, and never over a format the user chose: OpenAI Responses
   `text.format` `json_object` (unless `chatgpt_text_format` is set), Gemini
   `generationConfig.responseMimeType: "application/json"` (`json_mode` option of

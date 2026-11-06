@@ -48,6 +48,7 @@ import {
     stripHtmlKeepLines,
     isPlainTextCompose,
     htmlBodyToPlainText,
+    splitQuotedHtml,
     cleanupNewlines,
     convertNewlinesToParagraphs,
     getConnectionType,
@@ -112,6 +113,17 @@ import {
     RouterJsonError
 } from './js/mzta-smartbar-router.js';
 import {
+    askCompose,
+    bodyWithSignature,
+    buildExecutePrompt,
+    composeResult,
+    executeLanguageRule,
+    plainTextToHtml,
+    resolveSignature,
+    splitQuotedText,
+    trimEmailText
+} from './js/mzta-smartbar-execute.js';
+import {
     taSmartbarStore,
     newRecord as smartbarNewRecord,
     recordOperation as smartbarRecordOperation,
@@ -122,7 +134,8 @@ import {
 } from './js/mzta-smartbar-store.js';
 import {
     getPlaceholders,
-    mapPlaceholderToSuggestion
+    mapPlaceholderToSuggestion,
+    placeholdersUtils
 } from './js/mzta-placeholders.js';
 import {
     addTags_getExclusionList,
@@ -1217,67 +1230,12 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     //         identityId: await getCurrentIdentity(mailMessage),
                     //     })
                     //console.log(">>>>>>>>>>>> message.mailMessageId: " + message.mailMessageId);
-                    let _mailMessage = await browser.messages.get(message.mailMessageId);
-                    let curr_idn = await getCurrentIdentity(_mailMessage)
-                    // isPlainText is deliberately NOT forced here: omitting it lets the
-                    // reply follow the identity's own compose format, so a user who
-                    // writes in plain text gets a plain text reply. replaceBody() then
-                    // reads the resulting format back off the tab. [#855]
-                    let reply_tab = await browser.compose.beginReply(_mailMessage.id, replyType, {
-                        type: "reply",
-                        //body:  paragraphsHtmlString,
-                        identityId: curr_idn,
-                    })
-                        // Wait for tab loaded.
-                        await new Promise(resolve => {
-                            const tabIsLoaded = tab => {
-                                return tab.status == "complete" && tab.url != "about:blank";
-                            };
-                            const listener = (tabId, changeInfo, updatedTab) => {
-                                if (tabIsLoaded(updatedTab)) {
-                                    browser.tabs.onUpdated.removeListener(listener);
-                                    //console.log(">>>>>>>>>>>> reply_tab: " + tabId);
-                                    resolve();
-                                }
-                            }
-                            // Early exit if loaded already
-                            if (tabIsLoaded(reply_tab)) {
-                                resolve();
-                            } else {
-                                browser.tabs.onUpdated.addListener(listener);
-                            }
-                        });
-                        // we need to wait for the compose windows to load the content script
-                        setTimeout(() => _insertReply(reply_tab.id, paragraphsHtmlString).catch(e => taLog.error("chatgpt_replyMessage: the reply could not be inserted: " + e)), 500);
-                        return true;
-                }
-                // The answer goes into the reply through the compose script (insertReply), as
-                // an editor command, so one Ctrl+Z takes it out. setComposeDetails cannot be
-                // undone and, from Thunderbird 143, clears the undo history (bug 1975127):
-                // replaceBody() is only the fallback, when the compose script cannot be reached.
-                // The script may not be loaded yet: a missing receiver is retried.
-                async function _insertReply(tabId, html) {
-                    let isPlainText = await isPlainTextCompose(tabId);
-                    // Sanitized before execCommand('insertHTML') and the replaceBody() fallback
-                    // alike, as in _replaceSelectedText().
-                    if (!isPlainText) html = sanitizeBlockHtml(html);
-                    let text = isPlainText ? stripHtmlKeepLines(html) : html;
-                    for (let attempt = 0; attempt < 20; attempt++) {
-                        try {
-                            await browser.tabs.sendMessage(tabId, { command: "insertReply", text: text, isPlainText: isPlainText });
-                            return;
-                        } catch (e) {
-                            // Only "no receiver yet" is worth a retry: any other failure may
-                            // come after the answer was inserted, and a retry would double it.
-                            if (!/Receiving end does not exist|Could not establish connection/.test(String(e?.message ?? e))) {
-                                taLog.error("chatgpt_replyMessage: insertReply failed, not retried: " + e);
-                                return;
-                            }
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 250));
-                    }
-                    taLog.error("chatgpt_replyMessage: the compose script never answered, writing the reply with setComposeDetails (not undoable)");
-                    await replaceBody(tabId, html);
+                    // The reply window, opened and loaded as the Smart bar's compose operation
+                    // opens its own (_beginComposeWindow()).
+                    let reply_tab = await _beginComposeWindow(replyType, message.mailMessageId);
+                    // we need to wait for the compose windows to load the content script
+                    setTimeout(() => _insertComposeAnswer(reply_tab.id, paragraphsHtmlString).catch(e => taLog.error("chatgpt_replyMessage: the reply could not be inserted: " + e)), COMPOSE_SCRIPT_LOAD_DELAY_MS);
+                    return true;
                 }
                 return _replyMessage(message);
                 break;
@@ -1470,13 +1428,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     const hid = message.headerMessageId;
                     switch (message.command) {
                         case 'smartbar_run':
-                            return _smartbarRun({ headerMessageId: hid, tabId, instruction: message.instruction, hasSelection: message.hasSelection });
+                            return _smartbarRun({ headerMessageId: hid, tabId, instruction: message.instruction, hasSelection: message.hasSelection, selection: message.selection });
                         case 'smartbar_open_chat':
                             return { ok: await _smartbarOpenChat(hid, tabId, message.text, message.selection) };
                         case 'smartbar_stop':
                             return { ok: await _smartbarStop(hid, message.index ?? null) };
                         case 'smartbar_retry':
-                            return _smartbarRetry({ headerMessageId: hid, tabId, recordId: message.recordId, index: message.index ?? null, auto: message.auto === true, hasSelection: message.hasSelection });
+                            return _smartbarRetry({ headerMessageId: hid, tabId, recordId: message.recordId, index: message.index ?? null, auto: message.auto === true, hasSelection: message.hasSelection, selection: message.selection });
                         case 'smartbar_confirm':
                         case 'smartbar_cancel':
                             return { ok: _smartbarAnswerConfirm(hid, message.index, message.command === 'smartbar_confirm') };
@@ -2209,6 +2167,101 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
     }
 }
 
+// ---- A compose window opened with an answer ----------------------------------------------------
+//
+// The API chat's "reply" (chatgpt_replyMessage) and the Smart bar's compose operation open their
+// window the same way: Thunderbird builds it (quote, forwarded content, identity signature, the
+// identity's compose format), then the answer goes at its top through the compose script.
+
+// The time the compose script of a window just loaded is given before it is sent the answer.
+const COMPOSE_SCRIPT_LOAD_DELAY_MS = 500;
+
+// Wait until a compose tab just opened is loaded.
+function _waitComposeTabLoaded(tab) {
+    return new Promise(resolve => {
+        const tabIsLoaded = t => {
+            return t.status == "complete" && t.url != "about:blank";
+        };
+        const listener = (tabId, changeInfo, updatedTab) => {
+            if (tabIsLoaded(updatedTab)) {
+                browser.tabs.onUpdated.removeListener(listener);
+                resolve();
+            }
+        };
+        // Early exit if loaded already
+        if (tabIsLoaded(tab)) {
+            resolve();
+        } else {
+            browser.tabs.onUpdated.addListener(listener);
+        }
+    });
+}
+
+// Open a compose window on a message and wait for it to load. kind:
+//   'replyToSender' / 'replyToAll'  compose.beginReply(), the reply of chatgpt_replyMessage
+//   'forward'                       compose.beginForward() with no forward type: Thunderbird's
+//                                   preference decides inline or as attachment, and builds the
+//                                   forwarded content (or the attachment) itself
+//   'new'                           compose.beginNew(), not threaded, with options.subject
+// The identity is getCurrentIdentity()'s, as for every reply. No recipient is ever set: a reply
+// gets Thunderbird's own, a forward and a new email none. No body either: the answer goes in
+// afterwards through the compose script (_insertComposeAnswer()), so it can be undone.
+async function _beginComposeWindow(kind, mailMessageId, options = {}) {
+    let _mailMessage = await browser.messages.get(mailMessageId);
+    let curr_idn = await getCurrentIdentity(_mailMessage);
+    let tab;
+    if (kind === 'forward') {
+        tab = await browser.compose.beginForward(_mailMessage.id, undefined, { identityId: curr_idn });
+    } else if (kind === 'new') {
+        const details = { identityId: curr_idn };
+        if (options.subject) details.subject = options.subject;
+        tab = await browser.compose.beginNew(details);
+    } else {
+        // isPlainText is deliberately NOT forced here: omitting it lets the
+        // reply follow the identity's own compose format, so a user who
+        // writes in plain text gets a plain text reply. replaceBody() then
+        // reads the resulting format back off the tab. [#855]
+        tab = await browser.compose.beginReply(_mailMessage.id, kind, {
+            type: "reply",
+            identityId: curr_idn,
+        });
+    }
+    // Wait for tab loaded.
+    await _waitComposeTabLoaded(tab);
+    return tab;
+}
+
+// The answer goes into the compose window through the compose script (insertReply), as an editor
+// command, so one Ctrl+Z takes it out. setComposeDetails cannot be undone and, from Thunderbird
+// 143, clears the undo history (bug 1975127): replaceBody() is only the fallback, when the
+// compose script cannot be reached. The script may not be loaded yet: a missing receiver is
+// retried. insertReply puts it above the first quote, forwarded content or signature, so the
+// same command serves a reply, a forward and a new email. Resolves true once inserted.
+async function _insertComposeAnswer(tabId, html) {
+    let isPlainText = await isPlainTextCompose(tabId);
+    // Sanitized before execCommand('insertHTML') and the replaceBody() fallback
+    // alike, as in _replaceSelectedText().
+    if (!isPlainText) html = sanitizeBlockHtml(html);
+    let text = isPlainText ? stripHtmlKeepLines(html) : html;
+    for (let attempt = 0; attempt < 20; attempt++) {
+        try {
+            await browser.tabs.sendMessage(tabId, { command: "insertReply", text: text, isPlainText: isPlainText });
+            return true;
+        } catch (e) {
+            // Only "no receiver yet" is worth a retry: any other failure may
+            // come after the answer was inserted, and a retry would double it.
+            if (!/Receiving end does not exist|Could not establish connection/.test(String(e?.message ?? e))) {
+                taLog.error("insertReply failed, not retried: " + e);
+                return false;
+            }
+        }
+        await new Promise(resolve => setTimeout(resolve, 250));
+    }
+    taLog.error("The compose script never answered, writing the answer with setComposeDetails (not undoable)");
+    await replaceBody(tabId, html);
+    return true;
+}
+
 // ---- The Smart bar (claude-spec/10-smartbar.md) -----------------------------------------------
 //
 // The bar in the message pane (js/mzta-smartbar-script.js) sends an instruction; the router
@@ -2236,7 +2289,9 @@ let _smartbarSeq = 0;
 const _smartbarThinking = new Map();
 const SMARTBAR_THINKING_THROTTLE_MS = 250;
 // The job kind of each operation, for a Stop of one line.
-const SMARTBAR_OPERATION_JOB_KIND = { tag: 'add_tags', summarize: 'summary', translate: 'translation' };
+const SMARTBAR_OPERATION_JOB_KIND = { tag: 'add_tags', summarize: 'summary', translate: 'translation', compose: 'smartbar_compose' };
+// The compose window of each message type of the compose operation (_beginComposeWindow()).
+const SMARTBAR_COMPOSE_WINDOW = { reply: 'replyToSender', reply_all: 'replyToAll', forward: 'forward', new: 'new' };
 // The wait before the automatic retry of a rate-limited call, when the provider named none.
 const SMARTBAR_DEFAULT_RETRY_MS = 30000;
 
@@ -2252,7 +2307,8 @@ async function _smartbarConfig() {
 }
 
 // What the requirements of the operations read (js/mzta-smartbar-registry.js): the features on,
-// their connection usable, the Add Tags permissions granted.
+// their connection usable, the Add Tags permissions granted. compose has no feature of its own:
+// the smartbar_execute connection usable is all it needs.
 async function _smartbarEnv() {
     const prefs = await mztaPrefs.getPrefs([
         'add_tags', 'summarize', 'translate', 'connection_type',
@@ -2268,6 +2324,8 @@ async function _smartbarEnv() {
         add_tags: isApiUsableConnection(getConnectionType(prefs, await getAddTagsPrompt(), 'add_tags')),
         summarize: isApiUsableConnection(getConnectionType(prefs, await getSummarizePrompt(), 'summarize')),
         translate: isApiUsableConnection(getConnectionType(prefs, await getTranslatePrompt(), 'translate')),
+        smartbar_execute: isApiUsableConnection(getConnectionType(prefs,
+            (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_execute') || {}, 'smartbar_execute')),
     };
     return {
         features: { add_tags: prefs.add_tags === true, summarize: prefs.summarize === true, translate: prefs.translate === true },
@@ -2307,6 +2365,12 @@ function _smartbarRecordForBar(record) {
         hasRawResponse: !!_raw,
         operations: (record.operations || []).map(op => {
             const { rawResponse: _opRaw, ...opRest } = op;
+            // The text a compose line generated stays in the background: the bar shows its type
+            // and the recipient reminder only.
+            if (opRest.result && typeof opRest.result === 'object' && 'body' in opRest.result) {
+                const { body: _body, subject: _subject, signature: _signature, ...resultRest } = opRest.result;
+                opRest.result = resultRest;
+            }
             return opRest;
         }),
     };
@@ -2473,10 +2537,170 @@ async function _smartbarRunTranslate(ctx) {
     return _smartbarPanelOutcome(outcome, browser.i18n.getMessage('smartbar_error_no_language'));
 }
 
+// The preferences of the compose operation: its connection, the email length, the additional
+// instructions, the signatures and the default language.
+async function _smartbarComposePrefs() {
+    return await mztaPrefs.getPrefs([
+        'connection_type', 'do_debug', 'default_chatgpt_lang', 'default_sign_name',
+        'smartbar_max_body_length', 'smartbar_additional_instructions', 'smartbar_signature',
+        ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+    ]);
+}
+
+// The values of the context of an instruction (the router's placeholders, the selected text, the
+// ones the user typed), rendered with the placeholder machinery of the prompts: a custom
+// placeholder expanded first, then the built-in ones it holds. Always the default values (an
+// unknown value is '', never a literal token). [{ key, value }], in the order of `keys`.
+async function _smartbarContextValues(keys, message, body_text, msg_text, selection) {
+    if (!Array.isArray(keys) || keys.length === 0) return [];
+    const texts = [];
+    for (const key of keys) {
+        let text = '{%' + key + '%}';
+        if (placeholdersUtils.hasCustomPlaceholder(text)) text = await placeholdersUtils.replaceCustomPlaceholders(text);
+        texts.push(text);
+    }
+    const subs = await placeholdersUtils.getPlaceholdersValues({
+        prompt_text: texts.join('\n'),
+        curr_message: message,
+        mail_subject: message.subject || '',
+        body_text: body_text,
+        msg_text: msg_text,
+        selection_text: selection || '',
+    });
+    return keys.map((key, i) => ({
+        key: key,
+        value: placeholdersUtils.replacePlaceholders({ text: texts[i], replacements: subs, use_default_value: true }),
+    }));
+}
+
+// The text of a compose operation: the special command prompt_smartbar_execute on the
+// smartbar_execute connection, the email cut to smartbar_max_body_length (quoted part first).
+// Resolves { answer, prefs } or rejects (RouterJsonError, a config error, an API error, an abort).
+async function _smartbarGenerateCompose(ctx, signal) {
+    const { message, params } = ctx;
+    const prefs = await _smartbarComposePrefs();
+    const executePrompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_execute');
+    if (!executePrompt) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_execute_prompt'));
+        err.isConfigError = true;
+        throw err;
+    }
+    const connection = getConnectionType(prefs, executePrompt, 'smartbar_execute');
+    if (!isApiUsableConnection(connection)) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_connection'));
+        err.isConfigError = true;
+        throw err;
+    }
+    let text = executePrompt.text;
+    if (text === 'prompt_smartbar_execute_full_text') text = browser.i18n.getMessage('prompt_smartbar_execute_full_text');
+
+    // Only the current email. The quoted part is told apart so the length limit cuts it first.
+    const msg_text = await getMailInlineTextParts(message.id);
+    let split = msg_text.html ? splitQuotedHtml(msg_text.html) : null;
+    if (!split || (split.own === '' && split.quoted === '')) split = splitQuotedText(cleanupNewlines(msg_text.text || ''));
+    let body_text = htmlBodyToPlainText(msg_text.html || '');
+    if (body_text.length === 0) body_text = cleanupNewlines(msg_text.text || '');
+    const maxLength = Number.isInteger(prefs.smartbar_max_body_length) && prefs.smartbar_max_body_length > 0
+        ? prefs.smartbar_max_body_length : 0;
+
+    const prompt = buildExecutePrompt({
+        text: text,
+        params: params,
+        instruction: ctx.instruction,
+        email: {
+            subject: message.subject || '',
+            from: message.author || '',
+            to: message.recipients || [],
+            cc: message.ccList || [],
+            date: message.date instanceof Date ? message.date.toISOString() : String(message.date || ''),
+            text: trimEmailText(split, maxLength),
+        },
+        context: await _smartbarContextValues(ctx.routerContext, message, body_text, msg_text, ctx.selection),
+        additionalInstructions: prefs.smartbar_additional_instructions || '',
+        signature: resolveSignature('default', prefs.smartbar_signature, prefs.default_sign_name),
+        languageRule: executeLanguageRule(prefs.default_chatgpt_lang),
+    });
+    const send = async (p) => {
+        const cmd = new mzta_specialCommand({
+            processingClient,
+            prompt: p,
+            llm: connection,
+            do_debug: prefs.do_debug,
+            config: executePrompt,
+            jsonMode: true,
+            signal: signal,
+        });
+        await cmd.initWorker();
+        return await cmd.sendPrompt();
+    };
+    const { answer } = await askCompose(prompt, send, params.type);
+    return { answer, prefs };
+}
+
+// A failed compose generation as a Smart bar line outcome.
+function _smartbarComposeError(error) {
+    const type = _smartbarErrorType(error);
+    if (type === 'aborted') return { state: 'cancelled' };
+    return {
+        state: 'error',
+        error: error?.message || String(error),
+        errorType: type,
+        rawResponse: error?.rawResponse ?? null,
+        retryAt: type === 'rate_limit' ? _smartbarRetryAt(error?.retryAfterMs) : null,
+    };
+}
+
+// The compose operation (claude-spec/10-smartbar.md "Compose"): the text generated, then a
+// compose window of the asked type opened with it (_beginComposeWindow()). Done once the window
+// is open. The generated text is kept in the line's result, so a window that could not open is
+// opened again by Retry without a new generation (ctx.previousResult). A generation stopped
+// (Stop, a new instruction) never opens a window.
+async function _smartbarRunCompose(ctx) {
+    const { message, params, groupId } = ctx;
+    const type = params.type;
+    const entry = taJobRegistry.start('smartbar_compose', message.headerMessageId, async (job) => {
+        const stopped = () => job.invalidated || job.abort.signal.aborted || ctx.signal?.aborted === true;
+        let result = ctx.previousResult?.type === type && ctx.previousResult?.body ? ctx.previousResult : null;
+        let prefs = null;
+        if (!result) {
+            let generated;
+            try {
+                generated = await _smartbarGenerateCompose(ctx, job.abort.signal);
+            } catch (error) {
+                return { status: 'ok', line: stopped() ? { state: 'cancelled' } : _smartbarComposeError(error) };
+            }
+            result = composeResult(type, generated.answer);
+            prefs = generated.prefs;
+        }
+        if (stopped()) return { status: 'ok', line: { state: 'cancelled' } };
+        prefs = prefs || await _smartbarComposePrefs();
+        const signature = resolveSignature(result.signature, prefs.smartbar_signature, prefs.default_sign_name);
+        const html = plainTextToHtml(bodyWithSignature(result.body, signature));
+        let tab;
+        try {
+            tab = await _beginComposeWindow(SMARTBAR_COMPOSE_WINDOW[type], message.id, { subject: result.subject });
+        } catch (e) {
+            taLog.error("Smart bar: the compose window could not be opened: " + (e?.message || e));
+            return { status: 'ok', line: { state: 'error', error: e?.message || String(e), errorType: 'compose_window', result: result } };
+        }
+        await new Promise(resolve => setTimeout(resolve, COMPOSE_SCRIPT_LOAD_DELAY_MS));
+        try {
+            if (!(await _insertComposeAnswer(tab.id, html))) taLog.error("Smart bar: the text could not be written into the compose window");
+        } catch (e) {
+            taLog.error("Smart bar: the text could not be written into the compose window: " + (e?.message || e));
+        }
+        return { status: 'ok', line: { state: 'done', result: result } };
+    }, { groupId: groupId });
+    const outcome = await entry.promise;
+    if (outcome?.line) return outcome.line;
+    return { state: 'error', error: outcome?.errorMessage || 'error', errorType: 'api' };
+}
+
 const SMARTBAR_EXECUTORS = {
     tag: _smartbarRunTag,
     summarize: _smartbarRunSummarize,
     translate: _smartbarRunTranslate,
+    compose: _smartbarRunCompose,
 };
 
 // The metadata the router gets about the message: never its body.
@@ -2568,6 +2792,13 @@ async function _smartbarStartLine(state, line) {
             source: 'bar',
             tabId: state.tabId,
             executors: SMARTBAR_EXECUTORS,
+            // What the generative operations add to the email (compose): the instruction, the
+            // context the router resolved, the selected text, and the text of a previous run of
+            // this line whose window could not open (Retry opens it without a new generation).
+            instruction: state.record.instruction,
+            routerContext: state.record.routerContext || [],
+            selection: state.selection || '',
+            previousResult: line.previousResult ?? null,
         });
     } catch (e) {
         taLog.error("Smart bar: operation " + line.id + " failed: " + (e?.message || e));
@@ -2643,7 +2874,7 @@ async function _smartbarProcess(state, job) {
 }
 
 // Start an instruction on a message (the bar's Enter, or its execute button).
-async function _smartbarRun({ headerMessageId, tabId, instruction, hasSelection }) {
+async function _smartbarRun({ headerMessageId, tabId, instruction, hasSelection, selection = '' }) {
     const config = await _smartbarConfig();
     if (!config.enabled) return { ok: false, error: 'disabled' };
     const text = String(instruction ?? '').trim();
@@ -2673,8 +2904,11 @@ async function _smartbarRun({ headerMessageId, tabId, instruction, hasSelection 
         taLog.error("Smart bar: could not store the new record: " + e);
         record.id = 'unsaved-' + groupId;
     }
+    // The selected text itself is given by the bar (it reads it when the instruction is sent):
+    // only the generative operations use it, as the selected_text context.
     const state = {
-        headerMessageId, tabId, message, groupId, hasSelection: !!hasSelection, record,
+        headerMessageId, tabId, message, groupId, hasSelection: !!hasSelection,
+        selection: hasSelection && typeof selection === 'string' ? selection : '', record,
         controller: new AbortController(), confirms: new Map(), replaced: false,
     };
     _smartbarActive.set(headerMessageId, state);
@@ -2723,11 +2957,11 @@ async function _smartbarStop(headerMessageId, index = null) {
 
 // Retry: the router of an instruction-level error (a new instruction with the same text), or one
 // failed operation of the last record (a fresh run of that line alone).
-async function _smartbarRetry({ headerMessageId, tabId, recordId, index = null, auto = false, hasSelection = false }) {
+async function _smartbarRetry({ headerMessageId, tabId, recordId, index = null, auto = false, hasSelection = false, selection = '' }) {
     const record = await taSmartbarStore.get(recordId);
     if (!record || record.messageId !== headerMessageId) return { ok: false };
     if (index === null || index === undefined) {
-        return _smartbarRun({ headerMessageId, tabId, instruction: record.instruction, hasSelection });
+        return _smartbarRun({ headerMessageId, tabId, instruction: record.instruction, hasSelection, selection });
     }
     if (_smartbarActive.has(headerMessageId)) return { ok: false, error: 'busy' };
     const op = record.operations.find(o => o.index === index);
@@ -2737,6 +2971,7 @@ async function _smartbarRetry({ headerMessageId, tabId, recordId, index = null, 
     const groupId = smartbarNewId();
     const state = {
         headerMessageId, tabId, message, groupId, hasSelection: !!hasSelection,
+        selection: hasSelection && typeof selection === 'string' ? selection : '',
         record: { ...record, groupId: groupId, state: 'running' },
         controller: new AbortController(), confirms: new Map(), replaced: false,
     };
@@ -2744,7 +2979,11 @@ async function _smartbarRetry({ headerMessageId, tabId, recordId, index = null, 
         ? { ...o, state: 'running', error: null, errorType: null, retryAt: null, autoRetried: o.autoRetried || auto }
         : o);
     _smartbarActive.set(headerMessageId, state);
-    const line = { index: op.index, id: op.id, params: op.params, state: 'queued', dependsOn: [], risk: smartbarRegistry.get(op.id)?.risk || 'direct' };
+    const line = {
+        index: op.index, id: op.id, params: op.params, state: 'queued', dependsOn: [], risk: smartbarRegistry.get(op.id)?.risk || 'direct',
+        // A compose window that could not open: its text is kept, no new generation.
+        previousResult: op.errorType === 'compose_window' ? (op.result ?? null) : null,
+    };
     await _smartbarPushState(headerMessageId, state.record);
     const job = taJobRegistry.start('smartbar', headerMessageId, async () => {
         await _smartbarRunLines(state, [line]);

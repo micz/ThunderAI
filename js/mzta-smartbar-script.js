@@ -66,6 +66,13 @@
     lastSelection = sel.isCollapsed ? '' : sel.toString();
   });
 
+  // What an instruction carries about the selection: whether there is one (the router is told)
+  // and its text (the compose operation's selected_text context; the router never gets it).
+  function selectionInfo(fields) {
+    const hasSelection = lastSelection.trim() !== '';
+    return { ...fields, hasSelection: hasSelection, selection: hasSelection ? lastSelection : '' };
+  }
+
   // ── Styles ──────────────────────────────────────────────────────────────────────────────────
   const CSS = `
     :host { all: initial; display: block; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; }
@@ -334,7 +341,7 @@
     }
     noticeHidden = false;
     thinking = { recordId: null, text: '' };
-    const res = await send('smartbar_run', { instruction: text, hasSelection: lastSelection.trim() !== '' });
+    const res = await send('smartbar_run', selectionInfo({ instruction: text }));
     if (res?.ok) {
       if (!suggestions.includes(text)) suggestions = [text, ...suggestions];
       else suggestions = [text, ...suggestions.filter(s => s !== text)];
@@ -345,7 +352,17 @@
 
   // ── Drawing ─────────────────────────────────────────────────────────────────────────────────
   const OP_LABEL_KEYS = { tag: 'smartbar_op_tag', summarize: 'smartbar_op_summarize', translate: 'smartbar_op_translate' };
-  const opLabel = id => OP_LABEL_KEYS[id] ? msg(OP_LABEL_KEYS[id]) : id;
+  // The compose operation is named by its message type ("Reply to all"), its params' only field.
+  const COMPOSE_LABEL_KEYS = {
+    reply: 'smartbar_op_compose_reply',
+    reply_all: 'smartbar_op_compose_reply_all',
+    forward: 'smartbar_op_compose_forward',
+    new: 'smartbar_op_compose_new',
+  };
+  const opLabel = (id, params = {}) => {
+    if (id === 'compose') return msg(COMPOSE_LABEL_KEYS[params?.type] || 'smartbar_op_compose');
+    return OP_LABEL_KEYS[id] ? msg(OP_LABEL_KEYS[id]) : id;
+  };
   const STATE_ICON = { running: '⏳', pending_confirmation: '❓', done: '✔', error: '⚠', cancelled: '–', drafted: '✎' };
 
   // The state the icon's dot shows: running, pending confirmation, error (nothing otherwise).
@@ -360,7 +377,7 @@
   }
 
   function opText(op) {
-    const label = opLabel(op.id);
+    const label = opLabel(op.id, op.params);
     switch (op.state) {
       case 'running': return msg('smartbar_line_running', [label]);
       case 'pending_confirmation': return msg('smartbar_line_pending', [label]);
@@ -375,6 +392,13 @@
         }
         if (op.id === 'summarize') return msg('smartbar_result_summary_ready');
         if (op.id === 'translate') return msg('smartbar_result_translation_ready');
+        if (op.id === 'compose') {
+          // The add-on never fills the recipients: the one the instruction named is a reminder.
+          const recipient = String(op.result?.recipient || '').trim();
+          return recipient !== ''
+            ? msg('smartbar_result_compose_opened_recipient', [label, recipient])
+            : msg('smartbar_result_compose_opened', [label]);
+        }
         return msg('smartbar_line_done', [label]);
       default: return label;
     }
@@ -397,7 +421,7 @@
         clearInterval(countdowns.get(key));
         countdowns.delete(key);
         autoRetried.add(key);
-        send('smartbar_retry', { recordId: record.id, index: index, auto: true, hasSelection: lastSelection.trim() !== '' });
+        send('smartbar_retry', selectionInfo({ recordId: record.id, index: index, auto: true }));
         return;
       }
       span.textContent = msg('smartbar_retry_in', [String(left)]);
@@ -414,7 +438,7 @@
       const c = countdownNode(record, index, retryAt);
       if (c) nodes.push(c);
     }
-    nodes.push(button(msg('smartbar_retry'), () => send('smartbar_retry', { recordId: record.id, index: index, hasSelection: lastSelection.trim() !== '' }), 'retry'));
+    nodes.push(button(msg('smartbar_retry'), () => send('smartbar_retry', selectionInfo({ recordId: record.id, index: index })), 'retry'));
     nodes.push(button(msg('smartbar_remove'), () => send('smartbar_dismiss', { recordId: record.id, what: index ?? 'error' }), 'remove'));
     if (errorType === 'json') {
       nodes.push(button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', { text: record.instruction, selection: lastSelection }), 'chat'));
@@ -483,7 +507,7 @@
     }
     const nothing = !record.errorType && ops.length === 0 && !record.unrecognized && record.state !== 'running' && record.state !== 'interrupted';
     if (nothing && !record.dismissed?.unrecognized) {
-      const available = (state.available || []).map(opLabel);
+      const available = (state.available || []).map(id => opLabel(id));
       const text = msg('smartbar_nothing_matched') + ' ' + (available.length > 0
         ? msg('smartbar_available_operations', [available.join(', ')])
         : msg('smartbar_no_operations_available'));
