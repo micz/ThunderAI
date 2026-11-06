@@ -79,7 +79,7 @@ function rawAll(store) {
 const raw = async (store, id) => (await rawAll(store)).find(r => r.messageId === id);
 const clearAll = () => taStorage.clearAllRecords();
 
-k.test('schema', 'the database: its name, version 1, the three stores keyed on messageId, the createdAt, size and failed_createdAt indexes', async () => {
+k.test('schema', 'the database: its name, version 1, the three stores keyed on messageId, the createdAt, size and failed_createdAt indexes, and the smartbar store', async () => {
     await st.writeSummary('schema@x', { summary: 'S' });
     const db = await new Promise((resolve, reject) => {
         const open = indexedDB.open('thunderai-message-data');
@@ -88,7 +88,7 @@ k.test('schema', 'the database: its name, version 1, the three stores keyed on m
     });
     try {
         assert.equal(db.version, 1);
-        assert.deepEqual([...db.objectStoreNames].sort(), ['spam', 'summary', 'translation']);
+        assert.deepEqual([...db.objectStoreNames].sort(), ['smartbar', 'spam', 'summary', 'translation']);
         const tx = db.transaction(['spam', 'summary', 'translation'], 'readonly');
         for (const name of ['spam', 'summary', 'translation']) {
             const store = tx.objectStore(name);
@@ -380,7 +380,7 @@ k.test('cleanup-zero', 'a limit of 0 is no limit: nothing goes', async (t) => {
     const now = Date.parse('2026-06-10T12:00:00Z');
     t.mock.timers.enable({ apis: ['Date'], now });
     await seedDays(t, 'spam', 4, now);
-    assert.deepEqual(await taStorage.cleanup({ spam: { maxAgeDays: 0, maxEntries: 0 } }, now), { spam: 0, summary: 0, translation: 0 });
+    assert.deepEqual(await taStorage.cleanup({ spam: { maxAgeDays: 0, maxEntries: 0 } }, now), { spam: 0, summary: 0, translation: 0, smartbar: 0 });
     assert.equal(await taStorage.count('spam'), 4);
 });
 
@@ -392,7 +392,7 @@ k.test('cleanup-per-type', 'each type has its own limits: one type cleaned, the 
     await seedDays(t, 'summary', 3, now);
     await seedDays(t, 'translation', 3, now);
     const removed = await taStorage.cleanup({ spam: { maxEntries: 1 }, summary: { maxAgeDays: 1 }, translation: {} }, now);
-    assert.deepEqual(removed, { spam: 2, summary: 2, translation: 0 });
+    assert.deepEqual(removed, { spam: 2, summary: 2, translation: 0, smartbar: 0 });
     assert.deepEqual(await ids('spam'), ['spam0@x']);
     assert.deepEqual(await ids('summary'), ['summary0@x']);
     assert.equal(await taStorage.count('translation'), 3);
@@ -407,7 +407,7 @@ k.test('cleanup-prefs', 'without explicit limits the cleanup reads the preferenc
     await ctx.ctl.browser.storage.local.set({ spamfilter_storage_max_entries: 1, summarize_storage_max_age_days: 2 });
     try {
         const removed = await taStorage.cleanup();
-        assert.deepEqual(removed, { spam: 3, summary: 2, translation: 0 });
+        assert.deepEqual(removed, { spam: 3, summary: 2, translation: 0, smartbar: 0 });
     } finally {
         await ctx.ctl.browser.storage.local.remove(['spamfilter_storage_max_entries', 'summarize_storage_max_age_days']);
     }
@@ -418,7 +418,7 @@ k.test('cleanup-defaults', 'with the default preferences (only the error age, 90
     const now = Date.now();
     t.mock.timers.enable({ apis: ['Date'], now });
     await seedDays(t, 'spam', 3, now - 400 * DAY);
-    assert.deepEqual(await taStorage.cleanup(), { spam: 0, summary: 0, translation: 0 });
+    assert.deepEqual(await taStorage.cleanup(), { spam: 0, summary: 0, translation: 0, smartbar: 0 });
     assert.equal(await taStorage.count('spam'), 3);
 });
 
@@ -433,7 +433,7 @@ k.test('schedule-first', 'no cleanup ever: it runs at once, its time is stored, 
     t.mock.method(taStorage, 'cleanup', async (...a) => { runs.push(Date.now()); return real.apply(taStorage, a); });
     await taStorage.startCleanupSchedule();
     assert.deepEqual(runs, [now], 'at once');
-    assert.deepEqual(ctx.ctl.localData()[LAST_CLEANUP_KEY], { time: now, removed: { spam: 0, summary: 0, translation: 0 } });
+    assert.deepEqual(ctx.ctl.localData()[LAST_CLEANUP_KEY], { time: now, removed: { spam: 0, summary: 0, translation: 0, smartbar: 0 } });
     t.mock.timers.tick(24 * 60 * 60 * 1000 - 1);
     assert.equal(runs.length, 1);
     t.mock.timers.tick(1);
@@ -542,7 +542,7 @@ k.test('evicted-recreated', 'a database deleted under the add-on (eviction): an 
     assert.equal(await taStorage.count('summary'), 0);
     await st.writeSummary('ev2@x', { summary: 'S2' });
     assert.equal((await st.getRecord('ev2@x')).summary.summary, 'S2');
-    assert.deepEqual(await rawStoreNames(), ['spam', 'summary', 'translation']);
+    assert.deepEqual(await rawStoreNames(), ['smartbar', 'spam', 'summary', 'translation']);
 });
 
 k.test('missing-stores-recreated', 'a database at version 1 without its stores is deleted and created again, empty, with a warning', async () => {
@@ -550,8 +550,8 @@ k.test('missing-stores-recreated', 'a database at version 1 without its stores i
     await rawCreate(['spam']);
     ctx.con.clear();
     assert.equal(await st.getRecord('ms@x'), null);
-    assert.match(ctx.con.all().join(' | '), /no summary, translation object store/);
-    assert.deepEqual(await rawStoreNames(), ['spam', 'summary', 'translation']);
+    assert.match(ctx.con.all().join(' | '), /no summary, translation, smartbar object store/);
+    assert.deepEqual(await rawStoreNames(), ['smartbar', 'spam', 'summary', 'translation']);
     await st.writeTranslation('ms@x', { translated_text: 'T' });
     assert.equal((await st.getRecord('ms@x')).translation.translated_text, 'T');
     const db = await taStorage.openDB();
@@ -726,7 +726,7 @@ k.test('mirror-cleanup', 'the cleanup removes the mirror keys of the records it 
     await seedDays(t, 'summary', 3, now);
     const removes = recordRemoves(t);
     const removed = await taStorage.cleanup({ spam: { maxEntries: 2 }, summary: { maxAgeDays: 1 } }, now);
-    assert.deepEqual(removed, { spam: 2, summary: 2, translation: 0 });
+    assert.deepEqual(removed, { spam: 2, summary: 2, translation: 0, smartbar: 0 });
     assert.deepEqual(Object.keys(mirrorOf('spam')).sort(), ['spam0@x', 'spam1@x']);
     assert.deepEqual(Object.keys(mirrorOf('summary')), ['summary0@x']);
     assert.deepEqual(removes.map(keys => [...keys].sort()), [['spam:spam2@x', 'spam:spam3@x'], ['summary:summary1@x', 'summary:summary2@x']]);

@@ -860,6 +860,9 @@ it, so reasoning must never reach the resolved value:
   reasoning to the caller's parser. The third enables the leading-whitespace trim, which
   is safe here because `full_message` is the whole response — unlike the per-segment
   streaming caller above.
+- A caller may pass `onThinking(text)`: it is called with the reasoning received so far on
+  each thinking token, for display only (the Smart bar router shows it while it works). It is
+  never part of the resolved value, and an exception in it never breaks the command.
 
 ## Font zoom in the webchat UI
 
@@ -996,6 +999,18 @@ sent.
 
 - **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` terminates the provider worker, disposes the command's isolated companion session and nulls the reference. Disposing during preprocessing prevents delayed provider dispatch and cancels queued work for that command.
 - **Timeout:** `special_command_timeout` (default `120000` ms, with `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback) bounds stalled initialization/queueing and each local processing part. Hook progress renews the budget, and provider dispatch starts a fresh budget for the API response. Progressing multi-part input can exceed one interval overall, while stalled processing/provider calls still time out. Without active processing, the existing request-wide timeout applies. The same `finally` disposes the command without terminating peers' work.
+- **Abort:** a caller may pass `signal` (an `AbortSignal`). When it aborts, before or during the
+  call, the command is disposed (worker terminated, companion session disposed) and `sendPrompt()`
+  rejects with an error named `AbortError` (`err.aborted = true`). The summary and translation jobs
+  pass their registry entry's signal (`taJobRegistry`, spec 01 "In-flight jobs"), so a Smart bar
+  Stop or replacement ends their call at once; a job body that sees an abort resolves `cancelled`.
+- **JSON mode:** a caller may pass `jsonMode: true` (the Smart bar router). It is asked only where
+  the provider has a reliable one, and never over a format the user chose: OpenAI Responses
+  `text.format` `json_object` (unless `chatgpt_text_format` is set), Gemini
+  `generationConfig.responseMimeType: "application/json"` (`json_mode` option of
+  `js/api/google_gemini.js`, unless already set), Ollama `format: "json"`. OpenAI-compatible
+  servers (an unsupported `json_object` / `json_schema` is a hard 400 on some) and Claude (no JSON
+  mode) are not touched: the caller's parser is tolerant for every provider.
 - **Strings:** `initWorker()` sends the worker the same `i18nStrings` as the chat window
   (`<integration>_api_request_failed`, `error_connection_interrupted`, `error_stream_idle_timeout`
   with the literal `$SECONDS$`, and for Claude the four `anthropic_err_hint_*` with the literal

@@ -23,6 +23,9 @@
 const MZTA_INJECTED_SELECTORS = [
   '#mzta-container',
   '.mzta_dialog',
+  // The Smart bar's host (js/mzta-smartbar-script.js): its shadow root holds the instruction
+  // the user is typing, never part of the mail.
+  '#mzta-smartbar-host',
   // <style>/<script> hold no readable text, but their SOURCE is text: the clone
   // below is detached, and on a detached node textContent-based extraction reads
   // stylesheet rules out as if they were body copy. A Word/Outlook mail carries a

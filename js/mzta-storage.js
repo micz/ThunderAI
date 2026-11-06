@@ -25,6 +25,12 @@
  *  message_date - plus the fields of its type. See claude-spec/01-architecture.md
  *  "Per-Message Data Storage".
  *
+ *  A fourth store, smartbar, holds the Smart bar's records (claude-spec/10-smartbar.md "Storage"):
+ *  one per instruction, keyed by an auto-increment id, NOT mirrored (STORE_MIRRORED): nothing of
+ *  what is said below about the mirror applies to it. ALL_STORES is the four, MESSAGE_STORES the
+ *  three mirrored ones keyed on the Message-ID. A smartbar record still running is never removed
+ *  by a bulk removal (isKeptRecord()).
+ *
  *  Who opens the database: the background (every read and write of the message flow, the
  *  migration from storage.local, the scheduled cleanup) and the management pages (the options
  *  page, the spam filter page, the storage management page pages/storage/). The message display
@@ -78,7 +84,38 @@ export const MESSAGE_DB_VERSION = 1;
 export const STORE_SPAM = 'spam';
 export const STORE_SUMMARY = 'summary';
 export const STORE_TRANSLATION = 'translation';
+/** The per-message stores: keyed by the Message-ID, one record per message, mirrored. */
 export const MESSAGE_STORES = Object.freeze([STORE_SPAM, STORE_SUMMARY, STORE_TRANSLATION]);
+/**
+ * The Smart bar's store (claude-spec/10-smartbar.md): one record per instruction the user typed,
+ * keyed by an auto-increment id, NOT mirrored in storage.local. It can be lost if Thunderbird
+ * evicts the database: nothing rebuilds it.
+ */
+export const STORE_SMARTBAR = 'smartbar';
+/** Every object store of the database. */
+export const ALL_STORES = Object.freeze([...MESSAGE_STORES, STORE_SMARTBAR]);
+/**
+ * Per store: whether it has a durable copy in storage.local (the mirror). A store that is not
+ * mirrored never writes to storage.local, is not rebuilt by reconcileWithMirror() (a database
+ * found new leaves it empty), and its deletes touch only the database.
+ */
+export const STORE_MIRRORED = Object.freeze({
+    [STORE_SPAM]: true,
+    [STORE_SUMMARY]: true,
+    [STORE_TRANSLATION]: true,
+    [STORE_SMARTBAR]: false,
+});
+/** The smartbar store's own indexes, besides createdAt, size and failed_createdAt. */
+export const INDEX_MESSAGE_ID = 'messageId';
+export const INDEX_SESSION_ID = 'sessionId';
+export const INDEX_STATE = 'state';
+/**
+ * [state, failed, createdAt]: the running records older than a cutoff, with or without an error,
+ * counted without loading them (previewCleanup()).
+ */
+export const INDEX_STATE_FAILED_CREATED_AT = 'state_failed_createdAt';
+/** The smartbar state the cleanup never removes: an instruction still being processed. */
+export const SMARTBAR_STATE_RUNNING = 'running';
 export const INDEX_CREATED_AT = 'createdAt';
 export const INDEX_SIZE = 'size';
 /**
@@ -176,6 +213,11 @@ export const STORAGE_PREFS = Object.freeze({
         maxAgeDays: 'translate_storage_max_age_days',
         errorMaxAgeDays: 'translate_storage_error_max_age_days',
     }),
+    [STORE_SMARTBAR]: Object.freeze({
+        maxEntries: 'smartbar_retention_max_records',
+        maxAgeDays: 'smartbar_retention_days',
+        errorMaxAgeDays: 'smartbar_retention_error_days',
+    }),
 });
 
 /** The preference that turns the scheduled cleanup on and off (default true). */
@@ -259,6 +301,17 @@ function openMessageDB(onLost) {
                     store.createIndex(INDEX_SIZE, 'size');
                     store.createIndex(INDEX_FAILED_CREATED_AT, ['failed', 'createdAt']);
                 }
+                // Version 1 too: nothing of this storage has been released yet. A development
+                // database without it opens without its object store, and is created again
+                // (openCheckedMessageDB()), then rebuilt from the mirror.
+                const smartbar = db.createObjectStore(STORE_SMARTBAR, { keyPath: 'id', autoIncrement: true });
+                smartbar.createIndex(INDEX_MESSAGE_ID, 'messageId');
+                smartbar.createIndex(INDEX_SESSION_ID, 'sessionId');
+                smartbar.createIndex(INDEX_CREATED_AT, 'createdAt');
+                smartbar.createIndex(INDEX_SIZE, 'size');
+                smartbar.createIndex(INDEX_FAILED_CREATED_AT, ['failed', 'createdAt']);
+                smartbar.createIndex(INDEX_STATE, 'state');
+                smartbar.createIndex(INDEX_STATE_FAILED_CREATED_AT, ['state', 'failed', 'createdAt']);
             }
         },
         blocked(currentVersion, blockedVersion) {
@@ -288,7 +341,7 @@ function openMessageDB(onLost) {
  */
 async function openCheckedMessageDB(onLost) {
     const db = await openMessageDB(onLost);
-    const missing = MESSAGE_STORES.filter(name => !db.objectStoreNames.contains(name));
+    const missing = ALL_STORES.filter(name => !db.objectStoreNames.contains(name));
     if (missing.length === 0) return db;
     _log.warn('The message database has no ' + missing.join(', ') + ' object store: creating it again, empty.');
     db.close();
@@ -406,9 +459,9 @@ function errorRange(upper = Infinity, upperOpen = false) {
     return IDBKeyRange.bound([1, -Infinity], [1, upper], false, upperOpen);
 }
 
-/** A count of 0 for every type. */
+/** A count of 0 for every type (every store, the smartbar one included). */
 function zeroByType() {
-    return Object.fromEntries(MESSAGE_STORES.map(type => [type, 0]));
+    return Object.fromEntries(ALL_STORES.map(type => [type, 0]));
 }
 
 /** A day count as a cutoff time: the records created before it are older. */
@@ -428,7 +481,8 @@ function cutoff(now, days) {
  */
 async function removeMirrorKeysIfUnchanged(byType) {
     for (const [type, entries] of Object.entries(byType)) {
-        if (!entries || entries.length === 0) continue;
+        // A store with no mirror has no key to remove.
+        if (!entries || entries.length === 0 || !STORE_MIRRORED[type]) continue;
         const seen = new Map(entries.map(e => [mirrorKey(type, e.messageId), e.createdAt]));
         const current = await browser.storage.local.get([...seen.keys()]);
         const keys = [...seen.keys()].filter(key =>
@@ -448,12 +502,23 @@ async function deleteByCursor(type, indexName, range, limit = Infinity) {
     const tx = await openTransaction(type, 'readwrite');
     let cursor = await tx.store.index(indexName).openCursor(range);
     while (cursor && removed.length < limit) {
+        // A Smart bar instruction still being processed is never removed (it becomes
+        // 'interrupted' at the next start, then expires like the others).
+        if (isKeptRecord(type, cursor.value)) {
+            cursor = await cursor.continue();
+            continue;
+        }
         removed.push({ messageId: cursor.primaryKey, createdAt: cursor.value.createdAt });
         await cursor.delete();
         cursor = await cursor.continue();
     }
     await tx.done;
     return removed;
+}
+
+/** A record no bulk removal may delete: a Smart bar instruction still running. */
+function isKeptRecord(type, record) {
+    return type === STORE_SMARTBAR && record?.state === SMARTBAR_STATE_RUNNING;
 }
 
 /** Whether a record holds no message metadata: subject, from and message_date all empty. */
@@ -552,13 +617,16 @@ async function deleteExcessInLots(type, maxEntries, batch, removed) {
             const gone = [];
             let cursor = take > 0 ? await tx.store.index(INDEX_CREATED_AT).openCursor() : null;
             while (cursor && gone.length < take) {
-                gone.push({ messageId: cursor.primaryKey, createdAt: cursor.value.createdAt });
-                await cursor.delete();
+                if (!isKeptRecord(type, cursor.value)) {
+                    gone.push({ messageId: cursor.primaryKey, createdAt: cursor.value.createdAt });
+                    await cursor.delete();
+                }
                 cursor = await cursor.continue();
             }
             await tx.done;
             await removeMirrorKeysIfUnchanged({ [type]: gone });
-            return { n: gone.length, more: excess > gone.length };
+            // No cursor left: only kept records remain beyond the limit.
+            return { n: gone.length, more: excess > gone.length && cursor !== null };
         });
         removed[type] = (removed[type] || 0) + n;
         if (!more || n === 0) return;
@@ -640,6 +708,12 @@ function typeFields(type, data) {
         default:
             throw new Error('Unknown message data type: ' + type);
     }
+}
+
+/** The size of a record, as every store computes it: the JSON byte length of the record without size. */
+function recordSize(record) {
+    const { size: _size, ...rest } = record;
+    return new TextEncoder().encode(JSON.stringify(rest)).byteLength;
 }
 
 export class taStorage {
@@ -732,6 +806,10 @@ export class taStorage {
             case STORE_SUMMARY:
             case STORE_TRANSLATION:
                 return !!record?.error;
+            case STORE_SMARTBAR:
+                // An instruction-level error (the router failed), or an operation that failed.
+                return record?.state === 'error' || !!record?.errorType ||
+                    (Array.isArray(record?.operations) && record.operations.some(op => op?.state === 'error'));
             default:
                 throw new Error('Unknown message data type: ' + type);
         }
@@ -844,9 +922,9 @@ export class taStorage {
     static async getTotalSize() {
         try {
             await rebuildDone();
-            const tx = await openTransaction(MESSAGE_STORES, 'readonly');
+            const tx = await openTransaction(ALL_STORES, 'readonly');
             let total = 0;
-            for (const name of MESSAGE_STORES) {
+            for (const name of ALL_STORES) {
                 let cursor = await tx.objectStore(name).index(INDEX_SIZE).openKeyCursor();
                 while (cursor) {
                     if (typeof cursor.key === 'number') total += cursor.key;
@@ -870,13 +948,13 @@ export class taStorage {
      * @returns {Promise<object>} { [type]: { count, errors, size, oldest, newest } }
      */
     static async getStats() {
-        const empty = () => Object.fromEntries(MESSAGE_STORES.map(type =>
+        const empty = () => Object.fromEntries(ALL_STORES.map(type =>
             [type, { count: 0, errors: 0, size: 0, oldest: null, newest: null }]));
         try {
             await rebuildDone();
-            const tx = await openTransaction(MESSAGE_STORES, 'readonly');
+            const tx = await openTransaction(ALL_STORES, 'readonly');
             const out = empty();
-            for (const type of MESSAGE_STORES) {
+            for (const type of ALL_STORES) {
                 const store = tx.objectStore(type);
                 const stats = out[type];
                 stats.count = await store.count();
@@ -1096,6 +1174,151 @@ export class taStorage {
         });
     }
 
+    // ---- The smartbar store ---------------------------------------------------------------------
+    //
+    // One record per instruction typed in the Smart bar (claude-spec/10-smartbar.md), keyed by an
+    // auto-increment id. Not mirrored: nothing is written to storage.local, and a database found
+    // new is not rebuilt for it. Every write is under the cleanup lock, like the other stores. The
+    // record itself (its fields and their states) is built by js/mzta-smartbar-store.js; here
+    // only failed and size are computed, as buildRecord() does for the other stores.
+
+    /** A smartbar record ready to be stored: failed (1 / 0) and size set, undefined fields dropped. */
+    static finishSmartbarRecord(record) {
+        const out = { ...record };
+        out.failed = taStorage.isFailed(STORE_SMARTBAR, out) ? 1 : 0;
+        for (const key of Object.keys(out)) {
+            if (out[key] === undefined) delete out[key];
+        }
+        out.size = recordSize(out);
+        return out;
+    }
+
+    /**
+     * Store a new smartbar record (no id: the store gives one). Rejects when the write fails.
+     * @returns {Promise<object>} the stored record, with its id
+     */
+    static smartbarAdd(record) {
+        return withCleanupLock(async () => {
+            const stored = taStorage.finishSmartbarRecord(record);
+            delete stored.id;
+            const tx = await openTransaction(STORE_SMARTBAR, 'readwrite');
+            const id = await tx.store.add(stored);
+            await tx.done;
+            stored.id = id;
+            return stored;
+        });
+    }
+
+    /**
+     * Rewrite a smartbar record (it has its id). createdAt is kept as given. Rejects when the
+     * write fails; a record removed meanwhile (by the cleanup or a deletion) is not put back.
+     * @returns {Promise<object|null>} the stored record, or null when it no longer exists
+     */
+    static smartbarPut(record) {
+        return withCleanupLock(async () => {
+            const stored = taStorage.finishSmartbarRecord(record);
+            const tx = await openTransaction(STORE_SMARTBAR, 'readwrite');
+            const existing = await tx.store.get(stored.id);
+            if (!existing) {
+                await tx.done;
+                return null;
+            }
+            await tx.store.put(stored);
+            await tx.done;
+            return stored;
+        });
+    }
+
+    /** A smartbar record by id; null when there is none or the database cannot be read. */
+    static async smartbarGet(id) {
+        try {
+            await rebuildDone();
+            const tx = await openTransaction(STORE_SMARTBAR, 'readonly');
+            const record = await tx.store.get(id);
+            await tx.done;
+            return record || null;
+        } catch (e) {
+            _log.error('smartbarGet error (answered as no record): ' + e);
+            return null;
+        }
+    }
+
+    /**
+     * The newest smartbar record of a message (the highest id on the messageId index); null when
+     * there is none or the database cannot be read.
+     */
+    static async smartbarLatestForMessage(messageId) {
+        if (!messageId) return null;
+        try {
+            await rebuildDone();
+            const tx = await openTransaction(STORE_SMARTBAR, 'readonly');
+            const cursor = await tx.store.index(INDEX_MESSAGE_ID).openCursor(IDBKeyRange.only(messageId), 'prev');
+            const record = cursor ? cursor.value : null;
+            await tx.done;
+            return record;
+        } catch (e) {
+            _log.error('smartbarLatestForMessage error (answered as no record): ' + e);
+            return null;
+        }
+    }
+
+    /**
+     * The distinct instructions of the smartbar store, most recent first, at most `limit` of
+     * them (the history suggestions of the bar). Reads at most `limit * 20` records. [] when
+     * `limit` is 0 or the database cannot be read.
+     */
+    static async smartbarRecentInstructions(limit) {
+        if (!Number.isInteger(limit) || limit <= 0) return [];
+        try {
+            await rebuildDone();
+            const tx = await openTransaction(STORE_SMARTBAR, 'readonly');
+            const seen = new Set();
+            const out = [];
+            let read = 0;
+            let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor(null, 'prev');
+            while (cursor && out.length < limit && read < limit * 20) {
+                read++;
+                const text = cursor.value.instruction;
+                if (typeof text === 'string' && text.trim() !== '' && !seen.has(text)) {
+                    seen.add(text);
+                    out.push(text);
+                }
+                cursor = await cursor.continue();
+            }
+            await tx.done;
+            return out;
+        } catch (e) {
+            _log.error('smartbarRecentInstructions error (answered as none): ' + e);
+            return [];
+        }
+    }
+
+    /**
+     * At startup: every smartbar record still 'running' was cut short by the end of the previous
+     * session. It becomes 'interrupted', and its running operations 'cancelled'; it then expires
+     * like any other. Resolves the number of records changed.
+     */
+    static smartbarMarkInterrupted(now = Date.now()) {
+        return withCleanupLock(async () => {
+            const tx = await openTransaction(STORE_SMARTBAR, 'readwrite');
+            let changed = 0;
+            let cursor = await tx.store.index(INDEX_STATE).openCursor(IDBKeyRange.only(SMARTBAR_STATE_RUNNING));
+            while (cursor) {
+                const record = { ...cursor.value, state: 'interrupted' };
+                if (Array.isArray(record.operations)) {
+                    record.operations = record.operations.map(op => (op?.state === 'running' || op?.state === 'pending_confirmation')
+                        ? { ...op, state: 'cancelled', finishedAt: now }
+                        : op);
+                }
+                await cursor.update(taStorage.finishSmartbarRecord(record));
+                changed++;
+                cursor = await cursor.continue();
+            }
+            await tx.done;
+            return changed;
+        });
+    }
+
     // ---- Bulk removals, in lots -----------------------------------------------------------------
     //
     // Every bulk removal works in lots of message_storage_batch_size records (readBatchSize()):
@@ -1115,13 +1338,13 @@ export class taStorage {
      * @returns {Promise<number>} the number of records removed from the store
      */
     static async clear(type) {
-        if (!MESSAGE_STORES.includes(type)) throw new Error('Unknown message data type: ' + type);
+        if (!ALL_STORES.includes(type)) throw new Error('Unknown message data type: ' + type);
         const removed = { [type]: 0 };
         try {
             const batch = await readBatchSize();
             const bound = await clearBound([type]);
             await deleteRangeInLots(type, INDEX_CREATED_AT, IDBKeyRange.upperBound(bound), batch, removed);
-            await withCleanupLock(() => removeMirrorKeysUpTo([type], bound));
+            if (STORE_MIRRORED[type]) await withCleanupLock(() => removeMirrorKeysUpTo([type], bound));
             return removed[type];
         } catch (e) {
             _log.error('clear ' + type + ' error: ' + e);
@@ -1138,8 +1361,8 @@ export class taStorage {
         const removed = zeroByType();
         try {
             const batch = await readBatchSize();
-            const bound = await clearBound(MESSAGE_STORES);
-            for (const type of MESSAGE_STORES) {
+            const bound = await clearBound(ALL_STORES);
+            for (const type of ALL_STORES) {
                 await deleteRangeInLots(type, INDEX_CREATED_AT, IDBKeyRange.upperBound(bound), batch, removed);
             }
             await withCleanupLock(() => removeMirrorKeysUpTo(MESSAGE_STORES, bound));
@@ -1159,7 +1382,7 @@ export class taStorage {
         const removed = zeroByType();
         try {
             const batch = await readBatchSize();
-            for (const type of MESSAGE_STORES) {
+            for (const type of ALL_STORES) {
                 await deleteRangeInLots(type, INDEX_FAILED_CREATED_AT, errorRange(now), batch, removed);
             }
             return removed;
@@ -1180,7 +1403,7 @@ export class taStorage {
         try {
             const batch = await readBatchSize();
             const range = IDBKeyRange.upperBound(cutoff(now, days), true);
-            for (const type of MESSAGE_STORES) {
+            for (const type of ALL_STORES) {
                 await deleteRangeInLots(type, INDEX_CREATED_AT, range, batch, removed);
             }
             return removed;
@@ -1199,7 +1422,8 @@ export class taStorage {
      * @returns {Promise<object>} the number of records removed, per type
      */
     static async removeEntries(entries) {
-        const removed = zeroByType();
+        // The per-message types only: their entries are what the orphan scan lists.
+        const removed = Object.fromEntries(MESSAGE_STORES.map(type => [type, 0]));
         try {
             const batch = await readBatchSize();
             const valid = entries.filter(e => MESSAGE_STORES.includes(e?.type) && e.messageId);
@@ -1388,10 +1612,10 @@ export class taStorage {
      * { [type]: { maxEntries, maxAgeDays, errorMaxAgeDays } }, each a positive integer or 0 (no limit).
      */
     static async readLimits() {
-        const keys = MESSAGE_STORES.flatMap(type => Object.values(STORAGE_PREFS[type]));
+        const keys = ALL_STORES.flatMap(type => Object.values(STORAGE_PREFS[type]));
         const prefs = await mztaPrefs.getPrefs(keys);
         const out = {};
-        for (const type of MESSAGE_STORES) {
+        for (const type of ALL_STORES) {
             out[type] = {
                 maxEntries: toLimit(prefs[STORAGE_PREFS[type].maxEntries]),
                 maxAgeDays: toLimit(prefs[STORAGE_PREFS[type].maxAgeDays]),
@@ -1424,7 +1648,7 @@ export class taStorage {
         try {
             const resolved = limits || await taStorage.readLimits();
             const batch = await readBatchSize();
-            for (const type of MESSAGE_STORES) {
+            for (const type of ALL_STORES) {
                 const { maxEntries, maxAgeDays, errorMaxAgeDays } = normalizeLimits(resolved[type]);
                 if (errorMaxAgeDays > 0) {
                     await deleteRangeInLots(type, INDEX_FAILED_CREATED_AT,
@@ -1462,25 +1686,41 @@ export class taStorage {
     static async previewCleanup(limits, now = Date.now()) {
         try {
             await rebuildDone();
-            const tx = await openTransaction(MESSAGE_STORES, 'readonly');
+            const tx = await openTransaction(ALL_STORES, 'readonly');
             const out = zeroByType();
-            for (const type of MESSAGE_STORES) {
+            for (const type of ALL_STORES) {
                 const { maxEntries, maxAgeDays, errorMaxAgeDays } = normalizeLimits(limits?.[type]);
                 const store = tx.objectStore(type);
                 const total = await store.count();
                 const ageCut = maxAgeDays > 0 ? cutoff(now, maxAgeDays) : -Infinity;
+                const errorCut = errorMaxAgeDays > 0 ? cutoff(now, errorMaxAgeDays) : -Infinity;
+                // The records no rule removes (a running Smart bar instruction), counted on the
+                // state_failed_createdAt index: `kept` of them, `keptOld` older than the age
+                // cutoff, `keptError` holding an error between the age and the error cutoffs.
+                let kept = 0;
+                let keptOld = 0;
+                let keptError = 0;
+                if (type === STORE_SMARTBAR) {
+                    const index = store.index(INDEX_STATE_FAILED_CREATED_AT);
+                    const running = (failed, from, to) => index.count(IDBKeyRange.bound(
+                        [SMARTBAR_STATE_RUNNING, failed, from], [SMARTBAR_STATE_RUNNING, failed, to], false, true));
+                    kept = await running(0, -Infinity, Infinity) + await running(1, -Infinity, Infinity);
+                    if (maxAgeDays > 0) keptOld = await running(0, -Infinity, ageCut) + await running(1, -Infinity, ageCut);
+                    if (errorCut > ageCut) keptError = await running(1, ageCut, errorCut);
+                }
                 const byAge = maxAgeDays > 0
-                    ? await store.index(INDEX_CREATED_AT).count(IDBKeyRange.upperBound(ageCut, true))
+                    ? await store.index(INDEX_CREATED_AT).count(IDBKeyRange.upperBound(ageCut, true)) - keptOld
                     : 0;
                 let byError = 0;
-                if (errorMaxAgeDays > 0) {
-                    const errorCut = cutoff(now, errorMaxAgeDays);
-                    if (errorCut > ageCut) {
-                        byError = await store.index(INDEX_FAILED_CREATED_AT)
-                            .count(IDBKeyRange.bound([1, ageCut], [1, errorCut], false, true));
-                    }
+                if (errorCut > ageCut) {
+                    byError = await store.index(INDEX_FAILED_CREATED_AT)
+                        .count(IDBKeyRange.bound([1, ageCut], [1, errorCut], false, true)) - keptError;
                 }
-                const byCount = maxEntries > 0 ? Math.max(0, total - byAge - byError - maxEntries) : 0;
+                // The count rule cannot take a kept record either: of what the first two rules
+                // leave, it removes the excess, at most the records that are not kept.
+                const byCount = maxEntries > 0
+                    ? Math.min(Math.max(0, total - byAge - byError - maxEntries), total - byAge - byError - kept)
+                    : 0;
                 out[type] = byAge + byError + byCount;
             }
             await tx.done;

@@ -69,7 +69,8 @@ k.test('overview-rows', S_OVER, 'one row per type: entries, with an error, estim
         new Date(at(5)).toLocaleString(), new Date(at(5)).toLocaleString()]);
     assert.deepEqual(cells('spam'), [msg('storage_type_spam'), '2', '1', '120.00 Bytes',
         new Date(at(20)).toLocaleString(), new Date(at(2)).toLocaleString()]);
-    assert.deepEqual(ctx.$$('#stats_body tr').map(r => r.dataset.type), ['summary', 'translation', 'spam']);
+    assert.deepEqual(cells('smartbar'), [msg('storage_type_smartbar'), '0', '0', '0 Bytes', '', '']);
+    assert.deepEqual(ctx.$$('#stats_body tr').map(r => r.dataset.type), ['summary', 'translation', 'spam', 'smartbar']);
 });
 
 k.test('overview-total', S_OVER, 'the total row, and the note that the disk used is about twice as much', () => {
@@ -82,7 +83,7 @@ k.test('overview-total', S_OVER, 'the total row, and the note that the disk used
 k.test('overview-last-cleanup', S_OVER, 'the last automatic cleanup: its date and what it removed per type', () => {
     assert.equal($('#last_cleanup').textContent, msg('storage_last_cleanup', [new Date(LAST.time).toLocaleString(),
         [msg('storage_count_item', [msg('storage_type_summary'), '1']), msg('storage_count_item', [msg('storage_type_translation'), '0']),
-            msg('storage_count_item', [msg('storage_type_spam'), '4'])].join(', ')]));
+            msg('storage_count_item', [msg('storage_type_spam'), '4']), msg('storage_count_item', [msg('storage_type_smartbar'), '0'])].join(', ')]));
 });
 
 k.test('no-migration', S_OVER, 'no migration: neither notice is shown; no managed banner without a policy', () => {
@@ -132,7 +133,7 @@ k.test('rules-save-warns-refused', S_RULES, 'a Save that would delete entries sa
     assert.equal(question.kind, 'confirm');
     assert.equal(question.args[0], msg('storage_rules_save_confirm', ['2',
         [msg('storage_count_item', [msg('storage_type_summary'), '2']), msg('storage_count_item', [msg('storage_type_translation'), '0']),
-            msg('storage_count_item', [msg('storage_type_spam'), '0'])].join(', ')]));
+            msg('storage_count_item', [msg('storage_type_spam'), '0']), msg('storage_count_item', [msg('storage_type_smartbar'), '0'])].join(', ')]));
     assert.deepEqual(ctx.localWrites(since), []);
     assert.equal(save().disabled, false);
     assert.equal(cells('summary')[1], '3', 'nothing deleted');

@@ -36,6 +36,8 @@ import {
     STORE_SPAM,
     STORE_SUMMARY,
     STORE_TRANSLATION,
+    STORE_SMARTBAR,
+    ALL_STORES,
     buildMessageMetadata,
     isMirrorKey,
     taStorage
@@ -55,12 +57,19 @@ import {
     renderSpamReportRows
 } from '../_lib/spam-log.js';
 
-/** The order the page shows the types in. */
+/** The order the page shows the per-message types in (the entry list, the orphans, the realignment). */
 const TYPE_ORDER = [STORE_SUMMARY, STORE_TRANSLATION, STORE_SPAM];
+/**
+ * Every store, in the order the overview, the rules, the counts and the deletions show them: the
+ * per-message types, then the Smart bar's instructions (claude-spec/10-smartbar.md), which have
+ * no durable copy and one record per instruction, so they are in neither the entry list nor the
+ * orphan scan nor the realignment.
+ */
+const STORE_ORDER = [...TYPE_ORDER, STORE_SMARTBAR];
 /** The entry list's page size. */
 const PAGE_SIZE = 50;
 /** Every preference the rules form edits. */
-const RULE_KEYS = [...TYPE_ORDER.flatMap(type => Object.values(STORAGE_PREFS[type])), CLEANUP_AUTO_PREF];
+const RULE_KEYS = [...STORE_ORDER.flatMap(type => Object.values(STORAGE_PREFS[type])), CLEANUP_AUTO_PREF];
 /** The delete method of a single entry, per type. */
 const DELETE_ENTRY = {
     [STORE_SPAM]: 'deleteSpamField',
@@ -84,7 +93,7 @@ const dateText = time => (Number.isFinite(time) ? new Date(time).toLocaleString(
 
 /** "Summaries: 3, Translations: 0, Spam reports: 5", for the types present in byType. */
 function formatCounts(byType) {
-    return TYPE_ORDER.filter(type => byType && Object.hasOwn(byType, type))
+    return STORE_ORDER.filter(type => byType && Object.hasOwn(byType, type))
         .map(type => msg('storage_count_item', [typeName(type), String(byType[type] ?? 0)]))
         .join(', ');
 }
@@ -170,7 +179,7 @@ async function loadOverview() {
     let count = 0;
     let errors = 0;
     let size = 0;
-    for (const type of TYPE_ORDER) {
+    for (const type of STORE_ORDER) {
         const s = stats[type];
         count += s.count;
         errors += s.errors;
@@ -193,7 +202,7 @@ async function loadOverview() {
 
     const last = await taStorage.getLastCleanup();
     $('last_cleanup').textContent = last
-        ? msg('storage_last_cleanup', [dateText(last.time), formatCounts(Object.fromEntries(TYPE_ORDER.map(t => [t, last.removed[t] ?? 0])))])
+        ? msg('storage_last_cleanup', [dateText(last.time), formatCounts(Object.fromEntries(STORE_ORDER.map(t => [t, last.removed[t] ?? 0])))])
         : msg('storage_last_cleanup_never');
 }
 
@@ -243,7 +252,7 @@ function readRules() {
 
 /** The limits of the form in the shape taStorage.cleanup() / previewCleanup() take. */
 function limitsOf(values) {
-    return Object.fromEntries(MESSAGE_STORES.map(type => [type, {
+    return Object.fromEntries(ALL_STORES.map(type => [type, {
         maxEntries: values[STORAGE_PREFS[type].maxEntries],
         maxAgeDays: values[STORAGE_PREFS[type].maxAgeDays],
         errorMaxAgeDays: values[STORAGE_PREFS[type].errorMaxAgeDays],
@@ -325,7 +334,7 @@ async function runAction(resultEl, confirmText, fn, doneText) {
 
 function bindActions() {
     const result = $('actions_result');
-    for (const type of TYPE_ORDER) {
+    for (const type of STORE_ORDER) {
         $('btn_delete_' + type).addEventListener('click', () => runAction(result,
             msg('storage_delete_' + type + '_confirm'),
             () => taStorage.clear(type),

@@ -70,8 +70,9 @@ const overrideOf = p => Object.fromEntries(Object.entries(p || {}).filter(([k]) 
 const holds = (v, target) => v === target
     || (v !== null && typeof v === 'object' && Object.values(v).some(x => holds(x, target)));
 
-export async function connectionScenario(page, mode) {
-    const prefix = prefixOfPage(page);
+// prefix: the feature, when the page hosts several panels (the Smart bar page); the lookups of the
+// panel's structural elements are then made inside the panel's section (feature.root).
+export async function connectionScenario(page, mode, prefix = prefixOfPage(page)) {
     const feature = FEATURE_PAGES[prefix];
     const id = name => '#' + prefix + '_' + name;
     const local = {
@@ -85,6 +86,7 @@ export async function connectionScenario(page, mode) {
     };
     const ctx = await openPage(page, { policy: policyFor(prefix, mode), local });
     after(() => ctx.close());
+    const inPanel = sel => feature.root ? ctx.$('#' + feature.root).querySelector(sel) : ctx.$(sel);
     const { MANAGED_SECRET_MARKER } = ctx.mods;
     const storedPrompt = () => (ctx.ctl.localData()._special_prompts || []).find(p => p.id === feature.promptId);
     const policyValues = mode === 'enforced'
@@ -115,7 +117,7 @@ export async function connectionScenario(page, mode) {
 
     if (mode === 'enforced') {
         test('the switch is not presented as "mandatory": the managed marker explains it', () => {
-            const badge = ctx.$('#specific_integration_locked_badge');
+            const badge = inPanel('#specific_integration_locked_badge');
             if (badge) assert.equal(badge.classList.contains('shown'), false);
             assert.notEqual(ctx.$(id('use_specific_integration')).dataset.mandatory, 'true');
         });
@@ -165,7 +167,7 @@ export async function connectionScenario(page, mode) {
         });
 
         test('the connection test refuses the marker: an error, and no request', async () => {
-            const strip = ctx.$('#mzta_conn_test');
+            const strip = inPanel('#mzta_conn_test');
             assert.ok(strip, 'no connection test strip');
             const before = ctx.fetchCalls.length;
             await ctx.click(strip.querySelector('.conn_test_link'));
@@ -260,7 +262,8 @@ export async function connectionScenario(page, mode) {
     // The page's text Save rewrites the whole array from a fresh read (saveSpecialPromptTexts()),
     // overlay included - in 'unlocked' mode after the user edited the connection, so the read
     // holds the policy defaults (the marker) next to values the user has stored.
-    test('a text Save writes the array back without storing a policy value over the user\'s', async () => {
+    // Only on a page with the prompt's text editor (the Smart bar page has none yet).
+    if (feature.textarea) test('a text Save writes the array back without storing a policy value over the user\'s', async () => {
         const textarea = ctx.$('#' + feature.textarea);
         const expected = overrideOf(storedPrompt() || USER_OVERRIDE);
         textarea.value = feature.text + ' (edited)';

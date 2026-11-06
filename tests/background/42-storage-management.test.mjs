@@ -181,7 +181,7 @@ k.test('cleanup-error-rule', 'the error rule: the errors older than their maximu
     const now = Date.parse('2026-06-10T12:00:00Z');
     await seedDays('summary', now, [['old-err@x', 10, true], ['new-err@x', 2, true], ['old-ok@x', 30, false]]);
     const removed = await taStorage.cleanup({ summary: { errorMaxAgeDays: 5 } }, now);
-    assert.deepEqual(removed, { spam: 0, summary: 1, translation: 0 });
+    assert.deepEqual(removed, { spam: 0, summary: 1, translation: 0, smartbar: 0 });
     assert.deepEqual(await ids('summary'), ['new-err@x', 'old-ok@x']);
     assert.equal('summary:old-err@x' in local(), false, 'its mirror key too');
     assert.ok('summary:new-err@x' in local());
@@ -207,7 +207,7 @@ k.test('cleanup-zero', 'a limit of 0 disables its rule, the error rule too', asy
     const now = Date.parse('2026-06-10T12:00:00Z');
     await seedDays('spam', now, [['e@x', 400, true], ['o@x', 400, false]]);
     assert.deepEqual(await taStorage.cleanup({ spam: { errorMaxAgeDays: 0, maxAgeDays: 0, maxEntries: 0 } }, now),
-        { spam: 0, summary: 0, translation: 0 });
+        { spam: 0, summary: 0, translation: 0, smartbar: 0 });
     assert.equal(await taStorage.count('spam'), 2);
 });
 
@@ -261,7 +261,7 @@ k.test('preview-reads-only', 'previewCleanup(): counts only, no record loaded, n
 k.test('delete-errors', 'deleteErrors(): every record holding an error, of every type, with its mirror key; the results stay', async () => {
     const now = Date.parse('2026-06-10T12:00:00Z');
     await seedMixed(now);
-    assert.deepEqual(await taStorage.deleteErrors(), { spam: 3, summary: 3, translation: 3 });
+    assert.deepEqual(await taStorage.deleteErrors(), { spam: 3, summary: 3, translation: 3, smartbar: 0 });
     for (const type of ['spam', 'summary', 'translation']) {
         assert.equal((await rawAll(type)).filter(r => r.failed === 1).length, 0, type);
         assert.equal(await taStorage.count(type), 7);
@@ -272,7 +272,7 @@ k.test('delete-errors', 'deleteErrors(): every record holding an error, of every
 k.test('delete-older', 'deleteOlderThan(days): every record older than that, of every type, with its mirror key', async () => {
     const now = Date.parse('2026-06-10T12:00:00Z');
     await seedMixed(now);
-    assert.deepEqual(await taStorage.deleteOlderThan(6, now), { spam: 4, summary: 4, translation: 4 });
+    assert.deepEqual(await taStorage.deleteOlderThan(6, now), { spam: 4, summary: 4, translation: 4, smartbar: 0 });
     assert.deepEqual(await ids('spam'), ['spam0@x', 'spam1@x', 'spam2@x', 'spam3@x', 'spam4@x', 'spam5@x']);
     assert.equal('spam:spam6@x' in local(), false);
     await assert.rejects(taStorage.deleteOlderThan(0), /Invalid number of days/);
@@ -317,7 +317,7 @@ k.test('mirror-helper-rewritten', 'a record rewritten between the cursor and the
         return realGet(keys);
     });
     ctx.ctl.calls.length = 0;
-    assert.deepEqual(await taStorage.cleanup({ summary: { maxAgeDays: 5 } }, now), { spam: 0, summary: 2, translation: 0 });
+    assert.deepEqual(await taStorage.cleanup({ summary: { maxAgeDays: 5 } }, now), { spam: 0, summary: 2, translation: 0, smartbar: 0 });
     assert.deepEqual(local()['summary:race@x'], newer, 'the new value is kept');
     assert.equal('summary:gone@x' in local(), false);
     assert.equal(ctx.ctl.calls.some(c => c.area === 'local' && c.op === 'get' && c.keys === null), false, 'no get(null)');
@@ -508,14 +508,14 @@ k.test('lots-size', 'a bulk removal works in lots of message_storage_batch_size,
     await clearAll();
     await seedDays('summary', now, old(150));
     // 150 summaries in lots of 50: three full lots, then one that finds nothing; the two empty
-    // types one lot each.
-    assert.equal(await withBatchSize(50, () => countHolds(t, () => taStorage.deleteOlderThan(5, now))), 4 + 1 + 1);
+    // types one lot each, and the empty smartbar store one lot.
+    assert.equal(await withBatchSize(50, () => countHolds(t, () => taStorage.deleteOlderThan(5, now))), 4 + 1 + 1 + 1);
     assert.equal(await taStorage.count('summary'), 0);
     await clearAll();
     await seedDays('summary', now, old(150));
     // 0 is not a valid size: the default, 100 (one lot of 100, one of 50).
     const holds = await withBatchSize(0, () => countHolds(t, () => taStorage.deleteOlderThan(5, now)));
-    assert.equal(holds, 2 + 1 + 1);
+    assert.equal(holds, 2 + 1 + 1 + 1);
     assert.equal(await taStorage.count('summary'), 0);
 });
 
@@ -606,7 +606,7 @@ k.test('lots-partial-failure', 'a failure in a later lot leaves the lots done, a
     const error = await withBatchSize(2, () => taStorage.deleteOlderThan(5, now).then(() => null, e => e));
     t.mock.restoreAll();
     assert.match(String(error), /disk failure/);
-    assert.deepEqual(error.removed, { spam: 0, summary: 2, translation: 0 });
+    assert.deepEqual(error.removed, { spam: 0, summary: 2, translation: 0, smartbar: 0 });
     assert.equal(await taStorage.count('summary'), 3);
 });
 

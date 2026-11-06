@@ -18,8 +18,8 @@ import assert from 'node:assert/strict';
 import { openPage, assertHarnessClean } from './dom-page.mjs';
 import { FEATURE_PAGES, prefixOfPage } from './feature-pages.mjs';
 
-export async function lockedOnSwitchScenario(page) {
-    const prefix = prefixOfPage(page);
+// prefix: the feature, when the page hosts several panels (see dom-connection.mjs).
+export async function lockedOnSwitchScenario(page, prefix = prefixOfPage(page)) {
     const feature = FEATURE_PAGES[prefix];
     const useKey = prefix + '_use_specific_integration';
     const ctx = await openPage(page, {
@@ -45,7 +45,9 @@ export async function lockedOnSwitchScenario(page) {
         assert.equal(sw().disabled, true);
         assert.equal(sw().dataset.mztaManaged, '1');
         assert.notEqual(sw().dataset.mandatory, 'true', 'the "mandatory" badge as a second explanation');
-        const badge = ctx.$('#specific_integration_locked_badge');
+        const badge = feature.root
+            ? ctx.$('#' + feature.root).querySelector('#specific_integration_locked_badge')
+            : ctx.$('#specific_integration_locked_badge');
         assert.ok(!badge || !badge.classList.contains('shown'), 'mandatory badge shown');
     });
 

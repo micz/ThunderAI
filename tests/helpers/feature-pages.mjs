@@ -12,6 +12,11 @@
  *               initializeSpecificIntegrationUI())
  *    textarea   the id of the textarea that edits that text (saved with #btn_save_prompt)
  *    text       a stored text for that prompt that satisfies its response contract
+ *    root       the id of the element holding the feature's panel, when the page hosts several
+ *               (the Smart bar page: one section per special prompt); absent: the whole page
+ *
+ *  A page hosting several features (the Smart bar page) has textarea null: its prompt texts get
+ *  their editor in a later version, so the text Save scenario (15-*) does not apply to it.
  */
 
 export const FEATURE_PAGES = {
@@ -39,11 +44,41 @@ export const FEATURE_PAGES = {
         page: 'translate', promptId: 'prompt_translate_this', textarea: 'translate_prompt_text',
         text: 'Translate {%mail_html_body%} to {%thunderai_translate_lang%}, return {"subject", "body", "status"}',
     },
+    smartbar_router: {
+        page: 'smartbar', promptId: 'prompt_smartbar_router', textarea: null, root: 'smartbar_router_section',
+        text: 'Route the instruction. {OPERATIONS} {PLACEHOLDERS} {LANGUAGE_RULE}',
+    },
+    smartbar_execute: {
+        page: 'smartbar', promptId: 'prompt_smartbar_execute', textarea: null, root: 'smartbar_execute_section',
+        text: 'Execute.',
+    },
+    smartbar_chat: {
+        page: 'smartbar', promptId: 'prompt_smartbar_chat', textarea: null, root: 'smartbar_chat_section',
+        text: 'Chat.',
+    },
 };
 
-/** The feature prefix a FEATURE_PAGES page belongs to. */
+/** The feature prefixes a FEATURE_PAGES page hosts, in map order. */
+export function prefixesOfPage(page) {
+    return Object.entries(FEATURE_PAGES).filter(([, f]) => f.page === page).map(([prefix]) => prefix);
+}
+
+/**
+ * The feature prefix a FEATURE_PAGES page belongs to. A page hosting several features (the Smart
+ * bar page) has no single one: its scenario files name the prefix themselves.
+ */
 export function prefixOfPage(page) {
-    const found = Object.entries(FEATURE_PAGES).find(([, f]) => f.page === page);
-    if (!found) throw new Error('feature-pages: "' + page + '" is not a feature page');
+    const found = prefixesOfPage(page);
+    if (found.length === 0) throw new Error('feature-pages: "' + page + '" is not a feature page');
+    if (found.length > 1) throw new Error('feature-pages: "' + page + '" hosts several features (' + found.join(', ') + '): name one');
     return found[0];
+}
+
+/**
+ * The scenario file of a feature: tests/dom/<page>/<NN-name>.dom.mjs, with the prefix appended
+ * when the page hosts several features (13-connection-enforced-smartbar_router.dom.mjs).
+ */
+export function scenarioFile(prefix, name) {
+    const page = FEATURE_PAGES[prefix].page;
+    return page + '/' + name + (prefixesOfPage(page).length > 1 ? '-' + prefix : '') + '.dom.mjs';
 }

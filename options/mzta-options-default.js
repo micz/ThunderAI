@@ -16,7 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate'];
+// The Smart bar has three special prompts, each with its own connection (claude-spec/10-smartbar.md):
+// the router (which operations an instruction asks for), execute and chat (data only until the
+// phases that use them).
+export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate', 'smartbar_router', 'smartbar_execute', 'smartbar_chat'];
 
 // The Ollama reasoning levels offered when the server does not report which ones the
 // selected model accepts (buildOllamaThinkOptions() in pages/_lib/connection-ui.js), also
@@ -328,5 +331,17 @@ export const prefs_default = {
     translate_storage_max_entries: 0,    // see spamfilter_storage_max_entries
     translate_storage_max_age_days: 0,
     translate_storage_error_max_age_days: 90,
+    // The Smart bar in the message pane (claude-spec/10-smartbar.md). Off by default.
+    smartbar_enabled: false,
+    smartbar_mode: 'compact',                // 'disabled', 'compact' (an icon that expands) or 'expanded'
+    smartbar_default_destination: 'execute', // what Enter does: 'execute' (run the operations) or 'chat'
+    smartbar_history_size: 20,               // instructions offered as suggestions; 0 = none
+    smartbar_retention_days: 30,             // records older than this are removed by the cleanup; 0 = no limit
+    smartbar_retention_max_records: 500,     // the oldest records beyond this count are removed; 0 = no limit
+    smartbar_retention_error_days: 7,        // records holding an error older than this are removed first; 0 = no limit
+    smartbar_parallel_limit: 3,              // operations of one instruction run at once
+    smartbar_max_body_length: 0,             // used from the compose operation (phase 2); 0 = no limit
+    smartbar_additional_instructions: '',    // used from the compose operation (phase 2)
+    smartbar_signature: '',                  // used from the compose operation (phase 2)
     ...generated_prefs
 }

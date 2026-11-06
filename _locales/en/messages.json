@@ -4890,5 +4890,446 @@
   "prefs_insecure_origins_remove": {
     "message": "Remove",
     "description": "Options page, advanced section: button next to an allowed unencrypted server, which withdraws the permission."
+  },
+  "smartbar_feature_name": {
+    "message": "Smart bar",
+    "description": "Name of the Smart bar feature: the bar in the message pane where the user types an instruction for the displayed email. Options page feature row, its settings page title, storage page."
+  },
+  "smartbar_command_description": {
+    "message": "Opens the Smart bar of the displayed email",
+    "description": "Keyboard shortcut list (Thunderbird add-on shortcuts): what the Smart bar shortcut does."
+  },
+  "prefs_OptionText_smartbar_Info": {
+    "message": "Adds a bar to the message pane where you type what to do with the email, in your own words: for example \"tag as urgent and summarize\" or \"translate to English\". ThunderAI runs the matching actions. Nothing is ever sent automatically.",
+    "description": "Options page: description under the Smart bar feature toggle."
+  },
+  "prefs_OptionText_btnManageSmartbarInfo": {
+    "message": "Manage Smart bar settings",
+    "description": "Options page: link under the Smart bar feature toggle, opening its settings page."
+  },
+  "prompt_smartbar_router": {
+    "message": "Smart bar: router",
+    "description": "Name of the special prompt that decides which actions a Smart bar instruction asks for."
+  },
+  "prompt_smartbar_execute": {
+    "message": "Smart bar: execute",
+    "description": "Name of a special prompt of the Smart bar, used by a later version (writing replies)."
+  },
+  "prompt_smartbar_chat": {
+    "message": "Smart bar: chat",
+    "description": "Name of a special prompt of the Smart bar, used by a later version (chat mode)."
+  },
+  "prompt_smartbar_router_full_text": {
+    "message": "You are the router of the Smart bar of ThunderAI, inside the Thunderbird email client. The user typed an instruction about the email they are reading. Decide which of the available operations the instruction asks for, in the order the user expressed them, with their parameters. Use only the operation ids listed below, never invent one, and never add an operation the user did not ask for.\n\nAvailable operations:\n{OPERATIONS}\n\nInformation the later steps may need, as placeholder ids:\n{PLACEHOLDERS}\n\n{LANGUAGE_RULE}",
+    "description": "Default text of the Smart bar router prompt (sent to the AI). Keep the three variables {OPERATIONS}, {PLACEHOLDERS} and {LANGUAGE_RULE} exactly as they are: ThunderAI replaces them. Do not translate the words inside the braces."
+  },
+  "prompt_smartbar_execute_full_text": {
+    "message": "Reserved for a later version of ThunderAI: this text is not used yet.",
+    "description": "Placeholder text of a Smart bar special prompt that a later version will use. Shown nowhere today."
+  },
+  "prompt_smartbar_chat_full_text": {
+    "message": "Reserved for a later version of ThunderAI: this text is not used yet.",
+    "description": "Placeholder text of a Smart bar special prompt that a later version will use. Shown nowhere today."
+  },
+  "smartbar_open": {
+    "message": "Open the Smart bar",
+    "description": "Smart bar (message pane): tooltip of the small icon that expands the bar."
+  },
+  "smartbar_placeholder": {
+    "message": "Tell ThunderAI what to do with this email…",
+    "description": "Smart bar (message pane): placeholder of the input field."
+  },
+  "smartbar_stop": {
+    "message": "Stop",
+    "description": "Smart bar (message pane): button stopping an instruction or one of its actions."
+  },
+  "smartbar_collapse": {
+    "message": "Close the Smart bar",
+    "description": "Smart bar (message pane): button collapsing the bar back to its icon."
+  },
+  "smartbar_details": {
+    "message": "Details",
+    "description": "Smart bar (message pane): link opening the Smart bar settings page."
+  },
+  "smartbar_send_execute": {
+    "message": "Run the actions",
+    "description": "Smart bar (message pane): tooltip of the button that runs the actions the instruction asks for."
+  },
+  "smartbar_send_chat": {
+    "message": "Open in the chat",
+    "description": "Smart bar (message pane): tooltip of the button that opens the AI chat window with the instruction and the email."
+  },
+  "smartbar_op_tag": {
+    "message": "Add tags",
+    "description": "Smart bar: name of the action that tags the email."
+  },
+  "smartbar_op_summarize": {
+    "message": "Summarize",
+    "description": "Smart bar: name of the action that summarizes the email."
+  },
+  "smartbar_op_translate": {
+    "message": "Translate",
+    "description": "Smart bar: name of the action that translates the email."
+  },
+  "smartbar_routing": {
+    "message": "Understanding the instruction…",
+    "description": "Smart bar (message pane): shown while the AI decides which actions the instruction asks for."
+  },
+  "smartbar_line_running": {
+    "message": "$ACTION$…",
+    "description": "Smart bar (message pane): an action in progress. $ACTION$ is the action name (e.g. \"Summarize\").",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_line_pending": {
+    "message": "$ACTION$: waiting for your confirmation",
+    "description": "Smart bar (message pane): an action that runs only once the user confirms it. $ACTION$ is the action name.",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_line_cancelled": {
+    "message": "$ACTION$: cancelled",
+    "description": "Smart bar (message pane): an action stopped or not run. $ACTION$ is the action name.",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_line_done": {
+    "message": "$ACTION$: done",
+    "description": "Smart bar (message pane): an action completed. $ACTION$ is the action name.",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_line_error": {
+    "message": "$ACTION$: $ERROR$",
+    "description": "Smart bar (message pane): an action that failed. $ACTION$ is the action name, $ERROR$ the error message.",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      },
+      "error": {
+        "content": "$2"
+      }
+    }
+  },
+  "smartbar_line_router_error": {
+    "message": "The instruction could not be understood: $ERROR$",
+    "description": "Smart bar (message pane): the AI call deciding the actions failed. $ERROR$ is the error message.",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_result_tags_added": {
+    "message": "Tags added: $TAGS$",
+    "description": "Smart bar (message pane): the tag action completed. $TAGS$ is the list of tags, comma separated.",
+    "placeholders": {
+      "tags": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_result_tags_none": {
+    "message": "No tag added",
+    "description": "Smart bar (message pane): the tag action completed without adding any tag."
+  },
+  "smartbar_result_tags_skipped": {
+    "message": "Not created (creating new tags is off): $TAGS$",
+    "description": "Smart bar (message pane): tags the user named that do not exist and were not created, because the Add Tags settings only allow existing tags. $TAGS$ is the list.",
+    "placeholders": {
+      "tags": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_result_summary_ready": {
+    "message": "Summary ready",
+    "description": "Smart bar (message pane): the summary action completed (the summary is shown in its own panel)."
+  },
+  "smartbar_result_translation_ready": {
+    "message": "Translation ready",
+    "description": "Smart bar (message pane): the translate action completed (the translation is shown in its own panel)."
+  },
+  "smartbar_retry": {
+    "message": "Retry",
+    "description": "Smart bar (message pane): button running a failed action again."
+  },
+  "smartbar_retry_in": {
+    "message": "retrying in $SECONDS$ s",
+    "description": "Smart bar (message pane): countdown before an automatic retry after a rate limit. $SECONDS$ is a number.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_remove": {
+    "message": "Remove",
+    "description": "Smart bar (message pane): button removing an error line."
+  },
+  "smartbar_confirm": {
+    "message": "Confirm",
+    "description": "Smart bar (message pane): button confirming an action that waits for the user."
+  },
+  "smartbar_cancel": {
+    "message": "Cancel",
+    "description": "Smart bar (message pane): button cancelling an action that waits for the user."
+  },
+  "smartbar_open_in_chat": {
+    "message": "Open in chat",
+    "description": "Smart bar (message pane): button opening the AI chat window with the instruction and the email."
+  },
+  "smartbar_unrecognized": {
+    "message": "Not understood: \"$TEXT$\"",
+    "description": "Smart bar (message pane): the part of the instruction no action covers. $TEXT$ is that part, as the user wrote it.",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_nothing_matched": {
+    "message": "No action matches this instruction.",
+    "description": "Smart bar (message pane): the instruction asks for nothing the bar can do."
+  },
+  "smartbar_available_operations": {
+    "message": "Available actions: $LIST$.",
+    "description": "Smart bar (message pane): the actions the user can ask for now. $LIST$ is the list of action names.",
+    "placeholders": {
+      "list": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_no_operations_available": {
+    "message": "No action is available: turn on Add tags, Summarize or Translate in the options.",
+    "description": "Smart bar (message pane): no action can run, because the features it uses are off or have no usable AI connection."
+  },
+  "smartbar_report_unknown": {
+    "message": "Unknown action ignored: $ID$",
+    "description": "Smart bar (message pane): the AI named an action that does not exist. $ID$ is what it named.",
+    "placeholders": {
+      "id": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_report_duplicate": {
+    "message": "Asked twice, done once: $ID$",
+    "description": "Smart bar (message pane): the instruction asked for the same action twice. $ID$ is the action.",
+    "placeholders": {
+      "id": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_report_unavailable": {
+    "message": "Not available now: $ID$",
+    "description": "Smart bar (message pane): an action asked for whose feature is off or has no usable AI connection. $ID$ is the action.",
+    "placeholders": {
+      "id": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_notice_replaced_errors": {
+    "message": "The previous instruction had errors you did not look at: it was replaced by this one.",
+    "description": "Smart bar (message pane): shown when a new instruction replaces one whose results still held errors."
+  },
+  "smartbar_interrupted": {
+    "message": "Interrupted: Thunderbird was closed before this instruction ended.",
+    "description": "Smart bar (message pane): an instruction cut short by the end of the previous session."
+  },
+  "smartbar_stopped": {
+    "message": "Stopped",
+    "description": "Smart bar: an instruction stopped by the user."
+  },
+  "smartbar_error_no_connection": {
+    "message": "No AI connection able to reach an API is set for the Smart bar. Choose one in the ThunderAI options or in the Smart bar settings.",
+    "description": "Smart bar: error when the router has no usable AI connection."
+  },
+  "smartbar_error_no_router_prompt": {
+    "message": "The Smart bar router prompt is missing.",
+    "description": "Smart bar: error when the special prompt of the router cannot be found."
+  },
+  "smartbar_error_no_language": {
+    "message": "No target language: set one in the Translate settings, or name it in the instruction.",
+    "description": "Smart bar: the translate action has no language to translate into."
+  },
+  "smartbar_page_info": {
+    "message": "The bar in the message pane where you type what to do with the email. These settings apply to every message.",
+    "description": "Smart bar settings page: subtitle."
+  },
+  "smartbar_tab_options": {
+    "message": "Options",
+    "description": "Smart bar settings page: name of the tab holding the settings."
+  },
+  "smartbar_mode": {
+    "message": "Bar display",
+    "description": "Smart bar settings page: title of the display mode select."
+  },
+  "smartbar_mode_compact": {
+    "message": "Compact: a small icon that opens the bar",
+    "description": "Smart bar settings page: display mode option."
+  },
+  "smartbar_mode_expanded": {
+    "message": "Expanded: the bar is always open",
+    "description": "Smart bar settings page: display mode option."
+  },
+  "smartbar_mode_disabled": {
+    "message": "Hidden",
+    "description": "Smart bar settings page: display mode option (no bar in the message pane)."
+  },
+  "smartbar_mode_info": {
+    "message": "In compact mode every message starts with the icon only. Its dot shows an instruction in progress, waiting for you, or with an error.",
+    "description": "Smart bar settings page: help under the display mode select."
+  },
+  "smartbar_default_destination": {
+    "message": "What Enter does",
+    "description": "Smart bar settings page: title of the default destination select."
+  },
+  "smartbar_destination_execute": {
+    "message": "Run the actions",
+    "description": "Smart bar settings page: option of the default destination (run the actions the instruction asks for)."
+  },
+  "smartbar_destination_chat": {
+    "message": "Open the chat",
+    "description": "Smart bar settings page: option of the default destination (open the AI chat window)."
+  },
+  "smartbar_default_destination_info": {
+    "message": "The button next to the input does the other one.",
+    "description": "Smart bar settings page: help under the default destination select."
+  },
+  "smartbar_history_size": {
+    "message": "Instructions remembered",
+    "description": "Smart bar settings page: number of past instructions offered as suggestions."
+  },
+  "smartbar_history_size_info": {
+    "message": "Offered as suggestions in the bar (arrow up recalls the last one). 0 = none.",
+    "description": "Smart bar settings page: help of the history size field."
+  },
+  "smartbar_parallel_limit": {
+    "message": "Actions run at once",
+    "description": "Smart bar settings page: how many actions of one instruction run at the same time."
+  },
+  "smartbar_parallel_limit_info": {
+    "message": "The others wait their turn, in the order you wrote them.",
+    "description": "Smart bar settings page: help of the parallel limit field."
+  },
+  "smartbar_shortcut": {
+    "message": "Keyboard shortcut",
+    "description": "Smart bar settings page: title of the keyboard shortcut row."
+  },
+  "smartbar_shortcut_none": {
+    "message": "None",
+    "description": "Smart bar settings page: shown when no keyboard shortcut is set for the bar."
+  },
+  "smartbar_router_title": {
+    "message": "Understanding the instructions",
+    "description": "Smart bar settings page: title of the section of the router (the AI call that decides which actions an instruction asks for)."
+  },
+  "smartbar_router_info": {
+    "message": "Every instruction is first sent to the AI to know which actions it asks for. Only the instruction and a few details of the email (subject, sender, names, tags) are sent, never its text. A small, fast model is recommended here.",
+    "description": "Smart bar settings page: explanation of the router section."
+  },
+  "smartbar_router_use_specific_integration_info": {
+    "message": "If checked, the model and API below are used to understand the instructions, whatever the connection chosen in the ThunderAI options.",
+    "description": "Smart bar settings page: description of the specific integration switch of the router."
+  },
+  "smartbar_execute_title": {
+    "message": "Writing (later version)",
+    "description": "Smart bar settings page: title of the section of the settings used to write replies, in a later version."
+  },
+  "smartbar_later_version": {
+    "message": "Used from a later version of ThunderAI.",
+    "description": "Smart bar settings page: note on the settings not used yet."
+  },
+  "smartbar_execute_use_specific_integration_info": {
+    "message": "If checked, the model and API below will be used to write, whatever the connection chosen in the ThunderAI options.",
+    "description": "Smart bar settings page: description of the specific integration switch of the writing section."
+  },
+  "smartbar_max_body_length": {
+    "message": "Maximum email length",
+    "description": "Smart bar settings page: maximum number of characters of the email sent when writing."
+  },
+  "smartbar_max_body_length_info": {
+    "message": "Characters of the email sent to the AI when writing. 0 = no limit.",
+    "description": "Smart bar settings page: help of the maximum email length field."
+  },
+  "smartbar_additional_instructions": {
+    "message": "Additional instructions",
+    "description": "Smart bar settings page: free text added to the instructions when writing."
+  },
+  "smartbar_additional_instructions_info": {
+    "message": "Added to every writing request, e.g. your tone or your role.",
+    "description": "Smart bar settings page: help of the additional instructions field."
+  },
+  "smartbar_signature": {
+    "message": "Signature",
+    "description": "Smart bar settings page: the signature used when writing."
+  },
+  "smartbar_signature_info": {
+    "message": "How the written emails are signed.",
+    "description": "Smart bar settings page: help of the signature field."
+  },
+  "smartbar_chat_title": {
+    "message": "Chat (later version)",
+    "description": "Smart bar settings page: title of the section of the chat mode, in a later version."
+  },
+  "smartbar_chat_info": {
+    "message": "Used from a later version of ThunderAI. Today, \"Open the chat\" opens the usual AI chat window with this connection.",
+    "description": "Smart bar settings page: note on the chat section."
+  },
+  "smartbar_chat_use_specific_integration_info": {
+    "message": "If checked, the model and API below are used by the chat opened from the bar, whatever the connection chosen in the ThunderAI options.",
+    "description": "Smart bar settings page: description of the specific integration switch of the chat section."
+  },
+  "smartbar_retention_title": {
+    "message": "History",
+    "description": "Smart bar settings page: title of the section on how long the past instructions are kept."
+  },
+  "smartbar_retention_info": {
+    "message": "Each instruction you type is kept with what it did. This history has no backup: Thunderbird may delete it when the disk is almost full. The same rules are on the storage management page.",
+    "description": "Smart bar settings page: explanation of the history section."
+  },
+  "smartbar_retention_days": {
+    "message": "Keep for (days)",
+    "description": "Smart bar settings page: maximum age of the kept instructions."
+  },
+  "smartbar_retention_max_records": {
+    "message": "Maximum instructions kept",
+    "description": "Smart bar settings page: maximum number of kept instructions."
+  },
+  "smartbar_retention_error_days": {
+    "message": "Keep instructions with errors for (days)",
+    "description": "Smart bar settings page: maximum age of the kept instructions that ended with an error."
+  },
+  "storage_type_smartbar": {
+    "message": "Smart bar instructions",
+    "description": "Storage management page: the saved Smart bar instructions (overview row, rule group, counts)."
+  },
+  "storage_smartbar_note": {
+    "message": "The Smart bar instructions have no durable copy: Thunderbird may delete them when the disk is almost full.",
+    "description": "Storage management page: note under the overview."
+  },
+  "storage_delete_smartbar": {
+    "message": "Delete all the Smart bar instructions",
+    "description": "Storage management page: button deleting every saved Smart bar instruction."
+  },
+  "storage_delete_smartbar_confirm": {
+    "message": "Delete all the saved Smart bar instructions? This action cannot be undone.",
+    "description": "Storage management page: confirmation of the \"Delete all the Smart bar instructions\" button."
   }
 }

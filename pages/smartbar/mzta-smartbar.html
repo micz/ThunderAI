@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>ThunderAI - __MSG_smartbar_feature_name__</title>
+    <link rel="stylesheet" href="../_lib/mzta-design.css" />
+    <link rel="stylesheet" href="mzta-smartbar.css" />
+    <link rel="stylesheet" href="../_lib/connection-ui.css" />
+    <link rel="icon" href="../../images/icon-16px.png" />
+</head>
+<body class="mzta_feature_page">
+    <div id="mzta_card">
+
+        <!-- HEADER -->
+        <div id="mzta_top_links">
+            <div class="mzta_hdr_row1">
+                <span class="mzta_page_icon"><img src="../../images/icon-32px.png" alt="" width="28" height="28" /></span>
+                <span class="mzta_page_title">__MSG_smartbar_feature_name__</span>
+            </div>
+            <p class="mzta_page_subtitle mzta_help">__MSG_smartbar_page_info__</p>
+        </div>
+
+        <!-- TABS: Options now; the Prompt and Activity tabs come in a later version, as more
+             buttons here and more panels below (selectTab() handles any number). -->
+        <div id="smartbar_tabs" class="smartbar_tabs" role="tablist">
+            <button type="button" role="tab" class="smartbar_tab" id="tab_btn_options" data-tab="options" aria-controls="tab_options" aria-selected="true">__MSG_smartbar_tab_options__</button>
+        </div>
+
+        <!-- BODY -->
+        <div id="mzta_body">
+          <div id="tab_options" class="smartbar_tabpanel" role="tabpanel" aria-labelledby="tab_btn_options">
+
+            <!-- GENERAL SETTINGS -->
+            <div class="mzta_section" id="smartbar_settings">
+                <div class="mzta_field">
+                    <span class="opt_title">__MSG_smartbar_mode__</span>
+                    <select id="smartbar_mode" name="smartbar_mode" class="option-input">
+                        <option value="compact">__MSG_smartbar_mode_compact__</option>
+                        <option value="expanded">__MSG_smartbar_mode_expanded__</option>
+                        <option value="disabled">__MSG_smartbar_mode_disabled__</option>
+                    </select>
+                    <span class="mzta_help">__MSG_smartbar_mode_info__</span>
+                </div>
+                <div class="mzta_field">
+                    <span class="opt_title">__MSG_smartbar_default_destination__</span>
+                    <select id="smartbar_default_destination" name="smartbar_default_destination" class="option-input">
+                        <option value="execute">__MSG_smartbar_destination_execute__</option>
+                        <option value="chat">__MSG_smartbar_destination_chat__</option>
+                    </select>
+                    <span class="mzta_help">__MSG_smartbar_default_destination_info__</span>
+                </div>
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_smartbar_history_size__</span>
+                        <span class="mzta_help">__MSG_smartbar_history_size_info__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="smartbar_history_size" name="smartbar_history_size" min="0" step="1" class="option-input" />
+                    </div>
+                </div>
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_smartbar_parallel_limit__</span>
+                        <span class="mzta_help">__MSG_smartbar_parallel_limit_info__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="smartbar_parallel_limit" name="smartbar_parallel_limit" min="1" step="1" class="option-input" />
+                    </div>
+                </div>
+                <div class="mzta_field">
+                    <span class="opt_title">__MSG_smartbar_shortcut__</span>
+                    <span class="mzta_help"><span id="smartbar_shortcut_keys"></span> <a id="smartbar_shortcut_help" href="https://micz.it/thunderbird-addon-keyboard-shortcut/" target="_blank">__MSG_prefs_shortcut_change_link__</a></span>
+                </div>
+            </div>
+
+            <!-- THE ROUTER: its own connection (the panel of the smartbar_router prefix) -->
+            <div class="mzta_section smartbar_conn_section" id="smartbar_router_section">
+                <div class="mzta_prompt_title">__MSG_smartbar_router_title__</div>
+                <p class="mzta_help">__MSG_smartbar_router_info__</p>
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
+                        <div class="feature_desc">__MSG_smartbar_router_use_specific_integration_info__</div>
+                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="smartbar_router_use_specific_integration" name="smartbar_router_use_specific_integration" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+                <div id="mzta_conn_panel">
+                    <div id="mzta_conn_panel_header">
+                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    </div>
+                    <table id="connection_ui_table">
+                        <tr id="smartbar_router_connection_ui_anchor"></tr>
+                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- EXECUTE: used from a later version (the compose operation) -->
+            <div class="mzta_section smartbar_conn_section" id="smartbar_execute_section">
+                <div class="mzta_prompt_title">__MSG_smartbar_execute_title__</div>
+                <p class="mzta_help smartbar_later_note">__MSG_smartbar_later_version__</p>
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
+                        <div class="feature_desc">__MSG_smartbar_execute_use_specific_integration_info__</div>
+                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="smartbar_execute_use_specific_integration" name="smartbar_execute_use_specific_integration" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+                <div id="mzta_conn_panel">
+                    <div id="mzta_conn_panel_header">
+                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    </div>
+                    <table id="connection_ui_table">
+                        <tr id="smartbar_execute_connection_ui_anchor"></tr>
+                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                    </table>
+                </div>
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_smartbar_max_body_length__</span>
+                        <span class="mzta_help">__MSG_smartbar_max_body_length_info__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="smartbar_max_body_length" name="smartbar_max_body_length" min="0" step="1" class="option-input" />
+                    </div>
+                </div>
+                <div class="mzta_field">
+                    <span class="opt_title">__MSG_smartbar_additional_instructions__</span>
+                    <textarea id="smartbar_additional_instructions" name="smartbar_additional_instructions" rows="3" class="option-input"></textarea>
+                    <span class="mzta_help">__MSG_smartbar_additional_instructions_info__</span>
+                </div>
+                <div class="mzta_field">
+                    <span class="opt_title">__MSG_smartbar_signature__</span>
+                    <textarea id="smartbar_signature" name="smartbar_signature" rows="3" class="option-input"></textarea>
+                    <span class="mzta_help">__MSG_smartbar_signature_info__</span>
+                </div>
+            </div>
+
+            <!-- CHAT: used from a later version (the chat mode) -->
+            <div class="mzta_section smartbar_conn_section" id="smartbar_chat_section">
+                <div class="mzta_prompt_title">__MSG_smartbar_chat_title__</div>
+                <p class="mzta_help smartbar_later_note">__MSG_smartbar_chat_info__</p>
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
+                        <div class="feature_desc">__MSG_smartbar_chat_use_specific_integration_info__</div>
+                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="smartbar_chat_use_specific_integration" name="smartbar_chat_use_specific_integration" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+                <div id="mzta_conn_panel">
+                    <div id="mzta_conn_panel_header">
+                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    </div>
+                    <table id="connection_ui_table">
+                        <tr id="smartbar_chat_connection_ui_anchor"></tr>
+                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- RETENTION -->
+            <div class="mzta_section" id="smartbar_retention">
+                <div class="mzta_prompt_title">__MSG_smartbar_retention_title__</div>
+                <p class="mzta_help">__MSG_smartbar_retention_info__</p>
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_smartbar_retention_days__</span>
+                        <span class="mzta_help">__MSG_storage_rule_zero_hint__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="smartbar_retention_days" name="smartbar_retention_days" min="0" step="1" class="option-input" />
+                    </div>
+                </div>
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_smartbar_retention_max_records__</span>
+                        <span class="mzta_help">__MSG_storage_rule_zero_hint__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="smartbar_retention_max_records" name="smartbar_retention_max_records" min="0" step="1" class="option-input" />
+                    </div>
+                </div>
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_smartbar_retention_error_days__</span>
+                        <span class="mzta_help">__MSG_storage_rule_zero_hint__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="smartbar_retention_error_days" name="smartbar_retention_error_days" min="0" step="1" class="option-input" />
+                    </div>
+                </div>
+            </div>
+
+          </div>
+        </div>
+    </div>
+    <script src="mzta-smartbar.js" type="module"></script>
+    <script src="../../js/mzta-i18n.js"></script>
+</body>
+</html>

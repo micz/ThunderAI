@@ -1,0 +1,249 @@
+// The Smart bar in the message display (js/mzta-smartbar-script.js), loaded after the scripts
+// mzta-background.js registers before it, on a mail displayed as message "bar-A@example.com". The
+// background's answers are scripted here; what the background does is the background area's
+// (tests/background/44-smartbar).
+//
+// Spec 10 "Bar": a shadow-DOM host after ThunderAI's panels (#mzta-container), nothing when the
+// feature is off or the mode is disabled; compact mode is an icon that opens the bar, expanded mode
+// the bar at once; the state of the message comes from smartbar_get_state at load.
+// Spec 10 "Keyboard": Enter sends, Shift+Enter is a new line, a key during an IME composition does
+// nothing, no key typed in the bar reaches the page (Thunderbird's single-key shortcuts), ArrowUp in
+// an empty bar recalls the last instruction, Escape closes the compact bar.
+// Spec 10 "Result lines": one line per operation with its state, Stop on a running one, Retry /
+// Remove on an error (Open in chat for a json error), the reports, the unrecognized part, "nothing
+// matched" with the available operations; an update with an older seq or for another message is
+// ignored.
+
+import { after } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+    assertHarnessClean,
+    msg,
+} from '../../helpers/core/dom-harness.mjs';
+import { composeTests } from '../../helpers/known-issues/compose.mjs';
+import {
+    CONTENT_SCRIPTS,
+    DISPLAY_URL,
+    openMailDocument,
+    sentCommands,
+} from '../../compose/compose-doc.mjs';
+
+const ID = 'bar-A@example.com';
+const OTHER = 'bar-B@example.com';
+const S_BAR = 'spec 10 "Bar"';
+const S_KEYS = 'spec 10 "Keyboard"';
+const S_LINES = 'spec 10 "Result lines"';
+
+const config = { enabled: true, mode: 'compact', defaultDestination: 'execute', historySize: 20 };
+const ok = () => ({ ok: true });
+const ctx = await openMailDocument({
+    url: DISPLAY_URL,
+    displayedMessageId: ID,
+    html: '<!DOCTYPE html><html><head></head><body><div class="moz-text-html">Hello, this is the mail.</div></body></html>',
+    scripts: [...CONTENT_SCRIPTS, 'js/mzta-smartbar-script.js'],
+    commands: {
+        smartbar_get_state: () => ({ config: { ...config }, seq: 0, headerMessageId: ID, state: null, suggestions: ['riassumi', 'traduci'] }),
+        smartbar_run: ok,
+        smartbar_stop: ok,
+        smartbar_retry: ok,
+        smartbar_dismiss: ok,
+        smartbar_open_chat: ok,
+        smartbar_confirm: ok,
+        smartbar_cancel: ok,
+        smartbar_open_page: ok,
+        smartbar_placeholders: () => [],
+    },
+});
+after(() => ctx.close());
+const k = composeTests('21');
+
+const host = () => ctx.document.getElementById('mzta-smartbar-host');
+const root = () => host()?.shadowRoot;
+const $ = sel => root().querySelector(sel);
+const $$ = sel => [...root().querySelectorAll(sel)];
+const hidden = node => node.classList.contains('hidden');
+const textarea = () => $('textarea');
+const lines = () => $$('.results .line').map(l => l.querySelector('.tx').textContent);
+/**
+ * A background command delivered to EVERY runtime.onMessage listener of the document, as Firefox
+ * does. The core mock's dispatchMessage() stops at the first listener that answers, and
+ * js/mzta-compose-script.js (registered first) answers every command it does not know with
+ * Promise.resolve(false): through send() the bar's own listener would never be called.
+ */
+async function broadcast(message) {
+    for (const fn of [...ctx.ctl.browser.runtime.onMessage._listeners]) {
+        fn(structuredClone(message), { id: 'thunderai@micz.it' }, () => {});
+    }
+    await ctx.settle();
+}
+let seq = 0;
+const update = (record, extra = {}) => broadcast({ command: 'smartbar_update', headerMessageId: ID, seq: ++seq,
+    record, running: false, available: ['tag', 'summarize', 'translate'], ...extra });
+const record = (over = {}) => ({ id: 1, messageId: ID, instruction: 'riassumi', state: 'done', operations: [], reports: [],
+    unrecognized: null, errorType: null, error: null, dismissed: null, ...over });
+async function key(name, init = {}) {
+    const e = new ctx.window.KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init });
+    textarea().dispatchEvent(e);
+    await ctx.settle();
+    return e;
+}
+async function type(text) {
+    textarea().value = text;
+    await ctx.fire(textarea(), 'input');
+}
+const button = (lineIndex, cls) => $$('.results .line')[lineIndex].querySelector('button.' + cls);
+const lastSent = command => sentCommands(ctx, command).at(-1);
+
+// --- load and modes --------------------------------------------------------------------------
+
+k.test('load', S_BAR, 'at load the bar asks for its state; its host is in the body, with an open shadow root', () => {
+    assert.equal(sentCommands(ctx, 'smartbar_get_state').length, 1);
+    assert.ok(host());
+    assert.ok(root());
+    assert.ok($('style'));
+});
+
+k.test('compact-closed', S_BAR, 'compact mode: the icon shows, the bar is closed', () => {
+    assert.ok(!hidden($('.compact_row')));
+    assert.ok(hidden($('.panel')));
+});
+
+k.test('compact-open', S_BAR, 'a click on the icon opens the bar, the collapse button closes it', async () => {
+    await ctx.click($('.icon_btn'));
+    assert.ok(hidden($('.compact_row')));
+    assert.ok(!hidden($('.panel')));
+    await ctx.click($('button.collapse'));
+    assert.ok(hidden($('.panel')));
+    await ctx.click($('.icon_btn'));
+});
+
+k.test('expanded', S_BAR, 'expanded mode: the bar is open with no icon and no collapse button', async () => {
+    await broadcast({ command: 'smartbar_config', config: { ...config, mode: 'expanded' } });
+    assert.ok(hidden($('.compact_row')));
+    assert.ok(!hidden($('.panel')));
+    assert.ok(hidden($('button.collapse')));
+});
+
+// --- keyboard ---------------------------------------------------------------------------------
+
+k.test('enter-sends', S_KEYS, 'Enter sends the instruction to run, the bar empties', async () => {
+    await type('  riassumi la mail  ');
+    const e = await key('Enter');
+    assert.equal(e.defaultPrevented, true);
+    assert.deepEqual(lastSent('smartbar_run'), { command: 'smartbar_run', headerMessageId: ID, instruction: 'riassumi la mail', hasSelection: false });
+    assert.equal(textarea().value, '');
+});
+
+k.test('shift-enter', S_KEYS, 'Shift+Enter is a new line: nothing is sent', async () => {
+    const before = sentCommands(ctx, 'smartbar_run').length;
+    await type('first line');
+    const e = await key('Enter', { shiftKey: true });
+    assert.equal(e.defaultPrevented, false);
+    assert.equal(sentCommands(ctx, 'smartbar_run').length, before);
+});
+
+k.test('ime', S_KEYS, 'Enter during an IME composition sends nothing', async () => {
+    const before = sentCommands(ctx, 'smartbar_run').length;
+    await type('漢字');
+    await key('Enter', { isComposing: true });
+    assert.equal(sentCommands(ctx, 'smartbar_run').length, before);
+    await type('');
+});
+
+k.test('no-page-keys', S_KEYS, 'no key typed in the bar reaches the page', async () => {
+    const seen = [];
+    const listener = e => seen.push(e.key);
+    ctx.document.addEventListener('keydown', listener);
+    ctx.window.addEventListener('keydown', listener);
+    await key('j');
+    await key('Delete');
+    ctx.document.removeEventListener('keydown', listener);
+    ctx.window.removeEventListener('keydown', listener);
+    assert.deepEqual(seen, []);
+});
+
+k.test('arrow-up', S_KEYS, 'ArrowUp in an empty bar recalls the last instruction', async () => {
+    await type('');
+    await key('ArrowUp');
+    assert.equal(textarea().value, 'riassumi la mail', 'the instruction just sent is the newest');
+    await type('');
+});
+
+k.test('suggestions', S_KEYS, 'typing offers the matching past instructions; Escape closes the list', async () => {
+    await type('tra');
+    assert.ok(!hidden($('.suggest')));
+    assert.deepEqual($$('.suggest li').map(li => li.textContent), ['traduci']);
+    await key('Escape');
+    assert.ok(hidden($('.suggest')));
+    await type('');
+});
+
+// --- result lines -------------------------------------------------------------------------------
+
+k.test('routing', S_LINES, 'while the router works: one routing line with Stop', async () => {
+    await update(record({ state: 'running' }), { running: true });
+    assert.deepEqual(lines(), [msg('smartbar_routing')]);
+    assert.ok(!hidden($('button.stop')));
+    await ctx.click(button(0, 'stop'));
+    assert.deepEqual(lastSent('smartbar_stop'), { command: 'smartbar_stop', headerMessageId: ID });
+});
+
+k.test('operation-lines', S_LINES, 'one line per operation; Stop on a running one names its index', async () => {
+    await update(record({ state: 'running', operations: [
+        { index: 0, id: 'summarize', state: 'done' },
+        { index: 1, id: 'translate', state: 'running' },
+    ] }), { running: true });
+    assert.deepEqual(lines(), [msg('smartbar_result_summary_ready'), msg('smartbar_line_running', [msg('smartbar_op_translate')])]);
+    await ctx.click(button(1, 'stop'));
+    assert.deepEqual(lastSent('smartbar_stop'), { command: 'smartbar_stop', headerMessageId: ID, index: 1 });
+});
+
+k.test('error-line', S_LINES, 'an operation in error: Retry and Remove name the record and the index', async () => {
+    await update(record({ id: 2, state: 'error', operations: [{ index: 0, id: 'tag', state: 'error', error: 'boom', errorType: 'api' }] }));
+    assert.deepEqual(lines(), [msg('smartbar_line_error', [msg('smartbar_op_tag'), 'boom'])]);
+    assert.equal(button(0, 'chat'), null);
+    await ctx.click(button(0, 'retry'));
+    assert.deepEqual(lastSent('smartbar_retry'), { command: 'smartbar_retry', headerMessageId: ID, recordId: 2, index: 0, hasSelection: false });
+    await ctx.click(button(0, 'remove'));
+    assert.deepEqual(lastSent('smartbar_dismiss'), { command: 'smartbar_dismiss', headerMessageId: ID, recordId: 2, what: 0 });
+});
+
+k.test('json-error', S_LINES, 'a router json error offers Open in chat with the instruction', async () => {
+    await update(record({ id: 3, instruction: 'do the thing', state: 'error', errorType: 'json', error: 'not JSON' }));
+    assert.deepEqual(lines(), [msg('smartbar_line_router_error', ['not JSON'])]);
+    await ctx.click(button(0, 'chat'));
+    assert.deepEqual(lastSent('smartbar_open_chat'), { command: 'smartbar_open_chat', headerMessageId: ID, text: 'do the thing', selection: '' });
+});
+
+k.test('reports-unrecognized', S_LINES, 'the reports and the unrecognized part get their own lines', async () => {
+    await update(record({ id: 4, operations: [{ index: 0, id: 'summarize', state: 'done' }],
+        reports: [{ kind: 'unavailable', id: 'translate' }], unrecognized: 'forward it to Marco' }));
+    assert.deepEqual(lines(), [
+        msg('smartbar_result_summary_ready'),
+        msg('smartbar_report_unavailable', ['translate']),
+        msg('smartbar_unrecognized', ['forward it to Marco']),
+    ]);
+});
+
+k.test('nothing-matched', S_LINES, 'nothing matched: the line lists the operations available', async () => {
+    await update(record({ id: 5, instruction: 'archive' }), { available: ['summarize'] });
+    assert.deepEqual(lines(), [msg('smartbar_nothing_matched') + ' ' + msg('smartbar_available_operations', [msg('smartbar_op_summarize')])]);
+});
+
+k.test('stale-updates', S_LINES, 'an update with an older seq, or for another message, is ignored', async () => {
+    const shown = lines();
+    await broadcast({ command: 'smartbar_update', headerMessageId: ID, seq: seq - 1, record: record({ id: 9, state: 'error', errorType: 'api', error: 'old' }) });
+    await broadcast({ command: 'smartbar_update', headerMessageId: OTHER, seq: ++seq, record: record({ id: 9, messageId: OTHER, state: 'error', errorType: 'api', error: 'other' }) });
+    assert.deepEqual(lines(), shown);
+});
+
+k.test('disabled', S_BAR, 'the feature turned off removes the bar', async () => {
+    await broadcast({ command: 'smartbar_config', config: { ...config, enabled: false } });
+    assert.equal(host(), null);
+});
+
+k.test('harness-clean', S_BAR, 'the content scripts ran on modelled APIs only', () => {
+    assertHarnessClean(ctx);
+});
+
+k.coverage();

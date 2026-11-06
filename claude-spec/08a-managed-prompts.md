@@ -275,6 +275,7 @@ The chosen approach is **validate and reject**, not "move the format into code":
 | `prompt_translate_this` | `subject`, `body`, `status` | `mail_html_body` or `mail_text_body`, **and** `thunderai_translate_lang` |
 | `prompt_summarize_email_template` | — | any body placeholder¹, or none at all² |
 | `prompt_summarize`, `prompt_summarize_email_separator` | — | — (free text) |
+| `prompt_smartbar_router`, `prompt_smartbar_execute`, `prompt_smartbar_chat` | — | — (free text: the router's JSON format is a locked section the add-on appends, never part of the text, see [10-smartbar.md](10-smartbar.md) "Router") |
 
 ¹ `mail_text_body`, `mail_html_body`, `mail_text_body_or_selected`, `mail_html_body_or_selected`.
 ² `preparePrompt()` appends the message itself to a text with no placeholder at all.

@@ -63,6 +63,12 @@
             "default": "Ctrl+Alt+A"
         },
         "description": "Opens the ThunderAI prompts menu"
+        },
+        "_thunderai__smartbar": {
+        "suggested_key": {
+            "default": "Ctrl+Alt+B"
+        },
+        "description": "__MSG_smartbar_command_description__"
         }
     },
     "content_scripts": [

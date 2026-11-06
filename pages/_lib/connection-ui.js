@@ -1857,11 +1857,20 @@ function parseSvg(svgText) {
   return document.importNode(new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement, true);
 }
 
-function setupFeatureConnAdv({ getConnType, idPrefix }) {
-  const coreTable = document.getElementById('connection_ui_table');
+// `root`: the element holding this panel, when a page hosts several (the Smart bar page, one
+// panel per special prompt). Every lookup is then made inside it, so the panels never reach
+// each other's elements; the structural ids repeat in each root, which keeps the shared CSS.
+// Without a root, the document: the six feature pages, unchanged.
+function scopedFinder(root) {
+  return (id) => root ? root.querySelector('#' + id) : document.getElementById(id);
+}
+
+function setupFeatureConnAdv({ getConnType, idPrefix, root = null }) {
+  const find = scopedFinder(root);
+  const coreTable = find('connection_ui_table');
   if (!coreTable) return null;
 
-  let btn = document.getElementById('mzta_conn_adv_btn');
+  let btn = find('mzta_conn_adv_btn');
   if (!btn) {
     btn = document.createElement('button');
     btn.id = 'mzta_conn_adv_btn';
@@ -1878,7 +1887,7 @@ function setupFeatureConnAdv({ getConnType, idPrefix }) {
     coreTable.after(btn);
   }
 
-  let advTable = document.getElementById('connection_ui_adv_table');
+  let advTable = find('connection_ui_adv_table');
   if (!advTable) {
     advTable = document.createElement('table');
     advTable.id = 'connection_ui_adv_table';
@@ -1888,8 +1897,8 @@ function setupFeatureConnAdv({ getConnType, idPrefix }) {
   const advBody = advTable.tBodies[0] || advTable.appendChild(document.createElement('tbody'));
   coreTable.querySelectorAll('tr.conn_adv').forEach(tr => advBody.appendChild(tr));
 
-  // The unprefixed id is safe for the same single-form reason.
-  const testStrip = document.getElementById('mzta_conn_test') || attachConnTestStrip({
+  // The unprefixed id is safe for the same single-form reason (or the one form of its root).
+  const testStrip = find('mzta_conn_test') || attachConnTestStrip({
     afterEl: advTable,
     scopeEls: [coreTable, advTable],
     getConnType,
@@ -1920,20 +1929,27 @@ function setupFeatureConnAdv({ getConnType, idPrefix }) {
   };
 }
 
+// `root` and `anchorId`: for a page hosting several panels (the Smart bar page), the element
+// holding this one and the id of its anchor row, which must be unique in the page. Every other
+// structural lookup is made inside `root` (see scopedFinder()). Without them, the document and
+// 'connection_ui_anchor', as on the six feature pages.
 export async function initializeSpecificIntegrationUI({
   prefix,
   promptId,
   taLog,
-  restoreOptionsCallback
+  restoreOptionsCallback,
+  root = null,
+  anchorId = 'connection_ui_anchor'
 }) {
   const conntype_select_id = `${prefix}_connection_type`;
   const model_prefix = `${prefix}_`;
   const use_specific_integration_id = `${prefix}_use_specific_integration`;
+  const find = scopedFinder(root);
 
   // 1. Inject UI
   try {
       await injectConnectionUI({
-          afterTrId: 'connection_ui_anchor',
+          afterTrId: anchorId,
           tr_class: 'specific_integration_sub',
           selectId: conntype_select_id,
           modelId_prefix: model_prefix,
@@ -1947,7 +1963,8 @@ export async function initializeSpecificIntegrationUI({
   // Move the advanced rows behind the "Advanced options" disclosure.
   const connAdv = setupFeatureConnAdv({
       getConnType: () => document.getElementById(conntype_select_id)?.value,
-      idPrefix: model_prefix
+      idPrefix: model_prefix,
+      root: root
   });
 
   // 2. Restore Options
@@ -1955,8 +1972,10 @@ export async function initializeSpecificIntegrationUI({
       await restoreOptionsCallback();
   }
 
-  // Flag any malformed JSON already stored: the fields are filled now.
-  checkJsonFields();
+  // Flag any malformed JSON already stored: the fields are filled now. With several panels,
+  // only this one's fields: a document-wide sweep would repaint the others'.
+  if (root) checkJsonFieldsByPrefix(model_prefix);
+  else checkJsonFields();
 
   // Same reason: the saved Claude model is in the select now, so the per-model
   // option availability can finally be computed.
@@ -1968,7 +1987,9 @@ export async function initializeSpecificIntegrationUI({
   const use_specific_integration_el = document.getElementById(use_specific_integration_id);
   const conntype_el = document.getElementById(conntype_select_id);
   const conntype_row = document.getElementById(conntype_select_id + '_tr');
-  const conntype_end_el = document.getElementById('connection_ui_end');
+  const conntype_end_el = find('connection_ui_end');
+  // This panel's injected rows: all of the page's without a root.
+  const subRows = () => (root || document).querySelectorAll(".specific_integration_sub");
 
   // The panel's mode, decided once from the policy and the global connection (see
   // resolveSpecificIntegrationMode() in managed-ui.js): every decision below reads `mode`.
@@ -2031,7 +2052,7 @@ export async function initializeSpecificIntegrationUI({
 
   // Helper for visibility
   const _updateVisibility = (checked) => {
-      document.querySelectorAll(".specific_integration_sub").forEach(tr => {
+      subRows().forEach(tr => {
           tr.style.display = checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
       });
       if (conntype_row) conntype_row.style.display = checked ? 'table-row' : 'none';
@@ -2076,9 +2097,9 @@ export async function initializeSpecificIntegrationUI({
       // two unusable global connections we are in.
       const _lockedText = browser.i18n.getMessage(mode.mandatoryMsgKey);
       use_specific_integration_el.title = _lockedText;
-      const _lockedBadge = document.getElementById('specific_integration_locked_badge');
+      const _lockedBadge = find('specific_integration_locked_badge');
       if (_lockedBadge) _lockedBadge.classList.add('shown');
-      const _lockedNote = document.getElementById('specific_integration_locked_note');
+      const _lockedNote = find('specific_integration_locked_note');
       if (_lockedNote) {
           _lockedNote.textContent = _lockedText;
           _lockedNote.classList.add('shown');
@@ -2170,7 +2191,7 @@ export async function initializeSpecificIntegrationUI({
   // above; excluding it here avoids two concurrent async _updatePrompt() calls
   // racing on the same load-modify-save of the prompt (which could persist the
   // wrong api_type the first time the value is changed).
-  document.querySelectorAll(".specific_integration_sub .option-input").forEach(element => {
+  (root || document).querySelectorAll(".specific_integration_sub .option-input").forEach(element => {
       if (element === conntype_el) return;
       element.addEventListener("change", async () => {
           // Same for a field the policy connection enforces, re-enabled by hand.

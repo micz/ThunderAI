@@ -11,6 +11,7 @@ const ctx = await noPolicyScenario('storage');
 
 test('every retention rule and the automatic cleanup switch are editable', () => {
     const rules = ctx.$$('.rule_input');
-    assert.equal(rules.length, 10);
+    // Three rules per type (the Smart bar's included), the automatic cleanup switch.
+    assert.equal(rules.length, 13);
     for (const el of rules) assert.equal(el.disabled, false, el.id);
 });

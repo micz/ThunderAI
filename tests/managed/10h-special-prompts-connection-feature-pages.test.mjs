@@ -6,7 +6,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { FEATURE_PAGES } from '../helpers/feature-pages.mjs';
+import {
+    FEATURE_PAGES,
+    scenarioFile
+} from '../helpers/feature-pages.mjs';
 import { repoPath, REPO } from '../helpers/load.mjs';
 
 const { special_prompts_with_integration } =
@@ -16,13 +19,16 @@ test('FEATURE_PAGES covers special_prompts_with_integration exactly', () => {
     assert.deepEqual(Object.keys(FEATURE_PAGES).sort(), [...special_prompts_with_integration].sort());
 });
 
+// One file per feature and scenario; a page hosting several features (the Smart bar page) has the
+// prefix in each file name. The text Save scenario only where the page edits the prompt's text.
 test('every feature page has the connection scenarios', () => {
-    for (const { page } of Object.values(FEATURE_PAGES)) {
-        for (const file of ['13-connection-enforced.dom.mjs', '14-connection-unlocked.dom.mjs',
-                            '15-text-save-keeps-connection.dom.mjs',
-                            '16-mandatory-connection-blank.dom.mjs',
-                            '17-locked-on-switch.dom.mjs']) {
-            assert.ok(existsSync(repoPath('tests/dom/' + page + '/' + file)), page + '/' + file + ' missing');
+    for (const [prefix, feature] of Object.entries(FEATURE_PAGES)) {
+        const names = ['13-connection-enforced', '14-connection-unlocked',
+                       '16-mandatory-connection-blank', '17-locked-on-switch'];
+        if (feature.textarea) names.push('15-text-save-keeps-connection');
+        for (const name of names) {
+            const file = scenarioFile(prefix, name);
+            assert.ok(existsSync(repoPath('tests/dom/' + file)), file + ' missing');
         }
     }
 });

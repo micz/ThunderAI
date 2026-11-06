@@ -59,9 +59,15 @@ export const taJobRegistry = {
     // Register and start a job. Synchronous: the entry is in the map before this returns,
     // and fn(entry) starts on the next microtask (so even a job that never awaits cannot
     // run its finally before the entry exists). Returns the entry; await entry.promise.
-    start(kind, id, fn){
+    //
+    // options.groupId: the Smart bar instruction the job belongs to (claude-spec/10-smartbar.md).
+    // Every entry carries an AbortController (entry.abort): a job passes entry.abort.signal to
+    // its AI call, and abortGroup() stops every job of one instruction at once. A job started
+    // by anyone else (the batch, a panel button) has no group, so no instruction can stop it.
+    start(kind, id, fn, options = {}){
         const key = this._key(kind, id);
-        const entry = { kind: kind, id: id, promise: null, invalidated: false, wantsMove: false };
+        const entry = { kind: kind, id: id, promise: null, invalidated: false, wantsMove: false,
+            groupId: options.groupId || null, abort: new AbortController() };
         this._jobs.set(key, entry);
         this.taLog.log("[taJobs] start " + key);
         entry.promise = Promise.resolve()
@@ -102,10 +108,31 @@ export const taJobRegistry = {
         return true;
     },
 
+    // The running entries of one Smart bar instruction. Synchronous.
+    getGroup(groupId){
+        if (!groupId) return [];
+        return [...this._jobs.values()].filter(entry => entry.groupId === groupId);
+    },
+
+    // Stop every job of one Smart bar instruction: each is invalidated FIRST (so when it lands
+    // it neither saves nor shows anything) and then aborted (its AI call stops at once). Only
+    // the entries carrying this groupId: a batch job on the same message, which the bar may
+    // have joined, has no group and is never touched. Returns the number of jobs stopped.
+    abortGroup(groupId){
+        const entries = this.getGroup(groupId);
+        for (const entry of entries) {
+            entry.invalidated = true;
+            this.taLog.log("[taJobs] abort " + this._key(entry.kind, entry.id) + " (group " + groupId + ")");
+            try { entry.abort.abort(); } catch (e) { /* already aborted */ }
+        }
+        return entries.length;
+    },
+
     // An explicit manual re-trigger on an invalidated job: joining it and taking its
     // result is cheaper than a second concurrent call.
     revive(entry){
-        if (!entry || !entry.invalidated) return;
+        // An aborted job has stopped its call: there is no result left to take.
+        if (!entry || !entry.invalidated || entry.abort?.signal.aborted) return;
         entry.invalidated = false;
         this.taLog.log("[taJobs] revive " + this._key(entry.kind, entry.id));
     },

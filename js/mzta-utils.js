@@ -1117,6 +1117,9 @@ export function getActiveSpecialPromptsIDs(args = {}) {
     spamfilter = false,
     summarize = false,
     translate = false,
+    // The Smart bar prompts are never in a menu: only the prefix -> prompt mapping of the
+    // per-feature connections asks for them (specialPromptIdsForPrefix() in js/mzta-prompts.js).
+    smartbar = false,
     effective_conn = {}
   } = args;
   let output = [];
@@ -1144,6 +1147,11 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   }
   if (translate && usable('translate')) {
     output.push('prompt_translate_this');
+  }
+  if (smartbar) {
+    for (const part of ['router', 'execute', 'chat']) {
+      if (usable('smartbar_' + part)) output.push('prompt_smartbar_' + part);
+    }
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
   return output;

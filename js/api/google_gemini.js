@@ -100,7 +100,11 @@ export class GoogleGemini {
     top_p = '',
     top_k = '',
     extra_body = '',
+    // Not a preference: a special command that parses a JSON answer (the Smart bar router) asks
+    // for Gemini's JSON mode (responseMimeType). Never set by the chat window.
+    json_mode = false,
   } = {}) {
+    this.json_mode = json_mode === true;
     this.apiKey = apiKey;
     this.model = model;
     this.system_instruction = system_instruction;
@@ -289,6 +293,13 @@ export class GoogleGemini {
 
       if(this.top_k !== '' && !Number.isNaN(topKInt)) {
         google_gemini_body.generationConfig.topK = topKInt;
+      }
+
+      // JSON mode only, never a responseSchema: the schema subset Gemini accepts cannot express
+      // an object with free keys (the parameters of an operation), and a schema it rejects is
+      // a hard 400. A responseMimeType the user set in the extra body is left alone.
+      if(this.json_mode && google_gemini_body.generationConfig.responseMimeType === undefined) {
+        google_gemini_body.generationConfig.responseMimeType = 'application/json';
       }
 
       //  console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));

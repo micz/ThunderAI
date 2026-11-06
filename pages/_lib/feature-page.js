@@ -113,10 +113,13 @@ export function resolveFeatureConnectionPrefs(getting, prompt, prefix) {
  * name, and hide the whole panel when "use specific integration" is off (no empty bordered
  * box). Runs now, and again on every change of the switch or the type select.
  */
-export function bindConnPanelTint(prefix) {
+// `root`: the element holding the panel when a page hosts several (the Smart bar page); the
+// panel and its pill are looked up inside it. Without it, the document.
+export function bindConnPanelTint(prefix, root = null) {
+    const find = (id) => root ? root.querySelector('#' + id) : document.getElementById(id);
     const update = () => {
         const conntype_select = document.getElementById(`${prefix}_connection_type`);
-        const panel = document.getElementById('mzta_conn_panel');
+        const panel = find('mzta_conn_panel');
         const use_specific = document.getElementById(`${prefix}_use_specific_integration`);
         if (!panel) return;
         panel.style.display = (use_specific && use_specific.checked) ? '' : 'none';
@@ -125,7 +128,7 @@ export function bindConnPanelTint(prefix) {
         for (const t of valid_connection_types) {
             panel.classList.toggle('tint_' + t, conntype === t);
         }
-        const pillName = document.getElementById('mzta_conn_pill_name');
+        const pillName = find('mzta_conn_pill_name');
         if (pillName) {
             // Resolved from the shared catalogue, not by scraping the select:
             // populateConnectionTypeOptions() rebuilds the <option> list with replaceChildren(),

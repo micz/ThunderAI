@@ -807,6 +807,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   setFeatureManageVisibility(translate_info_btn, translate_el.checked);
 
+  // The Smart bar: its page is reachable only while the feature is on, like the others.
+  let smartbar_el = document.getElementById('smartbar_enabled');
+  let smartbar_info_btn = document.getElementById('btnManageSmartbarInfo');
+  smartbar_el.addEventListener('click', (event) => {
+    setFeatureManageVisibility(smartbar_info_btn, event.target.checked);
+  });
+  setFeatureManageVisibility(smartbar_info_btn, smartbar_el.checked);
+
   let get_calendar_event_el = document.getElementById('get_calendar_event');
   let get_calendar_event_info_btn = document.getElementById('btnManageCalendarEventInfo');
   get_calendar_event_el.addEventListener('click', (event) => {
@@ -847,6 +855,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnManageTranslateInfo').addEventListener('click', () => {
     openTab('/pages/translate/mzta-translate.html');
+  });
+
+  document.getElementById('btnManageSmartbarInfo').addEventListener('click', () => {
+    openTab('/pages/smartbar/mzta-smartbar.html');
   });
 
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {

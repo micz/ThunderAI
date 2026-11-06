@@ -18,8 +18,8 @@ import assert from 'node:assert/strict';
 import { openPage, assertHarnessClean } from './dom-page.mjs';
 import { FEATURE_PAGES, prefixOfPage } from './feature-pages.mjs';
 
-export async function textSaveScenario(page) {
-    const prefix = prefixOfPage(page);
+// prefix: the feature, when the page hosts several panels (see dom-connection.mjs).
+export async function textSaveScenario(page, prefix = prefixOfPage(page)) {
     const feature = FEATURE_PAGES[prefix];
     const ctx = await openPage(page, {
         local: {

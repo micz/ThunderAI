@@ -81,8 +81,21 @@ import { mztaPrefs } from './mzta-prefs.js';
             llm = '',
             do_debug = false,
             config = {},
-            processingClient
+            processingClient,
+            // Ask the provider for a JSON answer where it has a reliable JSON mode (OpenAI
+            // json_object, Gemini responseMimeType, Ollama format json). Used by the Smart bar
+            // router; the parser stays tolerant for every provider.
+            jsonMode = false,
+            // An AbortSignal: when it aborts, the worker is disposed and sendPrompt() rejects
+            // with an error named 'AbortError' (err.aborted = true).
+            signal = null,
+            // Called with the reasoning received so far, on each thinking token: the Smart bar
+            // shows it while the router works. Never part of the resolved value.
+            onThinking = null
         } = args;
+        this.onThinking = typeof onThinking === 'function' ? onThinking : null;
+        this.jsonMode = jsonMode === true;
+        this.signal = signal;
         this.prompt = prompt;
         this.llm = llm;
         this.config = config;
@@ -198,6 +211,19 @@ import { mztaPrefs } from './mzta-prefs.js';
             workerInitMessage[prefKey] = value;
         }
 
+        // JSON mode, only where the provider has a reliable one, and never over a format the
+        // user chose. OpenAI-compatible servers (json_object or json_schema support varies, and
+        // an unsupported one is a hard 400) and Claude (no JSON mode) rely on the parser.
+        if (this.jsonMode) {
+            if (integration === 'chatgpt' && !workerInitMessage.chatgpt_text_format) {
+                workerInitMessage.chatgpt_text_format = 'json_object';
+            } else if (integration === 'ollama') {
+                workerInitMessage.ollama_format_json = true;
+            } else if (integration === 'google_gemini') {
+                workerInitMessage.google_gemini_json_mode = true;
+            }
+        }
+
         // A custom endpoint is checked before the worker exists [#1000]. Nobody may be
         // looking (the automatic processing of incoming mail), so nothing is asked here:
         // an unencrypted server not yet confirmed fails like a missing setting, and the
@@ -241,6 +267,24 @@ import { mztaPrefs } from './mzta-prefs.js';
             resetTimer();
             const clearTimer = () => { clearTimeout(timeoutId); };
 
+            // A caller that stops the command (the Smart bar's Stop, or a new instruction that
+            // replaces the running one): the worker is disposed at once by the finally below,
+            // and no late answer is delivered.
+            if (this.signal) {
+                const onAbort = () => {
+                    clearTimer();
+                    const err = new Error('[ThunderAI] Special command aborted');
+                    err.name = 'AbortError';
+                    err.aborted = true;
+                    reject(err);
+                };
+                if (this.signal.aborted) {
+                    onAbort();
+                    return;
+                }
+                this.signal.addEventListener('abort', onAbort, { once: true });
+            }
+
             if (this.responsePrepared) {
                 this.worker.onprocessingstatus = status => {
                     if (['started', 'progress', 'complete'].includes(status.type)) resetTimer();
@@ -275,6 +319,9 @@ import { mztaPrefs } from './mzta-prefs.js';
                         // for the providers that stream it in a dedicated field: it is only
                         // written to the debug log, never handed to the caller.
                         this.thinking_message += payload.token;
+                        if (this.onThinking) {
+                            try { this.onThinking(this.thinking_message); } catch (e) { /* a display callback never breaks the command */ }
+                        }
                         break;
                     case 'tokensDone': {
                         clearTimer();

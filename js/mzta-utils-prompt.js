@@ -308,7 +308,10 @@ export const taPromptUtils = {
 
     // messageId is needed for the body: getMailInlineTextParts() asks the API for
     // the inline text parts directly. fullMessage stays for the subject header.
-    async buildTranslationPrompt(fullMessage, messageId) {
+    // targetLang: a language asked for explicitly (the Smart bar's "translate to German"),
+    // which replaces {%thunderai_translate_lang%}; omitted, the configured language is used,
+    // as before. Every other placeholder is resolved as usual.
+    async buildTranslationPrompt(fullMessage, messageId, targetLang = '') {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_translate_this');
 
@@ -338,6 +341,10 @@ export const taPromptUtils = {
             msg_text: { html: bodyHtml.html, text: bodyHtml.text },
             mail_subject: mailSubject,
         });
+        if (typeof targetLang === 'string' && targetLang.trim() !== '' &&
+            placeholdersUtils.hasPlaceholder(promptText, 'thunderai_translate_lang')) {
+            finalSubs['thunderai_translate_lang'] = placeholdersUtils.failSafePlaceholders(targetLang.trim());
+        }
 
         // Always the default values (all "" for these placeholders), whatever
         // placeholders_use_default_value says: this is a feature prompt with a fixed structure,

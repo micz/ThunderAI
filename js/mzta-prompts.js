@@ -418,6 +418,58 @@ const specialPrompts = [
         is_special: "1",
         allow_multi: true,
         show_in: "both",
+    },
+    // The three prompts of the Smart bar (claude-spec/10-smartbar.md). Never in a menu: the bar
+    // runs them. The router decides which operations an instruction asks for; its JSON format is
+    // appended by the add-on (js/mzta-smartbar-router.js), never part of this text. execute and
+    // chat are data only until the versions that use them.
+    {
+        id: 'prompt_smartbar_router',
+        name: "__MSG_prompt_smartbar_router__",
+        text: "prompt_smartbar_router_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        api_type: '',
+        is_default: "1",
+        is_special: "1",
+        show_in: "none",
+    },
+    {
+        id: 'prompt_smartbar_execute',
+        name: "__MSG_prompt_smartbar_execute__",
+        text: "prompt_smartbar_execute_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        api_type: '',
+        is_default: "1",
+        is_special: "1",
+        show_in: "none",
+    },
+    {
+        id: 'prompt_smartbar_chat',
+        name: "__MSG_prompt_smartbar_chat__",
+        text: "prompt_smartbar_chat_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        api_type: '',
+        is_default: "1",
+        is_special: "1",
+        show_in: "none",
     }
 ];
 
@@ -567,6 +619,11 @@ const SPECIAL_PROMPT_TEXT_CONTRACT = {
         responseKeys: ['subject', 'body', 'status'],
         contentPlaceholders: ['mail_html_body', 'mail_text_body'],
         requiredPlaceholders: ['thunderai_translate_lang'] },
+    // The Smart bar prompts carry no response format of their own: the router's JSON section is
+    // appended by the add-on (js/mzta-smartbar-router.js), and they never receive the message.
+    prompt_smartbar_router: {},
+    prompt_smartbar_execute: {},
+    prompt_smartbar_chat: {},
 };
 
 function textHasPlaceholder(text, id) {
@@ -1456,6 +1513,7 @@ function specialPromptIdsForPrefix(prefix) {
         spamfilter: true,
         summarize: true,
         translate: true,
+        smartbar: true,
         effective_conn: { [prefix]: 'chatgpt_api' }
     });
 }

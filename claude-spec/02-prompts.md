@@ -374,6 +374,7 @@ The factory `show_in` of each special prompt is declared once, in the `specialPr
 | `prompt_spamfilter` | `"context"` |
 | `prompt_summarize`, `prompt_translate_this` | `"both"` |
 | `prompt_summarize_email_template`, `prompt_summarize_email_separator` | `"none"` (text fragments, never in a menu) |
+| `prompt_smartbar_router`, `prompt_smartbar_execute`, `prompt_smartbar_chat` | `"none"` (the Smart bar's own calls, never in a menu, see [10-smartbar.md](10-smartbar.md)) |
 
 A value already saved in `_special_prompts` is never migrated to a new shipped one: a saved
 `"context"` may be the user's choice in the Menu Order page and cannot be told apart from a default
@@ -384,7 +385,8 @@ These special prompts can have their own dedicated API integration settings (con
 `getSpecialPromptPrefix(id)` (`js/mzta-prompts.js`) maps a special prompt id to the feature prefix
 whose connection it runs with — both calendar prompts to `get_calendar_event`, `prompt_translate_this`
 to `translate`, and so on — for `openChatGPT()` in `mzta-background.js`, the one caller, which
-resolves the connection of the prompt it runs. Any other id gives `null`, and so do
+resolves the connection of the prompt it runs. The three Smart bar prompts map to their own
+prefixes (`smartbar_router`, `smartbar_execute`, `smartbar_chat`). Any other id gives `null`, and so do
 `prompt_summarize_email_template` and `prompt_summarize_email_separator`: they are text fragments
 that `buildSummaryPrompt()` pastes into `prompt_summarize`, never run as prompts of their own, so
 they have no connection to resolve.
@@ -605,7 +607,7 @@ Two functions in `js/mzta-utils.js`, used by both menus and by the Menu Order pi
 2. **`getBuiltInPromptIcon()`** — the shipped icon, i.e. what clearing `custom_icon` reverts to
 3. `defaultContextMenuIcon` (`''`)
 
-All 8 prompts in `defaultPrompts` have a built-in icon, as do the 7 special prompts that appear in menus — so every shipped prompt has an icon, and only user-created custom prompts start with an empty slot. (`specialPrompts` holds 9 entries; `prompt_summarize_email_template` and `prompt_summarize_email_separator` are not menu items and have no icon.)
+All 8 prompts in `defaultPrompts` have a built-in icon, as do the 7 special prompts that appear in menus — so every shipped prompt has an icon, and only user-created custom prompts start with an empty slot. (`specialPrompts` holds 12 entries; `prompt_summarize_email_template`, `prompt_summarize_email_separator` and the three Smart bar prompts are not menu items and have no icon.)
 
 To give a new default prompt a shipped icon, drop the PNG in `images/context_menu/` (not in `custom/` — that folder is the user-selectable picker grid) and add one entry to `defaultPromptIconsPath` — no other code changes are needed, since both menus and the Menu Order preview go through these two functions.
 
@@ -673,7 +675,7 @@ Both sections are draggable and act as drop targets; the section the row lands i
 **What marks the page unsaved** — every drag end does, including a reorder inside a Hidden section (which changes no position: positions only matter in Visible) and a drag released outside any list (the rows stay where they were; for a row of a Visible section, that list's positions are renumbered in their current order).
 
 **Exclusions from the UI** (preserved on save so data is not lost):
-- Special prompts whose base definition has `show_in: "none"` (internal prompts like `prompt_summarize_email_template` and `prompt_summarize_email_separator`) — retrieved via `getHiddenSpecialPromptIds()`
+- Special prompts whose base definition has `show_in: "none"` (internal prompts like `prompt_summarize_email_template`, `prompt_summarize_email_separator` and the three Smart bar prompts) — retrieved via `getHiddenSpecialPromptIds()`
 - Special prompts whose feature is not active — retrieved from background via `get_active_special_ids` message, which calls `getActiveSpecialPromptsIDs()` with current prefs and `_sparks_presence`
 
 Both are chosen among the prompts with `is_special: "1"` only, and taken out of the list by object, never by id. Matched by id, a custom prompt with such an id (see "Prompt ids") was saved into `_special_prompts`, or left out of the list and so deleted from `_custom_prompt` by Save All.
@@ -706,7 +708,7 @@ The reset is **in-memory only**: it closes any open icon popover, clears the dee
 The `dynamic_menu_order_alphabet` preference (previously a user-facing option) has been retired and removed from the UI, but the key still exists in storage as a one-shot migration flag. At every background startup, `migrateMenuOrderAlphabetic()` in `js/mzta-prompts.js` runs:
 
 1. Reads `dynamic_menu_order_alphabet` from `browser.storage.local` (defaults to `true` if unset)
-2. If `true`: sorts every prompt except the hidden special prompts — special prompts first (alphabetically), then the rest (alphabetically) — and assigns sequential `position_display` = `position_compose` = `position_context` numbers. The hidden special prompts, the ones with `show_in: "none"` in their **base definition** (`getHiddenSpecialPromptIds()`: the summarize email template and separator), are preserved untouched. They are matched by `is_special: "1"` as well as by id, so a custom prompt with one of those ids stays a custom prompt. Every other prompt gets a position, including a prompt the user has hidden (`show_in: "none"`) and a special prompt whose feature is off: while hidden the position is unused (the Menu Order page lists hidden items alphabetically, the menus skip them), and if the prompt is shown again it already has a slot in the alphabetical order instead of none. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
+2. If `true`: sorts every prompt except the hidden special prompts — special prompts first (alphabetically), then the rest (alphabetically) — and assigns sequential `position_display` = `position_compose` = `position_context` numbers. The hidden special prompts, the ones with `show_in: "none"` in their **base definition** (`getHiddenSpecialPromptIds()`: the summarize email template and separator, the three Smart bar prompts), are preserved untouched. They are matched by `is_special: "1"` as well as by id, so a custom prompt with one of those ids stays a custom prompt. Every other prompt gets a position, including a prompt the user has hidden (`show_in: "none"`) and a special prompt whose feature is off: while hidden the position is unused (the Menu Order page lists hidden items alphabetically, the menus skip them), and if the prompt is shown again it already has a slot in the alphabetical order instead of none. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
 3. Persists the new positions via `setDefaultPromptsProperties` / `setCustomPrompts` / `setSpecialPrompts`. The prompts are saved from the normalized view, so a stored prompt may gain the fields it lacked, at the defaults every read already applies: no stored value changes, and every prompt reads back as before, its positions aside. The one visible difference: a field the read view lacked may now hold its empty default `''` (today `custom_icon` of a built-in prompt that was never customized), which every reader treats exactly as the absent field
 4. Sets `dynamic_menu_order_alphabet = false` in `browser.storage.local` so the migration does not run again. The flag is read directly, not through `js/mzta-prefs.js` (it is not a preference), but it must sit in the same area as `PREFS_AREA`, and `migratePrefsToLocal()` carries it across from sync: since its default means "not yet run", reading it from an area the relocation did not fill would rerun the migration and overwrite the user's ordering (see [05-options.md](05-options.md))
 
@@ -728,6 +730,10 @@ It is idempotent: the flag short-circuits reruns, and after it runs no `enabled`
 Each prompt requires **two** conditions: its feature flag is on, **and** its feature's connection can drive an API. The second is judged per feature, never globally: the function takes an `effective_conn` map — one already-resolved connection type per prefix in `special_prompts_with_integration` — and tests it with `isApiUsableConnection()`. `_computeActiveSpecialIds()` in `mzta-background.js` is the only caller; it builds the map with `getConnectionType(prefs, null, prefix)`, so a feature with `use_specific_integration` stays available even when the global connection is ChatGPT Web or unset. Getting this wrong hides working features from the menus while the options page still shows them enabled.
 
 The preference read feeding it **must** include `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`. Without those keys `getConnectionType()` reads `use_specific_integration` as `undefined` and silently falls back to the global connection — the failure is invisible at the call site, which still looks correct.
+
+The three Smart bar prompts are active with `smartbar_enabled` and their own prefix's connection
+(`getActiveSpecialPromptsIDs(..., smartbar)`): they are never in a menu (`show_in: "none"`), so this
+only matters to the lists that take the active ids.
 
 Notable dependency:
 

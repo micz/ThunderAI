@@ -97,6 +97,34 @@ import { taWorkingStatus } from './js/mzta-working-status.js';
 import { taBatchController } from './js/mzta-batch-controller.js';
 import { taJobRegistry } from './js/mzta-job-registry.js';
 import {
+    createSmartbarRegistry,
+    describeOperations,
+    planOperations,
+    runPlanned
+} from './js/mzta-smartbar-registry.js';
+import {
+    askRouter,
+    buildRouterPrompt,
+    describePlaceholders,
+    participantNames,
+    readRouterOutput,
+    routerPlaceholderAllowList,
+    RouterJsonError
+} from './js/mzta-smartbar-router.js';
+import {
+    taSmartbarStore,
+    newRecord as smartbarNewRecord,
+    recordOperation as smartbarRecordOperation,
+    markReplaced as smartbarMarkReplaced,
+    hasErrors as smartbarHasErrors,
+    newId as smartbarNewId,
+    FINAL_OPERATION_STATES as SMARTBAR_FINAL_STATES
+} from './js/mzta-smartbar-store.js';
+import {
+    getPlaceholders,
+    mapPlaceholderToSuggestion
+} from './js/mzta-placeholders.js';
+import {
     addTags_getExclusionList,
     addTags_setExclusionList,
     checkExcludedTag
@@ -463,6 +491,12 @@ function setupCleanupScheduleListener() {
     });
 }
 setupCleanupScheduleListener();
+// The Smart bar instructions still 'running' were cut short by the end of the previous session:
+// they become 'interrupted' (claude-spec/10-smartbar.md "Storage"). After the storage startup above.
+taSmartbarStore.markInterrupted().catch(e => console.error("[ThunderAI] Smart bar: could not mark the interrupted instructions: " + e));
+// The bars follow their preferences (enabled, mode, default destination): a content script
+// cannot read them, so the background tells every open message tab.
+setupSmartbarConfigListener();
 
 browser.composeScripts.register({
     // mzta-html-lines.js FIRST: it is a classic script defining the globals
@@ -471,14 +505,21 @@ browser.composeScripts.register({
 });
 
 // Register the message display script for all newly opened message tabs.
+// The Smart bar (js/mzta-smartbar-script.js) only in the message display: it acts on the
+// displayed message. After the compose script, which keeps its own elements apart from it.
 messenger.messageDisplayScripts.register({
-    js: [{ file: "js/lib/mzta-html-lines.js" }, { file: "js/mzta-compose-script.js" }]
+    js: [{ file: "js/lib/mzta-html-lines.js" }, { file: "js/mzta-compose-script.js" }, { file: "js/mzta-smartbar-script.js" }]
 });
 
 // Listen for shortcut command
 messenger.commands.onCommand.addListener((command, tab) => {
     if (command === "_thunderai__do_action") {
         handleShortcut(tab);
+    } else if (command === "_thunderai__smartbar") {
+        // Expand the Smart bar of the displayed message and put the cursor in it.
+        if (tab && ["mail", "messageDisplay"].includes(tab.type)) {
+            sendTabMessageSafe(tab.id, { command: 'smartbar_focus' });
+        }
     }
 });
     
@@ -761,6 +802,13 @@ async function _assign_tags_now(_data, create_new_tags, exclusions_exact_match, 
     }
     let added_tags = await assignTagsToMessage(_data.messageId, new_tags);
     taLog.log("Assigned tags: " + JSON.stringify(added_tags));
+    // What happened to each tag asked for: the Smart bar reports it (no caller relied on a
+    // return value before).
+    return {
+        assigned: new_tags,
+        excluded: _data.tags.filter(tag => !tags_final.includes(tag)),
+        skipped: tags_final.filter(tag => !new_tags.includes(tag)),
+    };
 }
 
 messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -1393,6 +1441,61 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         taLog.error("Error in reconcileMessageStorage: " + (e?.message || e));
                         return { ok: false, error: e?.message || String(e) };
                     });
+            // The Smart bar (js/mzta-smartbar-script.js, claude-spec/10-smartbar.md). Every command
+            // names its message; the ones that act on it check that the sending tab displays it.
+            case 'smartbar_get_state':
+                return (async () => {
+                    const config = await _smartbarConfig();
+                    const current = sender.tab?.id ? await browser.messageDisplay.getDisplayedMessage(sender.tab.id).catch(() => null) : null;
+                    if (!config.enabled || !current) return { config: config, seq: _smartbarSeq, state: null, suggestions: [] };
+                    return {
+                        config: config,
+                        seq: _smartbarSeq,
+                        headerMessageId: current.headerMessageId,
+                        state: await _smartbarState(current.headerMessageId),
+                        suggestions: await taSmartbarStore.recentInstructions(config.historySize),
+                    };
+                })().catch(e => { taLog.error("Error in smartbar_get_state: " + e); return null; });
+            case 'smartbar_run':
+            case 'smartbar_open_chat':
+            case 'smartbar_stop':
+            case 'smartbar_retry':
+            case 'smartbar_confirm':
+            case 'smartbar_cancel':
+            case 'smartbar_dismiss':
+                return (async () => {
+                    const tabId = sender.tab?.id;
+                    const current = tabId ? await browser.messageDisplay.getDisplayedMessage(tabId).catch(() => null) : null;
+                    if (!current || current.headerMessageId !== message.headerMessageId) return { ok: false, error: 'not_displayed' };
+                    const hid = message.headerMessageId;
+                    switch (message.command) {
+                        case 'smartbar_run':
+                            return _smartbarRun({ headerMessageId: hid, tabId, instruction: message.instruction, hasSelection: message.hasSelection });
+                        case 'smartbar_open_chat':
+                            return { ok: await _smartbarOpenChat(hid, tabId, message.text, message.selection) };
+                        case 'smartbar_stop':
+                            return { ok: await _smartbarStop(hid, message.index ?? null) };
+                        case 'smartbar_retry':
+                            return _smartbarRetry({ headerMessageId: hid, tabId, recordId: message.recordId, index: message.index ?? null, auto: message.auto === true, hasSelection: message.hasSelection });
+                        case 'smartbar_confirm':
+                        case 'smartbar_cancel':
+                            return { ok: _smartbarAnswerConfirm(hid, message.index, message.command === 'smartbar_confirm') };
+                        case 'smartbar_dismiss':
+                            return { ok: await _smartbarDismiss(hid, message.recordId, message.what) };
+                    }
+                    return { ok: false };
+                })().catch(e => { taLog.error("Error in " + message.command + ": " + e); return { ok: false, error: String(e?.message || e) }; });
+            case 'smartbar_placeholders':
+                // The {%placeholder%} autocomplete of the bar's input: the placeholders a reading
+                // context offers, as the prompt editors list them (a content script cannot read
+                // the custom ones from storage itself).
+                return getPlaceholders(true)
+                    .then(list => list.map(mapPlaceholderToSuggestion).filter(s => s.id !== 'additional_text'))
+                    .catch(() => []);
+            case 'smartbar_open_page':
+                // The bar's Details link: the feature page (its Activity tab comes later).
+                return browser.tabs.create({ url: browser.runtime.getURL('pages/smartbar/mzta-smartbar.html') })
+                    .then(() => ({ ok: true }), () => ({ ok: false }));
             case 'batch_status':
                 return Promise.resolve(taBatchController.getStatus());
             case 'cancel_batch':
@@ -1720,7 +1823,8 @@ function _generateSummaryForMessage(headerMessageId, tabId = null, options = {})
     }
     const running = taJobRegistry.get('summary', headerMessageId);
     if (running) return _joinSummaryJob(running, headerMessageId, tabId, options);
-    return taJobRegistry.start('summary', headerMessageId, (entry) => _runSummaryJob(entry, headerMessageId, tabId, options)).promise;
+    // options.groupId: a Smart bar instruction, which may stop the job (taJobRegistry.abortGroup()).
+    return taJobRegistry.start('summary', headerMessageId, (entry) => _runSummaryJob(entry, headerMessageId, tabId, options), { groupId: options.groupId }).promise;
 }
 
 // A caller that found a summary job running: no startWorking(), no store write, no API
@@ -1864,7 +1968,10 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
-            config: summarize_prompt
+            config: summarize_prompt,
+            // A Smart bar instruction replaced or stopped: the call ends at once (the entry is
+            // invalidated first, so nothing is saved or shown).
+            signal: entry.abort?.signal
         });
 
         await cmd.initWorker();
@@ -1915,14 +2022,17 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
     // needs a prefs read, so it comes first; the synchronous lookup/registration below
     // follows it with no await in between.
     let prefs_lang = await mztaPrefs.getPrefs(['translate_lang', 'default_chatgpt_lang']);
-    const lang = prefs_lang.translate_lang || prefs_lang.default_chatgpt_lang || '';
+    // options.lang: a language asked for explicitly (the Smart bar's "translate to German");
+    // otherwise the configured one, as before.
+    const explicitLang = typeof options.lang === 'string' ? options.lang.trim() : '';
+    const lang = explicitLang || prefs_lang.translate_lang || prefs_lang.default_chatgpt_lang || '';
     if (!lang) {
         taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
         return { status: 'skipped' };
     }
     const running = taJobRegistry.get('translation', headerMessageId);
     if (running) return _joinTranslationJob(running, headerMessageId, tabId, options);
-    return taJobRegistry.start('translation', headerMessageId, (entry) => _runTranslationJob(entry, headerMessageId, tabId, options, lang)).promise;
+    return taJobRegistry.start('translation', headerMessageId, (entry) => _runTranslationJob(entry, headerMessageId, tabId, { ...options, explicitLang }, lang), { groupId: options.groupId }).promise;
 }
 
 // See _joinSummaryJob().
@@ -1990,7 +2100,10 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
                 .catch(e => taLog.error("[ThunderAI] Translation: could not remove the stored translation of " + headerMessageId + ": " + e));
         } else {
             let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
-            if (cachedTranslation && !cachedTranslation.error) {
+            // A language asked for explicitly is served from the cache only when the cached
+            // translation is in it: the store keeps one translation per message, so the new one
+            // replaces it.
+            if (cachedTranslation && !cachedTranslation.error && (!options.explicitLang || cachedTranslation.lang === lang)) {
                 const data = { ...cachedTranslation, ...display };
                 await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: data });
                 return { status: 'ok', data: data, cached: true };
@@ -2045,14 +2158,16 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg, metadata));
         }
         taLog.log("[ThunderAI] Translation: building the prompt for " + usedMessage?.headerMessageId + " (folder: " + usedMessage?.folder?.path + ")");
-        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
+        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId, options.explicitLang || '');
 
         const cmd = new mzta_specialCommand({
             processingClient,
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
-            config: translate_prompt
+            config: translate_prompt,
+            // See _runSummaryJob().
+            signal: entry.abort?.signal
         });
 
         await cmd.initWorker();
@@ -2092,6 +2207,647 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
     } finally {
         if (working) taWorkingStatus.stopWorking();
     }
+}
+
+// ---- The Smart bar (claude-spec/10-smartbar.md) -----------------------------------------------
+//
+// The bar in the message pane (js/mzta-smartbar-script.js) sends an instruction; the router
+// (special prompt prompt_smartbar_router) tells which operations it asks for; each operation runs
+// through the existing pipeline of its feature (add tags, summary, translation). Nothing is ever
+// sent automatically.
+//
+// One instruction = one record of the smartbar store (js/mzta-smartbar-store.js) and one group of
+// jobs in taJobRegistry: the router job (kind 'smartbar') and one job per operation, in its own
+// feature's kind (add_tags, summary, translation), so the attach-to-running rule with the
+// automatic processing of incoming mail is kept: a bar operation that finds a batch job running
+// joins it, and since the batch's jobs carry no group, a new instruction never stops them.
+//
+// Replacement (bar only): a new instruction on a message stops the previous one's group
+// (taJobRegistry.abortGroup(): invalidated, then aborted) and marks its record 'replaced'.
+
+const smartbarRegistry = createSmartbarRegistry();
+
+// The instruction in progress on each message: headerMessageId -> { groupId, recordId, record,
+// controller, confirms: Map(index -> resolve), tabId }.
+const _smartbarActive = new Map();
+// Sequence of the updates sent to the bars: a bar ignores an update older than one it has drawn.
+let _smartbarSeq = 0;
+// The reasoning of the running router calls, sent at most every 250 ms: key -> { text, timer, last }.
+const _smartbarThinking = new Map();
+const SMARTBAR_THINKING_THROTTLE_MS = 250;
+// The job kind of each operation, for a Stop of one line.
+const SMARTBAR_OPERATION_JOB_KIND = { tag: 'add_tags', summarize: 'summary', translate: 'translation' };
+// The wait before the automatic retry of a rate-limited call, when the provider named none.
+const SMARTBAR_DEFAULT_RETRY_MS = 30000;
+
+// The Smart bar preferences the content script follows: it cannot read preferences itself.
+async function _smartbarConfig() {
+    const p = await mztaPrefs.getPrefs(['smartbar_enabled', 'smartbar_mode', 'smartbar_default_destination', 'smartbar_history_size']);
+    return {
+        enabled: p.smartbar_enabled === true,
+        mode: ['disabled', 'compact', 'expanded'].includes(p.smartbar_mode) ? p.smartbar_mode : prefs_default.smartbar_mode,
+        defaultDestination: p.smartbar_default_destination === 'chat' ? 'chat' : 'execute',
+        historySize: Number.isInteger(p.smartbar_history_size) && p.smartbar_history_size > 0 ? p.smartbar_history_size : 0,
+    };
+}
+
+// What the requirements of the operations read (js/mzta-smartbar-registry.js): the features on,
+// their connection usable, the Add Tags permissions granted.
+async function _smartbarEnv() {
+    const prefs = await mztaPrefs.getPrefs([
+        'add_tags', 'summarize', 'translate', 'connection_type',
+        ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+    ]);
+    let add_tags_permission = false;
+    try {
+        add_tags_permission = await hasFeaturePermissions('add_tags');
+    } catch (e) {
+        taLog.error("Smart bar: could not check the Add Tags permissions: " + e);
+    }
+    const usable = {
+        add_tags: isApiUsableConnection(getConnectionType(prefs, await getAddTagsPrompt(), 'add_tags')),
+        summarize: isApiUsableConnection(getConnectionType(prefs, await getSummarizePrompt(), 'summarize')),
+        translate: isApiUsableConnection(getConnectionType(prefs, await getTranslatePrompt(), 'translate')),
+    };
+    return {
+        features: { add_tags: prefs.add_tags === true, summarize: prefs.summarize === true, translate: prefs.translate === true },
+        permissions: { add_tags: add_tags_permission },
+        usable: usable,
+    };
+}
+
+// The operations available now, as the bar lists them when nothing matched.
+async function _smartbarAvailableIds() {
+    return smartbarRegistry.listAvailable(await _smartbarEnv()).map(op => op.id);
+}
+
+// Send a Smart bar update to every tab displaying the message, with the next sequence number.
+async function _smartbarPush(headerMessageId, payload) {
+    _smartbarSeq++;
+    await _sendToTabsDisplaying(headerMessageId, { ...payload, headerMessageId: headerMessageId, seq: _smartbarSeq });
+}
+
+// The state of a message as the bar draws it.
+async function _smartbarState(headerMessageId, record = null, extra = {}) {
+    const active = _smartbarActive.get(headerMessageId);
+    const rec = record || active?.record || await taSmartbarStore.latest(headerMessageId);
+    return {
+        record: rec ? _smartbarRecordForBar(rec) : null,
+        running: !!active,
+        available: await _smartbarAvailableIds(),
+        ...extra,
+    };
+}
+
+// A record as the content script receives it: what it draws, without the raw answers.
+function _smartbarRecordForBar(record) {
+    const { rawResponse: _raw, size: _size, failed: _failed, ...rest } = record;
+    return {
+        ...rest,
+        hasRawResponse: !!_raw,
+        operations: (record.operations || []).map(op => {
+            const { rawResponse: _opRaw, ...opRest } = op;
+            return opRest;
+        }),
+    };
+}
+
+async function _smartbarPushState(headerMessageId, record = null, extra = {}) {
+    await _smartbarPush(headerMessageId, { command: 'smartbar_update', ...(await _smartbarState(headerMessageId, record, extra)) });
+}
+
+// Store a record at one of the meaningful points; a failure is logged, never fatal (the bar
+// still shows the state, which lives in memory until the instruction ends).
+async function _smartbarSave(record, options = {}) {
+    try {
+        const saved = await taSmartbarStore.save(record, options);
+        return saved || record;
+    } catch (e) {
+        taLog.error("Smart bar: could not store the record " + record.id + ": " + e);
+        return record;
+    }
+}
+
+// The reasoning of a running router call, sent to the bars at most every 250 ms (never stored).
+function _smartbarThinkingUpdate(headerMessageId, recordId, text) {
+    const key = headerMessageId + '|' + recordId;
+    let entry = _smartbarThinking.get(key);
+    if (!entry) {
+        entry = { text: '', timer: null, last: 0 };
+        _smartbarThinking.set(key, entry);
+    }
+    entry.text = text;
+    const send = () => {
+        entry.timer = null;
+        entry.last = Date.now();
+        _sendToTabsDisplaying(headerMessageId, { command: 'smartbar_thinking', headerMessageId: headerMessageId, recordId: recordId, text: entry.text })
+            .catch(() => {});
+    };
+    if (entry.timer) return;
+    const wait = SMARTBAR_THINKING_THROTTLE_MS - (Date.now() - entry.last);
+    if (wait <= 0) send();
+    else entry.timer = setTimeout(send, wait);
+}
+
+function _smartbarThinkingDone(headerMessageId, recordId) {
+    const key = headerMessageId + '|' + recordId;
+    const entry = _smartbarThinking.get(key);
+    if (entry?.timer) clearTimeout(entry.timer);
+    _smartbarThinking.delete(key);
+}
+
+// The error type of a failed call, for the record and the bar's buttons.
+function _smartbarErrorType(error) {
+    if (error?.aborted) return 'aborted';
+    if (error instanceof RouterJsonError || error?.errorType === 'json') return 'json';
+    if (error?.rateLimited) return 'rate_limit';
+    if (error?.isConfigError) return 'config';
+    if (/NetworkError|Failed to fetch|request failed: TypeError|connection/i.test(error?.message || '')) return 'network';
+    return 'api';
+}
+
+// When a rate-limited call may be tried again: what the provider asked, else 30 s.
+function _smartbarRetryAt(retryAfterMs) {
+    return Date.now() + (Number.isFinite(retryAfterMs) && retryAfterMs > 0 ? retryAfterMs : SMARTBAR_DEFAULT_RETRY_MS);
+}
+
+// The Add Tags preferences _runAddTagsJob() reads (the same set processEmails() reads).
+async function _smartbarAddTagsPrefs() {
+    return await mztaPrefs.getPrefs([
+        'add_tags_maxnum', 'connection_type', 'add_tags_force_lang', 'default_chatgpt_lang',
+        'add_tags_auto_force_existing', 'add_tags_exclusions_exact_match',
+        'add_tags_auto_uselist', 'add_tags_auto_uselist_list',
+        ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])),
+        'do_debug'
+    ]);
+}
+
+// An add_tags outcome as a Smart bar line outcome.
+function _smartbarTagOutcome(outcome) {
+    if (!outcome || outcome.status === 'cancelled') return { state: 'cancelled' };
+    if (outcome.status !== 'ok') {
+        return outcome.rateLimited
+            ? { state: 'error', error: outcome.errorMessage, errorType: 'rate_limit', retryAt: _smartbarRetryAt(outcome.retryAfterMs) }
+            : { state: 'error', error: outcome.errorMessage || 'error', errorType: 'api' };
+    }
+    if (outcome.sendError) return { state: 'error', error: outcome.sendError, errorType: 'api' };
+    const report = outcome.data?.report;
+    return {
+        state: 'done',
+        result: {
+            // A joined job assigned its own tags (report absent: data.tags) or left them to the
+            // confirmation dialog of the popup (assigned false: nothing to report).
+            tags: report ? report.assigned : (outcome.data?.assigned === false ? [] : (outcome.data?.tags || [])),
+            skipped: report ? report.skipped : [],
+            excluded: report ? report.excluded : [],
+            joined: !report,
+        },
+    };
+}
+
+// The tag operation. With params.tags: those tags, through the add-tags assignment (its
+// exclusions, and its rule about creating missing tags: add_tags_auto_force_existing), with no
+// model call. Without: the Add Tags special command pipeline, unchanged. A tag job already
+// running on the message (the automatic tagging, the context menu, the popup) is joined.
+async function _smartbarRunTag(ctx) {
+    const { message, params, groupId } = ctx;
+    try {
+        if (!(await hasFeaturePermissions('add_tags'))) {
+            return { state: 'error', error: getMissingPermissionMessage('add_tags', mztaManaged.isManagedLocked('add_tags')), errorType: 'permission' };
+        }
+    } catch (e) {
+        return { state: 'error', error: String(e?.message || e), errorType: 'permission' };
+    }
+    const running = taJobRegistry.get('add_tags', message.headerMessageId);
+    if (running) {
+        taJobRegistry.logJoin(running);
+        return _smartbarTagOutcome(await running.promise);
+    }
+    const prefs = await _smartbarAddTagsPrefs();
+    const entry = taJobRegistry.start('add_tags', message.headerMessageId, async (job) => {
+        if (Array.isArray(params.tags) && params.tags.length > 0) {
+            const accountId = message.folder?.accountId || '';
+            const prefs_msg = await addTags_resolveAccountPrefs(prefs, accountId);
+            try {
+                const report = await _assign_tags({ messageId: message.id, tags: params.tags },
+                    !prefs_msg.add_tags_auto_force_existing, prefs_msg.add_tags_exclusions_exact_match, accountId);
+                return { status: 'ok', data: { tags: params.tags, assigned: true, report: report } };
+            } catch (err) {
+                taLog.error("Smart bar: could not assign the tags to " + message.headerMessageId + ": " + (err?.message || err));
+                return { status: 'error', errorMessage: err?.message || String(err) };
+            }
+        }
+        const setup = await _resolveAddTagsSetup(prefs);
+        if (!setup) return { status: 'error', errorMessage: browser.i18n.getMessage('smartbar_error_no_connection') };
+        const fullMessage = await browser.messages.getFull(message.id);
+        const body = await _loadMessageBody(message.id);
+        return _runAddTagsJob(message, fullMessage, body, setup, prefs, job.abort.signal);
+    }, { groupId: groupId });
+    return _smartbarTagOutcome(await entry.promise);
+}
+
+// A summary or translation outcome as a Smart bar line outcome.
+function _smartbarPanelOutcome(outcome, noLanguageMessage = '') {
+    if (!outcome) return { state: 'error', error: 'error', errorType: 'api' };
+    if (outcome.status === 'ok') return { state: 'done', result: { cached: !!outcome.cached } };
+    if (outcome.status === 'cancelled') return { state: 'cancelled' };
+    if (outcome.status === 'skipped') return { state: 'error', error: noLanguageMessage || 'skipped', errorType: 'config' };
+    if (outcome.rateLimited) {
+        return { state: 'error', error: outcome.errorMessage, errorType: 'rate_limit', retryAt: _smartbarRetryAt(outcome.retryAfterMs) };
+    }
+    return { state: 'error', error: outcome.errorMessage || 'error', errorType: 'api' };
+}
+
+// The summarize operation: the Summarize pipeline as the panel button runs it (its prompt, its
+// connection, the summary store and the message-display panel).
+async function _smartbarRunSummarize(ctx) {
+    const outcome = await _generateSummaryForMessage(ctx.message.headerMessageId, ctx.tabId,
+        { resolvedMessage: ctx.message, manual: true, groupId: ctx.groupId });
+    return _smartbarPanelOutcome(outcome);
+}
+
+// The translate operation: the Translate pipeline, into params.language when given.
+async function _smartbarRunTranslate(ctx) {
+    const outcome = await _generateTranslationForMessage(ctx.message.headerMessageId, ctx.tabId,
+        { resolvedMessage: ctx.message, manual: true, groupId: ctx.groupId, lang: ctx.params.language || '' });
+    return _smartbarPanelOutcome(outcome, browser.i18n.getMessage('smartbar_error_no_language'));
+}
+
+const SMARTBAR_EXECUTORS = {
+    tag: _smartbarRunTag,
+    summarize: _smartbarRunSummarize,
+    translate: _smartbarRunTranslate,
+};
+
+// The metadata the router gets about the message: never its body.
+async function _smartbarRouterMetadata(message, hasSelection) {
+    let tags = [];
+    try {
+        const list = await getTagsList();
+        tags = String(list?.[0] || '').split(',').map(t => t.trim()).filter(t => t !== '');
+    } catch (e) {
+        taLog.log("Smart bar: the tag list cannot be read: " + e);
+    }
+    return {
+        subject: message.subject || '',
+        author: message.author || '',
+        participants: participantNames([message.author, ...(message.recipients || []), ...(message.ccList || [])]),
+        tags: tags,
+        hasSelection: !!hasSelection,
+    };
+}
+
+// The router call: resolves { parsed } or rejects (RouterJsonError, a config error, an API error).
+async function _smartbarRoute(headerMessageId, record, message, hasSelection, signal) {
+    const prefs = await mztaPrefs.getPrefs([
+        'connection_type', 'do_debug',
+        ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+    ]);
+    const routerPrompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_router');
+    if (!routerPrompt) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_router_prompt'));
+        err.isConfigError = true;
+        throw err;
+    }
+    const connection = getConnectionType(prefs, routerPrompt, 'smartbar_router');
+    if (!isApiUsableConnection(connection)) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_connection'));
+        err.isConfigError = true;
+        throw err;
+    }
+    let text = routerPrompt.text;
+    if (text === 'prompt_smartbar_router_full_text') text = browser.i18n.getMessage('prompt_smartbar_router_full_text');
+    const available = smartbarRegistry.listAvailable(await _smartbarEnv());
+    const placeholders = await getPlaceholders(true);
+    const allowList = routerPlaceholderAllowList(placeholders.filter(ph => String(ph.is_default) === '1'),
+        ph => i18nConditionalGet(ph.name));
+    const prompt = buildRouterPrompt({
+        text: text,
+        operations: describeOperations(available),
+        placeholders: describePlaceholders(allowList),
+        instruction: record.instruction,
+        metadata: await _smartbarRouterMetadata(message, hasSelection),
+    });
+    const send = async (p) => {
+        const cmd = new mzta_specialCommand({
+            processingClient,
+            prompt: p,
+            llm: connection,
+            do_debug: prefs.do_debug,
+            config: routerPrompt,
+            jsonMode: true,
+            signal: signal,
+            onThinking: (t) => _smartbarThinkingUpdate(headerMessageId, record.id, t),
+        });
+        await cmd.initWorker();
+        return await cmd.sendPrompt();
+    };
+    const { parsed } = await askRouter(prompt, send);
+    return {
+        output: readRouterOutput(parsed, allowList, {
+            hasSelection: hasSelection,
+            instruction: record.instruction,
+            knownIds: placeholders.map(ph => ph.id),
+        }),
+        availableIds: available.map(op => op.id),
+    };
+}
+
+// Run one planned line through its executor (js/mzta-smartbar-registry.js runPlanned()).
+async function _smartbarStartLine(state, line) {
+    const op = smartbarRegistry.get(line.id);
+    taWorkingStatus.startWorking();
+    try {
+        return await op.run({
+            message: state.message,
+            params: line.params,
+            signal: state.controller.signal,
+            groupId: state.groupId,
+            index: line.index,
+            report: () => {},
+            source: 'bar',
+            tabId: state.tabId,
+            executors: SMARTBAR_EXECUTORS,
+        });
+    } catch (e) {
+        taLog.error("Smart bar: operation " + line.id + " failed: " + (e?.message || e));
+        return { state: 'error', error: e?.message || String(e), errorType: _smartbarErrorType(e) };
+    } finally {
+        taWorkingStatus.stopWorking();
+    }
+}
+
+// Copy a line's state into the record (the operation of the same index).
+function _smartbarApplyLine(record, line) {
+    record.operations = record.operations.map(op => op.index === line.index ? { ...op, ...smartbarRecordOperation(line), dismissed: op.dismissed } : op);
+}
+
+// Run the planned lines of an instruction, storing the record at the meaningful points.
+async function _smartbarRunLines(state, lines) {
+    const prefs = await mztaPrefs.getPrefs(['smartbar_parallel_limit']);
+    const limit = Number.isInteger(prefs.smartbar_parallel_limit) && prefs.smartbar_parallel_limit >= 1
+        ? prefs.smartbar_parallel_limit : prefs_default.smartbar_parallel_limit;
+    await runPlanned({
+        lines: lines,
+        limit: limit,
+        signal: state.controller.signal,
+        start: (line) => _smartbarStartLine(state, line),
+        confirm: (line) => new Promise(resolve => state.confirms.set(line.index, resolve)),
+        onChange: (line) => {
+            if (state.replaced) return;
+            _smartbarApplyLine(state.record, line);
+            const meaningful = line.state === 'pending_confirmation' || SMARTBAR_FINAL_STATES.includes(line.state) || line.retryAt;
+            const step = meaningful ? _smartbarSave(state.record).then(r => { state.record = r; }) : Promise.resolve();
+            step.then(() => _smartbarPushState(state.headerMessageId, state.record)).catch(() => {});
+        },
+    });
+}
+
+// The router and then the operations of one instruction: the body of the 'smartbar' job.
+async function _smartbarProcess(state, job) {
+    const { headerMessageId } = state;
+    taWorkingStatus.startWorking();
+    let routed = null;
+    try {
+        routed = await _smartbarRoute(headerMessageId, state.record, state.message, state.hasSelection, job.abort.signal);
+    } catch (error) {
+        // Replaced: the record is already marked. Stopped by the user: an 'aborted' error, so
+        // the line offers Retry.
+        if (!state.replaced) {
+            const type = _smartbarErrorType(error);
+            state.record.errorType = type;
+            state.record.error = type === 'aborted' ? browser.i18n.getMessage('smartbar_stopped') : (error?.message || String(error));
+            state.record.rawResponse = error?.rawResponse ?? null;
+            state.record.retryAt = type === 'rate_limit' ? _smartbarRetryAt(error?.retryAfterMs) : null;
+            state.record = await _smartbarSave(state.record);
+        }
+        return { status: 'error', errorMessage: error?.message || String(error) };
+    } finally {
+        taWorkingStatus.stopWorking();
+        _smartbarThinkingDone(headerMessageId, state.record.id);
+    }
+    if (state.replaced) return { status: 'cancelled' };
+
+    const plan = planOperations(smartbarRegistry, routed.availableIds, routed.output.operations);
+    state.record.unrecognized = routed.output.unrecognized;
+    state.record.routerContext = routed.output.context;
+    state.record.reports = plan.reports;
+    state.record.operations = plan.lines.map(smartbarRecordOperation);
+    state.record = await _smartbarSave(state.record);
+    await _smartbarPushState(headerMessageId, state.record);
+
+    if (plan.lines.length > 0) await _smartbarRunLines(state, plan.lines);
+    if (state.replaced) return { status: 'cancelled' };
+    state.record = await _smartbarSave(state.record);
+    return { status: 'ok' };
+}
+
+// Start an instruction on a message (the bar's Enter, or its execute button).
+async function _smartbarRun({ headerMessageId, tabId, instruction, hasSelection }) {
+    const config = await _smartbarConfig();
+    if (!config.enabled) return { ok: false, error: 'disabled' };
+    const text = String(instruction ?? '').trim();
+    if (text === '') return { ok: false, error: 'empty' };
+    const message = await _resolveMessage(headerMessageId, null, tabId);
+    if (!message) return { ok: false, error: 'not_found' };
+
+    // Replacement: the previous instruction on this message stops, its record is 'replaced'.
+    let notice = null;
+    const previous = _smartbarActive.get(headerMessageId);
+    if (previous) _smartbarReplace(previous);
+    const last = previous?.record || await taSmartbarStore.latest(headerMessageId);
+    if (last && smartbarHasErrors(last) && !last.dismissed?.all) notice = 'replaced_with_errors';
+
+    const groupId = smartbarNewId();
+    let record = smartbarNewRecord({
+        messageId: headerMessageId,
+        metadata: buildMessageMetadata(message, null),
+        sessionId: last?.sessionId || smartbarNewId(),
+        groupId: groupId,
+        instruction: text,
+        source: 'bar',
+    });
+    try {
+        record = await taSmartbarStore.create(record);
+    } catch (e) {
+        taLog.error("Smart bar: could not store the new record: " + e);
+        record.id = 'unsaved-' + groupId;
+    }
+    const state = {
+        headerMessageId, tabId, message, groupId, hasSelection: !!hasSelection, record,
+        controller: new AbortController(), confirms: new Map(), replaced: false,
+    };
+    _smartbarActive.set(headerMessageId, state);
+    await _smartbarPushState(headerMessageId, record, { notice: notice, suggestions: await taSmartbarStore.recentInstructions(config.historySize) });
+
+    const job = taJobRegistry.start('smartbar', headerMessageId, (entry) => _smartbarProcess(state, entry), { groupId: groupId });
+    job.promise.then(() => {
+        if (_smartbarActive.get(headerMessageId) === state) _smartbarActive.delete(headerMessageId);
+        if (!state.replaced) return _smartbarPushState(headerMessageId, state.record);
+    }).catch(e => taLog.error("Smart bar: " + e));
+    return { ok: true, recordId: record.id };
+}
+
+// Stop an instruction in progress for good: replaced by a new one, or the feature turned off.
+function _smartbarReplace(state) {
+    state.replaced = true;
+    taJobRegistry.abortGroup(state.groupId);
+    state.controller.abort();
+    for (const resolve of state.confirms.values()) resolve(false);
+    state.confirms.clear();
+    if (_smartbarActive.get(state.headerMessageId) === state) _smartbarActive.delete(state.headerMessageId);
+    _smartbarSave(smartbarMarkReplaced(state.record), { keepState: true }).catch(() => {});
+}
+
+// The bar's Stop: the whole instruction (no index) or one of its operations.
+async function _smartbarStop(headerMessageId, index = null) {
+    const state = _smartbarActive.get(headerMessageId);
+    if (!state) return false;
+    if (index === null || index === undefined) {
+        taJobRegistry.abortGroup(state.groupId);
+        state.controller.abort();
+        for (const resolve of state.confirms.values()) resolve(false);
+        state.confirms.clear();
+        return true;
+    }
+    const op = state.record.operations.find(o => o.index === index);
+    const kind = SMARTBAR_OPERATION_JOB_KIND[op?.id];
+    const entry = kind ? taJobRegistry.get(kind, headerMessageId) : null;
+    if (entry && entry.groupId === state.groupId) {
+        entry.invalidated = true;
+        entry.abort.abort();
+        return true;
+    }
+    return false;
+}
+
+// Retry: the router of an instruction-level error (a new instruction with the same text), or one
+// failed operation of the last record (a fresh run of that line alone).
+async function _smartbarRetry({ headerMessageId, tabId, recordId, index = null, auto = false, hasSelection = false }) {
+    const record = await taSmartbarStore.get(recordId);
+    if (!record || record.messageId !== headerMessageId) return { ok: false };
+    if (index === null || index === undefined) {
+        return _smartbarRun({ headerMessageId, tabId, instruction: record.instruction, hasSelection });
+    }
+    if (_smartbarActive.has(headerMessageId)) return { ok: false, error: 'busy' };
+    const op = record.operations.find(o => o.index === index);
+    if (!op || op.state !== 'error') return { ok: false };
+    const message = await _resolveMessage(headerMessageId, null, tabId);
+    if (!message) return { ok: false, error: 'not_found' };
+    const groupId = smartbarNewId();
+    const state = {
+        headerMessageId, tabId, message, groupId, hasSelection: !!hasSelection,
+        record: { ...record, groupId: groupId, state: 'running' },
+        controller: new AbortController(), confirms: new Map(), replaced: false,
+    };
+    state.record.operations = record.operations.map(o => o.index === index
+        ? { ...o, state: 'running', error: null, errorType: null, retryAt: null, autoRetried: o.autoRetried || auto }
+        : o);
+    _smartbarActive.set(headerMessageId, state);
+    const line = { index: op.index, id: op.id, params: op.params, state: 'queued', dependsOn: [], risk: smartbarRegistry.get(op.id)?.risk || 'direct' };
+    await _smartbarPushState(headerMessageId, state.record);
+    const job = taJobRegistry.start('smartbar', headerMessageId, async () => {
+        await _smartbarRunLines(state, [line]);
+        state.record = await _smartbarSave(state.record);
+        return { status: 'ok' };
+    }, { groupId: groupId });
+    job.promise.then(() => {
+        if (_smartbarActive.get(headerMessageId) === state) _smartbarActive.delete(headerMessageId);
+        if (!state.replaced) return _smartbarPushState(headerMessageId, state.record);
+    }).catch(e => taLog.error("Smart bar: " + e));
+    return { ok: true };
+}
+
+// Confirm or cancel an operation waiting for the user ('confirm' risk).
+function _smartbarAnswerConfirm(headerMessageId, index, answer) {
+    const state = _smartbarActive.get(headerMessageId);
+    const resolve = state?.confirms.get(index);
+    if (!resolve) return false;
+    state.confirms.delete(index);
+    resolve(answer === true);
+    return true;
+}
+
+// Dismiss a line of the last record: an operation (index), the instruction-level error, the
+// unrecognized part or the replacement notice. Stored, so the line stays gone on the next visit.
+async function _smartbarDismiss(headerMessageId, recordId, what) {
+    const active = _smartbarActive.get(headerMessageId);
+    const record = active?.record?.id === recordId ? active.record : await taSmartbarStore.get(recordId);
+    if (!record || record.messageId !== headerMessageId) return false;
+    if (Number.isInteger(what)) {
+        record.operations = record.operations.map(op => op.index === what ? { ...op, dismissed: true } : op);
+    } else if (['error', 'unrecognized', 'reports'].includes(what)) {
+        record.dismissed = { ...(record.dismissed || {}), [what]: true };
+    } else {
+        return false;
+    }
+    const saved = await _smartbarSave(record, { keepState: true });
+    if (active?.record?.id === recordId) active.record = saved;
+    await _smartbarPushState(headerMessageId, saved);
+    return true;
+}
+
+// The chat destination, and Open in chat: the API chat window with the text and the email, as
+// for a prompt run on the message (a regular prompt, not the special command: the user goes on
+// in the chat). The prompt carries the smartbar_chat feature's connection.
+async function _smartbarOpenChat(headerMessageId, tabId, text, selection = '') {
+    const message = await _resolveMessage(headerMessageId, null, tabId);
+    if (!message) return false;
+    const msg_text = await getMailInlineTextParts(message.id);
+    let body_text = htmlBodyToPlainText(msg_text.html);
+    if (body_text.length === 0) body_text = cleanupNewlines(msg_text.text);
+    const chatPrompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_chat') || {};
+    const curr_prompt = {
+        ...chatPrompt,
+        id: 'prompt_smartbar_chat',
+        name: browser.i18n.getMessage('smartbar_feature_name'),
+        text: String(text ?? ''),
+        action: '0',
+        need_selected: '0',
+        need_signature: '0',
+        need_custom_text: '0',
+        define_response_lang: '0',
+        use_diff_viewer: '0',
+    };
+    const fullPrompt = await taPromptUtils.preparePrompt({
+        curr_prompt: curr_prompt,
+        curr_message: message,
+        chatgpt_lang: '',
+        selection_text: selection || '',
+        body_text: body_text,
+        subject_text: message.subject,
+        msg_text: msg_text,
+    });
+    await openChatGPT(fullPrompt, curr_prompt.action, tabId, curr_prompt.name, 0, curr_prompt);
+    return true;
+}
+
+// The feature turned off: every instruction in progress stops, the bars are told.
+function _smartbarStopAll() {
+    for (const state of [..._smartbarActive.values()]) _smartbarReplace(state);
+}
+
+// Tell every open message tab the bar's settings (enabled, mode, default destination): the
+// content script follows them, since it cannot read preferences.
+async function _smartbarBroadcastConfig() {
+    const config = await _smartbarConfig();
+    if (!config.enabled) _smartbarStopAll();
+    let tabs = [];
+    try {
+        tabs = (await browser.tabs.query({})).filter(tab => tab.type === 'mail' || tab.type === 'messageDisplay');
+    } catch (e) {
+        return;
+    }
+    for (const tab of tabs) sendTabMessageSafe(tab.id, { command: 'smartbar_config', config: config });
+}
+
+function setupSmartbarConfigListener() {
+    browser.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local') return;
+        if (['smartbar_enabled', 'smartbar_mode', 'smartbar_default_destination', 'smartbar_history_size'].some(key => Object.hasOwn(changes, key))) {
+            _smartbarBroadcastConfig().catch(e => taLog.error("Smart bar: " + e));
+        }
+    });
 }
 
 // Tail of the junk-move queue: every move to the junk folder chains on it, so only one is
@@ -3335,6 +4091,129 @@ function _concurrencyCap(value, fallback) {
     return (Number.isFinite(value) && value >= 1) ? Math.floor(value) : fallback;
 }
 
+// The prompt and the connection of the Add Tags special command: resolved once per batch by
+// processEmails() (memoized there), and once per Smart bar tag operation. Never rejects: null
+// when the prompt is missing or its connection cannot drive an API, logged.
+async function _resolveAddTagsSetup(prefs) {
+    let prompt = null;
+    try {
+        prompt = await getAddTagsPrompt();
+    } catch (err) {
+        taLog.error("Auto add_tags: could not read the 'prompt_add_tags' special prompt, skipping: " + (err?.message || err));
+        return null;
+    }
+    if (!prompt) {
+        taLog.error("Auto add_tags: the 'prompt_add_tags' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Add Tags prompt.");
+        return null;
+    }
+    // Same guard mzta-menus.js applies on the menu path: the auto/batch path
+    // reaches mzta_specialCommand without passing through it.
+    const conntype = getConnectionType(prefs, prompt, 'add_tags');
+    if (!isApiUsableConnection(conntype)) {
+        console.error("[ThunderAI | Auto add_tags] Invalid connection type: " + conntype);
+        return null;
+    }
+    return { prompt, conntype };
+}
+
+// The add_tags work for one message: the prompt (with the account's own settings), the AI call
+// and the assignment. Shared by the processEmails() batch (the automatic tagging and the context
+// menu) and the Smart bar's tag operation, so both run the very same pipeline.
+//   setup      _resolveAddTagsSetup(): { prompt, conntype }
+//   prefs_aats the Add Tags preferences of processEmails() (the batch reads them once)
+//   signal     an AbortSignal, the Smart bar's only: an abort resolves { status: 'cancelled' }
+// Resolves the job outcome; data.assigned is what _assign_tags() reports, and sendError the
+// message of an AI call that failed for another reason than a rate limit (no tag assigned,
+// as before, but the Smart bar reports it).
+async function _runAddTagsJob(msg, fullMessage, body, setup, prefs_aats, signal = null) {
+    const { prompt: global_prompt_add_tags, conntype: addtags_conntype } = setup;
+    // The account of the message may have its own Add Tags settings and prompt text
+    // (add_tags_account_settings). Applied here, per message, never inside
+    // resolveAddTagsSetup(): that result is memoized and shared by the whole batch.
+    // addTags_applyAccountPrompt() and addTags_resolveAccountPrefs() return copies;
+    // prefs_msg replaces prefs_aats for every Add Tags value below.
+    const addtags_account_id = msg.folder?.accountId;
+    const curr_prompt_add_tags = await addTags_applyAccountPrompt(global_prompt_add_tags, addtags_account_id);
+    if (curr_prompt_add_tags !== global_prompt_add_tags) {
+        taLog.log("Add tags: using the custom prompt of account " + addtags_account_id + ".");
+    }
+    const prefs_msg = await addTags_resolveAccountPrefs(prefs_aats, addtags_account_id);
+    const addtags_overridden = Object.keys(prefs_msg).filter(key => prefs_msg[key] !== prefs_aats[key]);
+    if (addtags_overridden.length > 0) {
+        taLog.log("Add tags: using the settings of account " + addtags_account_id + " for: " + addtags_overridden.join(', ') + ".");
+    }
+    let tags_full_list = await getTagsList();
+    let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags, prefs_msg.default_chatgpt_lang);
+    let specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
+        curr_prompt: curr_prompt_add_tags,
+        curr_message: msg,
+        chatgpt_lang: chatgpt_lang,
+        body_text: body.body_text,
+        subject_text: fullMessage.headers.subject,
+        msg_text: body.msg_text,
+        tags_full_list: tags_full_list
+    });
+    specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_msg.add_tags_maxnum, prefs_msg.add_tags_force_lang, prefs_msg.default_chatgpt_lang, prefs_msg.add_tags_auto_uselist, prefs_msg.add_tags_auto_uselist_list, prefs_msg.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
+    taLog.log("Special prompt: " + specialFullPrompt_add_tags);
+    let cmd_addTags = new mzta_specialCommand({
+        processingClient,
+        prompt: specialFullPrompt_add_tags,
+        llm: addtags_conntype,
+        custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
+        do_debug: prefs_aats.do_debug,
+        config: curr_prompt_add_tags,
+        signal: signal
+    });
+    let tags_current_email = [];
+    let send_error = null;
+    // Counted in WorkingLevel like the summary and translation calls, so the toolbar
+    // icon reflects every AI call in flight, not just the batch.
+    taWorkingStatus.startWorking();
+    try {
+        try {
+            await cmd_addTags.initWorker();
+        } catch (err) {
+            if (err.isConfigError) {
+                await showGenericError(err.message, browser.i18n.getMessage('prompt_add_tags') || 'Add tags');
+            } else {
+                console.error("[ThunderAI | Auto add_tags] initWorker error: ", err);
+            }
+            return { status: 'error', errorMessage: err?.message || String(err) };
+        }
+        try {
+            tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_msg.add_tags_auto_uselist, prefs_msg.add_tags_auto_uselist_list);
+        } catch (err) {
+            console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+            if (err?.aborted) {
+                // Stopped by the Smart bar (a new instruction, or Stop): nothing is assigned.
+                return { status: 'cancelled' };
+            }
+            if (err?.rateLimited) {
+                // Tags are not assigned; runAddTags() stops the batch.
+                return { status: 'error', errorMessage: err.message, rateLimited: true, retryAfterMs: err.retryAfterMs ?? null };
+            }
+            send_error = err?.message || String(err);
+        }
+    } finally {
+        taWorkingStatus.stopWorking();
+    }
+    taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
+    let _data = { messageId: msg.id, tags: tags_current_email };
+    // Serialized with every other tag assignment, see _enqueueTagAssign(). A tag that
+    // cannot be created or assigned stops the assignment and is reported here, never
+    // passed over [#962].
+    let report = null;
+    try {
+        report = await _assign_tags(_data, !prefs_msg.add_tags_auto_force_existing, prefs_msg.add_tags_exclusions_exact_match, addtags_account_id || '');
+    } catch (err) {
+        taLog.error("[ThunderAI | Auto add_tags] Could not assign the tags to " + msg.headerMessageId + ": " + (err?.message || err));
+        return { status: 'error', errorMessage: err?.message || String(err) };
+    }
+    const outcome = { status: 'ok', data: { tags: tags_current_email, assigned: true, report: report } };
+    if (send_error !== null) outcome.sendError = send_error;
+    return outcome;
+}
+
 async function processEmails(args) {
     const {
         messages,
@@ -3494,31 +4373,7 @@ async function processEmails(args) {
         // unusable connection skips add_tags for every message, logged once.
         let addTagsSetup = null;
         const resolveAddTagsSetup = () => {
-            if (!addTagsSetup) {
-                // Never rejects: a rejected memoized promise would throw into the loop's catch
-                // for every message, costing the other features too.
-                addTagsSetup = (async () => {
-                    let prompt = null;
-                    try {
-                        prompt = await getAddTagsPrompt();
-                    } catch (err) {
-                        taLog.error("Auto add_tags: could not read the 'prompt_add_tags' special prompt, skipping: " + (err?.message || err));
-                        return null;
-                    }
-                    if (!prompt) {
-                        taLog.error("Auto add_tags: the 'prompt_add_tags' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Add Tags prompt.");
-                        return null;
-                    }
-                    // Same guard mzta-menus.js applies on the menu path: the auto/batch path
-                    // reaches mzta_specialCommand without passing through it.
-                    const conntype = getConnectionType(prefs_aats, prompt, 'add_tags');
-                    if (!isApiUsableConnection(conntype)) {
-                        console.error("[ThunderAI | Auto add_tags] Invalid connection type: " + conntype);
-                        return null;
-                    }
-                    return { prompt, conntype };
-                })();
-            }
+            if (!addTagsSetup) addTagsSetup = _resolveAddTagsSetup(prefs_aats);
             return addTagsSetup;
         };
 
@@ -3699,85 +4554,10 @@ async function processEmails(args) {
             return false;
         };
 
-        // The add_tags work itself. Resolves to the job outcome.
-        const runAddTagsJob = async (msg, fullMessage, body) => {
-            const { prompt: global_prompt_add_tags, conntype: addtags_conntype } = await resolveAddTagsSetup();
-            // The account of the message may have its own Add Tags settings and prompt text
-            // (add_tags_account_settings). Applied here, per message, never inside
-            // resolveAddTagsSetup(): that result is memoized and shared by the whole batch.
-            // addTags_applyAccountPrompt() and addTags_resolveAccountPrefs() return copies;
-            // prefs_msg replaces prefs_aats for every Add Tags value below.
-            const addtags_account_id = msg.folder?.accountId;
-            const curr_prompt_add_tags = await addTags_applyAccountPrompt(global_prompt_add_tags, addtags_account_id);
-            if (curr_prompt_add_tags !== global_prompt_add_tags) {
-                taLog.log("Add tags: using the custom prompt of account " + addtags_account_id + ".");
-            }
-            const prefs_msg = await addTags_resolveAccountPrefs(prefs_aats, addtags_account_id);
-            const addtags_overridden = Object.keys(prefs_msg).filter(key => prefs_msg[key] !== prefs_aats[key]);
-            if (addtags_overridden.length > 0) {
-                taLog.log("Add tags: using the settings of account " + addtags_account_id + " for: " + addtags_overridden.join(', ') + ".");
-            }
-            let tags_full_list = await getTagsList();
-            let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags, prefs_msg.default_chatgpt_lang);
-            let specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
-                curr_prompt: curr_prompt_add_tags,
-                curr_message: msg,
-                chatgpt_lang: chatgpt_lang,
-                body_text: body.body_text,
-                subject_text: fullMessage.headers.subject,
-                msg_text: body.msg_text,
-                tags_full_list: tags_full_list
-            });
-            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_msg.add_tags_maxnum, prefs_msg.add_tags_force_lang, prefs_msg.default_chatgpt_lang, prefs_msg.add_tags_auto_uselist, prefs_msg.add_tags_auto_uselist_list, prefs_msg.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
-            taLog.log("Special prompt: " + specialFullPrompt_add_tags);
-            let cmd_addTags = new mzta_specialCommand({
-                processingClient,
-                prompt: specialFullPrompt_add_tags,
-                llm: addtags_conntype,
-                custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
-                do_debug: prefs_aats.do_debug,
-                config: curr_prompt_add_tags
-            });
-            let tags_current_email = [];
-            // Counted in WorkingLevel like the summary and translation calls, so the toolbar
-            // icon reflects every AI call in flight, not just the batch.
-            taWorkingStatus.startWorking();
-            try {
-                try {
-                    await cmd_addTags.initWorker();
-                } catch (err) {
-                    if (err.isConfigError) {
-                        await showGenericError(err.message, browser.i18n.getMessage('prompt_add_tags') || 'Add tags');
-                    } else {
-                        console.error("[ThunderAI | Auto add_tags] initWorker error: ", err);
-                    }
-                    return { status: 'error', errorMessage: err?.message || String(err) };
-                }
-                try {
-                    tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_msg.add_tags_auto_uselist, prefs_msg.add_tags_auto_uselist_list);
-                } catch (err) {
-                    console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
-                    if (err?.rateLimited) {
-                        // Tags are not assigned; runAddTags() stops the batch.
-                        return { status: 'error', errorMessage: err.message, rateLimited: true, retryAfterMs: err.retryAfterMs ?? null };
-                    }
-                }
-            } finally {
-                taWorkingStatus.stopWorking();
-            }
-            taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
-            let _data = { messageId: msg.id, tags: tags_current_email };
-            // Serialized with every other tag assignment, see _enqueueTagAssign(). A tag that
-            // cannot be created or assigned stops the assignment and is reported here, never
-            // passed over [#962].
-            try {
-                await _assign_tags(_data, !prefs_msg.add_tags_auto_force_existing, prefs_msg.add_tags_exclusions_exact_match, addtags_account_id || '');
-            } catch (err) {
-                taLog.error("[ThunderAI | Auto add_tags] Could not assign the tags to " + msg.headerMessageId + ": " + (err?.message || err));
-                return { status: 'error', errorMessage: err?.message || String(err) };
-            }
-            return { status: 'ok', data: { tags: tags_current_email, assigned: true } };
-        };
+        // The add_tags work itself (_runAddTagsJob(), shared with the Smart bar). Resolves to the
+        // job outcome.
+        const runAddTagsJob = async (msg, fullMessage, body) =>
+            _runAddTagsJob(msg, fullMessage, body, await resolveAddTagsSetup(), prefs_aats);
 
         // Whether the automatic summary / translation of a message is still wanted, from the
         // settings as they are now. The batch decides its targets when it starts, but a message
@@ -4071,6 +4851,9 @@ for (let messageTab of messageTabs) {
         })
         await browser.tabs.executeScript(messageTab.id, {
             file: "js/mzta-compose-script.js"
+        })
+        await browser.tabs.executeScript(messageTab.id, {
+            file: "js/mzta-smartbar-script.js"
         })
     } catch (error) {
         console.error("[ThunderAI] Error injecting message display script:", error);

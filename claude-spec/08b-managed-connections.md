@@ -22,7 +22,7 @@ list the user cannot pick from is pointless. In `pages/_lib/connection-ui.js`,
 
 ## No seeding from policy values
 
-The six feature pages pre-fill their per-feature connection fields
+The six feature pages and the Smart bar page (its three prefixes) pre-fill their per-feature connection fields
 (`{prefix}_{integration}_{key}`, and `{prefix}_connection_type`) from the global value when
 the special prompt has none (`resolveFeatureConnectionPrefs()` in `pages/_lib/feature-page.js`,
 which their `restoreOptions()` calls), and `initializeSpecificIntegrationUI()` writes those fields into
@@ -58,8 +58,12 @@ is stopped by the per-key write guard of `setPrefs()`, as before.
 
 This key lets the administrator set the connection of a feature that supports a specific
 integration: every prefix of `special_prompts_with_integration` (`add_tags`, `spamfilter`,
-`summarize`, `get_calendar_event`, `get_task`, `translate`). The prefix is the same one
-`{prefix}_use_specific_integration` uses.
+`summarize`, `get_calendar_event`, `get_task`, `translate`, and the Smart bar's `smartbar_router`,
+`smartbar_execute`, `smartbar_chat`). The prefix is the same one
+`{prefix}_use_specific_integration` uses. The Smart bar page shows the three panels of its prefixes
+on one page, each scoped to its own section ([05-options.md](05-options.md) "Smart Bar Settings
+Page"): the policy is presented on each panel as on a page with one, and the managed area's
+generated files test each prefix of that page (`tests/dom/smartbar/1N-*-<prefix>.dom.mjs`).
 
 Neither the allowlist nor `_special_prompts_text` can do this. The per-feature override is not
 a preference: it lives in the special prompt (`api_type` plus the `{integration}_{key}` fields,

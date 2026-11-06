@@ -246,7 +246,7 @@ Object.keys(prefs_default)
 The rules are applied in one place, `isPolicyExcludedKey(key)` (exported, pure): `buildAllowlist()`
 uses it, and so does the CI report of [Adding a policy-settable preference](#adding-a-policy-settable-preference).
 
-**153 of 163 keys** are policy-settable. The derivation already covers the generated keys:
+**170 of 180 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
@@ -256,7 +256,9 @@ The per-message storage keys of [#955](https://github.com/micz/ThunderAI/issues/
 [#956](https://github.com/micz/ThunderAI/issues/956) are ordinary entries of the allowlist:
 `{feature}_storage_max_entries`, `{feature}_storage_max_age_days` and
 `{feature}_storage_error_max_age_days` (numbers, any non-negative integer, `0` = no limit, so no
-`PREF_NUMBER_RANGES` entry) for `spamfilter`, `summarize` and `translate`, the boolean
+`PREF_NUMBER_RANGES` entry) for `spamfilter`, `summarize` and `translate`, the Smart bar's three
+(`smartbar_retention_days`, `smartbar_retention_max_records`, `smartbar_retention_error_days`, the
+same rules for its records), the boolean
 `message_storage_cleanup_auto`, and `message_storage_batch_size` (the lot size of the bulk removals,
 **policy-only**: no control in any page; `PREF_NUMBER_RANGES` 1 to 10000). There is no switch per type any more: every result is saved (the
 `{feature}_storage_enabled` keys of the development builds were removed before any release). The first ten
@@ -316,8 +318,8 @@ key, with an API key masked) and not applied, exactly like a type mismatch, neve
 | per-provider connection key `{integration}_{key}` (from `integration_options_config`) | `connectionFieldProblem(integration, key, …)`, the same rules as a field of [`_special_prompts_connection`](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection): host a URL, model not empty, temperature, thinking budget, numbers; `top_p` empty or 0–1, `top_k` empty or a non-negative integer; `extra_body`, `ollama_extra_options` and `chatgpt_text_format_schema` empty or a JSON object; `ollama_keep_alive` empty, a whole number of seconds or a Go duration (`5m`, `1h30m`); `chatgpt_max_output_tokens` 0 (not set) or ≥ 16, the input's `min`; the fixed selects of the panel (`CONNECTION_FIELD_ENUMS`: `chatgpt_verbosity`, `chatgpt_text_format`, `chatgpt_truncation`, `chatgpt_service_tier`) one of their options; `ollama_think` `''`, `'false'`, `'true'` or any lowercase word (its options depend on the model) |
 | `connection_type` | one of `valid_connection_types` (`''`, "no connection yet", is not a value to enforce) |
 | `{prefix}_connection_type` | one of `featureConnectionTypes()`: never `chatgpt_web`, which the feature panels do not offer |
-| `reply_type`, `diff_granularity`, `summarize_display_mode`, `summarize_auto`, `translate_auto` | one of the values its settings select offers (`PREF_ENUMS`) |
-| any other number | a non-negative integer; tighter ranges in `PREF_NUMBER_RANGES`, from the inputs' `min`/`max`: `spamfilter_threshold` 0–100, `max_prompt_length`, `batch_max_concurrency` ≥ 1 (`special_command_timeout`, `api_stream_idle_timeout`, `summarize_max_messages` and `add_tags_maxnum` have the general rule: 0 is accepted, and means "no idle timeout" for `api_stream_idle_timeout`, whose input's `min` of 1000 is a UI bound, not a policy range, and "no limit" for the last two, as on their pages) |
+| `reply_type`, `diff_granularity`, `summarize_display_mode`, `summarize_auto`, `translate_auto`, `smartbar_mode`, `smartbar_default_destination` | one of the values its settings select offers (`PREF_ENUMS`) |
+| any other number | a non-negative integer; tighter ranges in `PREF_NUMBER_RANGES`, from the inputs' `min`/`max`: `spamfilter_threshold` 0–100, `max_prompt_length`, `batch_max_concurrency` ≥ 1, `smartbar_parallel_limit` ≥ 1 (`special_command_timeout`, `api_stream_idle_timeout`, `summarize_max_messages` and `add_tags_maxnum` have the general rule: 0 is accepted, and means "no idle timeout" for `api_stream_idle_timeout`, whose input's `min` of 1000 is a UI bound, not a policy range, and "no limit" for the last two, as on their pages) |
 | `calendar_timezone` | `''` (no zone enforced, the select's empty option) or a zone of `Intl.supportedValuesOf('timeZone')`, the list the calendar pages' select is built from, so the page can always show it (a lowercased id or an alias `Intl.DateTimeFormat` would accept is refused); without `supportedValuesOf()`, any id the engine accepts |
 
 Free-text preferences (languages, sign name, prompts' extra instructions…) have no rule: any
@@ -532,7 +534,7 @@ overlays read), the page guard of [The connection panel](08b-managed-connections
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too. So do the "153 of 163" count in [The allowlist](#the-allowlist) and the counts in
+there too. So do the "170 of 180" count in [The allowlist](#the-allowlist) and the counts in
 `tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
 
 ## Adding a restriction
@@ -618,7 +620,7 @@ locks - or offers as an initial value - every allowlisted key that has an `.opti
 policy. A new preference with a control on one of those pages is covered the moment it is
 declared.
 
-`04-allowlist-derivation` also checks the **153 of 163** count in [The allowlist](#the-allowlist).
+`04-allowlist-derivation` also checks the **170 of 180** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the

@@ -161,7 +161,7 @@ k.test('special-none-stored-not-written', 'with no special prompt stored, a read
     const local = globalThis.browser.storage.local;
     const before = JSON.stringify(await local.get(null));
     const list = await p.getSpecialPrompts();
-    assert.equal(list.length, 9);
+    assert.equal(list.length, 12);
     assert.equal(JSON.stringify(await local.get(null)), before);
     assert.equal((await local.get('_special_prompts'))._special_prompts, undefined);
 });

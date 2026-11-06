@@ -744,6 +744,23 @@ only when `{%tags_full_list%}` or `{%tags_current_email%}` is in the prompt (`me
 mandatory permission). A failed read leaves `{%tags_full_list%}` empty and `{%tags_current_email%}`
 with the raw keys.
 
+## The Smart bar router's allow list
+
+The Smart bar router ([10-smartbar.md](10-smartbar.md) "Router", "Placeholders") never receives the
+email body, but it may ask for information through placeholder ids in its `context` answer. It sees
+an **allow list** (`routerPlaceholderAllowList()`, `js/mzta-smartbar-router.js`): the built-in
+placeholders (`is_default` "1") of a reading context, without `empty`, `additional_text`,
+`mail_typed_text` and the composing-only ones (`type` 2), each with its description and, for a
+dynamic one, its parameter form. The add-on keeps only the ids of that list from the answer, adds
+`selected_text` itself when text is selected, and always honors the `{%…%}` the user typed in the
+instruction when they exist (custom ones included). A new built-in placeholder joins the list by
+itself unless its type is 2; one that must never be picked by the router goes into
+`ROUTER_EXCLUDED_PLACEHOLDERS`.
+
+The bar's input offers the same `{%…%}` autocomplete as the prompt editors (type 1, a message being
+read), with the list from the background (`smartbar_placeholders`: the enabled placeholders, without
+`additional_text`).
+
 ## Adding a New Built-in Placeholder
 
 1. Add the object to the `defaultPlaceholders` array in `js/mzta-placeholders.js`

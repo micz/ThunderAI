@@ -25,13 +25,26 @@ export async function seedMessageData(records = {}) {
     await seedIndexedDB([{
         name: 'thunderai-message-data',
         version: 1,
-        stores: ['spam', 'summary', 'translation'].map(name => ({
-            name,
-            keyPath: 'messageId',
-            autoIncrement: false,
-            indexes: [index('createdAt'), index('size'), index('failed_createdAt', ['failed', 'createdAt'])],
-            records: (records[name] || []).map(r => ({ key: r.messageId, value: withSize(withFailed(name, r)) })),
-        })),
+        stores: [
+            ...['spam', 'summary', 'translation'].map(name => ({
+                name,
+                keyPath: 'messageId',
+                autoIncrement: false,
+                indexes: [index('createdAt'), index('size'), index('failed_createdAt', ['failed', 'createdAt'])],
+                records: (records[name] || []).map(r => ({ key: r.messageId, value: withSize(withFailed(name, r)) })),
+            })),
+            // The Smart bar's store, in the same database (claude-spec/10-smartbar.md "Storage"):
+            // without it the page would find the database incomplete and create it again, empty.
+            {
+                name: 'smartbar',
+                keyPath: 'id',
+                autoIncrement: true,
+                indexes: [index('messageId'), index('sessionId'), index('createdAt'), index('size'),
+                    index('failed_createdAt', ['failed', 'createdAt']), index('state'),
+                    index('state_failed_createdAt', ['state', 'failed', 'createdAt'])],
+                records: (records.smartbar || []).map(r => ({ key: r.id, value: withSize(r) })),
+            },
+        ],
     }]);
 }
 

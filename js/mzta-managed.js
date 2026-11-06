@@ -1260,6 +1260,8 @@ const PREF_ENUMS = {
     summarize_display_mode: () => ['inline', 'webchat'],
     summarize_auto: () => [0, 1, 2, 3],
     translate_auto: () => [0, 1, 2, 3],
+    smartbar_mode: () => ['disabled', 'compact', 'expanded'],
+    smartbar_default_destination: () => ['execute', 'chat'],
     // The feature panels never offer chatgpt_web, as for _special_prompts_connection.
     ...Object.fromEntries(special_prompts_with_integration.map(
         prefix => [prefix + '_connection_type', () => featureConnectionTypes()])),
@@ -1271,6 +1273,7 @@ const PREF_NUMBER_RANGES = {
     max_prompt_length: { min: 1 },
     batch_max_concurrency: { min: 1 },
     message_storage_batch_size: { min: 1, max: 10000 },
+    smartbar_parallel_limit: { min: 1 },
 };
 
 // A time zone the calendar pages' select offers: it is built from

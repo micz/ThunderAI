@@ -1,0 +1,58 @@
+# Tests: Smart bar (operation registry, router, records)
+
+Level-1 tests of the Smart bar's own modules, written from
+[`claude-spec/10-smartbar.md`](../../claude-spec/10-smartbar.md): each test file names the spec sections
+it covers in its opening comment. How to run the suite, the two levels, the mock and the known-issue
+mechanism are in the general [`tests/README.md`](../README.md). Paths below are relative to `tests/`.
+
+The modules under test:
+
+- `js/mzta-smartbar-registry.js`: the operations, their availability, the parameter checks, the plan
+  of an instruction and how its lines run (limit, dependencies, confirmation, abort);
+- `js/mzta-smartbar-router.js`: the router prompt (never the email body), the placeholder allow list,
+  the context, the reading of the answer and the one correction attempt;
+- `js/mzta-smartbar-store.js` with the `smartbar` store of `js/mzta-storage.js`: the record, its
+  derived state, the caps, the non-mirrored store, the startup interruption, the three retention rules.
+
+What the background does with them (routing through the special command, replacement of an
+instruction, the jobs it starts) is the background area's ([`background/README.md`](../background/README.md));
+the bar in the message pane is the compose area's ([`compose/README.md`](../compose/README.md)); the
+settings page (`pages/smartbar/`) is tested in `dom/smartbar/` (the no-policy, sweep and connection
+files the managed area generates, and the ui area's files).
+
+## Running
+
+```sh
+node --test "tests/smartbar/*.test.mjs"     # this area only, from the repository root
+```
+
+Level 1 only, no network, no real waiting. The area's plugin
+([`helpers/plugins/smartbar.mjs`](../helpers/plugins/smartbar.mjs)) only declares the settings page for
+the DOM harness.
+
+## Layout
+
+```
+tests/
+├── helpers/known-issues/smartbar.mjs   the known issues, their shape (validateKnown()), and caseTests()
+├── helpers/plugins/smartbar.mjs        the settings page, for openPage()
+└── smartbar/
+    ├── context.mjs                     smartbarContext(): the core background plus the three modules
+    ├── 01-registry.test.mjs            registry, availability, params, plan, runPlanned()
+    ├── 02-router.test.mjs              prompt, allow list, context, answer, correction attempt
+    ├── 03-store.test.mjs               records, states, caps, the smartbar store and its cleanup
+    ├── 04-router-test-set.test.mjs     claude-spec/10-smartbar-router-tests.md against the registry
+    └── 99-harness-known-issues.test.mjs   the known-issue entries themselves
+```
+
+## Writing a test
+
+Every test is declared through `caseTests('<file stem>')` with a case id unique in its file, and each
+file ends with `k.coverage()`. A failing test is a potential bug to report, never a reason to bend the
+source: until it is fixed, add an entry to `helpers/known-issues/smartbar.mjs` with a reason that names
+the spec section it contradicts (`spec 10 "..."`).
+
+The store tests open the real IndexedDB code on fake-indexeddb. The database must be created by the
+module before a test touches it with the raw API (`await taStorage.getStats()` at the top of the file),
+or the raw open creates an empty database the module then has to replace. Running records are kept by
+every bulk removal, `clear()` included: a test that needs an empty store empties it with the raw API.

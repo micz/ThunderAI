@@ -18,15 +18,16 @@ import { caseTests } from '../helpers/known-issues/prompts.mjs';
 
 const k = caseTests('11-prompt-views');
 
-// The eight built-in prompts and nine special prompts named across spec 02 (the picker table,
+// The eight built-in prompts and twelve special prompts named across spec 02 (the picker table,
 // "Special Prompts", "Summarize: Dual-Mode Prompt System", "Translate", "Icon Resolution": "All 8
 // prompts in defaultPrompts", "specialPrompts holds 9 entries").
 const SPECIAL_IDS = [
     'prompt_add_tags', 'prompt_get_calendar_event', 'prompt_get_calendar_event_from_clipboard',
     'prompt_get_task', 'prompt_spamfilter', 'prompt_summarize', 'prompt_summarize_email_template',
     'prompt_summarize_email_separator', 'prompt_translate_this',
+    'prompt_smartbar_router', 'prompt_smartbar_execute', 'prompt_smartbar_chat',
 ];
-const HIDDEN_SPECIAL_IDS = ['prompt_summarize_email_template', 'prompt_summarize_email_separator'];
+const HIDDEN_SPECIAL_IDS = ['prompt_summarize_email_template', 'prompt_summarize_email_separator', 'prompt_smartbar_router', 'prompt_smartbar_execute', 'prompt_smartbar_chat'];
 
 const CUSTOM = [
     { id: 'prompt_user_a', name: 'A', text: 'Do A', type: '1', action: '0', is_default: '0', is_special: '0',
@@ -187,7 +188,7 @@ k.test('positions-missing-entry', 'a built-in prompt with no stored entry goes t
 });
 
 k.test('summarize-fragments-no-prefix', 'getSpecialPromptPrefix(): the summarize template and separator give null', () => {
-    for (const id of HIDDEN_SPECIAL_IDS) assert.equal(p.getSpecialPromptPrefix(id), null, id);
+    for (const id of ['prompt_summarize_email_template', 'prompt_summarize_email_separator']) assert.equal(p.getSpecialPromptPrefix(id), null, id);
 });
 
 k.test('default-show-in-default', 'a built-in prompt with no stored show_in shows in the popup', async () => {
@@ -283,11 +284,11 @@ k.test('calendar-need-selected-pref-on', 'calendar_no_selection on: no selection
 
 // --- The special prompt catalogue ------------------------------------------------------------------
 
-k.test('special-ids', 'getSpecialPromptIds(): the nine special prompts', () => {
+k.test('special-ids', 'getSpecialPromptIds(): the twelve special prompts', () => {
     assert.deepEqual([...p.getSpecialPromptIds()].sort(), [...SPECIAL_IDS].sort());
 });
 
-k.test('hidden-special-ids', 'getHiddenSpecialPromptIds(): the summarize email template and separator', () => {
+k.test('hidden-special-ids', 'getHiddenSpecialPromptIds(): the summarize email template and separator, and the three Smart bar prompts', () => {
     assert.deepEqual([...p.getHiddenSpecialPromptIds()].sort(), [...HIDDEN_SPECIAL_IDS].sort());
 });
 
@@ -296,6 +297,8 @@ k.test('special-prefix', 'getSpecialPromptPrefix(): each feature prompt to its f
         prompt_add_tags: 'add_tags', prompt_spamfilter: 'spamfilter', prompt_summarize: 'summarize',
         prompt_get_calendar_event: 'get_calendar_event', prompt_get_calendar_event_from_clipboard: 'get_calendar_event',
         prompt_get_task: 'get_task', prompt_translate_this: 'translate',
+        // The Smart bar prompts each have their own connection (claude-spec/10-smartbar.md).
+        prompt_smartbar_router: 'smartbar_router', prompt_smartbar_execute: 'smartbar_execute', prompt_smartbar_chat: 'smartbar_chat',
     };
     for (const [id, prefix] of Object.entries(expected)) assert.equal(p.getSpecialPromptPrefix(id), prefix, id);
 });

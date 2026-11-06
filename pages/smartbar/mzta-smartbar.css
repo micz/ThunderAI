@@ -1,0 +1,75 @@
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* ===========================================================================
+   SMART BAR PAGE — page-specific styles. The shared design system lives in
+   ../_lib/mzta-design.css, linked first. Three connection panels share the
+   structural ids of the feature pages (one per section), so the shared rules
+   apply to each.
+   =========================================================================== */
+
+/* Connection-ui stacked layout override (see summarize page for rationale). */
+#connection_ui_table tr[style*="table-row"] {
+    display: block !important;
+}
+
+/* The tab strip: one tab today; the Prompt and Activity tabs come later. */
+.smartbar_tabs {
+    display: flex;
+    gap: 4px;
+    max-width: 760px;
+    margin: 0 auto 12px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--line);
+}
+.smartbar_tab {
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: none;
+    color: var(--dim);
+    padding: 6px 14px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font: inherit;
+}
+.smartbar_tab[aria-selected="true"] {
+    background: var(--panel);
+    border-color: var(--line);
+    color: var(--text);
+    margin-bottom: -1px;
+}
+.smartbar_tabpanel[hidden] {
+    display: none;
+}
+
+.smartbar_later_note {
+    font-style: italic;
+}
+
+#smartbar_shortcut_keys kbd {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0 4px;
+    margin-right: 2px;
+    font-family: var(--font-mono, monospace);
+}
+
+#smartbar_additional_instructions,
+#smartbar_signature {
+    width: 100%;
+}

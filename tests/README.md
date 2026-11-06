@@ -3,7 +3,7 @@
 Automated tests for ThunderAI. Today they cover the enterprise managed configuration
 ([`managed/README.md`](managed/README.md)), the static consistency of the locales and the
 preferences ([`static/README.md`](static/README.md)), the prompt and placeholder systems
-([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page, the six feature settings pages, the three prompt management pages, the setup wizard, the welcome page and the popup), and the API chat window with its diff picker ([`webchat/README.md`](webchat/README.md), being built group by group), and the one-time storage migrations run at startup ([`migration/README.md`](migration/README.md)), and what the add-on reads from a mail and writes into it, with the message-display panels ([`compose/README.md`](compose/README.md)), and what the background does on its own with no page open - special commands, the automatic processing of incoming mail, batches and their cancellation, the per-message storage, the preference snapshot and the menus ([`background/README.md`](background/README.md)), and ChatGPT Web - the page loader, the pre-script the background injects and the model verification of the content script, with its extended check option ([`chatgptweb/README.md`](chatgptweb/README.md)), and the CI script that reports a change of the enterprise policy surface ([`ci/README.md`](ci/README.md)); the infrastructure is built to extend to the whole
+([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page, the six feature settings pages, the three prompt management pages, the setup wizard, the welcome page and the popup), and the API chat window with its diff picker ([`webchat/README.md`](webchat/README.md), being built group by group), and the one-time storage migrations run at startup ([`migration/README.md`](migration/README.md)), and what the add-on reads from a mail and writes into it, with the message-display panels ([`compose/README.md`](compose/README.md)), and what the background does on its own with no page open - special commands, the automatic processing of incoming mail, batches and their cancellation, the per-message storage, the preference snapshot and the menus ([`background/README.md`](background/README.md)), and ChatGPT Web - the page loader, the pre-script the background injects and the model verification of the content script, with its extended check option ([`chatgptweb/README.md`](chatgptweb/README.md)), and the Smart bar's own modules - its operation registry, its router and its records ([`smartbar/README.md`](smartbar/README.md)), and the CI script that reports a change of the enterprise policy surface ([`ci/README.md`](ci/README.md)); the infrastructure is built to extend to the whole
 add-on, one **area** at a time. Each area adds its own files - tests, fixtures, a plugin, its
 known issues - and never edits the shared ones.
 
@@ -14,7 +14,7 @@ There are two levels:
 
 | Level | Where | What it loads | Needs |
 |---|---|---|---|
-| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`, `tests/webchat/`, `tests/migration/`, `tests/compose/`, `tests/background/`, `tests/chatgptweb/`, `tests/ci/`) | the shipped modules, imported as they are | Node 22+, `npm ci` (fake-indexeddb) |
+| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`, `tests/webchat/`, `tests/migration/`, `tests/compose/`, `tests/background/`, `tests/chatgptweb/`, `tests/smartbar/`, `tests/ci/`) | the shipped modules, imported as they are | Node 22+, `npm ci` (fake-indexeddb) |
 | **DOM** | `tests/dom/<page>/*.dom.mjs` | each page's real HTML and script (or a given document with given scripts), in [jsdom](https://github.com/jsdom/jsdom) | Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`, `npm ci` |
 
 Both use only Node's built-in runner (`node:test`, `node:assert/strict`). The project has two
@@ -96,10 +96,10 @@ tests/
 │   │   └── dom-harness.mjs     DOM harness: openPage(), openDocument(), the strict browser proxy,
 │   │                           settle() (the only core file that imports jsdom)
 │   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs, chatgptweb.mjs,
-│   │                           ui.mjs, webchat.mjs)
+│   │                           ui.mjs, webchat.mjs, smartbar.mjs)
 │   ├── known-issues/<area>.mjs an area's known issues and their shape (today: managed.mjs,
 │   │                           static.mjs, prompts.mjs, api.mjs, ui.mjs, webchat.mjs, migration.mjs,
-│   │                           compose.mjs, background.mjs, chatgptweb.mjs)
+│   │                           compose.mjs, background.mjs, chatgptweb.mjs, smartbar.mjs)
 │   │
 │   └── *.mjs                   the managed layer: load.mjs, dom-page.mjs, browser-mock.mjs,
 │                               dom-known-issues.mjs re-export the core with the managed
@@ -120,6 +120,8 @@ tests/
 │                               as one scope, the API models, the fake Worker), and its README
 ├── chatgptweb/                 the ChatGPT Web area (its DOM files are dom/<page>/chatgptweb-*): README, the
 │                               controlled clock, the pre-script cut, the ChatGPT page, level 1 (loader, pre-script)
+├── smartbar/                   level 1 of the Smart bar's modules (registry, router, records), and its README;
+│                               its flow is in background/, the bar in dom/compose/, its page in dom/smartbar/
 ├── ci/                         level 1 of the CI scripts (today the policy surface report), and its README
 ├── _stall_server/              not a test: a local AI server that stalls mid-answer, for testing the
 │                               stream idle timeout and Stop by hand in Thunderbird, and its README
