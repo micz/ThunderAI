@@ -2176,14 +2176,15 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
 // The time the compose script of a window just loaded is given before it is sent the answer.
 const COMPOSE_SCRIPT_LOAD_DELAY_MS = 500;
 
-// Wait until a compose tab just opened is loaded.
+// Wait until a compose tab just opened is loaded. Only that tab's own update counts: another tab
+// finishing its load meanwhile (a message, another compose window) must not end the wait early.
 function _waitComposeTabLoaded(tab) {
     return new Promise(resolve => {
         const tabIsLoaded = t => {
             return t.status == "complete" && t.url != "about:blank";
         };
         const listener = (tabId, changeInfo, updatedTab) => {
-            if (tabIsLoaded(updatedTab)) {
+            if (tabId === tab.id && tabIsLoaded(updatedTab)) {
                 browser.tabs.onUpdated.removeListener(listener);
                 resolve();
             }

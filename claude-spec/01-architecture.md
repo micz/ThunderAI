@@ -1782,7 +1782,10 @@ inserted, as the editor command does.
 ### Writing a reply
 
 `chatgpt_replyMessage` opens the reply with `_beginComposeWindow()` (`compose.beginReply`, *Writing
-into a plain text compose window* for the format), which waits for the tab to load, and
+into a plain text compose window* for the format), which waits for the tab to load
+(`_waitComposeTabLoaded()`: at once when the tab handed back is already loaded, else on that tab's
+own `tabs.onUpdated` with `status` complete and a URL other than `about:blank`; another tab finishing
+its load meanwhile does not end the wait), and
 `COMPOSE_SCRIPT_LOAD_DELAY_MS` (500 ms) later runs `_insertComposeAnswer()` (`mzta-background.js`).
 The Smart bar's compose operation opens its reply, forward or new email through the same two
 functions ([10-smartbar.md](10-smartbar.md) "Compose", "Delivery"): `beginForward()` with no forward

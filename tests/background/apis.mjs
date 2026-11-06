@@ -113,6 +113,9 @@ export function mailModel(o = {}) {
         newMessages: [],
         /** How many of the next compose.begin*() calls throw (a window that cannot open). */
         failComposeOpen: 0,
+        /** true: compose.begin*() hands back a tab still loading (status 'loading', about:blank);
+         *  a test ends its load by calling the tabs.onUpdated listeners. */
+        composeLoading: false,
         menus: new Map(),
         /** Every menus.create() of a duplicate id, and every update/remove of a missing one. */
         menuErrors: [],
@@ -410,7 +413,9 @@ export function installApis(browser, m) {
         const tabId = m.addTab({ type: 'messageCompose', windowId: 50 + m.replies.length + m.forwards.length + m.newMessages.length, isPlainText: m.replyPlainText === true });
         return tabId;
     };
-    const composeTabInfo = tabId => ({ ...tabInfo(m.tab(tabId)), status: 'complete', url: 'chrome://messenger/content/messengercompose/messengercompose.xhtml' });
+    const composeTabInfo = tabId => (m.composeLoading
+        ? { ...tabInfo(m.tab(tabId)), status: 'loading', url: 'about:blank' }
+        : { ...tabInfo(m.tab(tabId)), status: 'complete', url: 'chrome://messenger/content/messengercompose/messengercompose.xhtml' });
     const failOpen = () => {
         if (m.failComposeOpen > 0) {
             m.failComposeOpen--;

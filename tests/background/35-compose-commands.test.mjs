@@ -5,7 +5,8 @@
 // HTML answer with execCommand('insertHTML'), so the background passes it through the ONE sanitizer
 // (sanitizeBlockHtml) first - the ChatGPT web window's HTML is not sanitized anywhere else - and the
 // replaceBody() fallback gets the same sanitized HTML. On a plain text window the answer is
-// converted to text (stripHtmlKeepLines) and never sanitized. What the compose script does with it
+// converted to text (stripHtmlKeepLines) and never sanitized. A reply window still loading is
+// waited for on its own tab's load only, never another tab's. What the compose script does with it
 // is the compose area's; the sanitizer itself is a stand-in here (it prefixes '<!--sanitized-->'),
 // and so is stripHtmlKeepLines(), which needs a DOMParser (it prefixes 'PLAIN:').
 
@@ -143,7 +144,40 @@ k.test('reply-plain', 'reply on a plain text window: converted to text, not sani
     assert.equal(sent[0].text, 'PLAIN:' + HTML);
 });
 
-k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {
+k.test('reply-waits-own-tab', 'a reply window still loading: only its own load ends the wait, not another tab\'s', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    ctx.m.replyPlainText = false;
+    ctx.m.composeLoading = true;
+    try {
+        const n = ctx.m.replies.length;
+        let answered = false;
+        const pending = fromTab(ctx, 900, { command: 'chatgpt_replyMessage', text: HTML, tabId: 7, mailMessageId: mail.id, replyType: 'reply_sender' })
+            .then(v => { answered = true; return v; });
+        await flush(60);
+        assert.equal(ctx.m.replies.length, n + 1, 'the reply window is opened');
+        const replyTab = ctx.m.replies.at(-1).tabId;
+        const onUpdated = ctx.ctl.browser.tabs.onUpdated;
+        const fire = (tabId, tab) => { for (const fn of [...onUpdated._listeners]) fn(tabId, { status: tab.status }, tab); };
+        // Another tab finishes loading meanwhile: the wait goes on.
+        fire(7, { id: 7, status: 'complete', url: 'imap://mail.example.test/INBOX' });
+        await flush(60);
+        assert.equal(answered, false, 'another tab\'s load does not end the wait');
+        // The reply's own tab, still blank: the wait goes on too.
+        fire(replyTab, { id: replyTab, status: 'complete', url: 'about:blank' });
+        await flush(60);
+        assert.equal(answered, false);
+        fire(replyTab, { id: replyTab, status: 'complete', url: 'chrome://messenger/content/messengercompose/messengercompose.xhtml' });
+        assert.equal(await pending, true);
+        assert.equal(onUpdated._listeners.length, 0, 'the listener is removed');
+        t.mock.timers.tick(500);
+        await flush(60);
+        assert.equal(ctx.m.sentTo(replyTab, 'insertReply').length, 1, 'the answer goes in once the window is loaded');
+    } finally {
+        ctx.m.composeLoading = false;
+    }
+});
+
+k.test('no-leak','no worker left alive, no unmodelled API touched, no unhandled rejection', () => {
     assertClean(ctx);
 });
 
