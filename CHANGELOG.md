@@ -17,6 +17,7 @@
   <li>Fix: with <i>{%mail_typed_text%}</i>, the answer now replaces only the selected text [<a href="https://github.com/micz/ThunderAI/issues/978">#978</a>].</li>
   <li>Fix: a custom prompt can no longer use the ID of a built-in prompt; existing ones are renamed [<a href="https://github.com/micz/ThunderAI/issues/979">#979</a>].</li>
   <li>Fix: the Menu Order settings of organization prompts are now kept after a restart [<a href="https://github.com/micz/ThunderAI/issues/990">#990</a>].</li>
+  <li>Fix: Translate: <i>{%mail_text_body%}</i> and <i>{%mail_text_body_or_selected%}</i> in a custom translation prompt are no longer empty.</li>
   <li>Some improvements.</li>
   <li>Some minor bugs fixed.</li>
   <li>...</li>
