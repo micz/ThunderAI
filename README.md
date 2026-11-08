@@ -138,8 +138,8 @@ ThunderAI is released under the **GNU General Public License v3.0**. See [LICENS
 ### Translations
 <!-- translations:start -->
 - Brazilian Portuguese - Português Brasileiro (pt-br): [Bruno Scatolin](https://github.com/Brusca), Bruno Pereira de Souza, Generated automatically <img src="https://micz.it/weblate/thunderai/pt-br.svg">
-- Chinese (Simplified) - Jiǎntǐ Zhōngwén (简体中文) (zh_Hans): [jeklau](https://github.com/jeklau), [Min9X1n](https://github.com/Min9X1n), [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
-- Chinese (Traditional) - Fántǐ Zhōngwén (繁體中文) (zh_Hant): [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
+- Chinese (Simplified) - Jiǎntǐ Zhōngwén (简体中文) (zh_Hans): [tszlznl](https://hosted.weblate.org/user/tszlznl/), [jeklau](https://github.com/jeklau), [Min9X1n](https://github.com/Min9X1n), [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
+- Chinese (Traditional) - Fántǐ Zhōngwén (繁體中文) (zh_Hant): [tszlznl](https://hosted.weblate.org/user/tszlznl/), [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
 - Croatian - Hrvatski (hr): [Maurizio Domba Cerin](https://github.com/mdomba), Petar Jedvaj <img src="https://micz.it/weblate/thunderai/hr.svg">
 - Czech - Čeština (cs): [Jaroslav Staněk](https://hosted.weblate.org/user/jaroush/), [Fjuro](https://hosted.weblate.org/user/Fjuro/) <img src="https://micz.it/weblate/thunderai/cs.svg">
 - French - Français (fr): [Noam](https://github.com/noam-sc), Generated automatically <img src="https://micz.it/weblate/thunderai/fr.svg">
@@ -154,6 +154,7 @@ ThunderAI is released under the **GNU General Public License v3.0**. See [LICENS
 - Russian - Russkiy (русский) (ru): [Maksim_220 Кабанов](https://hosted.weblate.org/user/law820314/), [G S (TAra)](https://hosted.weblate.org/user/gebekovasmobile/), [Konstantin Spirin](https://hosted.weblate.org/user/PouncePanda/) <img src="https://micz.it/weblate/thunderai/ru.svg">
 - Spanish - Español (es): [Gerardo Sobarzo](https://github.com/gerald-CL), [Andrés Rendón Hernández](https://github.com/arendon1), [Erick Limon](https://github.com/ErickLimonG) <img src="https://micz.it/weblate/thunderai/es.svg">
 - Swedish - Svenska (sv): [Andreas Pettersson](https://github.com/andy-moz), [Luna Jernberg](https://github.com/bittin) <img src="https://micz.it/weblate/thunderai/sv.svg">
+- Turkish - Türkçe (tr): [Cahit Cengizhan](https://github.com/cahitcengizhan), [Müslüm Barış Korkmazer](https://github.com/babico) <img src="https://micz.it/weblate/thunderai/tr.svg">
 <!-- translations:end -->
 <br>
 
