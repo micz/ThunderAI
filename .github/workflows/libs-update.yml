@@ -64,7 +64,7 @@ jobs:
             https://api.github.com/repos/${{ github.repository }}/pulls \
             -d "{
               \"title\": \"Update vendor libraries from VENDORS.md\",
-              \"body\": \"Vendor library files (Tom Select, markdown-it, idb, List.js, jsdiff) updated automatically after a change to \`VENDORS.md\`.\n\nPlease review the downloaded files before merging.\",
+              \"body\": \"Vendor library files updated automatically after a change to \`VENDORS.md\`.\n\nPlease review the downloaded files before merging.\",
               \"head\": \"${{ steps.commit.outputs.pr_branch }}\",
               \"base\": \"${{ steps.commit.outputs.base_branch }}\"
             }")

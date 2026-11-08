@@ -11,26 +11,31 @@ permissions:
   issues: write
 
 jobs:
-  # Read the libraries to check from .github/vendor-libs.json, shared with libs-branch-cleanup.yml.
-  # Each entry:
-  #   package:   the npm package name, as it appears in the VENDORS.md sources (".../npm/<package>@<version>/...")
-  #              and in the file paths libs-update.mjs filters on
-  #   name:      the display name used in the PR title (kept stable: the duplicate check searches PRs by title)
-  #   changelog: the library's change log, linked in the PR body
+  # The libraries to check are the npm packages of the VENDORS.md sources (".../npm/<package>@<version>/...")
+  # on dev: adding one to VENDORS.md adds it here, nothing else to edit. Sources not served from npm
+  # (like list.js, from GitHub) are not checked. The optional name and changelog fields of the entries
+  # give the PR title and the change log link.
   libs:
     runs-on: ubuntu-latest
     outputs:
-      libs: ${{ steps.read.outputs.libs }}
+      packages: ${{ steps.read.outputs.packages }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: dev
-          sparse-checkout: .github/vendor-libs.json
+          sparse-checkout: VENDORS.md
           sparse-checkout-cone-mode: false
 
-      - name: Read the library list
+      - name: Read the npm packages from VENDORS.md
         id: read
-        run: echo "libs=$(jq -c . .github/vendor-libs.json)" >> $GITHUB_OUTPUT
+        run: |
+          PACKAGES=$(grep -oE '^source:.*/npm/[^/@]+@' VENDORS.md | sed -E 's#.*/npm/##; s#@$##' | sort -u | jq -R . | jq -sc .)
+          echo "Packages: ${PACKAGES}"
+          if [ "$PACKAGES" == "[]" ]; then
+            echo "Error: no npm source found in VENDORS.md."
+            exit 1
+          fi
+          echo "packages=${PACKAGES}" >> $GITHUB_OUTPUT
 
   check-and-update:
     needs: libs
@@ -39,14 +44,14 @@ jobs:
       # One library failing must not stop the others
       fail-fast: false
       matrix:
-        lib: ${{ fromJSON(needs.libs.outputs.libs) }}
+        package: ${{ fromJSON(needs.libs.outputs.packages) }}
     steps:
       - name: Get latest release from npm registry
         id: get_release
         run: |
           # Read npm (what the CDN serves), not GitHub releases, which can be published before npm
           # (and some libraries, like markdown-it, publish no GitHub releases at all)
-          PACKAGE_TARGET="${{ matrix.lib.package }}"
+          PACKAGE_TARGET="${{ matrix.package }}"
           LATEST_VERSION=$(curl -s https://registry.npmjs.org/$PACKAGE_TARGET/latest | jq -r .version)
 
           if [ "$LATEST_VERSION" == "null" ] || [ -z "$LATEST_VERSION" ]; then
@@ -66,6 +71,34 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Read the library name and change log from VENDORS.md
+        id: lib
+        run: |
+          PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
+
+          # The first value of a field among the VENDORS.md entries served from the package (entries are
+          # separated by a blank line); the fields are optional
+          vendor_field() {
+            tr -d '\r' < VENDORS.md | awk -v src="/npm/${PACKAGE_TARGET}@" -v key="$1" '
+              BEGIN { RS = ""; FS = "\n" }
+              {
+                is_lib = 0; value = ""
+                for (i = 1; i <= NF; i++) {
+                  if ($i ~ /^source:/ && index($i, src)) is_lib = 1
+                  if (index($i, key ":") == 1 && value == "") { value = substr($i, length(key) + 2); gsub(/^[ \t]+|[ \t]+$/, "", value) }
+                }
+                if (is_lib && value != "") { print value; exit }
+              }'
+          }
+
+          LIB_NAME=$(vendor_field name)
+          LIB_CHANGELOG=$(vendor_field changelog)
+          echo "Name: ${LIB_NAME:-(none, the package name is used)}"
+          echo "Change log: ${LIB_CHANGELOG:-(none, it will be looked up)}"
+
+          echo "name=${LIB_NAME:-$PACKAGE_TARGET}" >> $GITHUB_OUTPUT
+          echo "changelog=${LIB_CHANGELOG}" >> $GITHUB_OUTPUT
+
       - name: Update VENDORS.md and library files
         id: update
         env:
@@ -73,13 +106,8 @@ jobs:
         run: |
           LATEST_VERSION="${{ steps.get_release.outputs.version }}"
           PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
-          LIB_NAME="${{ matrix.lib.name }}"
+          LIB_NAME="${{ steps.lib.outputs.name }}"
           PR_TITLE="Update ${LIB_NAME} to version ${LATEST_VERSION}"
-
-          if ! grep -Eq "/npm/${PACKAGE_TARGET}@" VENDORS.md; then
-            echo "Error: no VENDORS.md source points to the npm package ${PACKAGE_TARGET}."
-            exit 1
-          fi
 
           # Skip if VENDORS.md on dev already points to the latest version (with or without the "v" prefix)
           if grep -Eq "/npm/${PACKAGE_TARGET}@v?${LATEST_VERSION//./\\.}/" VENDORS.md; then
@@ -111,10 +139,32 @@ jobs:
         run: |
           LATEST_VERSION="${{ steps.get_release.outputs.version }}"
           PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
-          LIB_NAME="${{ matrix.lib.name }}"
-          LIB_CHANGELOG="${{ matrix.lib.changelog }}"
           PR_TITLE="${{ steps.update.outputs.pr_title }}"
           PR_BRANCH="${PACKAGE_TARGET}-update-${LATEST_VERSION}"
+
+          LIB_NAME="${{ steps.lib.outputs.name }}"
+          LIB_CHANGELOG="${{ steps.lib.outputs.changelog }}"
+
+          # Without a changelog field in VENDORS.md, look the change log up from the package's GitHub
+          # repository (its npm "repository" field): the usual change log files, then the releases page,
+          # then the repository itself; without a GitHub repository, the versions page on npm
+          if [ -z "$LIB_CHANGELOG" ]; then
+            LIB_CHANGELOG="https://www.npmjs.com/package/${PACKAGE_TARGET}?activeTab=versions"
+            REPO_URL=$(curl -s "https://registry.npmjs.org/${PACKAGE_TARGET}/latest" | jq -r '.repository | if type == "object" then .url else . end // empty')
+            GH_REPO=$(echo "$REPO_URL" | sed -nE 's#^(.*github\.com[/:]|github:)([^/]+)/([^/\#]+).*#\2/\3#p' | sed -E 's#\.git$##')
+            if [ -n "$GH_REPO" ]; then
+              LIB_CHANGELOG="https://github.com/${GH_REPO}"
+              if [ "$(gh api "repos/${GH_REPO}/releases?per_page=1" --jq 'length' 2>/dev/null)" == "1" ]; then
+                LIB_CHANGELOG="https://github.com/${GH_REPO}/releases"
+              fi
+              for FILE in CHANGELOG.md CHANGELOG HISTORY.md CHANGES.md release-notes.md RELEASE_NOTES.md; do
+                if gh api "repos/${GH_REPO}/contents/${FILE}" --silent 2>/dev/null; then
+                  LIB_CHANGELOG="https://github.com/${GH_REPO}/blob/HEAD/${FILE}"
+                  break
+                fi
+              done
+            fi
+          fi
 
           # The sources the library files were downloaded from, as they now stand in VENDORS.md
           SOURCES=$(grep -E "^source:.*/npm/${PACKAGE_TARGET}@" VENDORS.md | sed -E 's/^source:[[:space:]]*//' | tr -d '\r' | sed -e 's/$/\n/')

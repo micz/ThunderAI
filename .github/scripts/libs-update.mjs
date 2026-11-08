@@ -31,12 +31,12 @@ while ((match = entryRegex.exec(content)) !== null) {
   });
 }
 
-// --- Filter the entries of the libraries updated automatically ---
-// Each name is matched as a substring of the entry's file path (list.js and diff.js by their file name,
-// as "list" and "diff" alone are too generic).
-// An optional argument limits the update to one of them (e.g. `node libs-update.mjs tom-select`)
-const LIBS = process.argv[2] ? [process.argv[2]] : ['tom-select', 'markdown-it', 'idb', 'list.js', 'diff.js'];
-const filteredEntries = entries.filter(e => LIBS.some(lib => e.file.toLowerCase().includes(lib)));
+// --- Filter the entries to update ---
+// By default every VENDORS.md entry is downloaded. An optional argument, an npm package name,
+// limits the update to the entries served from that package (e.g. `node libs-update.mjs tom-select`):
+// this is how the release check workflow updates one library.
+const pkg = process.argv[2];
+const filteredEntries = pkg ? entries.filter(e => e.source.includes(`/npm/${pkg}@`)) : entries;
 
 if (filteredEntries.length === 0) {
   console.log('No entries found in VENDORS.md');

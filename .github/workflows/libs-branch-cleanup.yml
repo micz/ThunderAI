@@ -2,7 +2,7 @@ name: Delete Vendor Library Update Branches
 
 # Deletes the branch of a vendor library update PR once it is merged.
 # Only the branches the library workflows create are touched:
-#   - <package>-update-<version>, from the daily release checks (packages listed in .github/vendor-libs.json)
+#   - <package>-update-<version>, from the daily release checks (the npm packages of VENDORS.md)
 #   - libs-update-<base branch>, from libs-update.yml
 # and only when the PR was opened by those workflows (github-actions[bot]).
 
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.ref }}
-          sparse-checkout: .github/vendor-libs.json
+          sparse-checkout: VENDORS.md
           sparse-checkout-cone-mode: false
 
       - name: Delete the merged branch
@@ -33,7 +33,7 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           REPO: ${{ github.repository }}
         run: |
-          # <package>-update-<version>, with the packages of the release check, or libs-update-<branch>
+          # <package>-update-<version>, with the npm packages of the VENDORS.md sources, or libs-update-<branch>
           IS_LIB_BRANCH=false
           if [[ "$BRANCH" == libs-update-* ]]; then
             IS_LIB_BRANCH=true
@@ -43,7 +43,7 @@ jobs:
                 IS_LIB_BRANCH=true
                 break
               fi
-            done < <(jq -r '.[].package' .github/vendor-libs.json)
+            done < <(grep -oE '^source:.*/npm/[^/@]+@' VENDORS.md | sed -E 's#.*/npm/##; s#@$##' | sort -u)
           fi
 
           if [ "$IS_LIB_BRANCH" != "true" ]; then
