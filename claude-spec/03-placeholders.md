@@ -730,12 +730,12 @@ source field on the path in question:
 
 | Path | Site | Supplies |
 |---|---|---|
-| Interactive menu (reader, message list, popup, calendar event, task, translate-this) | `js/mzta-menus.js` → `preparePrompt` | everything — the only site passing selection/typed/quoted/tags |
+| Interactive menu (reader, message list, popup, calendar event, task) | `js/mzta-menus.js` → `preparePrompt` | everything — the only site passing selection/typed/quoted/tags |
 | Spam filter | `mzta-background.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
 | Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same plus `tags_full_list` |
 | Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
 | Summarize, header + separator prompts | `js/mzta-utils-prompt.js` → `preparePrompt` | only `curr_prompt`/`chatgpt_lang` — every mail placeholder resolves empty |
-| Translation | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject` — **no `body_text`**, so `{%mail_text_body%}` is empty there |
+| Translation (popup and context menu included: `prompt_translate_this` never reaches `preparePrompt`) | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject`, and `body_text` read as in Summarize, only when `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` is in the prompt (no selection: the latter is the body) |
 | `additional_text` late fill | `api_webchat/controller.js` → `replacePlaceholders` | the deferred half of `skip_additional_text: true` |
 
 **The tag lists are the exception: no path leaves them empty.** When the caller supplies no
@@ -784,7 +784,8 @@ Three things bite when adding one:
   function has two call sites, but one of them is `preparePrompt()`, whose own six callers
   feed it with *uneven* coverage (see the table under *Placeholder Resolution Order*): only
   `js/mzta-menus.js` passes selection/typed/quoted/tags, and `buildTranslationPrompt()` —
-  the direct call — passes no `body_text` at all. Check the paths your placeholder needs.
+  the direct call — passes only `msg_text`, `mail_subject` and, on demand, `body_text`. Check the
+  paths your placeholder needs.
 - **`type: 1` means "reading", not "background".** The reader and the message list are reading
   contexts served by the content-script scraper in `js/mzta-menus.js`, which has no access to the
   message's parts. A placeholder that needs part or header data must fetch it there itself —

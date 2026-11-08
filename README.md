@@ -2,6 +2,8 @@
 
 *Use ChatGPT, Google Gemini, Claude or Ollama to enhance your emails!*
 
+[![Latest release](https://img.shields.io/github/v/release/micz/ThunderAI?label=release&color=blue)](https://github.com/micz/ThunderAI/releases/latest)
+[![Latest pre-release](https://img.shields.io/github/v/release/micz/ThunderAI?include_prereleases&label=pre-release&color=orange)](https://github.com/micz/ThunderAI/releases)
 [![Thunderbird Add-ons](https://img.shields.io/badge/Thunderbird%20Add--ons-install-blue?logo=thunderbird)](https://addons.thunderbird.net/thunderbird/addon/thunderai/)
 [![Thunderbird 140.0+](https://img.shields.io/badge/Thunderbird-140.0%2B-informational?logo=thunderbird)](https://www.thunderbird.net/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-green.svg)](LICENSE)
@@ -46,7 +48,7 @@ Using an API integration, ThunderAI can work on incoming mail on its own:
 
 | | Feature | Description |
 |---|---|---|
-| ![](images/context_menu/autotags.png) | **Auto-tagging** | Tag incoming emails automatically, with an exclusion list and an option for sent mail |
+| ![](images/context_menu/autotags.png) | **Auto-tagging** | Tag incoming emails automatically, with an exclusion list, an option for sent mail and separate settings for each account |
 | ![](images/context_menu/spamfilter.png) | **Spam filter** | Move spam to the junk folder, with a per-message report and a consultable log, kept without a limit by default. A skip list and a block list, of addresses or whole domains (`@domain.com`), decide some senders without asking the AI |
 | ![](images/context_menu/summarize.png) | **Auto-summarize** | Summarize on open, on receive or on demand, with the summary saved for each email and an optional list of senders/domains always summarized |
 | ![](images/context_menu/translate.png) | **Auto-translate** | Translate incoming emails inline, with the translation saved for each email |
@@ -81,7 +83,7 @@ ThunderAI supports the **Thunderbird Enterprise Policies**: with `policies.json`
 | **Google Gemini** | required | Model, temperature, Top P, Top K, max output tokens, *System Instructions*, extra body data and *thinking budget* — leave the budget empty to let the model decide |
 | **Claude API** | required | Model, system prompt, max tokens, temperature, Top P, Top K, stop sequences, extended thinking budget and *effort*. The request adapts to the selected model, so the options that a model rejects are disabled instead of failing. Requires the permission *"Access your data for sites in the https://anthropic.com domain"* |
 | **Ollama** | optional | Runs fully locally: model, context size, temperature, reasoning level, system prompt, keep model loaded, extra options and forced JSON output, adapting to the selected model. The API key is needed only for the hosted API at ollama.com or for a server behind an authenticating proxy. The server must accept requests from the add-on, adding `OLLAMA_ORIGINS = moz-extension://*` to its environment variables — [more info about CORS](https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/) |
-| **OpenAI Compatible** | optional | Any OpenAI-compatible server, local or remote, such as LM Studio. Ready-made configurations for **DeepSeek**, **Grok**, **Mistral**, **OpenRouter** and **Perplexity**, or set the host by hand. The *"v1"* compatibility segment can be turned off, the model name typed manually when the server exposes no models list, and extra JSON parameters sent with every request |
+| **OpenAI Compatible** | optional | Any OpenAI-compatible server, local or remote, such as LM Studio. Ready-made configurations for **DeepSeek**, **Grok**, **Mistral**, **OpenRouter** and **Perplexity**, or set the host by hand. The *"v1"* compatibility segment can be turned off, the model name typed manually when the server exposes no models list, and extra JSON parameters and custom HTTP headers sent with every request |
 
 ## Documentation
 
@@ -136,8 +138,8 @@ ThunderAI is released under the **GNU General Public License v3.0**. See [LICENS
 ### Translations
 <!-- translations:start -->
 - Brazilian Portuguese - Português Brasileiro (pt-br): [Bruno Scatolin](https://github.com/Brusca), Bruno Pereira de Souza, Generated automatically <img src="https://micz.it/weblate/thunderai/pt-br.svg">
-- Chinese (Simplified) - Jiǎntǐ Zhōngwén (简体中文) (zh_Hans): [jeklau](https://github.com/jeklau), [Min9X1n](https://github.com/Min9X1n), [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
-- Chinese (Traditional) - Fántǐ Zhōngwén (繁體中文) (zh_Hant): [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
+- Chinese (Simplified) - Jiǎntǐ Zhōngwén (简体中文) (zh_Hans): [tszlznl](https://hosted.weblate.org/user/tszlznl/), [jeklau](https://github.com/jeklau), [Min9X1n](https://github.com/Min9X1n), [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
+- Chinese (Traditional) - Fántǐ Zhōngwén (繁體中文) (zh_Hant): [tszlznl](https://hosted.weblate.org/user/tszlznl/), [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
 - Croatian - Hrvatski (hr): [Maurizio Domba Cerin](https://github.com/mdomba), Petar Jedvaj <img src="https://micz.it/weblate/thunderai/hr.svg">
 - Czech - Čeština (cs): [Jaroslav Staněk](https://hosted.weblate.org/user/jaroush/), [Fjuro](https://hosted.weblate.org/user/Fjuro/) <img src="https://micz.it/weblate/thunderai/cs.svg">
 - French - Français (fr): [Noam](https://github.com/noam-sc), Generated automatically <img src="https://micz.it/weblate/thunderai/fr.svg">
@@ -152,6 +154,7 @@ ThunderAI is released under the **GNU General Public License v3.0**. See [LICENS
 - Russian - Russkiy (русский) (ru): [Maksim_220 Кабанов](https://hosted.weblate.org/user/law820314/), [G S (TAra)](https://hosted.weblate.org/user/gebekovasmobile/), [Konstantin Spirin](https://hosted.weblate.org/user/PouncePanda/) <img src="https://micz.it/weblate/thunderai/ru.svg">
 - Spanish - Español (es): [Gerardo Sobarzo](https://github.com/gerald-CL), [Andrés Rendón Hernández](https://github.com/arendon1), [Erick Limon](https://github.com/ErickLimonG) <img src="https://micz.it/weblate/thunderai/es.svg">
 - Swedish - Svenska (sv): [Andreas Pettersson](https://github.com/andy-moz), [Luna Jernberg](https://github.com/bittin) <img src="https://micz.it/weblate/thunderai/sv.svg">
+- Turkish - Türkçe (tr): [Cahit Cengizhan](https://github.com/cahitcengizhan), [Müslüm Barış Korkmazer](https://github.com/babico) <img src="https://micz.it/weblate/thunderai/tr.svg">
 <!-- translations:end -->
 <br>
 

@@ -851,6 +851,12 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
   alongside `fullMessage` on **both** of its branches, and its `options.messageData` now requires
   `message` as well as `fullMessage`.
 - Retrieves the `prompt_translate_this` special prompt text
+- When the text holds `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` (with or without
+  the `:N` limit), reads the text body as `buildSummaryPrompt()` does (`htmlBodyToPlainText()` of
+  the html, `cleanupNewlines()` of the text part when that is empty) and passes it as `body_text`.
+  The shipped text uses `{%mail_html_body%}`, but the prompt is editable on the Translate page and
+  the autocomplete offers both: without this they were sent empty, and the translation of the
+  subject alone was cached as a good result
 - Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`,
   **always with the default values** (`use_default_value: true`), whatever
   `placeholders_use_default_value` says: an empty value becomes `""`, never the literal token. The

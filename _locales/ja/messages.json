@@ -1,6 +1,92 @@
 {
+    "ai_processing_unclassified_field": {
+        "message": "未分類のプロバイダーのコンテンツフィールドにより処理がブロックされました。再試行する前にThunderAIを更新してください。"
+    },
+    "ai_processing_busy": {
+        "message": "すでにリクエストを処理中です。完了するまでお待ちください。追加のメッセージは送信されませんでした。"
+    },
+    "ai_processing": {
+        "message": "コンテンツをローカルで処理中…"
+    },
+    "ai_processing_chunks": {
+        "message": "コンテンツを処理中… $TOTAL$ 中 $CURRENT$ 番目のパート",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "ai_processing_unavailable": {
+        "message": "ThunderAI Privacy が有効になっていますが、利用できません。この操作では何も送信されていません。ThunderAI Privacy を有効にするか再インストールしてください。今後使用しない場合は、ThunderAI の詳細オプションで「ThunderAI Privacy を使用」をオフにしてください。"
+    },
+    "ai_processing_incompatible": {
+        "message": "コンテンツプロセッサーが互換性のないAPIを使用しています。ThunderAIとそのコンパニオンを一緒に更新してください。この操作では何も送信されていません。"
+    },
+    "ai_processing_session_expired": {
+        "message": "処理セッションが利用できません。このチャットを閉じて、ThunderAIのプロンプトをもう一度開始してください。"
+    },
+    "ai_processing_failed": {
+        "message": "コンテンツの処理に失敗しました。操作はブロックされました。"
+    },
+    "ai_processing_timeout": {
+        "message": "コンテンツプロセッサーがタイムアウトしました。操作はブロックされました。"
+    },
+    "ai_processing_cancelled": {
+        "message": "コンテンツの処理をキャンセルしました。"
+    },
+    "ai_processing_invalid_result": {
+        "message": "プロセッサーが無効な結果を返しました。操作はブロックされました。"
+    },
+    "ai_processing_invalid_sender": {
+        "message": "コンテンツの処理は信頼された拡張機能のコンテキストに限定されています。"
+    },
+    "ai_processing_chatgpt_web_unsupported": {
+        "message": "ThunderAI Privacy は ChatGPT Web では動作しないため、このプロンプトは送信されませんでした。API接続を使用するか、ThunderAI の詳細オプションで「ThunderAI Privacy を使用」をオフにしてください。"
+    },
+    "ai_processing_setting_locked": {
+        "message": "この設定は組織によって管理されています。"
+    },
+    "prefs_OptionText_ai_processing_enabled": {
+        "message": "ThunderAI Privacy を使用"
+    },
+    "prefs_OptionText_ai_processing_enabled_info": {
+        "message": "個人データは、AIプロバイダーに送信される前に ThunderAI Privacy アドオンによってローカルでマスクされ、回答の中で復元されます。ローカルモデルのダウンロード後にオンにできます。オンの間、ThunderAI Privacy が利用できない場合はAIリクエストがブロックされます。変更は新しいチャットとコマンドに適用されます。"
+    },
+    "prefs_OptionText_ai_processing_Privacy_not_present": {
+        "message": "AIプロバイダーに送信する前に個人データをマスクするには、ThunderAI Privacy アドオンをインストールしてください。"
+    },
+    "prefs_OptionText_ai_processing_Privacy_wrong_version": {
+        "message": "インストールされている ThunderAI Privacy アドオンは、このバージョンの ThunderAI と互換性がありません。ThunderAI Privacy を更新してください。"
+    },
+    "prefs_OptionText_ai_processing_download_now": {
+        "message": "今すぐ ThunderAI Privacy をダウンロード!"
+    },
+    "prefs_OptionText_ai_processing_model_missing": {
+        "message": "オンにする前にローカルモデルをダウンロードしてください。"
+    },
+    "prefs_OptionText_ai_processing_model_downloading": {
+        "message": "ローカルモデルをダウンロード中… $PERCENT$%",
+        "placeholders": {
+            "percent": {
+                "content": "$1",
+                "example": "42"
+            }
+        }
+    },
+    "prefs_OptionText_ai_processing_download_model": {
+        "message": "モデルをダウンロード"
+    },
+    "prefs_OptionText_ai_processing_open_settings": {
+        "message": "ThunderAI Privacy の設定を開く"
+    },
     "prefs_api_extra_body": {
         "message": "追加のボディデータ"
+    },
+    "prefs_api_extra_headers": {
+        "message": "追加ヘッダー"
     },
     "prefs_google_gemini_max_output_tokens_Info": {
         "message": "応答で生成できるトークンの最大数です。空欄または 0 にするとモデルに任せます。",
@@ -103,6 +189,9 @@
     "customPrompts_form_label_ID_rules": {
         "message": "一意で、小文字、スペースなしである必要があります"
     },
+    "customPrompts_form_label_ID_rules_prompt": {
+        "message": "一意で、小文字、スペースなしである必要があり、prompt_ で始めることはできません"
+    },
     "customPrompts_form_label_Name": {
         "message": "名前"
     },
@@ -175,6 +264,9 @@
     "customPrompts_substitute_text": {
         "message": "テキストを置換"
     },
+    "customPrompts_insert_at_cursor": {
+        "message": "カーソル位置に挿入"
+    },
     "chatgpt_win_working": {
         "message": "処理中..."
     },
@@ -186,6 +278,9 @@
     },
     "chatgpt_win_get_answer": {
         "message": "選択した回答を使用"
+    },
+    "chatgpt_win_insert_at_cursor": {
+        "message": "カーソル位置に挿入"
     },
     "chatgpt_win_close": {
         "message": "閉じる"
@@ -293,6 +388,357 @@
             }
         }
     },
+    "storage_migration_in_progress": {
+        "message": "ThunderAIは保存済みのスパムレポート、要約、翻訳を新しいストレージに移動しています。しばらくしてからこのページを開き直すと表示されます。"
+    },
+    "storage_migration_failed": {
+        "message": "以前のバージョンで保存されたスパムレポート、要約、翻訳を新しいストレージに移動できませんでした。ThunderAIは次回の起動時に再試行します。"
+    },
+    "prefs_storage_manage_button": {
+        "message": "保存データを管理…"
+    },
+    "storage_page_title": {
+        "message": "保存データ"
+    },
+    "storage_page_info": {
+        "message": "ThunderAIがメッセージごとに保存したスパムレポート、要約、翻訳、それらを自動的に整理するルール、および削除するためのツールです。"
+    },
+    "storage_overview_title": {
+        "message": "概要"
+    },
+    "storage_refresh": {
+        "message": "更新"
+    },
+    "storage_col_type": {
+        "message": "種類"
+    },
+    "storage_col_entries": {
+        "message": "エントリ数"
+    },
+    "storage_col_errors": {
+        "message": "エラーあり"
+    },
+    "storage_col_size": {
+        "message": "推定サイズ"
+    },
+    "storage_col_oldest": {
+        "message": "最も古いエントリ"
+    },
+    "storage_col_newest": {
+        "message": "最も新しいエントリ"
+    },
+    "storage_col_saved": {
+        "message": "保存日"
+    },
+    "storage_col_status": {
+        "message": "状態"
+    },
+    "storage_col_language": {
+        "message": "言語"
+    },
+    "storage_col_actions": {
+        "message": "操作"
+    },
+    "storage_total": {
+        "message": "合計"
+    },
+    "storage_type_summary": {
+        "message": "要約"
+    },
+    "storage_type_translation": {
+        "message": "翻訳"
+    },
+    "storage_type_spam": {
+        "message": "スパムレポート"
+    },
+    "storage_count_item": {
+        "message": "$TYPE$: $COUNT$",
+        "placeholders": {
+            "type": {
+                "content": "$1"
+            },
+            "count": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_disk_note": {
+        "message": "実際に使用されるディスク容量は推定サイズの約2倍です。各エントリは永続コピーにも保存されており、Thunderbirdがデータベースを削除した場合はそこからデータが再構築されます。"
+    },
+    "storage_last_cleanup": {
+        "message": "前回の自動クリーンアップ：$DATE$、削除されたエントリ：$REMOVED$。",
+        "placeholders": {
+            "date": {
+                "content": "$1"
+            },
+            "removed": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_last_cleanup_never": {
+        "message": "前回の自動クリーンアップ：未実行。"
+    },
+    "storage_rules_title": {
+        "message": "保持ルール"
+    },
+    "storage_rules_info": {
+        "message": "クリーンアップでは種類ごとに、まず最大保存期間を超えたエラーのエントリ、次に最大保存期間を超えたエントリ、最後に最大件数を超えた古いエントリの順に削除します。"
+    },
+    "storage_rule_max_age": {
+        "message": "最大保存期間（日）"
+    },
+    "storage_rule_max_entries": {
+        "message": "最大エントリ数"
+    },
+    "storage_rule_error_max_age": {
+        "message": "エラーのあるエントリの最大保存期間（日）"
+    },
+    "storage_rule_zero_hint": {
+        "message": "0 = 制限なし"
+    },
+    "storage_cleanup_auto": {
+        "message": "自動クリーンアップ"
+    },
+    "storage_cleanup_auto_info": {
+        "message": "ルールを自動的に適用します。前回のクリーンアップから24時間以上経過している場合は起動時に、それ以外の場合は起動の2時間後に実行し、その後は24時間ごとに実行します。"
+    },
+    "storage_rules_invalid": {
+        "message": "すべての制限値は0以上の整数でなければなりません。"
+    },
+    "storage_rules_saved": {
+        "message": "ルールを保存しました。"
+    },
+    "storage_rules_save_confirm": {
+        "message": "これらのルールでは、次回の自動クリーンアップで保存済みのエントリが$COUNT$件削除されます（$DETAIL$）。それでも保存しますか？",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            },
+            "detail": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_restore_defaults": {
+        "message": "デフォルトに戻す"
+    },
+    "storage_preview": {
+        "message": "プレビュー"
+    },
+    "storage_preview_result": {
+        "message": "これらのルールで現在削除されるもの：$DETAIL$。",
+        "placeholders": {
+            "detail": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_apply_now": {
+        "message": "今すぐルールを適用"
+    },
+    "storage_apply_confirm": {
+        "message": "保存されたルールを今すぐ適用しますか？対象のエントリは削除されます。この操作は元に戻せません。"
+    },
+    "storage_actions_title": {
+        "message": "保存データの削除"
+    },
+    "storage_delete_summary": {
+        "message": "すべての要約を削除"
+    },
+    "storage_delete_translation": {
+        "message": "すべての翻訳を削除"
+    },
+    "storage_delete_spam": {
+        "message": "すべてのスパムレポートを削除"
+    },
+    "storage_delete_summary_confirm": {
+        "message": "保存されているすべての要約を削除しますか？この操作は元に戻せません。"
+    },
+    "storage_delete_translation_confirm": {
+        "message": "保存されているすべての翻訳を削除しますか？この操作は元に戻せません。"
+    },
+    "storage_delete_spam_confirm": {
+        "message": "保存されているすべてのスパムレポートを削除しますか？この操作は元に戻せません。"
+    },
+    "storage_delete_errors": {
+        "message": "エラーのあるエントリを削除"
+    },
+    "storage_delete_errors_confirm": {
+        "message": "エラーを含む保存済みのエントリをすべて削除しますか？この操作は元に戻せません。"
+    },
+    "storage_delete_older_label": {
+        "message": "次の日数より古いエントリ（日）："
+    },
+    "storage_delete_older": {
+        "message": "削除"
+    },
+    "storage_delete_older_confirm": {
+        "message": "$DAYS$日より古い保存済みのエントリをすべて削除しますか？この操作は元に戻せません。",
+        "placeholders": {
+            "days": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_days_invalid": {
+        "message": "1以上の整数で日数を入力してください。"
+    },
+    "storage_removed_result": {
+        "message": "削除されたエントリ：$DETAIL$。",
+        "placeholders": {
+            "detail": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_action_error": {
+        "message": "操作に失敗しました：$ERROR$",
+        "placeholders": {
+            "error": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_action_error_partial": {
+        "message": "$DETAIL$ を削除した後、エラーで操作が停止しました：$ERROR$",
+        "placeholders": {
+            "detail": {
+                "content": "$1"
+            },
+            "error": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_realign": {
+        "message": "永続コピーと再同期"
+    },
+    "storage_realign_info": {
+        "message": "データベースにないエントリを復元し、永続コピーから削除されたエントリを削除します。概要が想定と一致しない場合に便利です。"
+    },
+    "storage_realign_confirm": {
+        "message": "データベースを保存データの永続コピーと再同期しますか？"
+    },
+    "storage_realign_done": {
+        "message": "再同期しました：$DETAIL$。",
+        "placeholders": {
+            "detail": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_realign_item": {
+        "message": "$TYPE$ $RESTORED$件復元、$REMOVED$件削除",
+        "placeholders": {
+            "type": {
+                "content": "$1"
+            },
+            "restored": {
+                "content": "$2"
+            },
+            "removed": {
+                "content": "$3"
+            }
+        }
+    },
+    "storage_no_answer": {
+        "message": "ThunderAIから応答がありません"
+    },
+    "storage_entries_title": {
+        "message": "保存済みのエントリ"
+    },
+    "storage_no_entries": {
+        "message": "保存済みのエントリはありません。"
+    },
+    "storage_status_ok": {
+        "message": "OK"
+    },
+    "storage_status_error": {
+        "message": "エラー"
+    },
+    "storage_open_message": {
+        "message": "開く"
+    },
+    "storage_delete_entry": {
+        "message": "削除"
+    },
+    "storage_delete_entry_confirm": {
+        "message": "この保存済みのエントリを削除しますか？この操作は元に戻せません。"
+    },
+    "storage_entry_deleted": {
+        "message": "エントリを削除しました。"
+    },
+    "storage_message_not_found": {
+        "message": "元のメッセージが見つかりませんでした。削除されたか、同期またはインデックスされていないフォルダーにある可能性があります。"
+    },
+    "storage_orphans_title": {
+        "message": "メッセージのないエントリ"
+    },
+    "storage_orphans_info": {
+        "message": "保存済みの各エントリのメッセージを検索し、メッセージが存在しなくなったエントリを見つけるとともに、件名、差出人、日付が欠けているエントリを補完します。エントリが多い場合は長時間かかることがありますが、いつでも停止できます。"
+    },
+    "storage_orphans_confirm": {
+        "message": "検索ではメッセージを1件ずつ調べるため、保存済みのエントリが多い場合は長時間かかることがあります。開始しますか？"
+    },
+    "storage_orphans_start": {
+        "message": "検索を開始"
+    },
+    "storage_orphans_stop": {
+        "message": "停止"
+    },
+    "storage_orphans_progress": {
+        "message": "$TOTAL$件中$DONE$件のメッセージを確認しました",
+        "placeholders": {
+            "done": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_orphans_stopped": {
+        "message": "検索を停止しました。"
+    },
+    "storage_orphans_found": {
+        "message": "メッセージが見つからなかったエントリ：$COUNT$件。",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_orphans_filled": {
+        "message": "$COUNT$件のエントリをメッセージの件名、差出人、日付で補完しました。",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_orphans_note": {
+        "message": "この一覧は目安です。同期またはインデックスされていないフォルダーのメッセージは、誤って見つからないものとして表示される場合があります。"
+    },
+    "storage_orphans_delete": {
+        "message": "これらのエントリを削除"
+    },
+    "storage_orphans_delete_confirm": {
+        "message": "メッセージが見つからなかった$COUNT$件のエントリを削除しますか？この操作は元に戻せません。",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_save_failed": {
+        "message": "この結果を保存できませんでした：$ERROR$",
+        "placeholders": {
+            "error": {
+                "content": "$1"
+            }
+        }
+    },
     "prefsInfoDesc_1": {
         "message": "ChatGPTのWebインターフェースが変更され、アドオンが動作しなくなる可能性があります。このページの下部にある「サービス状態」ページを確認してください。また、ThunderAIを初めて使用する際はChatGPTへのログインが必要です。"
     },
@@ -317,6 +763,9 @@
     "prefs_shortcut_label": {
         "message": "ThunderAIメニューを開くキー"
     },
+    "prefs_shortcut_change_link": {
+        "message": "ショートカットの変更方法を確認"
+    },
     "prefs_disclaimer_short": {
         "message": "LLMモデルは誤った情報を生成する可能性があり、入力したデータが新しいモデルの学習に使用される場合があります。"
     },
@@ -325,6 +774,21 @@
     },
     "backToOptionsText": {
         "message": "オプション"
+    },
+    "releaseNotes_one_change": {
+        "message": "1件の変更"
+    },
+    "releaseNotes_n_changes": {
+        "message": "$COUNT$件の変更",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "12"
+            }
+        }
+    },
+    "releaseNotes_in_development": {
+        "message": "開発中"
     },
     "customPrompts_ExportAll": {
         "message": "すべてのプロンプトをエクスポート"
@@ -515,6 +979,9 @@
         "message": "ID は必須で、空白を含めることはできず、一意である必要があります。",
         "description": "Validation message for the prompt ID"
     },
+    "customPrompts_error_id_reserved": {
+        "message": "IDを prompt_ で始めることはできません。これは組み込みプロンプト用に予約されています。"
+    },
     "customPrompts_error_required": {
         "message": "名前とプロンプトのテキストは必須です。",
         "description": "Validation message for the name and text fields"
@@ -613,6 +1080,15 @@
     },
     "error_connection_interrupted": {
         "message": "サーバーへの接続が予期せず中断されました"
+    },
+    "error_stream_idle_timeout": {
+        "message": "サーバーが応答を停止しました：$SECONDS$秒間データを受信していません",
+        "placeholders": {
+            "seconds": {
+                "content": "$1",
+                "example": "120"
+            }
+        }
     },
     "ollama_api_request_failed": {
         "message": "Ollama APIリクエストが失敗しました"
@@ -782,6 +1258,12 @@
     "prefs_OptionText_special_command_timeout_Info": {
         "message": "応答しないAIリクエスト（タグの自動追加、スパムフィルター、要約、翻訳）を中止するまでの時間をミリ秒で指定します。低速なローカルモデルを使用している場合は値を大きくしてください。これはAPIベースの接続にのみ適用され、ChatGPT Webインターフェースには適用されません。"
     },
+    "prefs_OptionText_api_stream_idle_timeout": {
+        "message": "APIストリームのアイドルタイムアウト (ms)"
+    },
+    "prefs_OptionText_api_stream_idle_timeout_Info": {
+        "message": "回答の開始後、データをまったく受信しない状態がこの時間（ミリ秒）続くと、リクエストはエラーとして中止されます。推論モデルや低速なローカルモデルは、処理中でも長時間応答しないことがあります。回答が途中で切れる場合は値を大きくしてください。これはAPIベースの接続にのみ適用され、ChatGPT Webインターフェースには適用されません。"
+    },
     "prefs_OptionText_batch_max_concurrency": {
         "message": "並列処理するメール数",
         "description": "Label of the option limiting how many emails the automatic features (add tags, spam filter, summarize, translate) process at the same time"
@@ -823,11 +1305,56 @@
     "prefs_extra_body_error_invalid": {
         "message": "無効なJSON:"
     },
+    "prompt_json_error_missing": {
+        "message": "プロンプトには波括弧で囲んだJSON応答形式を含める必要があります。この機能はAIの回答をJSONオブジェクトとして読み取ります。"
+    },
+    "prompt_json_error_invalid": {
+        "message": "プロンプト内のJSON応答形式が無効です："
+    },
     "prefs_extra_body_error_not_object": {
         "message": "値は中括弧で囲まれたJSONオブジェクトである必要があります。"
     },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "すべてのAPI呼び出しで送信する追加パラメーターをJSONオブジェクトで指定します。このサービスは対応しているがThunderAIが公開していないオプション、たとえば思考モードの無効化などに便利です: {\"chat_template_kwargs\": {\"thinking\": false}} または {\"top_p\": 0.9}。ThunderAIが管理するパラメーター（model、messages、streaming、temperature）はここで上書きできません。無効な値は無視されます。"
+    },
+    "prefs_OptionText_openai_comp_extra_headers_info": {
+        "message": "このサービスへのすべてのリクエストで送信する追加のHTTPヘッダーです。{\"x-opencode-session\": \"thunderai\"} や {\"api-key\": \"your-key\"} のように、テキスト値のJSONオブジェクトで指定します。独自のヘッダーを必要とするサービスやゲートウェイで便利です。ThunderAIが設定するヘッダー（Content-Type、およびAPIキー設定時のAuthorization）はここで上書きできません。無効なヘッダーは無視されます。"
+    },
+    "prefs_extra_headers_error_name": {
+        "message": "「$header_name$」は有効なヘッダー名ではありません。英字、数字、および - や _ などの文字のみを使用してください。",
+        "placeholders": {
+            "header_name": {
+                "content": "$1",
+                "example": "my header"
+            }
+        }
+    },
+    "prefs_extra_headers_error_forbidden": {
+        "message": "ヘッダー「$header_name$」はアドオンから設定できません。Thunderbirdはこれを無視します。",
+        "placeholders": {
+            "header_name": {
+                "content": "$1",
+                "example": "Host"
+            }
+        }
+    },
+    "prefs_extra_headers_error_not_string": {
+        "message": "ヘッダー「$header_name$」の値は、二重引用符で囲んだテキストでなければなりません。",
+        "placeholders": {
+            "header_name": {
+                "content": "$1",
+                "example": "x-retry-count"
+            }
+        }
+    },
+    "prefs_extra_headers_error_value": {
+        "message": "ヘッダー「$header_name$」の値に改行を含めることはできません。",
+        "placeholders": {
+            "header_name": {
+                "content": "$1",
+                "example": "x-session"
+            }
+        }
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "「v1」互換性を維持する"
@@ -928,6 +1455,51 @@
     },
     "AddTags_prompt_text_title": {
         "message": "現在のプロンプトテキスト"
+    },
+    "AddTags_account_settings_title": {
+        "message": "アカウント別の設定"
+    },
+    "AddTags_account_settings_infoline": {
+        "message": "アカウントを選択すると、そのアカウント専用の設定を指定できます。そのアカウントのメッセージには、グローバル設定の代わりにこの設定が使用されます。"
+    },
+    "AddTags_account_settings_infoline2": {
+        "message": "各オプションは、名前の横のスイッチをオンにするまで右側に表示されたグローバル設定に従います。オンにすると、このアカウント用の値を設定できます。"
+    },
+    "AddTags_account_settings_override": {
+        "message": "このアカウントに別の値を使用"
+    },
+    "AddTags_account_settings_global": {
+        "message": "グローバル: $VALUE$",
+        "placeholders": {
+            "value": {
+                "content": "$1",
+                "example": "5"
+            }
+        }
+    },
+    "AddTags_account_settings_global_none": {
+        "message": "なし"
+    },
+    "AddTags_account_settings_uselist_info": {
+        "message": "上のオプションと同様に、自動タグ付けでのみ使用されます。"
+    },
+    "AddTags_account_settings_prompt_title": {
+        "message": "このアカウントのプロンプト"
+    },
+    "AddTags_account_settings_placeholder": {
+        "message": "このアカウントのプロンプトはありません。グローバルプロンプトが使用されます。"
+    },
+    "AddTags_account_settings_copy_prompt": {
+        "message": "グローバルプロンプトをコピー"
+    },
+    "AddTags_account_settings_remove": {
+        "message": "グローバル設定にリセット"
+    },
+    "AddTags_account_settings_custom_suffix": {
+        "message": "（独自の設定）"
+    },
+    "AddTags_account_settings_discard_confirm": {
+        "message": "選択したアカウントの設定に未保存の変更があります。破棄しますか？"
     },
     "AddTags_excl_list_title": {
         "message": "除外リスト"
@@ -1038,7 +1610,7 @@
         "message": "新しいカレンダーイベントを追加"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "以下のテキストからカレンダーイベントを生成するために必要なすべての関連詳細を抽出してください。抽出情報には以下を含めてください：\n- イベントタイトル\n- イベントの説明（メールの文脈、主要なトピック/議題、アクションアイテム、およびビデオ通話リンクやアクセス詳細を簡潔にまとめたもの）\n- 開始日時（指定されている場合はタイムゾーンを含む）\n- 終了日時（指定されている場合はタイムゾーンを含む）\n- 終日（言及されている場合）\n- 場所（言及されている場合、具体的な建物、部屋、またはオンラインのリンク）\n- 出席者\nデータはカレンダーイベントの作成に直接使用できるよう、明確かつ一貫した形式にしてください。\n相対的な時間参照がある場合、メールの日時は「{%mail_datetime%}」であることを考慮してください。この参照に基づいて開始日時を計算してください。計算された開始日時が「{%current_datetime%}」より前の場合、「{%current_datetime%}」を基準として開始日時を再計算してください。\n期間が指定されていない場合は、1時間に設定してください。\n出席者：{%author%}、{%recipients%}、{%cc_list%}。存在する場合、私のアドレス{%account_email_address%}を除外してください。\n終日イベントの場合、endDateはstartDateの翌日に設定し、時刻を「T000000」とする必要があります。\n必要な情報の1つ以上を取得できない場合は、空の文字列で応答してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"カレンダーイベントの概要をここに\",\n\"description\": \"アジェンダ、アクションアイテム、およびメールからの関連メモを含む詳細なイベントの説明。\",\n\"forceAllDay\": false,\n\"location\": \"場所またはURLをここに\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nテキスト：「{%mail_text_body_or_selected%}」"
+        "message": "以下のテキストからカレンダーイベントを生成するために必要なすべての関連詳細を抽出してください。抽出情報には以下を含めてください：\n- イベントタイトル\n- イベントの説明（メールの文脈、主要なトピック/議題、アクションアイテム、およびビデオ通話リンクやアクセス詳細を簡潔にまとめたもの）\n- 開始日時（指定されている場合はタイムゾーンを含む）\n- 終了日時（指定されている場合はタイムゾーンを含む）\n- 終日（言及されている場合）\n- 場所（言及されている場合、具体的な建物、部屋、またはオンラインのリンク）\n- 出席者\nデータはカレンダーイベントの作成に直接使用できるよう、明確かつ一貫した形式にしてください。\n相対的な時間参照がある場合、メールの日時は「{%mail_datetime%}」であることを考慮してください。この参照に基づいて開始日時を計算してください。計算された開始日時が「{%current_datetime%}」より前の場合、「{%current_datetime%}」を基準として開始日時を再計算してください。\n期間が指定されていない場合は、1時間に設定してください。\n出席者：{%author%}、{%recipients%}、{%cc_list%}。存在する場合、私のアドレス{%account_email_address%}を除外してください。\n終日イベントの場合、endDateはstartDateの翌日に設定し、時刻を「T000000」とする必要があります。\n必要な情報の1つ以上を取得できない場合は、空の文字列で応答してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"カレンダーイベントの概要をここに\",\n\"description\": \"アジェンダ、アクションアイテム、およびメールからの関連メモを含む詳細なイベントの説明。\",\n\"forceAllDay\": false,\n\"location\": \"場所またはURLをここに\",\n\"attendees\": [\"attendee1@example.com\", \"attendee2@example.com\", \"attendee3@example.com\"]\n}\nテキスト：「{%mail_text_body_or_selected%}」"
     },
     "prompt_get_calendar_event_from_clipboard": {
         "message": "クリップボードからカレンダーイベントを追加"
@@ -1333,7 +1905,7 @@
         "message": "スパムを解析"
     },
     "prompt_spamfilter_full_text": {
-        "message": "以下のメールを分析し、スパムかどうかを判断してください。不審なキーワード、過度な宣伝文句、誤解を招く件名、個人情報の要求、不審な送信者アドレスなどの要素を考慮してください。\n0（スパムではない）から100（スパム）までの値と、10語以内の説明を提供してください。\nメッセージデータが欠落している場合は、値を0（スパムではない）に設定し、理由を示してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"explanation\": \"判断理由の簡単な説明\",\n\"spamValue\": <0から100の整数>\n}\n以下がメール情報です：\n送信者：「{%author%}」\n件名：「{%mail_subject%}」\nHTML本文：「{%mail_html_body%}」"
+        "message": "以下のメールを分析し、スパムかどうかを判断してください。不審なキーワード、過度な宣伝文句、誤解を招く件名、個人情報の要求、不審な送信者アドレスなどの要素を考慮してください。\n0（スパムではない）から100（スパム）までの値と、10語以内の説明を提供してください。\nメッセージデータが欠落している場合は、値を0（スパムではない）に設定し、理由を示してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式は以下のとおりで、spamValueは0から100の整数です：\n{\n\"explanation\": \"判断理由の簡単な説明\",\n\"spamValue\": 0\n}\n以下がメール情報です：\n送信者：「{%author%}」\n件名：「{%mail_subject%}」\nHTML本文：「{%mail_html_body%}」"
     },
     "Summarize_PageTitle": {
         "message": "要約設定の管理"
@@ -1374,8 +1946,34 @@
     "spamfilter_threshold_zero": {
         "message": "スパムしきい値がゼロです！すべてのメールがスパムと判定されます！"
     },
+    "spamfilter_report_previous": {
+        "message": "前へ"
+    },
+    "spamfilter_report_next": {
+        "message": "次へ"
+    },
+    "spamfilter_report_page_label": {
+        "message": "$FROM$–$TO$ / $TOTAL$",
+        "placeholders": {
+            "from": {
+                "content": "$1"
+            },
+            "to": {
+                "content": "$2"
+            },
+            "total": {
+                "content": "$3"
+            }
+        }
+    },
+    "spamfilter_report_newest_info": {
+        "message": "最新20件のレポートです。"
+    },
+    "spamfilter_report_manage_link": {
+        "message": "保存されたすべてのレポートを表示"
+    },
     "spamfilter_no_reports": {
-        "message": "まだスパム判定されたメッセージはありません。ここには最新100件のスパムレポートが表示されます。"
+        "message": "まだスパム判定されたメッセージはありません。ここにはスパムレポートの一覧が表示されます。"
     },
     "SpamFilter_skip_addresses_title": {
         "message": "メールアドレスのスキップリスト"
@@ -1719,6 +2317,9 @@
                 "example": "foo_api"
             }
         }
+    },
+    "apiwebchat_privacy_active": {
+        "message": "ThunderAI Privacy がオンです：個人データはAIプロバイダーに送信される前にマスクされます。"
     },
     "apiwebchat_request_cancelled": {
         "message": "リクエストをキャンセルしました。",
@@ -2537,6 +3138,9 @@
         "message": "セットアップウィザードは利用できません",
         "description": "Title shown in place of the setup wizard when the policy disables it"
     },
+    "managed_restriction_add_tags_account_settings": {
+        "message": "アカウント別の設定は組織の構成ポリシーによって無効になっています。すべてのアカウントで上記の設定が使用されます。"
+    },
     "customPrompts_org_badge": {
         "message": "組織",
         "description": "Badge on a prompt supplied by the enterprise policy, when no organization name is configured"
@@ -3024,6 +3628,19 @@
             }
         }
     },
+    "connTest_ok_redirect": {
+        "message": "接続しました — $API$ に到達できますが、サーバーは $TO$ にリダイレクトしています。そのアドレスを直接入力してください。リダイレクトによってはリクエストの内容が失われ、チャットが機能しなくなります。",
+        "placeholders": {
+            "api": {
+                "content": "$1",
+                "example": "Ollama API"
+            },
+            "to": {
+                "content": "$2",
+                "example": "http://localhost:11434/v2"
+            }
+        }
+    },
     "connTest_error": {
         "message": "エラー — $DETAIL$",
         "placeholders": {
@@ -3284,6 +3901,76 @@
     },
     "editor_placeholder_unterminated": {
         "message": "プレースホルダーが閉じられていません: 終了の %} がありません"
+    },
+    "endpoint_error_invalid": {
+        "message": "サーバーアドレスが無効です。完全なアドレスを入力してください（例：http://localhost:11434 または https://api.example.com）。"
+    },
+    "endpoint_error_scheme": {
+        "message": "サーバーアドレスは http:// または https:// で始まる必要があります。"
+    },
+    "endpoint_error_credentials": {
+        "message": "サーバーアドレスにユーザー名またはパスワードが含まれています。セキュリティのため、ThunderAIはアドレス内の認証情報を受け付けません。削除し、サーバーで必要な場合はAPIキーの欄を使用してください。"
+    },
+    "endpoint_insecure_confirm": {
+        "message": "サーバー $origin$ は暗号化されていない接続（http://）を使用しています。\n\nメールの内容とAPIキーは平文のままネットワーク上を送信されるため、あなたとサーバーの間のネットワーク上の誰でもそれらを読み取ったり改ざんしたりできます。サーバーが対応している場合は、常に https:// を使用してください。\n\nそれでもこのサーバーへの暗号化されていない接続を許可しますか？",
+        "placeholders": {
+            "origin": {
+                "content": "$1"
+            }
+        }
+    },
+    "endpoint_insecure_not_confirmed": {
+        "message": "$origin$ には何も送信されませんでした。このサーバーは許可されていない暗号化されていない接続（http://）を使用しています。許可するには、この接続のThunderAI設定を開いて「今すぐテスト」または「リストを更新」をクリックしてください。または https:// のアドレスを使用してください。",
+        "placeholders": {
+            "origin": {
+                "content": "$1"
+            }
+        }
+    },
+    "endpoint_insecure_note": {
+        "message": "暗号化されていない接続（http://）はまだ許可されていません。許可するまで、ThunderAIはこのサーバーに何も送信しません。許可するには「今すぐテスト」または「リストを更新」をクリックするか、https:// のアドレスを使用してください。"
+    },
+    "api_error_redirect": {
+        "message": "サーバーがたどることのできないリダイレクトで応答しました。設定にサーバーの最終的なアドレスを直接入力してください。"
+    },
+    "endpoint_redirect_note": {
+        "message": "このサーバーはリクエストを $to$ にリダイレクトしています。ThunderAIはリダイレクトに従いますが、そのアドレスを直接入力することをおすすめします。",
+        "placeholders": {
+            "to": {
+                "content": "$1"
+            }
+        }
+    },
+    "endpoint_redirect_note_unverified": {
+        "message": "このサーバーはリクエストを $to$ にリダイレクトしています。そのアドレスを直接入力してください。リダイレクトによってはリクエストの内容が失われ、チャットが機能しなくなります。",
+        "placeholders": {
+            "to": {
+                "content": "$1"
+            }
+        }
+    },
+    "endpoint_redirect_failed_note": {
+        "message": "サーバーがたどることのできないリダイレクトで応答しています。サーバーの最終的なアドレスを入力するまでリクエストは失敗します。"
+    },
+    "endpoint_redirect_failed_note_to": {
+        "message": "このサーバーはリクエストを $to$ にリダイレクトしていますが、リダイレクト後に失敗しています（内容が失われている可能性があります）。代わりにそのアドレスを入力してください。",
+        "placeholders": {
+            "to": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_insecure_origins_title": {
+        "message": "許可された暗号化されていないサーバー"
+    },
+    "prefs_insecure_origins_info": {
+        "message": "暗号化されていない接続（http://）での接続を許可したサーバーです。削除すると、次回使用時に再度確認されます。"
+    },
+    "prefs_insecure_origins_empty": {
+        "message": "なし"
+    },
+    "prefs_insecure_origins_remove": {
+        "message": "削除"
     },
     "prefs_doc_title": {
         "message": "ドキュメント"
