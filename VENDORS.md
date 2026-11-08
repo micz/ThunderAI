@@ -8,7 +8,7 @@ webext-linter would read them as a declaration and reject the whole file.
 -->
 
 file: pages\_lib\list.js
-source: https://raw.githubusercontent.com/javve/list.js/v2.3.1/dist/list.js
+source: https://cdn.jsdelivr.net/npm/list.js@2.3.1/dist/list.js
 name: List.js
 changelog: https://github.com/javve/list.js/blob/master/CHANGELOG.md
 
