@@ -46,7 +46,7 @@ Using an API integration, ThunderAI can work on incoming mail on its own:
 
 | | Feature | Description |
 |---|---|---|
-| ![](images/context_menu/autotags.png) | **Auto-tagging** | Tag incoming emails automatically, with an exclusion list and an option for sent mail |
+| ![](images/context_menu/autotags.png) | **Auto-tagging** | Tag incoming emails automatically, with an exclusion list, an option for sent mail and separate settings for each account |
 | ![](images/context_menu/spamfilter.png) | **Spam filter** | Move spam to the junk folder, with a per-message report and a consultable log, kept without a limit by default. A skip list and a block list, of addresses or whole domains (`@domain.com`), decide some senders without asking the AI |
 | ![](images/context_menu/summarize.png) | **Auto-summarize** | Summarize on open, on receive or on demand, with the summary saved for each email and an optional list of senders/domains always summarized |
 | ![](images/context_menu/translate.png) | **Auto-translate** | Translate incoming emails inline, with the translation saved for each email |
@@ -81,7 +81,7 @@ ThunderAI supports the **Thunderbird Enterprise Policies**: with `policies.json`
 | **Google Gemini** | required | Model, temperature, Top P, Top K, max output tokens, *System Instructions*, extra body data and *thinking budget* — leave the budget empty to let the model decide |
 | **Claude API** | required | Model, system prompt, max tokens, temperature, Top P, Top K, stop sequences, extended thinking budget and *effort*. The request adapts to the selected model, so the options that a model rejects are disabled instead of failing. Requires the permission *"Access your data for sites in the https://anthropic.com domain"* |
 | **Ollama** | optional | Runs fully locally: model, context size, temperature, reasoning level, system prompt, keep model loaded, extra options and forced JSON output, adapting to the selected model. The API key is needed only for the hosted API at ollama.com or for a server behind an authenticating proxy. The server must accept requests from the add-on, adding `OLLAMA_ORIGINS = moz-extension://*` to its environment variables — [more info about CORS](https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/) |
-| **OpenAI Compatible** | optional | Any OpenAI-compatible server, local or remote, such as LM Studio. Ready-made configurations for **DeepSeek**, **Grok**, **Mistral**, **OpenRouter** and **Perplexity**, or set the host by hand. The *"v1"* compatibility segment can be turned off, the model name typed manually when the server exposes no models list, and extra JSON parameters sent with every request |
+| **OpenAI Compatible** | optional | Any OpenAI-compatible server, local or remote, such as LM Studio. Ready-made configurations for **DeepSeek**, **Grok**, **Mistral**, **OpenRouter** and **Perplexity**, or set the host by hand. The *"v1"* compatibility segment can be turned off, the model name typed manually when the server exposes no models list, and extra JSON parameters and custom HTTP headers sent with every request |
 
 ## Documentation
 
