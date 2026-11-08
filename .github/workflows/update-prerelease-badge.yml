@@ -1,0 +1,85 @@
+name: Update pre-release badge
+
+# Keeps the "pre-release" badge of README.md up to date: it shows the latest pre-release only while
+# that pre-release is newer than the latest stable release, and disappears once the pre-release is
+# promoted to stable or a newer stable release is published.
+#
+# The badge is not a shields.io URL (shields.io cannot hide a badge): README.md points to
+# https://micz.it/badges/thunderai/prerelease.svg, served by the site repository
+# (micz/micz.github.io, static/badges/thunderai/prerelease.svg). This workflow only decides what
+# that file must show and asks the site to write it, through a repository_dispatch with event_type
+# "thunderai-prerelease-badge", so README.md itself never changes.
+#
+# client_payload: { prerelease: tag to show | "" to hide the badge, stable: latest stable tag | "",
+#                   url: release html_url | run url }
+#
+# The rule: among the published releases (drafts excluded), take the most recently published one.
+# If it is a pre-release, the badge shows its tag; if it is a stable release (or there is none),
+# the badge is hidden. So a pre-release older than the latest stable is never shown, and a
+# pre-release promoted to stable (same version) hides the badge.
+#
+# Triggers: every change to a release (the state is always recomputed from the API, so the event
+# type does not matter) and by hand. Release events fire only for releases published by a user
+# (web UI, gh, or a personal access token): a release published by another workflow with
+# GITHUB_TOKEN does not trigger this workflow; run it by hand then.
+#
+# REQUIRED SECRET: SITE_DISPATCH_TOKEN (the same token as update-weblate-badges.yml and
+# sync-site-languages.yml).
+on:
+  release:
+    types: [published, unpublished, released, prereleased, edited, deleted]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # The state is read from the API at run time: only the last run matters.
+  group: prerelease-badge
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    # On a fork there is no token for the site: nothing to do there.
+    if: github.repository == 'micz/ThunderAI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Compute the badge and notify the site
+        env:
+          READ_TOKEN: ${{ github.token }}
+          DISPATCH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+          REPO: ${{ github.repository }}
+          SITE_REPO: micz/micz.github.io
+          URL: ${{ github.event.release.html_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DISPATCH_TOKEN" ]; then
+            echo "::error::Secret SITE_DISPATCH_TOKEN is not set (see the comment at the top of this workflow)"; exit 1
+          fi
+
+          # Most recently published release, drafts excluded: { tag, prerelease } or null.
+          NEWEST=$(GH_TOKEN="$READ_TOKEN" gh api --paginate "repos/$REPO/releases?per_page=100" \
+            --jq '.[] | select(.draft | not) | { tag: .tag_name, prerelease, published_at }' \
+            | jq -s 'sort_by(.published_at) | last')
+          # Latest stable release ("" when there is none: the endpoint answers 404).
+          STABLE=$(GH_TOKEN="$READ_TOKEN" gh api "repos/$REPO/releases/latest" --jq .tag_name 2>/dev/null || true)
+
+          PRERELEASE=""
+          if [ "$(jq -r '.prerelease // false' <<< "$NEWEST")" = "true" ]; then
+            PRERELEASE=$(jq -r .tag <<< "$NEWEST")
+          fi
+          # A pre-release with the same tag as the stable release is never shown.
+          if [ "$PRERELEASE" = "$STABLE" ]; then PRERELEASE=""; fi
+
+          if [ -n "$PRERELEASE" ]; then
+            echo "Latest stable: '${STABLE}'. Pre-release badge: show '$PRERELEASE'."
+          else
+            echo "Latest stable: '${STABLE}'. Pre-release badge: hide."
+          fi
+
+          jq -n --arg pre "$PRERELEASE" --arg stable "$STABLE" --arg url "$URL" \
+            '{ event_type: "thunderai-prerelease-badge", client_payload: { prerelease: $pre, stable: $stable, url: $url } }' \
+            | tee payload.json
+          GH_TOKEN="$DISPATCH_TOKEN" gh api --method POST "repos/$SITE_REPO/dispatches" --input payload.json
+          echo "Asked $SITE_REPO to update the pre-release badge"
