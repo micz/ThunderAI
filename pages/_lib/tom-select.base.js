@@ -1,5 +1,5 @@
 /**
-* Tom Select v2.6.2
+* Tom Select v2.7.0
 * Licensed under the Apache License, Version 2.0 (the "License");
 */
 
@@ -265,7 +265,9 @@
 	    return result;
 	};
 
-	const code_points = [[0, 65535]];
+	// code_points without blocks that never fold: CJK Unified Ideographs, Yijing,
+	// Yi, Lisu, Vai, Hangul, surrogates and private use.
+	const folding_code_points = [[0x0000, 0x33FF], [0xA640, 0xABFF], [0xF900, 0xFFFF]];
 	const accent_pat = '[\u0300-\u036F\u{b7}\u{2be}\u{2bc}]';
 	let unicode_map;
 	let multi_char_reg;
@@ -302,7 +304,8 @@
 	    "p": "ƥᵽꝑꝓꝕρ",
 	    "q": "ꝗꝙɋ",
 	    "r": "ɍɽꝛꞧꞃ",
-	    "s": "ßȿꞩꞅʂ",
+	    "s": "ȿꞩꞅʂ",
+	    "ss": "ß",
 	    "t": "ŧƭʈⱦꞇ",
 	    "th": "þ",
 	    "tz": "ꜩ",
@@ -328,7 +331,7 @@
 	const initialize = (_code_points) => {
 	    if (unicode_map !== undefined)
 	        return;
-	    unicode_map = generateMap(code_points);
+	    unicode_map = generateMap(folding_code_points);
 	};
 	/**
 	 * Helper method for normalize a string
@@ -365,6 +368,11 @@
 	function* generator(code_points) {
 	    for (const [code_point_min, code_point_max] of code_points) {
 	        for (let i = code_point_min; i <= code_point_max; i++) {
+	            // Skip UTF-16 surrogate code units, which are not valid
+	            // Unicode scalar values on their own.
+	            if (i >= 0xD800 && i <= 0xDFFF) {
+	                continue;
+	            }
 	            let composed = String.fromCharCode(i);
 	            let folded = asciifold(composed);
 	            if (folded == composed.toLowerCase()) {
@@ -2861,14 +2869,12 @@
 	   */
 	  getSearchOptions() {
 	    var settings = this.settings;
-	    var sort = settings.sortField;
-	    if (typeof settings.sortField === 'string') {
-	      sort = [{
-	        field: settings.sortField
-	      }];
-	    }
+	    var fields = typeof settings.searchField === 'string' ? [settings.searchField] : settings.searchField;
+	    var sort = typeof settings.sortField === 'string' ? [{
+	      field: settings.sortField
+	    }] : settings.sortField;
 	    return {
-	      fields: settings.searchField,
+	      fields: fields,
 	      conjunction: settings.searchConjunction,
 	      sort: sort,
 	      nesting: settings.nesting
@@ -3167,6 +3173,7 @@
 	      return false;
 	    }
 	    data.$order = data.$order || ++self.order;
+	    self.order = Math.max(self.order, data.$order); // options parsed from the <select> are numbered separately
 	    data.$id = self.inputId + '-opt-' + data.$order;
 	    self.options[key] = data;
 	    self.isDropdownContentStale = true;
@@ -3203,6 +3210,7 @@
 	    var key = hash_key(data[this.settings.optgroupValueField]);
 	    if (key === null) return false;
 	    data.$order = data.$order || ++this.order;
+	    this.order = Math.max(this.order, data.$order);
 	    this.optgroups[key] = data;
 	    return key;
 	  }
@@ -3502,7 +3510,7 @@
 	    if (!item) return;
 	    var i, idx;
 	    const value = item.dataset.value;
-	    i = nodeIndex(item);
+	    i = nodeIndex(item, '.item');
 	    item.remove();
 	    if (item.classList.contains('active')) {
 	      idx = self.activeItems.indexOf(item);
@@ -3666,10 +3674,9 @@
 	        if (!option_el) {
 	          option_el = getDom('<option value="' + escape_html(value) + '">' + escape_html(label) + '</option>');
 	        }
-
-	        // don't move empty option from top of list
-	        // fixes bug in firefox https://bugzilla.mozilla.org/show_bug.cgi?id=1725293
-	        if (option_el != empty_option) {
+	        if (!value) {
+	          self.input.prepend(option_el);
+	        } else {
 	          self.input.append(option_el);
 	        }
 	        selected.push(option_el);
