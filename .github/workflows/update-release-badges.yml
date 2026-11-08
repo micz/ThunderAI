@@ -1,15 +1,17 @@
 name: Update release badges
 
-# Keeps the "release" and "pre-release" badges of README.md up to date without depending on an
-# external badge service when the README is viewed: README.md points to
+# Keeps the version badges of README.md up to date without depending on an external badge
+# service when the README is viewed: README.md (the same on main and dev) points to
 #   https://micz.it/badges/thunderai/release.svg     (latest stable release)
 #   https://micz.it/badges/thunderai/prerelease.svg  (latest pre-release, hidden when not newer)
+#   https://micz.it/badges/thunderai/dev.svg         ("version" of manifest.json on the dev branch)
 # served by the site repository (micz/micz.github.io, static/badges/thunderai/*.svg). This workflow
-# only decides what the two files must show and asks the site to write them, through a
+# only decides what the three files must show and asks the site to write them, through a
 # repository_dispatch with event_type "thunderai-release-badges", so README.md itself never changes.
 #
 # client_payload: { stable: latest stable tag | "" (no stable release: badge hidden),
 #                   prerelease: tag to show | "" to hide the badge,
+#                   dev: version of manifest.json on dev | "" (no dev branch: badge hidden),
 #                   url: release html_url | run url }
 #
 # The pre-release rule: among the published releases (drafts excluded), take the most recently
@@ -17,8 +19,10 @@ name: Update release badges
 # there is none), the badge is hidden. So a pre-release older than the latest stable is never
 # shown, and a pre-release promoted to stable (same version) hides the badge.
 #
-# Triggers: every change to a release (the state is always recomputed from the API, so the event
-# type does not matter) and by hand. Release events fire only for releases published by a user
+# Triggers: every change to a release, every push to dev that touches manifest.json, and by hand.
+# Every run recomputes all three badges from the API, so the event does not matter. Release events
+# run the copy of this file on the default branch (main), pushes the copy on dev: keep this file on
+# both branches. Release events fire only for releases published by a user
 # (web UI, gh, or a personal access token): a release published by another workflow with
 # GITHUB_TOKEN does not trigger this workflow; run it by hand then.
 #
@@ -27,6 +31,11 @@ name: Update release badges
 on:
   release:
     types: [published, unpublished, released, prereleased, edited, deleted]
+  push:
+    branches: [dev]
+    paths:
+      - manifest.json
+      - .github/workflows/update-release-badges.yml
   workflow_dispatch:
 
 permissions:
@@ -44,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Compute the badge and notify the site
+      - name: Compute the badges and notify the site
         env:
           READ_TOKEN: ${{ github.token }}
           DISPATCH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
@@ -71,10 +80,14 @@ jobs:
           # A pre-release with the same tag as the stable release is never shown.
           if [ "$PRERELEASE" = "$STABLE" ]; then PRERELEASE=""; fi
 
-          echo "Release badge: '${STABLE:-(hidden)}'. Pre-release badge: '${PRERELEASE:-(hidden)}'."
+          # Version of the manifest on dev ("" when the branch or the file is missing).
+          DEV=$(GH_TOKEN="$READ_TOKEN" gh api -H "Accept: application/vnd.github.raw" \
+            "repos/$REPO/contents/manifest.json?ref=dev" 2>/dev/null | jq -r '.version // ""' || true)
 
-          jq -n --arg pre "$PRERELEASE" --arg stable "$STABLE" --arg url "$URL" \
-            '{ event_type: "thunderai-release-badges", client_payload: { stable: $stable, prerelease: $pre, url: $url } }' \
+          echo "Release badge: '${STABLE:-(hidden)}'. Pre-release badge: '${PRERELEASE:-(hidden)}'. Dev badge: '${DEV:-(hidden)}'."
+
+          jq -n --arg pre "$PRERELEASE" --arg stable "$STABLE" --arg dev "$DEV" --arg url "$URL" \
+            '{ event_type: "thunderai-release-badges", client_payload: { stable: $stable, prerelease: $pre, dev: $dev, url: $url } }' \
             | tee payload.json
           GH_TOKEN="$DISPATCH_TOKEN" gh api --method POST "repos/$SITE_REPO/dispatches" --input payload.json
           echo "Asked $SITE_REPO to update the release badges"
