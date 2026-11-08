@@ -22,7 +22,8 @@
         <li>Saved spam reports, summaries and translations are now kept in a dedicated database with a backup copy, so they are no longer lost. Existing data is moved automatically [<a href="https://github.com/micz/ThunderAI/issues/955">#955</a>].</li>
         <li>New <i>Saved data</i> page, opened with the <i>Manage saved data...</i> button, to view, limit and clean up the saved data, with an optional automatic cleanup. Spam reports are no longer capped at 100, and the limits can also be set by policy [<a href="https://github.com/micz/ThunderAI/issues/956">#956</a>].</li>
         <li>Fix: with <i>{%mail_typed_text%}</i>, the answer now replaces only the selected text [<a href="https://github.com/micz/ThunderAI/issues/978">#978</a>].</li>
-        <li>Fix: a custom prompt can no longer use the ID of a built-in prompt; existing ones are renamed [<a href="https://github.com/micz/ThunderAI/issues/979">#979</a>].</li>
+        <li>Fix: in the message list context menu, with several messages or a collapsed thread selected, the prompts that work on a single message only are now disabled. Summarize, Translate, Add Tags and Spam Filter stay available [<a href="https://github.com/micz/ThunderAI/issues/979">#979</a>].</li>
+        <li>Fix: a custom prompt can no longer use the ID of a built-in prompt; existing ones are renamed [<a href="https://github.com/micz/ThunderAI/issues/989">#989</a>].</li>
         <li>Fix: the Menu Order settings of organization prompts are now kept after a restart [<a href="https://github.com/micz/ThunderAI/issues/990">#990</a>].</li>
         <li>Fix: Translate: <i>{%mail_text_body%}</i> and <i>{%mail_text_body_or_selected%}</i> in a custom translation prompt are no longer empty.</li>
         <li>Turkish (tr) translation added, thanks to <a href="https://hosted.weblate.org/user/babico/">Müslüm Barış Korkmazer</a> and <a href="https://github.com/cahitcengizhan">Cahit Cengizhan</a>.</li>
