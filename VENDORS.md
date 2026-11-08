@@ -13,12 +13,12 @@ name: List.js
 changelog: https://github.com/javve/list.js/blob/master/CHANGELOG.md
 
 file: pages\_lib\tom-select.base.js
-source: https://cdn.jsdelivr.net/npm/tom-select@v2.6.2/dist/js/tom-select.base.js
+source: https://cdn.jsdelivr.net/npm/tom-select@2.7.0/dist/js/tom-select.base.js
 name: Tom Select
 changelog: https://github.com/orchidjs/tom-select/releases
 
 file: pages\_lib\tom-select.default.min.css
-source: https://cdn.jsdelivr.net/npm/tom-select@v2.6.2/dist/css/tom-select.default.min.css
+source: https://cdn.jsdelivr.net/npm/tom-select@2.7.0/dist/css/tom-select.default.min.css
 name: Tom Select
 changelog: https://github.com/orchidjs/tom-select/releases
 
