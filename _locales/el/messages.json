@@ -2073,6 +2073,15 @@
         "message": "Επισκόπηση"
     },
     "storage_refresh": {
-        "message": "Επισκόπηση"
+        "message": "Ανανέωση"
+    },
+    "storage_col_type": {
+        "message": "Τύπος"
+    },
+    "storage_col_entries": {
+        "message": "Συμμετοχές"
+    },
+    "storage_col_errors": {
+        "message": "Με ένα σφάλμα"
     }
 }
