@@ -89,7 +89,7 @@ const writesDuring = async fn => {
     await fn();
     return ctx.localWrites(since);
 };
-const GEMINI_MODELS = /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\?key=/;
+const GEMINI_MODELS = /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models$/;
 
 // ---- step 0, at load -------------------------------------------------------------------
 
@@ -214,7 +214,10 @@ k.test('test-ok', S_TEST, 'a reachable provider: "Connected", the form\'s key us
     assert.equal(strip().getAttribute('data-state'), 'ok');
     assert.equal($('#mzta_conn_test_text').textContent, msg('connTest_ok', [msg(NAME_KEY.google_gemini_api)]));
     assert.equal($('#mzta_conn_test_link').textContent, msg('connTest_link_retest'));
-    assert.match(ctx.fetchCalls.at(-1).url, /key=gemini-typed-key$/);
+    // The form's key, in the x-goog-api-key header and never in the URL (spec 04 "Google Gemini").
+    const call = ctx.fetchCalls.at(-1);
+    assert.equal(new Headers(call.init.headers).get('x-goog-api-key'), 'gemini-typed-key');
+    assert.equal(call.url.includes('gemini-typed-key'), false);
     assert.deepEqual(ctx.localWrites(since), []);
     assert.deepEqual(net.pending(), []);
 });

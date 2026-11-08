@@ -9,7 +9,7 @@
 // Section (`#mzta_adv_panel`)", "Owl for Exchange Warning (`#owl_warning`)" (no Owl account).
 //
 // Stored state: no connection_type, two feature flags left on (add_tags, spamfilter),
-// Summarize on with its own integration (OpenAI API), two per-message cache records. Then the user picks providers in turn,
+// Summarize on with its own integration (OpenAI API), two saved per-message records (IndexedDB, the storage block: their size and the link to the storage management page). Then the user picks providers in turn,
 // toggles features and edits preferences on the same page.
 
 import {
@@ -23,12 +23,15 @@ import {
     shown,
     userSets,
     writtenSince,
+    seedMessageData,
 } from '../../ui/dom-helpers.mjs';
 
-const CACHE = {
-    'msg:<a@example.com>': { v: 1, ts: 1, summary: { text: 'A summary.' } },
-    'msg:<b@example.com>': { v: 1, ts: 2, spam: { value: 80 } },
+// Two saved records, with the sizes the storage computed when it wrote them: 120 + 80 bytes.
+const SAVED = {
+    summary: [{ messageId: '<a@example.com>', createdAt: 1, subject: [], from: [], message_date: '', summary: 'A summary.', size: 120 }],
+    spam: [{ messageId: '<b@example.com>', createdAt: 2, subject: [], from: [], message_date: '', spamValue: 80, size: 80 }],
 };
+await seedMessageData(SAVED);
 const permissions = {};       // .request swapped by a test (the harness reads it per call)
 const ctx = await openPage('options', {
     local: {
@@ -37,9 +40,19 @@ const ctx = await openPage('options', {
         summarize: true,
         summarize_use_specific_integration: true,
         summarize_connection_type: 'chatgpt_api',
-        ...CACHE,
     },
     permissions,
+});
+/** The records of a store of the message database, read with the raw IndexedDB API. */
+const savedIn = store => new Promise((resolve, reject) => {
+    const open = indexedDB.open('thunderai-message-data');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+        const db = open.result;
+        const req = db.transaction(store, 'readonly').objectStore(store).getAll();
+        req.onsuccess = () => { db.close(); resolve(req.result); };
+        req.onerror = () => { db.close(); reject(req.error); };
+    };
 });
 after(() => ctx.close());
 const k = uiTests('options', '01');
@@ -177,16 +190,16 @@ k.test('strip-hidden', S_TEST, 'the connection test strip is hidden while nothin
     assert.equal(shown($('#mzta_conn_test')), false);
 });
 
-k.test('note-empty', S_NOTE, 'no provider text and no guide link in the setup note', () => {
+k.test('note-empty', S_NOTE, 'no provider text and no links in the setup note', () => {
     for (const span of ctx.$$('#miczDescription .info_specific')) assert.equal(span.style.display, 'none', span.className);
-    assert.equal($('#mzta_info_guide').style.display, 'none');
+    assert.equal($('#mzta_info_links').style.display, 'none');
 });
 
 k.test('ui-defaults', S_UI, 'with nothing stored each preference shows its default', () => {
     const d = ctx.mods.prefs_default;
     assert.equal($('#reply_type').value, d.reply_type);
     assert.equal($('#diff_granularity').value, d.diff_granularity);
-    for (const id of ['chatgpt_win_height', 'chatgpt_win_width', 'max_prompt_length', 'special_command_timeout', 'batch_max_concurrency']) {
+    for (const id of ['chatgpt_win_height', 'chatgpt_win_width', 'max_prompt_length', 'special_command_timeout', 'api_stream_idle_timeout', 'batch_max_concurrency']) {
         assert.equal($('#' + id).valueAsNumber, d[id], id);
     }
     for (const id of ['do_debug', 'chatgpt_win_save_position', 'dynamic_menu_force_enter', 'placeholders_use_default_value', 'hide_thinking', 'chat_show_usage_data']) {
@@ -201,9 +214,11 @@ k.test('max-prompt-length-irrelevant', S_ADVSEC, 'with nothing selected max_prom
     assert.equal(maxRowShown(), false);
 });
 
-k.test('timeout-always-shown', S_ADVSEC, 'special_command_timeout is offered even with nothing selected', () => {
-    assert.equal($('#special_command_timeout').disabled, false);
-    assert.notEqual($('#special_command_timeout').closest('.mzta_field').style.display, 'none');
+k.test('timeout-always-shown', S_ADVSEC, 'special_command_timeout and api_stream_idle_timeout are offered even with nothing selected', () => {
+    for (const id of ['special_command_timeout', 'api_stream_idle_timeout']) {
+        assert.equal($('#' + id).disabled, false, id);
+        assert.notEqual($('#' + id).closest('.mzta_field').style.display, 'none', id);
+    }
 });
 
 k.test('adv-section-collapsed', S_ADVSEC, 'the app-level disclosure opens collapsed', () => {
@@ -223,10 +238,14 @@ k.test('adv-section-toggle', S_ADVSEC, 'a click opens it, another closes it, and
     assert.deepEqual(ctx.localWrites(since), []);
 });
 
-k.test('cache-size', S_ADVSEC, 'the cache size counts the msg: records', () => {
-    const text = $('#cache_storage_size').textContent;
-    assert.match(text, /^\d+(\.\d+)? (Bytes|KB)$/, text);
-    assert.notEqual(text, '0 Bytes');
+k.test('storage-size', S_ADVSEC, 'the storage size is the sum of the sizes of the saved records, formatted', () => {
+    assert.equal($('#message_storage_size').textContent, '200.00 Bytes');
+});
+
+k.test('storage-not-migrating', S_ADVSEC, 'with no migration flag, the migration notice stays hidden', () => {
+    // Its own display: the advanced panel around it starts collapsed.
+    assert.equal($('#message_storage_migrating').style.display, 'none');
+    assert.equal($('#message_storage_migration_failed').style.display, 'none');
 });
 
 k.test('owl-hidden', S_OWL, 'with no Owl account the warning stays hidden', () => {
@@ -244,10 +263,13 @@ k.test('shortcut-chips', S_BOTTOM, 'the shortcut chips come from browser.command
     assert.deepEqual(ctx.$$('#mzta_shortcut_keys kbd').map(k => k.textContent), ['Ctrl', 'Alt', 'A']);
 });
 
-k.test('bottom-structure', S_BOTTOM, 'the disclaimer precedes the shortcut strip; the footer holds the three plain links', () => {
+k.test('bottom-structure', S_BOTTOM, 'the disclaimer precedes the shortcut strip and its change link; the footer holds the three plain links', () => {
     const row = $('#mzta_bottom #mzta_info_row');
     assert.ok(row, '#mzta_info_row inside #mzta_bottom');
-    assert.deepEqual([...row.children].map(e => e.id), ['mzta_disclaimer', 'mzta_shortcut_strip']);
+    assert.deepEqual([...row.children].map(e => e.id), ['mzta_disclaimer', 'mzta_shortcut_strip', 'mzta_shortcut_help']);
+    assert.equal($('#mzta_shortcut_help').tagName, 'A');
+    assert.match($('#mzta_shortcut_help').getAttribute('href'), /^https:\/\/micz\.it\/([a-z]{2}\/)?thunderbird-addon-keyboard-shortcut\/$/, 'localized through getMiczItUrl()');
+    assert.equal($('#mzta_shortcut_help').textContent, msg('prefs_shortcut_change_link'));
     assert.match($('#mzta_disclaimer').textContent, new RegExp(msg('prefs_disclaimer_short').slice(0, 20).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
     assert.ok($('#mzta_disclaimer a'), 'the privacy link');
     assert.equal($('#mzta_shortcut_strip .mzta_shortcut_label').textContent, msg('prefs_shortcut_label'));
@@ -309,12 +331,17 @@ k.test('pick-api-strip', S_TEST, 'with a testable provider the strip shows, idle
     assert.equal($('#mzta_conn_test_link').textContent, msg('connTest_link_test'));
 });
 
-k.test('pick-api-note', S_NOTE, 'only the selected provider\'s text shows, tinted, and OpenAI has no guide link', () => {
+k.test('pick-api-note', S_NOTE, 'only the selected provider\'s text shows, tinted, with the OpenAI guide link inside it', () => {
     for (const span of ctx.$$('#miczDescription .info_specific')) {
         assert.equal(span.style.display !== 'none', span.classList.contains('conntype_chatgpt_api'), span.className);
     }
     assert.equal($('#miczDescription').classList.contains('tint_chatgpt_api'), true);
-    assert.equal($('#mzta_info_guide').style.display, 'none');
+    const links = $('#mzta_info_links');
+    assert.notEqual(links.style.display, 'none');
+    assert.equal(links.parentElement, $('#miczDescription .conntype_chatgpt_api.info_specific'));
+    assert.notEqual($('#mzta_info_guide').style.display, 'none');
+    assert.match($('#mzta_info_guide').href, /\/thunderbird-addon-thunderai\/guides\/openai-api\/$/);
+    assert.equal($('#mzta_info_extra').style.display, 'none', 'OpenAI has no second link');
 });
 
 k.test('pick-web-rows', S_ROWS, 'with ChatGPT Web the rows stay clickable and show the API hint', async () => {
@@ -335,11 +362,17 @@ k.test('pick-web-max-prompt', S_ADVSEC, 'with ChatGPT Web max_prompt_length is d
     assert.equal(maxRowShown(), false);
 });
 
-k.test('pick-web-guide', S_NOTE, 'ChatGPT Web gets the status-page guide link, inline in its own text', () => {
-    const link = $('#mzta_info_guide');
-    assert.notEqual(link.style.display, 'none');
-    assert.equal(link.parentElement, $('#miczDescription .conntype_chatgpt_web.info_specific'));
-    assert.match(link.href, /^https:\/\/micz\.it\/(\w+\/)?thunderbird-addon-thunderai\/status\/$/);
+k.test('pick-web-guide', S_NOTE, 'ChatGPT Web gets its setup guide and status links, below its own text', () => {
+    const links = $('#mzta_info_links');
+    assert.notEqual(links.style.display, 'none');
+    assert.equal(links.parentElement, $('#miczDescription .conntype_chatgpt_web.info_specific'));
+    assert.notEqual($('#mzta_info_guide').style.display, 'none');
+    assert.match($('#mzta_info_guide').href, /^https:\/\/micz\.it\/(\w+\/)?thunderbird-addon-thunderai\/guides\/chatgpt-web\/$/);
+    const extra = $('#mzta_info_extra');
+    assert.notEqual(extra.style.display, 'none');
+    assert.equal(extra.textContent, msg('prefs_status_page') + ' ›');
+    // The status page exists only in English on micz.it: never a language prefix.
+    assert.equal(extra.href, 'https://micz.it/thunderbird-addon-thunderai/chatgptweb_status/');
     assert.equal($('#miczDescription').classList.contains('tint_chatgpt_web'), true);
     assert.equal($('#miczDescription').classList.contains('tint_chatgpt_api'), false);
 });
@@ -351,12 +384,17 @@ k.test('pick-web-sparks', S_ROWS, 'with ChatGPT Web and no Sparks the calendar r
     assert.equal($('#wrong_sparks_text').style.display, 'none');
 });
 
-k.test('pick-ollama-guide', S_NOTE, 'Ollama gets the CORS guide link, moved into its own text', async () => {
+k.test('pick-ollama-guide', S_NOTE, 'Ollama gets its setup guide and CORS links, moved into its own text', async () => {
     await pick('ollama_api');
-    const link = $('#mzta_info_guide');
-    assert.notEqual(link.style.display, 'none');
-    assert.equal(link.parentElement, $('#miczDescription .conntype_ollama_api.info_specific'));
-    assert.match(link.href, /\/thunderbird-addon-thunderai\/ollama-cors-information\/$/);
+    const links = $('#mzta_info_links');
+    assert.notEqual(links.style.display, 'none');
+    assert.equal(links.parentElement, $('#miczDescription .conntype_ollama_api.info_specific'));
+    assert.notEqual($('#mzta_info_guide').style.display, 'none');
+    assert.match($('#mzta_info_guide').href, /\/thunderbird-addon-thunderai\/guides\/ollama\/$/);
+    const extra = $('#mzta_info_extra');
+    assert.notEqual(extra.style.display, 'none');
+    assert.equal(extra.textContent, msg('CORS_alternative_1') + ' ›');
+    assert.match(extra.href, /^https:\/\/micz\.it\/(\w+\/)?thunderbird-addon-thunderai\/ollama-cors-information\/$/);
 });
 
 k.test('switch-collapses-adv', S_ADV, 'a provider switch collapses an expanded disclosure', async () => {
@@ -455,10 +493,12 @@ k.test('write-number', S_UI, 'a number field is stored as a number', async () =>
     const since = ctx.ctl.calls.length;
     await userSets(ctx, $('#chatgpt_win_height'), '900');
     await userSets(ctx, $('#special_command_timeout'), '60000');
+    await userSets(ctx, $('#api_stream_idle_timeout'), '300000');
     await userSets(ctx, $('#batch_max_concurrency'), '3');
     const w = writtenSince(ctx, since);
     assert.strictEqual(w.chatgpt_win_height, 900);
     assert.strictEqual(w.special_command_timeout, 60000);
+    assert.strictEqual(w.api_stream_idle_timeout, 300000);
     assert.strictEqual(w.batch_max_concurrency, 3);
 });
 
@@ -500,7 +540,7 @@ k.test('adv-no-pref', S_ADV, 'expanding and collapsing the disclosure persists n
 
 k.test('reset-defaults', S_ADVSEC, 'each Reset button puts the default back in its field and stores it as a number', async () => {
     const d = ctx.mods.prefs_default;
-    for (const id of ['max_prompt_length', 'special_command_timeout']) {
+    for (const id of ['max_prompt_length', 'special_command_timeout', 'api_stream_idle_timeout']) {
         await userSets(ctx, $('#' + id), '4321');
         assert.strictEqual(ctx.ctl.localData()[id], 4321, id + ' set up');
         const since = ctx.ctl.calls.length;
@@ -510,29 +550,15 @@ k.test('reset-defaults', S_ADVSEC, 'each Reset button puts the default back in i
     }
 });
 
-k.test('cache-clear-cancelled', S_ADVSEC, 'a cancelled confirm() removes nothing', async () => {
-    const real = globalThis.confirm;
-    globalThis.confirm = (...args) => { ctx.dialogs.push({ kind: 'confirm', args }); return false; };
-    try {
-        await ctx.click($('#btnClearCache'));
-    } finally {
-        globalThis.confirm = real;
-    }
-    assert.deepEqual(ctx.dialogs.at(-1), { kind: 'confirm', args: [msg('prefs_storage_clear_confirm')] });
-    for (const key of Object.keys(CACHE)) assert.ok(key in ctx.ctl.localData(), key);
-});
-
-k.test('cache-clear', S_ADVSEC, 'confirmed, every msg: record and nothing else is removed, the count reported, the size re-read', async () => {
-    const before = Object.keys(ctx.ctl.localData()).filter(key => !key.startsWith('msg:'));
-    const dialogs = ctx.dialogs.length;
-    await ctx.click($('#btnClearCache'));
-    const after = Object.keys(ctx.ctl.localData());
-    assert.deepEqual(after.filter(key => key.startsWith('msg:')), []);
-    assert.deepEqual(after.sort(), before.sort(), 'other keys were removed');
-    const shownDialogs = ctx.dialogs.slice(dialogs).map(d => d.kind);
-    assert.deepEqual(shownDialogs, ['confirm', 'alert']);
-    assert.deepEqual(ctx.dialogs.at(-1).args, [msg('prefs_storage_clear_done', [String(Object.keys(CACHE).length)])]);
-    assert.equal($('#cache_storage_size').textContent, '0 Bytes');
+k.test('storage-manage', S_ADVSEC, 'the storage block keeps the size and opens the storage management page in a tab; it deletes nothing itself', async () => {
+    assert.equal($('#btnClearMessageStorage'), null, 'no Clear button any more');
+    const created = ctx.apiCalls('browser.tabs.create').length;
+    await ctx.click($('#btnManageMessageStorage'));
+    const calls = ctx.apiCalls('browser.tabs.create').slice(created);
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].args[0].url, /pages\/storage\/mzta-storage-manager\.html$/);
+    assert.equal((await savedIn('summary')).length, 1);
+    assert.equal((await savedIn('spam')).length, 1);
 });
 
 k.coverage();

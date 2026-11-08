@@ -10,6 +10,9 @@
 // locales that exist under _locales/. The other direction (a locale absent from LANG.md) is
 // deliberate and never reported.
 //
+// Spec 06 "Message File Format": a name appears once per object. JSON.parse keeps the last of two
+// equal names without a word, so the duplicates are found on the raw text (duplicateKeys()).
+//
 // Message names are matched ignoring case, as the WebExtension i18n API does.
 
 import { test } from 'node:test';
@@ -23,6 +26,43 @@ import {
 
 const NAME = /^[A-Za-z0-9_@]+$/;   // the characters a WebExtension message name may use
 
+// The names that appear more than once in the same object of a JSON text that parses, at any depth,
+// as [{path, key, lines}]: path is the names leading to that object ([] for the top level).
+function duplicateKeys(text) {
+    const found = [];
+    const stack = [];   // {isObject, path, keys: Map name -> lines, expectKey, lastKey}
+    let line = 1;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '\n') line++;
+        else if (ch === '{' || ch === '[') {
+            const top = stack[stack.length - 1];
+            const path = top ? (top.isObject ? [...top.path, top.lastKey] : top.path) : [];
+            stack.push({ isObject: ch === '{', path, keys: new Map(), expectKey: ch === '{', lastKey: null });
+        } else if (ch === '}' || ch === ']') {
+            const frame = stack.pop();
+            for (const [key, lines] of frame.keys) if (lines.length > 1) found.push({ path: frame.path, key, lines });
+        } else if (ch === ',') {
+            const top = stack[stack.length - 1];
+            if (top && top.isObject) top.expectKey = true;
+        } else if (ch === ':') {
+            stack[stack.length - 1].expectKey = false;
+        } else if (ch === '"') {
+            let j = i + 1;
+            while (text[j] !== '"') j += text[j] === '\\' ? 2 : 1;
+            const top = stack[stack.length - 1];
+            if (top && top.isObject && top.expectKey) {
+                const key = JSON.parse(text.slice(i, j + 1));
+                if (!top.keys.has(key)) top.keys.set(key, []);
+                top.keys.get(key).push(line);
+                top.lastKey = key;
+            }
+            i = j;
+        }
+    }
+    return found;
+}
+
 const localeDirs = readdirSync(repoPath('_locales')).filter(d => statSync(repoPath('_locales/' + d)).isDirectory()).sort();
 const locales = {};       // {locale: {key: entry}} for the files that parse
 const shape = new Map();  // subject -> detail
@@ -30,19 +70,27 @@ const shape = new Map();  // subject -> detail
 for (const loc of localeDirs) {
     const file = '_locales/' + loc + '/messages.json';
     if (!existsSync(repoPath(file))) { shape.set(loc, 'no messages.json'); continue; }
+    const text = readFileSync(repoPath(file), 'utf8');
     let data;
     try {
-        data = JSON.parse(readFileSync(repoPath(file), 'utf8'));
+        data = JSON.parse(text);
     } catch (e) {
         shape.set(loc, 'does not parse: ' + e.message);
         continue;
     }
     if (!data || typeof data !== 'object' || Array.isArray(data)) { shape.set(loc, 'not an object of entries'); continue; }
     locales[loc] = data;
+    const duplicates = new Map();   // entry name -> problems
+    for (const { path, key, lines } of duplicateKeys(text)) {
+        const entry = path.length ? path[0] : key;
+        const where = path.length > 1 ? '"' + path.slice(1).concat(key).join('.') + '"' : 'the name';
+        if (!duplicates.has(entry)) duplicates.set(entry, []);
+        duplicates.get(entry).push(where + ' appears ' + lines.length + ' times (lines ' + lines.join(', ') + ')');
+    }
     const byLower = new Map();
     for (const [key, entry] of Object.entries(data)) {
         const subject = loc + ':' + key;
-        const problems = [];
+        const problems = [...(duplicates.get(key) || [])];
         if (!NAME.test(key)) problems.push('the name uses characters outside [A-Za-z0-9_@]');
         if (byLower.has(key.toLowerCase())) problems.push('same name as "' + byLower.get(key.toLowerCase()) + '" ignoring case');
         byLower.set(key.toLowerCase(), key);

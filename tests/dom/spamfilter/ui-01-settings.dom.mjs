@@ -20,6 +20,7 @@ import { uiTests } from '../../helpers/known-issues/ui.mjs';
 import {
     userSets,
     writtenSince,
+    seedMessageData,
 } from '../../ui/dom-helpers.mjs';
 import {
     inheritedIntegrationTests,
@@ -42,15 +43,17 @@ const STORED = {
     spamfilter_block_addresses: ['@spam.example'],
     spamfilter_skip_addressbook: false,
     spamfilter_enabled_accounts: ['account2'],
-    'msg:<full@x.example>': { v: 1, ts: Date.UTC(2026, 0, 2), spam: {
-        ts: Date.UTC(2026, 0, 2), spamValue: 85, explanation: 'Looks like phishing.',
-        subject: ['Win now'], from: ['Bad <bad@spam.example>'], message_date: Date.UTC(2026, 0, 1),
-        moved: true, SpamThreshold: 60,
-    } },
-    'msg:<legacy@x.example>': { v: 1, ts: Date.UTC(2025, 5, 1), spam: {
-        ts: Date.UTC(2025, 5, 1), spamValue: 10, explanation: 'Fine.', moved: false, SpamThreshold: 70,
-    } },
 };
+// The two reports, as the per-message storage holds them (IndexedDB, spec 01 "Per-Message Data
+// Storage"): one with its message metadata, one without (an error saved when the message could
+// not be read, or a report moved from an older version).
+await seedMessageData({ spam: [
+    { messageId: '<full@x.example>', createdAt: Date.UTC(2026, 0, 2), spamValue: 85, explanation: 'Looks like phishing.',
+        subject: ['Win now'], from: ['Bad <bad@spam.example>'], message_date: '2026-01-01T00:00:00.000Z',
+        moved: true, SpamThreshold: 60 },
+    { messageId: '<legacy@x.example>', createdAt: Date.UTC(2025, 5, 1), spamValue: 10, explanation: 'Fine.',
+        subject: [], from: [], message_date: '', moved: false, SpamThreshold: 70 },
+] });
 const permissions = {};       // .request swapped by a test (the harness reads it per call)
 const ctx = await openPage('spamfilter', { local: STORED, accounts: ACCOUNTS, permissions });
 after(() => ctx.close());
@@ -100,6 +103,12 @@ k.test('log-arrays', S_LOG, 'the subject and sender arrays are joined', () => {
     assert.equal(row.cells[2].textContent, 'Bad <bad@spam.example>');
     assert.equal(row.cells[3].textContent, 'Win now');
     assert.equal(row.cells[4].textContent, '85');
+});
+
+k.test('log-order-date', S_LOG, 'the newest report first; the report date is the time it was saved (createdAt)', () => {
+    const rows = ctx.$$('#report_data_body tr');
+    assert.deepEqual(rows.map(r => r.cells[0].textContent), ['<full@x.example>', '<legacy@x.example>']);
+    assert.equal(rows[0].cells[7].textContent, new Date(Date.UTC(2026, 0, 2)).toLocaleString());
 });
 
 k.test('log-legacy', S_LOG, 'a report without date, sender or subject shows empty cells, not "Invalid Date" / "undefined"', () => {

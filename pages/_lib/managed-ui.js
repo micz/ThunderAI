@@ -45,7 +45,7 @@ let _state = null;
  * cached for the lifetime of the page:
  *
  *     { active, orgName, lockedKeys, disablePromptManagement, disableDefaultPrompts,
- *       disableSetupWizard }
+ *       disableSetupWizard, disableAddTagsAccountSettings }
  *
  * Never throws and never leaves a page half-rendered: if the hydration failed the page simply
  * behaves as an unmanaged one (fail open, see managedReady()). The background still enforces
@@ -61,6 +61,7 @@ export async function getManagedState(do_debug = false) {
         disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
         disableDefaultPrompts: mztaManaged.areDefaultPromptsDisabled(),
         disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
+        disableAddTagsAccountSettings: mztaManaged.isAddTagsAccountSettingsDisabled(),
     };
     return _state;
 }
@@ -88,6 +89,11 @@ export function areDefaultPromptsDisabled() {
 /** True when the policy forbids opening the setup wizard. */
 export function isSetupWizardDisabled() {
     return mztaManaged.isSetupWizardDisabled();
+}
+
+/** True when the policy takes away the per-account Add Tags settings. */
+export function isAddTagsAccountSettingsDisabled() {
+    return mztaManaged.isAddTagsAccountSettingsDisabled();
 }
 
 /** The enforced preference keys on this page. Empty array when no policy is active. */
@@ -213,6 +219,30 @@ function disableCompanions(elements) {
         element.disabled = true;
         element.title = browser.i18n.getMessage('managed_marker_tooltip');
     });
+}
+
+/**
+ * Lock the controls that edit an OVERRIDE of a preference rather than the preference itself
+ * (the per-account rows of the Add Tags page, add_tags_account_settings), when the policy
+ * locks that preference: an override of a locked key is ignored at run time, so its row must
+ * not look editable.
+ *
+ * Not applyManagedUI() territory: the controls are not bound to the preference (they must not
+ * be an .option-input or carry data-mzta-pref, or the generic save and the allowlist sweep
+ * would take them for the global control). Each element is disabled, marked
+ * data-mzta-managed="1" (so setDisabledRespectingManaged() keeps it disabled) and made inert
+ * like a locked control; the marker goes next to the first element, or in `anchor` when given.
+ * The page's handlers must still skip the key. Returns whether the key is locked.
+ */
+export async function lockOverrideControls(key, elements, anchor = null, do_debug = false) {
+    const state = await getManagedState(do_debug);
+    if (!isLockedKey(key)) return false;
+    const controls = elements.filter(Boolean);
+    if (controls.length === 0) return true;
+    disableCompanions(controls);
+    controls.forEach(element => lockControl(element));
+    markManaged(controls[0], state, anchor);
+    return true;
 }
 
 /**

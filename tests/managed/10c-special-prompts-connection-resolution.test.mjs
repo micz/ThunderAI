@@ -134,9 +134,12 @@ test('getConnectionType() resolves the policy connection, with or without the pr
 
 test('initWorker() receives the policy connection with the real key', async () => {
     const { mzta_specialCommand } = await import(new URL('js/mzta-special-commands.js', REPO).href);
+    const { createAIProcessingClient } = await import(new URL('js/mzta-ai-processing-client.js', REPO).href);
+    const processingClient = createAIProcessingClient(async operation => operation === 'createSession' ? { active: false } : {});
     const spam = byId(await specials(), 'prompt_spamfilter');
     const prefs = await ctx.mztaPrefs.getAllPrefs();
     const cmd = new mzta_specialCommand({
+        processingClient,
         prompt: 'x', llm: ctx.utils.getConnectionType(prefs, spam, 'spamfilter'), config: spam,
     });
     posted.length = 0;

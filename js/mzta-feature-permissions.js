@@ -32,7 +32,7 @@
  *  belong to the connection, not to a feature, and have their own flow.
  *
  *  No imports on purpose: the background, the menus and every settings page load it, and the
- *  level-1 tests read it with nothing installed.
+ *  level-1 tests import it directly.
  */
 
 /** Feature preference key -> the optional API permissions it needs. */

@@ -23,7 +23,7 @@ Paths below are relative to `tests/`.
 node --test "tests/static/*.test.mjs"     # this area only, from the repository root
 ```
 
-Level 1 only: nothing to install, no jsdom, no network, and nothing is written anywhere. The
+Level 1 only (after `npm ci`, see [`../README.md`](../README.md)): no jsdom, no network, and nothing is written anywhere. The
 area imports only `helpers/core/` (never the managed layer in `helpers/*.mjs`) and has no
 plugin, so it runs the same on a branch without the managed area. The whole area takes about a
 second: each file is read once per process and its token stream is shared by every check of
@@ -55,7 +55,7 @@ violation: the thing a known issue names.
 
 | Check | File | Enforces | Spec | Subject |
 |---|---|---|---|---|
-| `locale-shape` | 01 | every `messages.json` parses; every entry is an object with a string `message`, a name of `[A-Za-z0-9_@]` only, no two names equal ignoring case, a string `description` and `placeholders.*.content` when present | 06 "Message File Format" | `locale` or `locale:key` |
+| `locale-shape` | 01 | every `messages.json` parses; every entry is an object with a string `message`, a name of `[A-Za-z0-9_@]` only, no two names equal ignoring case, no name repeated in the same object at any depth (found on the raw text: `JSON.parse` keeps the last copy without a word), a string `description` and `placeholders.*.content` when present | 06 "Message File Format" | `locale` or `locale:key` |
 | `en-description` | 01 | every `en` entry has a non-empty `description` | 06 "Message File Format", "Adding a New String" | key |
 | `placeholders` | 01 | a translated entry uses the same `$name$` placeholders as `en` | 06 "Golden Rule" | `locale:key` |
 | `stale-key` | 01 | **informational, never fails**: lists the keys a translated locale holds and `en` no longer has. Spec 06 "Removing a String" says the translations follow a key removed from `en` when Weblate syncs from `en`, so the interval is expected and its length depends on Weblate, not on this repository | 06 "Golden Rule", "Removing a String" | `locale:key` |

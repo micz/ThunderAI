@@ -80,7 +80,7 @@ const inFolder = hid => ctx.m.byHeaderId(hid)?.folder.id;
 k.test('spam-moved', 'a verdict at the threshold or above: the message is marked junk and moved to its account\'s junk folder', async () => {
     const h = mail('s1@x', 'f-inbox', 95);
     await receive(ctx, [h]);
-    const r = record(ctx, 's1@x').spam;
+    const r = (await record(ctx, 's1@x')).spam;
     assert.equal(r.spamValue, 95);
     assert.equal(r.moved, true);
     assert.equal(r.SpamThreshold, 70);
@@ -91,14 +91,14 @@ k.test('spam-moved', 'a verdict at the threshold or above: the message is marked
     assert.ok(upd !== -1 && mov > upd, 'marked junk, then moved');
 });
 
-k.test('spam-stops-pipeline', 'a message moved to junk is not summarized', () => {
+k.test('spam-stops-pipeline', 'a message moved to junk is not summarized', async () => {
     assert.equal(prompted('summary', 's1@x'), false);
-    assert.equal(record(ctx, 's1@x').summary, undefined);
+    assert.equal((await record(ctx, 's1@x')).summary, undefined);
 });
 
 k.test('below-threshold', 'a verdict below the threshold: not moved, and the message goes on to its summary', async () => {
     await receive(ctx, [mail('s2@x', 'f-inbox', 69)]);
-    const r = record(ctx, 's2@x');
+    const r = (await record(ctx, 's2@x'));
     assert.equal(r.spam.moved, false);
     assert.equal(inFolder('s2@x'), 'f-inbox');
     assert.ok(r.summary);
@@ -106,7 +106,7 @@ k.test('below-threshold', 'a verdict below the threshold: not moved, and the mes
 
 k.test('at-threshold', 'a verdict equal to the threshold is spam', async () => {
     await receive(ctx, [mail('s3@x', 'f-inbox', 70)]);
-    assert.equal(record(ctx, 's3@x').spam.moved, true);
+    assert.equal((await record(ctx, 's3@x')).spam.moved, true);
 });
 
 k.test('panel-broadcast', 'every tab displaying the message gets the in-progress badge, then the report', async () => {
@@ -124,27 +124,27 @@ k.test('panel-broadcast', 'every tab displaying the message gets the in-progress
 
 k.test('no-junk-folder', 'an account with no junk folder: the move fails quietly, the verdict is saved with moved = false', async () => {
     await receive(ctx, [mail('nj1@x', 'n-inbox', 99)]);
-    const r = record(ctx, 'nj1@x').spam;
+    const r = (await record(ctx, 'nj1@x')).spam;
     assert.equal(r.spamValue, 99);
     assert.equal(r.moved, false);
     assert.equal(inFolder('nj1@x'), 'n-inbox');
 });
 
-k.test('no-junk-folder-continues', 'not moved, the message goes on to its other features', () => {
-    assert.ok(record(ctx, 'nj1@x').summary);
+k.test('no-junk-folder-continues', 'not moved, the message goes on to its other features', async () => {
+    assert.ok((await record(ctx, 'nj1@x')).summary);
 });
 
 k.test('account-not-enabled', 'auto mode: a message of an account not in spamfilter_enabled_accounts is not screened', async () => {
     await receive(ctx, [mail('acc2@x', 'g-inbox', 99)]);
     assert.equal(prompted('spam', 'acc2@x'), false);
-    assert.equal(record(ctx, 'acc2@x')?.spam, undefined);
-    assert.ok(record(ctx, 'acc2@x')?.summary, 'its other features still run');
+    assert.equal((await record(ctx, 'acc2@x'))?.spam, undefined);
+    assert.ok((await record(ctx, 'acc2@x'))?.summary, 'its other features still run');
 });
 
 k.test('skipped-folder', 'auto mode: a message already in trash is not screened (nor summarized)', async () => {
     await receive(ctx, [mail('tr1@x', 'f-trash', 99)]);
     assert.equal(prompted('spam', 'tr1@x'), false);
-    assert.equal(record(ctx, 'tr1@x'), null);
+    assert.equal((await record(ctx, 'tr1@x')), null);
 });
 
 k.test('reread-gone', 'a message moved by a filter during the analysis is gone after the spam step: the pipeline stops quietly, nothing else is written', async () => {
@@ -157,8 +157,8 @@ k.test('reread-gone', 'a message moved by a filter during the analysis is gone a
     ctx.m.moveTo(h.id, 'f-lists');          // a user filter moved it: new id
     hold.held[0].answer('{"spamValue": 10, "explanation": "fine"}');
     await batch;
-    assert.equal(record(ctx, 'gone@x').spam.spamValue, 10, 'the verdict is stored');
-    assert.equal(record(ctx, 'gone@x').summary, undefined, 'no summary for a message that is gone');
+    assert.equal((await record(ctx, 'gone@x')).spam.spamValue, 10, 'the verdict is stored');
+    assert.equal((await record(ctx, 'gone@x')).summary, undefined, 'no summary for a message that is gone');
     assert.equal(hold.held.length, 1, 'no further prompt');
     ctx.workers.respond = featureResponder({ spam: hid => JSON.stringify({ spamValue: verdicts[hid] ?? 10, explanation: 'verdict for ' + hid }) });
 });
@@ -169,14 +169,14 @@ k.test('fetch-failure-local', 'getFull() failing (a filter moved the message): t
     await receive(ctx, [h]);
     assert.equal(prompted('spam', 'ff1@x'), false);
     assert.equal(prompted('summary', 'ff1@x'), false);
-    assert.equal(record(ctx, 'ff1@x'), null);
+    assert.equal((await record(ctx, 'ff1@x')), null);
     assert.equal(inFolder('ff1@x'), 'f-inbox');
 });
 
 k.test('ai-not-json', 'an answer that is not JSON: an error report is saved, and the message is not moved', async () => {
     ctx.workers.respond = featureResponder({ spam: () => 'I think it is spam.' });
     await receive(ctx, [mail('nj@x', 'f-inbox', 99)]);
-    const r = record(ctx, 'nj@x').spam;
+    const r = (await record(ctx, 'nj@x')).spam;
     assert.equal(r.moved, false);
     assert.ok(r.explanation && r.explanation.length > 0, 'the error is the explanation');
     assert.notEqual(r.spamValue, 99);
@@ -208,7 +208,7 @@ k.test('manual-not-filtered', 'the context-menu spam check is not filtered by th
     const h = mail('man@x', 'f-trash', 20);
     await clickContextMenu(ctx, 'mzta-ctx-prompt_spamfilter', { id: 7, windowId: 1, type: 'mail' }, [h]);
     assert.equal(prompted('spam', 'man@x'), true);
-    assert.equal(record(ctx, 'man@x').spam.spamValue, 20);
+    assert.equal((await record(ctx, 'man@x')).spam.spamValue, 20);
 });
 
 k.test('only-inbox', 'with spamfilter_only_inbox, auto mode screens the inbox only', async (t) => {
@@ -221,25 +221,24 @@ k.test('only-inbox', 'with spamfilter_only_inbox, auto mode screens the inbox on
     assert.equal(inFolder('oi2@x'), 'f-junk');
 });
 
-k.test('outcome-after-save', 'the spam job resolves only once its report is stored', async () => {
+k.test('outcome-after-save', 'the spam job resolves only once its report is stored', async (t) => {
     const h = mail('aw@x', 'f-inbox', 20);
-    const local = ctx.ctl.browser.storage.local;
-    const realSet = local.set;
+    const { taStorage } = await import('../../js/mzta-storage.js');
+    const realWrite = taStorage.prototype.writeSpam;
     let release;
     const gate = new Promise(r => { release = r; });
-    local.set = async (items) => {
-        if (items['msg:aw@x']?.spam) await gate;
-        return realSet.call(local, items);
-    };
+    t.mock.method(taStorage.prototype, 'writeSpam', async function (messageId, ...rest) {
+        if (messageId === 'aw@x') await gate;
+        return realWrite.call(this, messageId, ...rest);
+    });
     let done = false;
     const job = ctx.bg._generateSpamReportForMessage('aw@x', { messageId: h.id }).then(o => { done = true; return o; });
     for (let i = 0; i < 60; i++) await new Promise(r => setImmediate(r));
     assert.equal(done, false, 'not resolved while the report write is pending');
     release();
     const outcome = await job;
-    local.set = realSet;
     assert.equal(outcome.data.report.spamValue, 20);
-    assert.equal(record(ctx, 'aw@x').spam.spamValue, 20);
+    assert.equal((await record(ctx, 'aw@x')).spam.spamValue, 20);
 });
 
 k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {

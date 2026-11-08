@@ -120,11 +120,14 @@ async function loadAndRender() {
     // and special prompts whose feature is not active (e.g. add_tags disabled, sparks not present)
     const hiddenSpecialIds = getHiddenSpecialPromptIds();
     const activeSpecialIds = await browser.runtime.sendMessage({ command: "get_active_special_ids" });
+    // Special prompts only, by the flag, and taken out by object, not by id: a custom prompt with
+    // the id of an excluded special one would otherwise be saved into _special_prompts, or left out
+    // of the list and so deleted from _custom_prompt by Save All.
     allExcludedSpecialPrompts = allPrompts.filter(p =>
-        hiddenSpecialIds.includes(p.id) ||
-        (String(p.is_special) === '1' && !activeSpecialIds.includes(p.id))
+        String(p.is_special) === '1' &&
+        (hiddenSpecialIds.includes(p.id) || !activeSpecialIds.includes(p.id))
     );
-    allPrompts = allPrompts.filter(p => !allExcludedSpecialPrompts.some(e => e.id === p.id));
+    allPrompts = allPrompts.filter(p => !allExcludedSpecialPrompts.includes(p));
 
     // Resolve i18n names and assign initial position_context if missing
     let contextPos = 1;

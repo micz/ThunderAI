@@ -27,4 +27,7 @@ coverage
 *.tsbuildinfo
 dist
 
-.claude
+# Claude Code: local settings and the translate-locales work files (.claude/i18n-work/) stay
+# private, project skills are committed
+.claude/*
+!.claude/skills/

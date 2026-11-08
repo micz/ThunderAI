@@ -24,6 +24,12 @@
 import { mztaPrefs } from './mzta-prefs.js';
  import { taLogger } from './mzta-logger.js';
  import { stripThinkTags } from './mzta-utils.js';
+ import {
+     createProviderWorker,
+     ProcessingWorker
+ } from './mzta-processing-worker.js';
+ import { resolveEndpointAccess } from './mzta-endpoint-approvals.js';
+ import { saveEndpointRedirect } from './mzta-endpoint-redirects.js';
 
  // Fallback timeout (ms) for a special command if the special_command_timeout
  // preference is unavailable. Kept generous to accommodate slow local models.
@@ -74,11 +80,13 @@ import { mztaPrefs } from './mzta-prefs.js';
             prompt = '',
             llm = '',
             do_debug = false,
-            config = {}
+            config = {},
+            processingClient
         } = args;
         this.prompt = prompt;
         this.llm = llm;
         this.config = config;
+        this.processingClient = processingClient;
         this.do_debug = do_debug;
         this.logger = new taLogger('mzta_specialCommand', do_debug);
 
@@ -131,7 +139,7 @@ import { mztaPrefs } from './mzta-prefs.js';
         const prefs_api = await mztaPrefs.getPrefs(Object.keys(prefsToGet));
 
         // Load the configurable timeout used to abort a hung worker in sendPrompt().
-        const prefs_timeout = await mztaPrefs.getPrefs(['special_command_timeout']);
+        const prefs_timeout = await mztaPrefs.getPrefs(['special_command_timeout', 'api_stream_idle_timeout']);
         if (Number.isFinite(prefs_timeout.special_command_timeout) && prefs_timeout.special_command_timeout > 0) {
             this.timeout_ms = prefs_timeout.special_command_timeout;
         }
@@ -152,6 +160,9 @@ import { mztaPrefs } from './mzta-prefs.js';
         const i18nStrings = {
             [i18n_msg_key]: browser.i18n.getMessage(i18n_msg_key),
             error_connection_interrupted: browser.i18n.getMessage('error_connection_interrupted'),
+            // The worker fills in the literal $SECONDS$ with the timeout it applies.
+            error_stream_idle_timeout: browser.i18n.getMessage('error_stream_idle_timeout', ['$SECONDS$']),
+            api_error_redirect: browser.i18n.getMessage('api_error_redirect'),
         };
         if (integration === 'anthropic') {
             // describeAnthropicError() replaces the literal $MODEL$ with the model actually sent.
@@ -163,7 +174,9 @@ import { mztaPrefs } from './mzta-prefs.js';
         let workerInitMessage = {
             type: 'init',
             do_debug: this.do_debug,
-            i18nStrings: i18nStrings
+            i18nStrings: i18nStrings,
+            // Validated by the worker (resolveIdleTimeoutMs()), like in the chat window.
+            api_stream_idle_timeout: prefs_timeout.api_stream_idle_timeout,
         };
 
         for (const key of configKeys) {
@@ -185,7 +198,25 @@ import { mztaPrefs } from './mzta-prefs.js';
             workerInitMessage[prefKey] = value;
         }
 
-        this.worker = new Worker(new URL(this.worker_path, import.meta.url), { type: 'module' });
+        // A custom endpoint is checked before the worker exists [#1000]. Nobody may be
+        // looking (the automatic processing of incoming mail), so nothing is asked here:
+        // an unencrypted server not yet confirmed fails like a missing setting, and the
+        // message sends the user to the settings, where the confirmation is asked.
+        if (Object.prototype.hasOwnProperty.call(options_config, 'host')) {
+            const access = await resolveEndpointAccess(workerInitMessage[`${integration}_host`]);
+            if (!access.ok) {
+                const err = new Error(access.message);
+                err.isConfigError = true;
+                throw err;
+            }
+            workerInitMessage.approved_insecure_origins = access.approvedOrigins;
+        }
+
+        this.worker = await createProviderWorker(new URL(this.worker_path, import.meta.url), {
+            format: 'json',
+            client: this.processingClient
+        });
+        this.responsePrepared = this.worker instanceof ProcessingWorker;
         this.worker.postMessage(workerInitMessage);
     }
 
@@ -195,15 +226,26 @@ import { mztaPrefs } from './mzta-prefs.js';
             // special_command_timeout, so a request still retrying a 429 when the timer
             // fires is reported as rate limited too, not as a plain timeout.
             let lastRetryStatus = null;
-            // Abort the worker if it never replies (e.g. a hung network connection),
-            // so the caller's queue is not stuck waiting forever. Cleared on any outcome.
-            let timeoutId = setTimeout(() => {
-                this.logger.error("Special command timed out after " + this.timeout_ms + " ms");
-                const err = new Error(`[ThunderAI] Special command timed out after ${this.timeout_ms} ms`);
-                if (lastRetryStatus === 429) err.rateLimited = true;
-                reject(err);
-            }, this.timeout_ms);
+            // Each local chunk gets the configured timeout; dispatch starts a
+            // fresh provider budget. A stalled chunk or queue still times out.
+            let timeoutId;
+            const resetTimer = () => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    this.logger.error("Special command timed out after " + this.timeout_ms + " ms");
+                    const err = new Error(`[ThunderAI] Special command timed out after ${this.timeout_ms} ms`);
+                    if (lastRetryStatus === 429) err.rateLimited = true;
+                    reject(err);
+                }, this.timeout_ms);
+            };
+            resetTimer();
             const clearTimer = () => { clearTimeout(timeoutId); };
+
+            if (this.responsePrepared) {
+                this.worker.onprocessingstatus = status => {
+                    if (['started', 'progress', 'complete'].includes(status.type)) resetTimer();
+                };
+            }
 
             // Event listeners for worker messages
             this.worker.onmessage = (event) => {
@@ -217,6 +259,12 @@ import { mztaPrefs } from './mzta-prefs.js';
                         // show, the overall special_command_timeout still applies.
                         this.logger.log("Retrying the API request: " + JSON.stringify(payload));
                         lastRetryStatus = payload?.status ?? null;
+                        break;
+                    case 'endpoint_redirect':
+                        // The redirect outcome of a request to a custom endpoint [#1000]:
+                        // saved for the note under the host field of the connection panels.
+                        // Not awaited: a storage write must not delay the answer.
+                        saveEndpointRedirect(payload.host, payload.info);
                         break;
                     case 'newToken':
                         this.full_message += payload.token;
@@ -236,7 +284,9 @@ import { mztaPrefs } from './mzta-prefs.js';
                         // rather than handing raw reasoning to the caller's parser.
                         // The whole response is passed here, so the leading whitespace a
                         // removed block leaves behind is safe to trim (third argument).
-                        const cleaned = stripThinkTags(this.full_message, true, true).text;
+                        // Filtered output has reasoning stripped before restoration,
+                        // so literal <think> text in an original value stays intact.
+                        const cleaned = this.responsePrepared ? this.full_message : stripThinkTags(this.full_message, true, true).text;
                         this.logger.log("tokensDone: " + cleaned);
                         resolve(cleaned); // Resolve the promise with the full message
                         break;

@@ -17,6 +17,8 @@
  */
 
 import { mzta_script } from './js/mzta-chatgpt.js';
+import { createAIProcessingBroker } from './js/mzta-ai-processing-broker.js';
+import { createAIProcessingClient } from './js/mzta-ai-processing-client.js';
 import {
     prefs_default,
     getDynamicSettingsDefaults,
@@ -75,6 +77,7 @@ import {
     migrateMenuOrderAlphabetic,
     migrateEnabledToShowIn,
     migrateCalendarNoSelection,
+    migrateCustomPromptIdCollisions,
     getSpecialPrompts,
     getIgnoredProviderOverrides,
     getReplacedProviderOverrides,
@@ -83,6 +86,13 @@ import {
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
 import { taTranslationStore } from './js/mzta-translationstore.js';
+import {
+    taStorage,
+    buildMessageMetadata,
+    CLEANUP_AUTO_PREF,
+    SPAM_ERROR_VALUE
+} from './js/mzta-storage.js';
+import { migrateMessageDataToIndexedDB } from './js/mzta-storage-migration.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import { taBatchController } from './js/mzta-batch-controller.js';
 import { taJobRegistry } from './js/mzta-job-registry.js';
@@ -91,6 +101,13 @@ import {
     addTags_setExclusionList,
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
+import {
+    addTags_applyAccountPrompt,
+    addTags_getAccountEntry,
+    addTags_getAccountSettings,
+    addTags_resolveAccountPrefs,
+    addTags_setAccountSettings
+} from './js/mzta-addtags-account-settings.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
 import { sanitizeBlockHtml } from './js/mzta-richtext.js';
 import {
@@ -106,6 +123,10 @@ import {
     getFeatureLabel,
     getMissingPermissionMessage
 } from './js/mzta-feature-permissions.js';
+
+const aiProcessingBroker = createAIProcessingBroker();
+const processingClient = createAIProcessingClient(aiProcessingBroker.dispatch);
+aiProcessingBroker.ready.catch(error => console.error('[ThunderAI] Content processor initialization failed:', error));
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -132,6 +153,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
         values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {},
         orgPrompts: [], orgName: '', active: false,
         disablePromptManagement: false, disableDefaultPrompts: false, disableSetupWizard: false,
+        disableAddTagsAccountSettings: false,
     };
     // Extension pages only. Content scripts (compose and message display) share this
     // channel but never import js/mzta-prefs.js, so they have no use for the values.
@@ -179,6 +201,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
             disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
             disableDefaultPrompts: mztaManaged.areDefaultPromptsDisabled(),
             disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
+            disableAddTagsAccountSettings: mztaManaged.isAddTagsAccountSettingsDisabled(),
         };
     });
 });
@@ -214,6 +237,27 @@ if (_prefs_migration_ok) await migrateCalendarNoSelection().catch(e => console.e
 // flag lives in storage.local, and reading it before the copy succeeded would find the
 // "not yet run" default and rewrite a value that is not there yet.
 if (_prefs_migration_ok) await migrateOllamaThinkLevel();
+// Renames a custom prompt whose id is a built-in prompt's (claude-spec/02-prompts.md "Prompt ids").
+// Not guarded and with no flag: it runs at every start, since a new version can ship an id a user
+// already has, and it reads only _custom_prompt, which the #129 pair above has already moved.
+await migrateCustomPromptIdCollisions().catch(e => console.error("[ThunderAI] migrateCustomPromptIdCollisions error: " + e));
+// Moves the per-message data (spam reports, summaries, translations) from the msg: records of
+// storage.local to their mirror keys and to IndexedDB (claude-spec/01-architecture.md "Per-Message
+// Data Storage"). Not guarded by _prefs_migration_ok: it owns its state, the add-on version it last
+// completed for, and scans storage.local only at the first start of a new version (an older
+// version run in between, a downgrade, writes msg: records again); any other start is one read.
+// Awaited here, before any listener that reads or writes those records is registered (the main
+// onMessage listener, the new mail listener) and before the scheduled cleanup starts, so nothing
+// reads or writes the stores before it has finished. A failure keeps the legacy records for the
+// next start.
+await migrateMessageDataToIndexedDB().catch(e => console.error("[ThunderAI] migrateMessageDataToIndexedDB error: " + e));
+// The database is the working copy of the per-message data, the storage.local mirror its durable
+// copy: a database this open finds new (first start, evicted by Thunderbird, or recreated because
+// its object stores were missing) is rebuilt from the mirror, before the same listeners are
+// registered. A failure is logged: the reads then answer from what the database holds.
+await taStorage.reconcileIfNew().catch(e => console.error("[ThunderAI] Message storage rebuild error: " + e));
+// From now on a lost database connection is reopened at once, and rebuilt if it is new.
+taStorage.startRebuildWatch();
 
 let _process_incoming = false;
 let _sparks_presence = false;
@@ -390,9 +434,35 @@ await (async () => {
 taWorkingStatus.taLog = taLog;
 taBatchController.taLog = taLog;
 taJobRegistry.taLog = taLog;
+// While the ThunderAI Privacy switch is on, the toolbar buttons show the companion's icon.
+// The policy-resolved value is read, at startup and on every write of the switch.
+function syncPrivacyIcon() {
+    mztaPrefs.getPref('ai_processing_enabled')
+        .then(enabled => taWorkingStatus.setPrivacy(enabled === true))
+        .catch(e => taLog.error("Could not read the ThunderAI Privacy switch: " + e));
+}
+syncPrivacyIcon();
+browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && Object.hasOwn(changes, 'ai_processing_enabled')) syncPrivacyIcon();
+});
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
+// The scheduled cleanup of the per-message data (the limits of each type, js/mzta-storage.js):
+// at once when the last one is more than 24 hours old, else 2 hours from now, then every 24
+// hours; nothing while message_storage_cleanup_auto is off. After the migration above, and after
+// the policy load, since it reads the limits and the switch.
+taStorage.startCleanupSchedule().catch(e => console.error("[ThunderAI] Storage cleanup schedule error: " + e));
+// The switch of the scheduled cleanup, turned on or off on the storage management page:
+// startCleanupSchedule() reads it again through mztaPrefs (so a policy value wins over the stored
+// one), stops the timer when it is off, and starts the schedule when it is on.
+function setupCleanupScheduleListener() {
+    browser.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local' || !Object.hasOwn(changes, CLEANUP_AUTO_PREF)) return;
+        taStorage.startCleanupSchedule().catch(e => taLog.error("Storage cleanup schedule error: " + e));
+    });
+}
+setupCleanupScheduleListener();
 
 browser.composeScripts.register({
     // mzta-html-lines.js FIRST: it is a classic script defining the globals
@@ -636,17 +706,36 @@ function _enqueueTagAssign(fn) {
 
 // Serialized through _enqueueTagAssign(): processEmails() tags several
 // messages at once, and the context menu path can overlap with an automatic batch.
-function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false) {
-    return _enqueueTagAssign(() => _assign_tags_now(_data, create_new_tags, exclusions_exact_match));
+// The account id of a message, for the per-account Add Tags settings (add_tags_account_settings)
+// of the tag dialog commands, which only have the message id. '' when no account has settings
+// or the policy disables them (no header read at all then), when the message has no folder or
+// cannot be read.
+async function _accountIdOfMessage(messageId) {
+    if (messageId === undefined || messageId === null || messageId === '') return '';
+    if (Object.keys(await addTags_getAccountSettings()).length === 0) return '';
+    if (mztaManaged.isAddTagsAccountSettingsDisabled()) return '';
+    try {
+        const header = await messenger.messages.get(messageId);
+        return header?.folder?.accountId || '';
+    } catch (e) {
+        taLog.warn("Add tags: could not read the account of message " + messageId + ": " + (e?.message || e));
+        return '';
+    }
 }
 
-async function _assign_tags_now(_data, create_new_tags, exclusions_exact_match) {
+// accountId: the account of the message, '' when unknown. Its own exclusion list
+// (add_tags_account_settings) replaces the global one, read at assignment time like it.
+function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false, accountId = '') {
+    return _enqueueTagAssign(() => _assign_tags_now(_data, create_new_tags, exclusions_exact_match, accountId));
+}
+
+async function _assign_tags_now(_data, create_new_tags, exclusions_exact_match, accountId = '') {
     let all_tags_list = await getTagsList();
     all_tags_list = all_tags_list[1];
     // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
     taLog.log("assign_tags data: " + JSON.stringify(_data));
     let new_tags = [];
-    let add_tags_exclusions_list = await addTags_getExclusionList();
+    let add_tags_exclusions_list = (await addTags_resolveAccountPrefs({ add_tags_exclusions: await addTags_getExclusionList() }, accountId)).add_tags_exclusions;
     taLog.log("add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
     const tags_final = _data.tags.filter(tag =>
         !add_tags_exclusions_list.some(exclusion =>
@@ -859,14 +948,33 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             summary_date: new Date(),
                             headerMessageId: msg.headerMessageId
                         };
-                        await summaryStore.saveSummary(summaryData, msg.headerMessageId);
+                        // Only the Message-ID and the text come from the chat window: the
+                        // metadata saved with the summary comes from the message it resolves
+                        // to, and stays empty when it cannot be resolved.
+                        let metadata = {};
+                        try {
+                            const curr_message = await _resolveMessage(msg.headerMessageId, null, msg.tabId);
+                            if (curr_message) metadata = buildMessageMetadata(curr_message, null);
+                        } catch (e) {
+                            taLog.error("[ThunderAI] Could not resolve the message of the webchat summary: " + e);
+                        }
+                        // A failed write never hides the summary: see _endSummaryJob().
+                        let storage_error = null;
+                        try {
+                            await summaryStore.saveSummary(summaryData, msg.headerMessageId, metadata);
+                        } catch (e) {
+                            taLog.error("[ThunderAI] Summary: could not store the webchat summary for " + msg.headerMessageId + ": " + e);
+                            storage_error = _storageErrorMessage(e);
+                        }
                         let prefs_summary = await mztaPrefs.getPrefs([
                             'summarize_max_display_length',
                             'summarize_strip_formatting'
                         ]);
+                        const data = { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length, stripFormatting: prefs_summary.summarize_strip_formatting };
+                        if (storage_error) data.storage_error = storage_error;
                         await _sendIfCurrent(msg.tabId, msg.headerMessageId, {
                             command: "showSummary",
-                            data: { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length, stripFormatting: prefs_summary.summarize_strip_formatting }
+                            data: data
                         });
                     } catch (error) {
                         console.error("[ThunderAI] Error saving summary from webchat:", error);
@@ -1018,22 +1126,21 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     taLog.log("chatgpt_replaceSelectedText text: " + text);
-                    // The compose format is read from the window itself, not from a
-                    // preference: it is a per-message property, so a global setting
-                    // could never be right for a user who writes in both formats.
-                    let isPlainText = await isPlainTextCompose(tabId);
-                    if(isPlainText){
-                        text = stripHtmlKeepLines(text);
-                    }else{
-                        // The compose script inserts it with execCommand('insertHTML'): only
-                        // sanitized markup may reach it. The ChatGPT web window's HTML is not
-                        // sanitized anywhere else; the API chat's already crossed it.
-                        text = sanitizeBlockHtml(text);
-                    }
-                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId, isPlainText: isPlainText });
+                    const prepared = await _prepareComposeAnswer(tabId, text);
+                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: prepared.text, tabId: tabId, isPlainText: prepared.isPlainText });
                     return true;
                 }
                 return _replaceSelectedText(message.tabId, message.text);
+            case 'chatgpt_insertAtCaret':
+                // Action "3": the answer goes where the cursor is, never replacing a selection
+                // and never asking for confirmation. Same conversion as the replacement.
+                async function _insertAtCaret(tabId, text) {
+                    taLog.log("chatgpt_insertAtCaret text: " + text);
+                    const prepared = await _prepareComposeAnswer(tabId, text);
+                    await browser.tabs.sendMessage(tabId, { command: "insertAtCaret", text: prepared.text, tabId: tabId, isPlainText: prepared.isPlainText });
+                    return true;
+                }
+                return _insertAtCaret(message.tabId, message.text);
             case 'chatgpt_replyMessage':
                 async function _replyMessage(message) {
                     let paragraphsHtmlString = message.text;
@@ -1176,9 +1283,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 // was open. A failure is shown, never left to the console [#962].
                 async function _do_assign_tags(message) {
                     if (!(await _ensureFeaturePermissions('add_tags'))) return false;
-                    let prefs_assign_tags = await mztaPrefs.getPrefs(['add_tags_exclusions_exact_match']);
+                    // The exclusion settings of the message's account (add_tags_account_settings).
+                    const assign_account_id = await _accountIdOfMessage(message.messageId);
+                    let prefs_assign_tags = await addTags_resolveAccountPrefs(await mztaPrefs.getPrefs(['add_tags_exclusions_exact_match']), assign_account_id);
                     try {
-                        return await _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match);
+                        return await _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match, assign_account_id);
                     } catch (err) {
                         taLog.error("Could not assign the tags: " + (err?.message || err));
                         await showGenericError(err?.message || String(err), getFeatureLabel('add_tags'));
@@ -1191,6 +1300,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // import js/mzta-prefs.js. These two give it the tag exclusion preferences
             // resolved against the enterprise policy, and a write that goes through the
             // write guard.
+            // With the dialog's messageId the values are the EFFECTIVE ones of the message's
+            // account (add_tags_account_settings), and exclusions_account_id says where the list
+            // comes from: the account id when that account has its own list (and the policy
+            // does not lock the global one), '' for the global list. The dialog sends it back
+            // with addtags_set_exclusions, so its "exclude" icon edits the list it shows.
             case 'addtags_get_exclusion_prefs':
                 async function _addtags_get_exclusion_prefs() {
                     let prefs_excl = await mztaPrefs.getPrefs([
@@ -1198,7 +1312,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         'add_tags_hide_exclusions',
                         'add_tags_exclusions_exact_match'
                     ]);
+                    const excl_account_id = await _accountIdOfMessage(message.messageId);
+                    prefs_excl = await addTags_resolveAccountPrefs(prefs_excl, excl_account_id);
                     prefs_excl.exclusions_locked = mztaManaged.isManagedLocked('add_tags_exclusions');
+                    const excl_entry = await addTags_getAccountEntry(excl_account_id);
+                    prefs_excl.exclusions_account_id = (!prefs_excl.exclusions_locked && Array.isArray(excl_entry.add_tags_exclusions)) ? excl_account_id : '';
                     return prefs_excl;
                 }
                 return _addtags_get_exclusion_prefs();
@@ -1207,6 +1325,19 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 if (!Array.isArray(message.list) || !message.list.every(el => typeof el === 'string')) {
                     taLog.warn('addtags_set_exclusions: the list must be an array of strings, ignored.');
                     return Promise.resolve(false);
+                }
+                // With the per-account settings disabled by the policy the dialog was told
+                // exclusions_account_id '', and an account id is ignored all the same: the list
+                // it shows is the global one.
+                if (typeof message.accountId === 'string' && message.accountId !== '' &&
+                    !mztaManaged.isAddTagsAccountSettingsDisabled()) {
+                    // That account's own list; the rest of its entry is kept.
+                    async function _addtags_set_account_exclusions() {
+                        const excl_entry = await addTags_getAccountEntry(message.accountId);
+                        await addTags_setAccountSettings(message.accountId, { ...excl_entry, add_tags_exclusions: message.list });
+                        return true;
+                    }
+                    return _addtags_set_account_exclusions();
                 }
                 return addTags_setExclusionList(message.list).then(() => true);
                 break;
@@ -1241,7 +1372,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 _checkSpamReport(sender.tab.id);
                 break;
             case 'removeSpamReport':
-                spamReport.removeReportData(message.headerMessageId);
+                spamReport.removeReportData(message.headerMessageId)
+                    .catch(e => taLog.error("Error in removeSpamReport: " + e));
                 break;
             case 'refreshSpamReport':
                 // The panel this comes from lives in the message display, so the sender tab is
@@ -1250,6 +1382,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 _generateSpamReportForMessage(message.headerMessageId, { tabId: sender.tab.id })
                     .catch(e => taLog.error("Error in refreshSpamReport: " + (e?.message || e)));
                 break;
+            case 'reconcileMessageStorage':
+                // The manual realignment of the per-message data with its storage.local mirror
+                // (the storage management page): only the background runs it. Answers the counts
+                // per type, { ok: true, counts: { spam: { restored, removed }, ... } }, or the
+                // error message, { ok: false, error }.
+                return taStorage.reconcileWithMirror()
+                    .then(counts => ({ ok: true, counts }))
+                    .catch(e => {
+                        taLog.error("Error in reconcileMessageStorage: " + (e?.message || e));
+                        return { ok: false, error: e?.message || String(e) };
+                    });
             case 'batch_status':
                 return Promise.resolve(taBatchController.getStatus());
             case 'cancel_batch':
@@ -1618,16 +1761,21 @@ async function _endSummaryJob(entry, headerMessageId, data, store) {
         await _restoreSummaryButton(null, headerMessageId);
         return { status: 'cancelled' };
     }
+    // A store failure never hides the result: it is logged, and its message travels with the
+    // data (storage_error), so the panel shows the result with a red notice above it.
+    let storage_error = null;
     if (store) {
         try {
             await store();
         } catch (e) {
             taLog.error("[ThunderAI] Summary: could not store the result for " + headerMessageId + ": " + e);
+            storage_error = _storageErrorMessage(e);
         }
     }
     // The banner's Refresh / Delete buttons send data.headerMessageId back: the error
     // payloads built above do not carry it.
     data = { headerMessageId: headerMessageId, ...data };
+    if (storage_error) data.storage_error = storage_error;
     await _sendToTabsDisplaying(headerMessageId, { command: "showSummary", data: data });
     return data.error
         ? { status: 'error', data: data, errorMessage: data.message }
@@ -1637,6 +1785,10 @@ async function _endSummaryJob(entry, headerMessageId, data, store) {
 async function _runSummaryJob(entry, headerMessageId, tabId, options) {
     // One startWorking()/stopWorking() pair per job that really works (past the cache).
     let working = false;
+    // Saved with the summary (subject, from, message_date), as the spam reports are: built as
+    // soon as the message is known, from the full message once fetched; empty while the message
+    // is not available. Declared outside the try so the final catch saves it too.
+    let metadata = {};
     try {
         let prefs = await mztaPrefs.getPrefs([
             'connection_type',
@@ -1651,7 +1803,10 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         if (options.refresh) {
             // Inside the job, not in the refresh handler: the old summary is dropped only by
             // the caller that owns the generation, never while another job is running.
-            await summaryStore.removeSummary(headerMessageId);
+            // The stored summary is only a cache: failing to drop it must not stop the new one,
+            // which overwrites it anyway.
+            await summaryStore.removeSummary(headerMessageId)
+                .catch(e => taLog.error("[ThunderAI] Summary: could not remove the stored summary of " + headerMessageId + ": " + e));
         } else {
             let cachedSummary = await summaryStore.loadSummary(headerMessageId);
             if (cachedSummary && !cachedSummary.error) {
@@ -1671,6 +1826,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         if (options.messageData) {
             message = options.messageData.message;
             fullMessage = options.messageData.fullMessage;
+            if (message) metadata = buildMessageMetadata(message, fullMessage);
             // buildSummaryPrompt() reads message.id to fetch the body, so a caller
             // passing only { fullMessage } would summarize an EMPTY body - subject
             // present, so the result looks plausible - and cache it as valid. Treated
@@ -1678,14 +1834,16 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
             if (!message?.id) {
                 taLog.error('[ThunderAI] Summary: options.messageData has no message.id - callers must pass { message, fullMessage }.');
                 const errorMsg = browser.i18n.getMessage('summarize_error_no_message_id');
-                return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg));
+                return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg, metadata));
             }
         } else {
             message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
-                return await _endSummaryJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => summaryStore.saveError(headerMessageId, "Message not found"));
+                return await _endSummaryJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => summaryStore.saveError(headerMessageId, "Message not found", {}));
             }
+            metadata = buildMessageMetadata(message, null);
             fullMessage = await browser.messages.getFull(message.id);
+            metadata = buildMessageMetadata(message, fullMessage);
         }
 
         const summarize_prompt = await getSummarizePrompt();
@@ -1695,13 +1853,14 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         // through into mzta_specialCommand.
         if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
-            return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg));
+            return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg, metadata));
         }
 
         taLog.log("[ThunderAI] Summary: building the prompt for " + message.headerMessageId + " (folder: " + message.folder?.path + ")");
         const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }]);
 
         const cmd = new mzta_specialCommand({
+            processingClient,
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
@@ -1720,7 +1879,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
             summary_date: new Date(),
             headerMessageId: headerMessageId
         };
-        return await _endSummaryJob(entry, headerMessageId, { ...summaryData, ...display }, () => summaryStore.saveSummary(summaryData, headerMessageId));
+        return await _endSummaryJob(entry, headerMessageId, { ...summaryData, ...display }, () => summaryStore.saveSummary(summaryData, headerMessageId, metadata));
 
     } catch (error) {
         console.error("[ThunderAI] Error generating summary:", error);
@@ -1730,7 +1889,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         const storedMessage = error.message || String(error);
         const outcome = await _endSummaryJob(entry, headerMessageId,
             { error: true, message: error.message || "Failed to generate summary" },
-            error.isConfigError ? null : () => summaryStore.saveError(headerMessageId, storedMessage));
+            error.isConfigError ? null : () => summaryStore.saveError(headerMessageId, storedMessage, metadata));
         // The error banner above already replaces the panel where it is delivered; this
         // covers the tabs where it is not, so no spinner outlives the failed generation.
         await _sendToTabsDisplaying(headerMessageId, { command: "hideSummaryGenerating", headerMessageId: headerMessageId });
@@ -1792,16 +1951,20 @@ async function _endTranslationJob(entry, headerMessageId, data, store) {
         await _restoreTranslationButton(null, headerMessageId);
         return { status: 'cancelled' };
     }
+    // See _endSummaryJob(): a store failure travels with the data, the result is still shown.
+    let storage_error = null;
     if (store) {
         try {
             await store();
         } catch (e) {
             taLog.error("[ThunderAI] Translation: could not store the result for " + headerMessageId + ": " + e);
+            storage_error = _storageErrorMessage(e);
         }
     }
     // The banner's Refresh / Delete buttons send data.headerMessageId back: the error
     // payloads built above do not carry it.
     data = { headerMessageId: headerMessageId, ...data };
+    if (storage_error) data.storage_error = storage_error;
     await _sendToTabsDisplaying(headerMessageId, { command: "showTranslation", data: data });
     return data.error
         ? { status: 'error', data: data, errorMessage: data.message }
@@ -1810,6 +1973,8 @@ async function _endTranslationJob(entry, headerMessageId, data, store) {
 
 async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) {
     let working = false;
+    // Saved with the translation: see _runSummaryJob().
+    let metadata = {};
     try {
         let prefs = await mztaPrefs.getPrefs([
             'connection_type',
@@ -1821,7 +1986,8 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
 
         if (options.refresh) {
             // See _runSummaryJob().
-            await translationStore.removeTranslation(headerMessageId);
+            await translationStore.removeTranslation(headerMessageId)
+                .catch(e => taLog.error("[ThunderAI] Translation: could not remove the stored translation of " + headerMessageId + ": " + e));
         } else {
             let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
             if (cachedTranslation && !cachedTranslation.error) {
@@ -1844,6 +2010,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             fullMessage = options.messageData.fullMessage;
             usedMessage = options.messageData.message;
             curr_messageId = options.messageData.message?.id;
+            if (usedMessage) metadata = buildMessageMetadata(usedMessage, fullMessage);
             // The ?. above is what keeps a caller passing only { fullMessage } from
             // throwing - but an undefined id reaches getMailInlineTextParts() and comes
             // back as an empty body, so the translation would be built from the subject
@@ -1854,16 +2021,18 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             if (!curr_messageId) {
                 taLog.error('[ThunderAI] Translation: options.messageData has no message.id - callers must pass { message, fullMessage }.');
                 const errorMsg = browser.i18n.getMessage('translate_error_no_message_id');
-                return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg));
+                return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg, metadata));
             }
         } else {
             const message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
-                return await _endTranslationJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => translationStore.saveError(headerMessageId, "Message not found"));
+                return await _endTranslationJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => translationStore.saveError(headerMessageId, "Message not found", {}));
             }
             usedMessage = message;
             curr_messageId = message.id;
+            metadata = buildMessageMetadata(message, null);
             fullMessage = await browser.messages.getFull(message.id);
+            metadata = buildMessageMetadata(message, fullMessage);
         }
 
         const translate_prompt = await getTranslatePrompt();
@@ -1873,12 +2042,13 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
         // through into mzta_specialCommand.
         if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
-            return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg));
+            return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg, metadata));
         }
         taLog.log("[ThunderAI] Translation: building the prompt for " + usedMessage?.headerMessageId + " (folder: " + usedMessage?.folder?.path + ")");
         const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
 
         const cmd = new mzta_specialCommand({
+            processingClient,
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
@@ -1907,7 +2077,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             lang: lang,
             headerMessageId: headerMessageId
         };
-        return await _endTranslationJob(entry, headerMessageId, { ...translationData, ...display }, () => translationStore.saveTranslation(translationData, headerMessageId));
+        return await _endTranslationJob(entry, headerMessageId, { ...translationData, ...display }, () => translationStore.saveTranslation(translationData, headerMessageId, metadata));
 
     } catch (error) {
         console.error("[ThunderAI] Error generating translation:", error);
@@ -1915,30 +2085,13 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
         const storedMessage = error.message || String(error);
         const outcome = await _endTranslationJob(entry, headerMessageId,
             { error: true, message: error.message || "Failed to generate translation" },
-            error.isConfigError ? null : () => translationStore.saveError(headerMessageId, storedMessage));
+            error.isConfigError ? null : () => translationStore.saveError(headerMessageId, storedMessage, metadata));
         // Same as the summary: no spinner outlives the failed generation.
         await _sendToTabsDisplaying(headerMessageId, { command: "hideTranslationGenerating", headerMessageId: headerMessageId });
         return { ...outcome, rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
     } finally {
         if (working) taWorkingStatus.stopWorking();
     }
-}
-
-// Build a lightweight metadata snapshot (subject, from, message_date) for spam
-// report entries. Prefers the full MIME headers, but falls back to the
-// MessageHeader fields (message.subject / message.author / message.date), which
-// remain readable even when the message storage is no longer available. This
-// keeps the spam log populated when a user filter removes a message while it is
-// being analyzed, or when getFull() returns partial headers.
-// Thanks to https://github.com/racerm3 for the idea, from https://github.com/racerm3/ThunderAI/commit/5ae5e206a733b44d57ef57dcc46968ea7e686e72#diff-ee0e0f04f23f4913865479164d992ff20124eba596df1453f1cde635359fb634
-function _buildReportMetadata(message, curr_fullMessage) {
-    const headers = (curr_fullMessage && curr_fullMessage.headers) || {};
-    const isEmpty = (v) => v === undefined || v === null || (Array.isArray(v) && v.length === 0);
-    return {
-        subject: isEmpty(headers.subject) ? (message?.subject ? [message.subject] : undefined) : headers.subject,
-        from: isEmpty(headers.from) ? (message?.author ? [message.author] : undefined) : headers.from,
-        message_date: message?.date ? new Date(message.date) : undefined
-    };
 }
 
 // Tail of the junk-move queue: every move to the junk folder chains on it, so only one is
@@ -2002,6 +2155,30 @@ function _spamOutcome(success, report, extra = {}) {
     return { status: success ? 'ok' : 'error', success: success, moved: false, data: { report: report }, ...extra };
 }
 
+// The text a failed write of the per-message storage shows in a result panel.
+function _storageErrorMessage(e) {
+    return (e && e.message) || String(e);
+}
+
+// Store a spam report. A failed write never hides the report: it is logged, and its message
+// travels with the report (storage_error), so the panel shows the report with a red notice above
+// it. An automatic run with no panel open only logs it.
+async function _saveSpamReport(report_data, headerMessageId) {
+    try {
+        await spamReport.saveReportData(report_data, headerMessageId);
+        return report_data;
+    } catch (e) {
+        taLog.error("[ThunderAI | SpamFilter] Could not store the report for " + headerMessageId + ": " + e);
+        return { ...report_data, storage_error: _storageErrorMessage(e) };
+    }
+}
+
+// Store the report of a failed analysis (see _saveSpamReport()). metadata: the message's
+// subject, from and message_date when known, {} otherwise.
+async function _saveSpamError(headerMessageId, error_message, metadata = {}) {
+    return await _saveSpamReport(spamReport.buildError(headerMessageId, error_message, metadata), headerMessageId);
+}
+
 // Marks a message as junk and moves it to its account's junk folder. Returns true on success.
 // Serialized through _enqueueJunkMove(): processEmails() analyzes several messages at once,
 // and concurrent moves into the junk folder (IMAP especially) were never exercised.
@@ -2050,7 +2227,7 @@ async function _saveRuleSpamReport(entry, headerMessageId, message, message_meta
     if (verdict.isSpam && (options.autoMove || entry.wantsMove)) {
         report_data.moved = await _moveMessageToJunk(message, headerMessageId);
     }
-    await spamReport.saveReportData(report_data, headerMessageId);
+    report_data = await _saveSpamReport(report_data, headerMessageId);
     await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
     // moved: read by the processEmails() pipeline, a moved message gets no tags, summary or translation.
     return _spamOutcome(true, report_data, { moved: report_data.moved });
@@ -2069,7 +2246,10 @@ async function _runSpamJob(entry, headerMessageId, options) {
             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
         ]);
 
-        await spamReport.removeReportData(headerMessageId);
+        // Only a cache: failing to drop the old report must not stop the analysis, whose new
+        // report overwrites it anyway.
+        await spamReport.removeReportData(headerMessageId)
+            .catch(e => taLog.error("[ThunderAI | SpamFilter] Could not remove the stored report of " + headerMessageId + ": " + e));
 
         await updateSpamPanel(headerMessageId, "showSpamCheckInProgress");
 
@@ -2080,26 +2260,26 @@ async function _runSpamJob(entry, headerMessageId, options) {
             curr_fullMessage = options.messageData.fullMessage;
             msg_text = options.messageData.msg_text;
             body_text = options.messageData.body_text;
-            message_metadata = _buildReportMetadata(message, curr_fullMessage);
+            message_metadata = buildMessageMetadata(message, curr_fullMessage);
         } else {
             message = await _resolveMessage(headerMessageId, options.messageId, options.tabId);
             if (!message) {
-                let err_data = await spamReport.saveError(headerMessageId, "Message not found");
+                let err_data = await _saveSpamError(headerMessageId, "Message not found");
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 return _spamOutcome(false, err_data);
             }
             // Snapshot the MessageHeader fields first: getFull() can fail, or resolve
             // with empty headers, when a user filter removes the message mid-analysis.
-            message_metadata = _buildReportMetadata(message, null);
+            message_metadata = buildMessageMetadata(message, null);
             try {
                 curr_fullMessage = await browser.messages.getFull(message.id);
             } catch (err) {
                 console.error("[ThunderAI | SpamFilter] Error getting the full message: ", err);
-                let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
+                let err_data = await _saveSpamError(headerMessageId, err.message || String(err), message_metadata || {});
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 return _spamOutcome(false, err_data);
             }
-            message_metadata = _buildReportMetadata(message, curr_fullMessage);
+            message_metadata = buildMessageMetadata(message, curr_fullMessage);
             msg_text = await getMailInlineTextParts(message.id);
             body_text = htmlBodyToPlainText(msg_text.html);
             if (body_text.length == 0) {
@@ -2167,7 +2347,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         let curr_prompt_spamfilter = await getSpamFilterPrompt();
         if (!curr_prompt_spamfilter) {
             taLog.error("Spam filter: the 'prompt_spamfilter' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Spam Filter prompt.");
-            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('spamfilter_prompt_missing_explanation'), message_metadata || {});
+            let err_data = await _saveSpamError(headerMessageId, browser.i18n.getMessage('spamfilter_prompt_missing_explanation'), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return _spamOutcome(false, err_data);
         }
@@ -2178,7 +2358,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         let spam_conntype = getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter');
         if (!isApiUsableConnection(spam_conntype)) {
             console.error("[ThunderAI | SpamFilter] Invalid connection type: " + spam_conntype);
-            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('msg_no_connection_selected'), message_metadata || {});
+            let err_data = await _saveSpamError(headerMessageId, browser.i18n.getMessage('msg_no_connection_selected'), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return _spamOutcome(false, err_data);
         }
@@ -2194,6 +2374,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
 
         let cmd_spamfilter = new mzta_specialCommand({
+            processingClient,
             prompt: specialFullPrompt_spamfilter,
             llm: spam_conntype,
             custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
@@ -2211,7 +2392,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
                 spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
             } catch (err) {
                 console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
-                let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
+                let err_data = await _saveSpamError(headerMessageId, err.message || String(err), message_metadata || {});
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 // rateLimited: the processEmails() pipeline stops the batch on it.
                 return _spamOutcome(false, err_data, { rateLimited: !!err.rateLimited, retryAfterMs: err.retryAfterMs ?? null });
@@ -2227,7 +2408,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
             jsonObj = extractJsonObject(spamfilter_result);
         } catch (e) {
             console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
-            let err_data = await spamReport.saveError(headerMessageId, e.message || String(e), message_metadata || {});
+            let err_data = await _saveSpamError(headerMessageId, e.message || String(e), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return _spamOutcome(false, err_data);
         }
@@ -2249,7 +2430,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
             report_data.moved = await _moveMessageToJunk(message, headerMessageId);
         }
 
-        await spamReport.saveReportData(report_data, headerMessageId);
+        report_data = await _saveSpamReport(report_data, headerMessageId);
         await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
         // moved: read by the processEmails() pipeline, a moved message gets no tags, summary or translation.
         return _spamOutcome(true, report_data, { moved: report_data.moved });
@@ -2258,13 +2439,9 @@ async function _runSpamJob(entry, headerMessageId, options) {
         console.error("[ThunderAI] Error generating spam report:", error);
         // A config error is shown but not stored, so a later check runs again once the
         // settings are fixed. Nothing is left "in progress": the registry drops the entry.
-        let err_data = { spamValue: -999, explanation: error.message || String(error) };
+        let err_data = { spamValue: SPAM_ERROR_VALUE, explanation: error.message || String(error) };
         if (!error.isConfigError) {
-            try {
-                err_data = await spamReport.saveError(headerMessageId, error.message || String(error), message_metadata || {});
-            } catch (e) {
-                taLog.error("[ThunderAI | SpamFilter] Could not store the error for " + headerMessageId + ": " + e);
-            }
+            err_data = await _saveSpamError(headerMessageId, error.message || String(error), message_metadata || {});
         }
         await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
         return _spamOutcome(false, err_data);
@@ -2287,8 +2464,14 @@ async function _openSummaryWebchat(headerMessageId, tabId, messageId = null) {
         // Not just chatgpt_web: an empty connection is equally unusable.
         if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
-            await summaryStore.saveError(headerMessageId, errorMsg);
-            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            const data = { error: true, message: errorMsg };
+            try {
+                await summaryStore.saveError(headerMessageId, errorMsg, buildMessageMetadata(curr_message, curr_message_full));
+            } catch (e) {
+                taLog.error("[ThunderAI] Summary: could not store the error for " + headerMessageId + ": " + e);
+                data.storage_error = _storageErrorMessage(e);
+            }
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: data });
             return;
         }
 
@@ -2311,6 +2494,21 @@ browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) =>
             break;
     }
 });
+
+// The answer as a compose window takes it, for replaceSelectedText and insertAtCaret alike.
+// The compose format is read from the window itself, not from a preference: it is a
+// per-message property, so a global setting could never be right for a user who writes in
+// both formats.
+async function _prepareComposeAnswer(tabId, text) {
+    const isPlainText = await isPlainTextCompose(tabId);
+    if(isPlainText){
+        return { text: stripHtmlKeepLines(text), isPlainText: true };
+    }
+    // The compose script inserts it with execCommand('insertHTML'): only sanitized markup
+    // may reach it. The ChatGPT web window's HTML is not sanitized anywhere else; the API
+    // chat's already crossed it.
+    return { text: sanitizeBlockHtml(text), isPlainText: false };
+}
 
 async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0, prompt_info = {}) {
     let prefs = await mztaPrefs.getAllPrefs();
@@ -2346,6 +2544,14 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     switch(prefs.connection_type){
         case 'chatgpt_web':
         {
+            // ThunderAI Privacy does not cover ChatGPT Web: while its switch is on, the prompt
+            // is blocked here rather than sent unprocessed to the site (fail-closed, as a
+            // missing companion blocks the API workers). The policy-resolved value is read.
+            if (await mztaPrefs.getPref('ai_processing_enabled') === true) {
+                let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                sendTabMessageSafe(curr_tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('ai_processing_chatgpt_web_unsupported') });
+                return;
+            }
             // We are using the ChatGPT web interface
 
             let rand_call_id = '_chatgptweb_' + generateCallID();
@@ -2393,7 +2599,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             
             applyWindowPositionAndSize(win_options, prefs);
 
-            const listener = (message, sender, sendResponse) => {
+            const ready = addReadyListener("chatgpt_web_ready_" + rand_call_id, (message, createdTab) => {
                 async function handleChatGptWeb(createdTab) {
                     taLog.log("ChatGPT web interface script started...");
 
@@ -2440,18 +2646,14 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, prompt_info: prompt_info});
                     taLog.log('[ChatGPT Web] Connection succeded!');
                     taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
-                    browser.runtime.onMessage.removeListener(listener);
+                    ready.cleanup();
                 }
-            
-                if (message.command === "chatgpt_web_ready_" + rand_call_id) {
-                    taLog.log("[chatgpt_web] Page ready: reason " + message.readyReason + ", loaderStartMs " + Math.round(message.loaderStartMs) + ", readySentMs " + Math.round(message.readySentMs) + ", readyStateAtSend " + message.readyStateAtSend);
-                    return handleChatGptWeb(sender.tab)
-                }
-                return false;
-            }
 
-            browser.runtime.onMessage.addListener(listener);
-            await browser.windows.create(win_options);
+                taLog.log("[chatgpt_web] Page ready: reason " + message.readyReason + ", loaderStartMs " + Math.round(message.loaderStartMs) + ", readySentMs " + Math.round(message.readySentMs) + ", readyStateAtSend " + message.readyStateAtSend);
+                return handleChatGptWeb(createdTab)
+            });
+
+            await ready.openWindow(win_options);
         }
         break;  // chatgpt_web - END
 
@@ -2461,34 +2663,26 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id2 = '_openai_' + generateCallID();
 
-            const listener2 = (message, sender, sendResponse) => {
+            const ready2 = addReadyListener("chatgpt_api_ready_"+rand_call_id2, (message, createdTab) => {
+                let mailMessageId2 = -1;
+                if(mailMessage) mailMessageId2 = mailMessage.id;
 
-                function handleChatGptApi(createdTab) {
-                    let mailMessageId2 = -1;
-                    if(mailMessage) mailMessageId2 = mailMessage.id;
-
-                    // check if the config is present, or give a message error
-                    if (prefs.chatgpt_api_key == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_apikey')});
-                        return;
-                    }
-                    if (prefs.chatgpt_model == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_model')});
-                        return;
-                    }
-                    //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[OpenAI ChatGPT] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener2);
+                // check if the config is present, or give a message error
+                if (prefs.chatgpt_api_key == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_apikey')});
+                    ready2.cleanup();
+                    return;
                 }
-
-                if (message.command === "chatgpt_api_ready_"+rand_call_id2) {
-                    return handleChatGptApi(sender.tab);
+                if (prefs.chatgpt_model == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_model')});
+                    ready2.cleanup();
+                    return;
                 }
-                return false;
-            }
-
-            browser.runtime.onMessage.addListener(listener2);
+                //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[OpenAI ChatGPT] Connection succeded!');
+                ready2.cleanup();
+            });
 
             let win_options2 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id2+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2497,7 +2691,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options2, prefs);
 
-            await browser.windows.create(win_options2);
+            await ready2.openWindow(win_options2);
         }
         break;  // chatgpt_api - END
 
@@ -2507,34 +2701,26 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id5 = '_google_gemini_' + generateCallID();
 
-            const listener5 = (message, sender, sendResponse) => {
+            const ready5 = addReadyListener("google_gemini_api_ready_"+rand_call_id5, (message, createdTab) => {
+                let mailMessageId5 = -1;
+                if(mailMessage) mailMessageId5 = mailMessage.id;
 
-                function handleChatGptApi(createdTab) {
-                    let mailMessageId5 = -1;
-                    if(mailMessage) mailMessageId5 = mailMessage.id;
-
-                    // check if the config is present, or give a message error
-                    if (prefs.google_gemini_api_key == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_apikey')});
-                        return;
-                    }
-                    if (prefs.google_gemini_model == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_model')});
-                        return;
-                    }
-                    //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[Google Gemini] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener5);
+                // check if the config is present, or give a message error
+                if (prefs.google_gemini_api_key == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_apikey')});
+                    ready5.cleanup();
+                    return;
                 }
-
-                if (message.command === "google_gemini_api_ready_"+rand_call_id5) {
-                    return handleChatGptApi(sender.tab);
+                if (prefs.google_gemini_model == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_model')});
+                    ready5.cleanup();
+                    return;
                 }
-                return false;
-            }
-
-            browser.runtime.onMessage.addListener(listener5);
+                //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[Google Gemini] Connection succeded!');
+                ready5.cleanup();
+            });
 
             let win_options5 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id5+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2543,7 +2729,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options5, prefs);
 
-            await browser.windows.create(win_options5);
+            await ready5.openWindow(win_options5);
         }
         break;  // google_gemini_api - END
 
@@ -2555,39 +2741,30 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id3 = '_ollama_' + generateCallID();
 
-            const listener3 = (message, sender, sendResponse) => {
+            const ready3 = addReadyListener("ollama_api_ready_"+rand_call_id3, (message, createdTab3) => {
+                taLog.log("Ollama API window ready.");
+                taLog.log("message.window_id: " + message.window_id)
+                taLog.log("createdTab3.id: " + createdTab3.id)
+                // let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                let mailMessageId3 = -1;
+                if(mailMessage) mailMessageId3 = mailMessage.id;
+                taLog.log("mailMessageId3: " + mailMessageId3)
 
-                function handleOllamaApi(createdTab3) {
-                    taLog.log("Ollama API window ready.");
-                    taLog.log("message.window_id: " + message.window_id)
-                    taLog.log("createdTab3.id: " + createdTab3.id)
-                    // let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-                    let mailMessageId3 = -1;
-                    if(mailMessage) mailMessageId3 = mailMessage.id;
-                    taLog.log("mailMessageId3: " + mailMessageId3)
-            
-                    // check if the config is present, or give a message error
-                    if (prefs.ollama_host == '') {
-                        browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
-                        return;
-                    }
-                    if (prefs.ollama_model == '') {
-                        browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
-                        return;
-                    }
-                    browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[Ollama API] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener3);
+                // check if the config is present, or give a message error
+                if (prefs.ollama_host == '') {
+                    browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
+                    ready3.cleanup();
+                    return;
                 }
-
-                if (message.command === "ollama_api_ready_"+rand_call_id3) {
-                    return handleOllamaApi(sender.tab);
-                }else{
-                    return false;
+                if (prefs.ollama_model == '') {
+                    browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
+                    ready3.cleanup();
+                    return;
                 }
-            }
-
-            browser.runtime.onMessage.addListener(listener3);
+                browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[Ollama API] Connection succeded!');
+                ready3.cleanup();
+            });
 
             let win_options3 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id3+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2596,7 +2773,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options3, prefs);
 
-            await browser.windows.create(win_options3);
+            await ready3.openWindow(win_options3);
 
         }
         break;  // ollama_api - END
@@ -2608,34 +2785,26 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             let rand_call_id4 = '_openai_comp_api_' + generateCallID();
 
     
-            const listener4 = (message, sender, sendResponse) => {
+            const ready4 = addReadyListener("openai_comp_api_ready_"+rand_call_id4, (message, createdTab) => {
+                let mailMessageId4 = -1;
+                if(mailMessage) mailMessageId4 = mailMessage.id;
 
-                function handleOpenAICompApi(createdTab) {
-                    let mailMessageId4 = -1;
-                    if(mailMessage) mailMessageId4 = mailMessage.id;
-    
-                    // check if the config is present, or give a message error
-                    if (prefs.openai_comp_host == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_host')});
-                        return;
-                    }
-                    if (prefs.openai_comp_model == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_model')});
-                        return;
-                    }
-    
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId4, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[OpenAI Comp API] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener4);
+                // check if the config is present, or give a message error
+                if (prefs.openai_comp_host == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_host')});
+                    ready4.cleanup();
+                    return;
+                }
+                if (prefs.openai_comp_model == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_model')});
+                    ready4.cleanup();
+                    return;
                 }
 
-                if (message.command === "openai_comp_api_ready_"+rand_call_id4) {
-                    return handleOpenAICompApi(sender.tab);
-                }
-                return false;
-            }
-    
-            browser.runtime.onMessage.addListener(listener4);
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId4, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[OpenAI Comp API] Connection succeded!');
+                ready4.cleanup();
+            });
 
             let win_options4 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id4+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2644,7 +2813,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options4, prefs);
 
-            await browser.windows.create(win_options4);
+            await ready4.openWindow(win_options4);
         }
         break;  // openai_comp_api - END
 
@@ -2654,38 +2823,31 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id6 = '_anthropic_' + generateCallID();
 
-            const listener6 = (message, sender, sendResponse) => {
+            const ready6 = addReadyListener("anthropic_api_ready_"+rand_call_id6, (message, createdTab) => {
+                let mailMessageId6 = -1;
+                if(mailMessage) mailMessageId6 = mailMessage.id;
 
-                function handleAnthropicApi(createdTab) {
-                    let mailMessageId6 = -1;
-                    if(mailMessage) mailMessageId6 = mailMessage.id;
-
-                    // check if the config is present, or give a message error
-                    if (prefs.anthropic_api_key == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_apikey')});
-                        return;
-                    }
-                    if (prefs.anthropic_model == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_model')});
-                        return;
-                    }
-                    if (prefs.anthropic_version == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_version')});
-                        return;
-                    }
-                    //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId6, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[OpenAI ChatGPT] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener6);
+                // check if the config is present, or give a message error
+                if (prefs.anthropic_api_key == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_apikey')});
+                    ready6.cleanup();
+                    return;
                 }
-
-                if (message.command === "anthropic_api_ready_"+rand_call_id6) {
-                    return handleAnthropicApi(sender.tab);
+                if (prefs.anthropic_model == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_model')});
+                    ready6.cleanup();
+                    return;
                 }
-                return false;
-            }
-
-            browser.runtime.onMessage.addListener(listener6);
+                if (prefs.anthropic_version == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_version')});
+                    ready6.cleanup();
+                    return;
+                }
+                //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId6, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[OpenAI ChatGPT] Connection succeded!');
+                ready6.cleanup();
+            });
 
             let win_options6 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id6+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2694,7 +2856,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options6, prefs);
 
-            await browser.windows.create(win_options6);
+            await ready6.openWindow(win_options6);
         }
         break;  // anthropic_api - END
 
@@ -2710,6 +2872,50 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             }
         break;
     }
+}
+
+// The background's side of the chat window's ready handshake (claude-spec/01-architecture.md,
+// "Ready handshake"): a runtime.onMessage listener waiting for `command` (`<llm>_ready_<call_id>`)
+// and calling onReady(message, senderTab) with it. Whatever onReady answers the window (api_send,
+// api_error, chatgpt_send), it calls cleanup() once done. openWindow() creates the window and
+// watches it: a window closed before its ready message arrives (or that never sends it) removes
+// the listener too. cleanup() removes both listeners, so neither is left behind.
+function addReadyListener(command, onReady) {
+    let done = false;
+    let windowId = null;
+    const listener = (message, sender, sendResponse) => {
+        if (message.command === command) {
+            return onReady(message, sender.tab);
+        }
+        return false;
+    };
+    const onWindowRemoved = (removedId) => {
+        if (removedId === windowId) cleanup();
+    };
+    function cleanup() {
+        done = true;
+        browser.runtime.onMessage.removeListener(listener);
+        browser.windows.onRemoved.removeListener(onWindowRemoved);
+    }
+    browser.runtime.onMessage.addListener(listener);
+    return {
+        cleanup,
+        async openWindow(win_options) {
+            let win;
+            try {
+                win = await browser.windows.create(win_options);
+            } catch (error) {
+                cleanup();
+                throw error;
+            }
+            // The ready message may already have been answered while the window was being created.
+            if (!done) {
+                windowId = win.id;
+                browser.windows.onRemoved.addListener(onWindowRemoved);
+            }
+            return win;
+        },
+    };
 }
 
 function checkScreenDimensions(prefs){
@@ -2865,7 +3071,7 @@ setupPermissionsRemovedListener();
 // Never fatal either, like the migration block above: on failure its flag stays unset and it
 // runs again at the next start.
 if (_prefs_migration_ok) await migrateMenuOrderAlphabetic().catch(e => console.error("[ThunderAI] migrateMenuOrderAlphabetic error: " + e));
-const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
+const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug, processingClient);
 await menus.loadMenus(await _computeActiveSpecialIds());
 
 // Context menu click handling
@@ -2983,10 +3189,6 @@ const newEmailListener = (folder, messagesList) => {
             translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3,
             isAutoMode: true,
         });
-
-        if(prefs_init.spamfilter){
-            spamReport.truncReportData();
-        }
     }
 
     return _newEmailListener();
@@ -3499,9 +3701,24 @@ async function processEmails(args) {
 
         // The add_tags work itself. Resolves to the job outcome.
         const runAddTagsJob = async (msg, fullMessage, body) => {
-            const { prompt: curr_prompt_add_tags, conntype: addtags_conntype } = await resolveAddTagsSetup();
+            const { prompt: global_prompt_add_tags, conntype: addtags_conntype } = await resolveAddTagsSetup();
+            // The account of the message may have its own Add Tags settings and prompt text
+            // (add_tags_account_settings). Applied here, per message, never inside
+            // resolveAddTagsSetup(): that result is memoized and shared by the whole batch.
+            // addTags_applyAccountPrompt() and addTags_resolveAccountPrefs() return copies;
+            // prefs_msg replaces prefs_aats for every Add Tags value below.
+            const addtags_account_id = msg.folder?.accountId;
+            const curr_prompt_add_tags = await addTags_applyAccountPrompt(global_prompt_add_tags, addtags_account_id);
+            if (curr_prompt_add_tags !== global_prompt_add_tags) {
+                taLog.log("Add tags: using the custom prompt of account " + addtags_account_id + ".");
+            }
+            const prefs_msg = await addTags_resolveAccountPrefs(prefs_aats, addtags_account_id);
+            const addtags_overridden = Object.keys(prefs_msg).filter(key => prefs_msg[key] !== prefs_aats[key]);
+            if (addtags_overridden.length > 0) {
+                taLog.log("Add tags: using the settings of account " + addtags_account_id + " for: " + addtags_overridden.join(', ') + ".");
+            }
             let tags_full_list = await getTagsList();
-            let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
+            let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags, prefs_msg.default_chatgpt_lang);
             let specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
                 curr_prompt: curr_prompt_add_tags,
                 curr_message: msg,
@@ -3511,9 +3728,10 @@ async function processEmails(args) {
                 msg_text: body.msg_text,
                 tags_full_list: tags_full_list
             });
-            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list, prefs_aats.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
+            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_msg.add_tags_maxnum, prefs_msg.add_tags_force_lang, prefs_msg.default_chatgpt_lang, prefs_msg.add_tags_auto_uselist, prefs_msg.add_tags_auto_uselist_list, prefs_msg.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand({
+                processingClient,
                 prompt: specialFullPrompt_add_tags,
                 llm: addtags_conntype,
                 custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
@@ -3536,7 +3754,7 @@ async function processEmails(args) {
                     return { status: 'error', errorMessage: err?.message || String(err) };
                 }
                 try {
-                    tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                    tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_msg.add_tags_auto_uselist, prefs_msg.add_tags_auto_uselist_list);
                 } catch (err) {
                     console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
                     if (err?.rateLimited) {
@@ -3553,12 +3771,29 @@ async function processEmails(args) {
             // cannot be created or assigned stops the assignment and is reported here, never
             // passed over [#962].
             try {
-                await _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+                await _assign_tags(_data, !prefs_msg.add_tags_auto_force_existing, prefs_msg.add_tags_exclusions_exact_match, addtags_account_id || '');
             } catch (err) {
                 taLog.error("[ThunderAI | Auto add_tags] Could not assign the tags to " + msg.headerMessageId + ": " + (err?.message || err));
                 return { status: 'error', errorMessage: err?.message || String(err) };
             }
             return { status: 'ok', data: { tags: tags_current_email, assigned: true } };
+        };
+
+        // Whether the automatic summary / translation of a message is still wanted, from the
+        // settings as they are now. The batch decides its targets when it starts, but a message
+        // can wait in the queue (batch_max_concurrency) long after: if the user meanwhile turns
+        // the feature off or back to the manual button, the steps not started yet must not run,
+        // or the message is summarized "on receive" with a setting that no longer says so.
+        // Only the automatic runs: a manual action (context menu) is never re-checked.
+        const autoSummaryStillWanted = async (msg) => {
+            const p = await mztaPrefs.getPrefs(['summarize', 'summarize_auto', 'summarize_auto_senders', 'summarize_auto_senders_list']);
+            if (!p.summarize) return false;
+            if (p.summarize_auto === 3) return true;
+            return !!p.summarize_auto_senders && matchAddressList(msg.author, p.summarize_auto_senders_list);
+        };
+        const autoTranslateStillWanted = async () => {
+            const p = await mztaPrefs.getPrefs(['translate', 'translate_auto']);
+            return !!p.translate && p.translate_auto === 3;
         };
 
         // One message through its features, in series. Spam first: a spam verdict can move
@@ -3585,7 +3820,7 @@ async function processEmails(args) {
                 if (target.spam) {
                     let spamReady = false;
                     try {
-                        // _buildReportMetadata() reads fullMessage.headers, so the spam report
+                        // buildMessageMetadata() reads fullMessage.headers, so the spam report
                         // needs the full message too, not just the body.
                         await ensureFull();
                         await ensureBody();
@@ -3654,6 +3889,8 @@ async function processEmails(args) {
                 if (target.summarize) {
                     if (isAutoMode && isMessageInAutoSkippedFolder(curr)) {
                         taLog.log("[ThunderAI] Summarize: " + curr.headerMessageId + " is now in an excluded folder, skipping.");
+                    } else if (isAutoMode && !(await autoSummaryStillWanted(curr))) {
+                        taLog.log("[ThunderAI] Summarize: the automatic summary was turned off since the batch started, skipping " + curr.headerMessageId + ".");
                     } else {
                         let summaryReady = false;
                         try {
@@ -3679,6 +3916,10 @@ async function processEmails(args) {
                 if (target.translate) {
                     if (isAutoMode && isMessageInAutoSkippedFolder(curr)) {
                         taLog.log("[ThunderAI] Translate: " + curr.headerMessageId + " is now in an excluded folder, skipping.");
+                        return;
+                    }
+                    if (isAutoMode && !(await autoTranslateStillWanted())) {
+                        taLog.log("[ThunderAI] Translate: the automatic translation was turned off since the batch started, skipping " + curr.headerMessageId + ".");
                         return;
                     }
                     try {

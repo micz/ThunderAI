@@ -19,6 +19,10 @@ Each entry in `_locales/en/messages.json` follows the standard WebExtension i18n
 
 The `description` field is important — it helps Weblate translators understand the context.
 
+Each key appears once per file, and each name once inside an entry. A repeated key is still valid
+JSON for the browser, which silently keeps the last copy, so it hides one of the two texts; the
+`static` tests fail on it in every locale.
+
 ## Using Strings in Code
 
 A string reaches the UI in one of three ways: `browser.i18n.getMessage()` in JavaScript, a
@@ -113,6 +117,35 @@ A key no longer referenced from the code is **removed from `_locales/en/messages
 behind: Weblate keeps asking translators for every key `en` has. The other locales follow when
 Weblate syncs from `en`. The `dead-key` check of `tests/static/02-locales-references` reports an
 `en` key that is referenced nowhere (see `tests/static/README.md` for what counts as a reference).
+
+## Automatic Translation
+
+The one exception to the Golden Rule, and only when the maintainer asks for it: the
+`translate-locales` Claude Code skill (`.claude/skills/translate-locales/SKILL.md`) has Claude
+translate, for the locales listed in `LANG_AUTO.md` (one per line, `#` lines ignored), the `en`
+strings those locales lack or translate from an older English text. Weblate stays in charge of the
+same files; reconciling the two is the maintainer's job.
+
+`scripts/i18n.mjs` (Node built-ins only) does every file operation; nothing edits a locale by hand.
+
+- **Baseline** `.claude/skills/translate-locales/baseline.json` (committed): per locale folder and key, the truncated sha256 of
+  the English `message` (and `:` that of its `placeholders`) the translation was produced or
+  confirmed for. `init` records it for the languages that lack one, taking every existing
+  translation as up to date.
+- **States**: *missing* (absent or empty in the locale), *modified* (translated, but the English
+  hash differs from the baseline, or the key has no baseline entry, e.g. translated on Weblate
+  afterwards), *obsolete* (no longer in `en`; removed only with `apply --prune`).
+- **Commands**: `status` (exit 1 when anything needs work), `extract` (work files in the ignored
+  `.claude/i18n-work/`, with the previous English text recovered from git for modified keys and reference
+  translations), `apply` (validates `$name$`, `$1`, HTML tags and non-empty text, then merges).
+- **Merge**: the locale file is edited as text, member by member: existing keys keep their place and
+  any `description`, a new key goes right after the nearest earlier `en` key the file has, the
+  `placeholders` block is copied from `en`, and no other byte changes. Only the written keys get a
+  new baseline hash.
+
+Everything the skill keeps (script, baseline, work files) lives under `.claude/`, which the
+packaging script (`create_xpi_from_folder.bat`, outside this repository) excludes from the XPI;
+`LANG_AUTO.md` is excluded with every `*.md`.
 
 ## Supported Languages
 

@@ -17,6 +17,7 @@ import { assertHarnessClean } from '../../helpers/core/dom-harness.mjs';
 import { composeTests } from '../../helpers/known-issues/compose.mjs';
 import {
     COMPOSE_URL,
+    caretAfter,
     clearSelection,
     fixture,
     openMailDocument,
@@ -38,6 +39,7 @@ const S_TEXT_HTML = 'spec 01 "The text/HTML rule: stripped from the TEXT, never 
 const S_RICHTEXT = 'spec 01 "The rich-text layer — `js/lib/mzta-html-lines.js` (classic) + `js/mzta-richtext.js` (module)"';
 
 const TYPED = 'Ciao Mario,\n\nHere we use HTML because we are pretty!\nAnd a second line.\n\nRegards!!!';
+const TYPED_HTML = '<p>Ciao&nbsp;Mario,</p><p>Here we use HTML because we are pretty!<br>And a second line.</p><p>Regards!!!</p>';
 const QUOTE_LINES = 'This is the body of test email number 8. It was received.\nA second quoted line.';
 
 /** The selection twin of spec 03, computed with the shared layer's own functions. */
@@ -103,13 +105,44 @@ k.test('autoselect-typed-range', S_RICHTEXT, 'autoselect: the range runs from th
     clearSelection(ctx);
     await send(ctx, { command: 'getOnlyTypedText', do_autoselect: true });
     const html = await send(ctx, { command: 'getSelectedHtml' });
-    assert.equal(html, '<p>Ciao&nbsp;Mario,</p><p>Here we use HTML because we are pretty!<br>And a second line.</p><p>Regards!!!</p>');
+    assert.equal(html, TYPED_HTML);
 });
 
 k.test('autoselect-twin-agrees', S_TWINS, 'the autoselected html and the typed text are twins: the same lines', async () => {
     const html = await send(ctx, { command: 'getSelectedHtml' });
     const typed = cleanupNewlinesKeepParagraphs(await send(ctx, { command: 'getOnlyTypedText' }));
     assert.equal(twinText(html), cleanupNewlines(typed));
+});
+
+k.test('typed-with-html', S_RICHTEXT, 'with_html: the typed text and the markup of its range, with no autoselect and no range left in the selection', async () => {
+    clearSelection(ctx);
+    const r = await send(ctx, { command: 'getOnlyTypedText', with_html: true });
+    assert.equal(cleanupNewlinesKeepParagraphs(r.text), TYPED);
+    assert.equal(r.html, TYPED_HTML);
+    assert.equal(ctx.window.getSelection().rangeCount, 0);
+});
+
+k.test('autoselect-keeps-user-selection', S_TWINS, 'autoselect with a user selection: the selection is left as it is, the typed text and its html are still whole [#978]', async () => {
+    select(ctx, 'use HTML because');
+    const r = await send(ctx, { command: 'getOnlyTypedText', do_autoselect: true, with_html: true });
+    assert.equal(ctx.window.getSelection().toString(), 'use HTML because');
+    assert.equal(await send(ctx, { command: 'getSelectedHtml' }), 'use HTML because');
+    assert.equal(cleanupNewlinesKeepParagraphs(r.text), TYPED);
+    assert.equal(r.html, TYPED_HTML);
+});
+
+k.test('autoselect-caret', S_TWINS, 'autoselect with a collapsed caret: the typed region is selected, and its markup is the returned html', async () => {
+    caretAfter(ctx, 'pretty!');
+    const r = await send(ctx, { command: 'getOnlyTypedText', do_autoselect: true, with_html: true });
+    assert.equal(await send(ctx, { command: 'getSelectedHtml' }), r.html);
+    assert.equal(r.html, TYPED_HTML);
+});
+
+k.test('autoselect-whitespace-selection', S_TWINS, 'autoselect with a whitespace-only selection: treated as no selection, the typed region is selected [#978]', async () => {
+    select(ctx, ' ');
+    assert.equal(ctx.window.getSelection().toString(), ' ');
+    await send(ctx, { command: 'getOnlyTypedText', do_autoselect: true });
+    assert.equal(await send(ctx, { command: 'getSelectedHtml' }), TYPED_HTML);
 });
 
 k.test('autoselect-quoted-range', S_RICHTEXT, 'autoselect on the quoted text: from the citation to the last node with text', async () => {

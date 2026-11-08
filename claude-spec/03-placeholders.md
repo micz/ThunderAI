@@ -18,6 +18,7 @@ Example in a prompt: `"Summarize this email: {%mail_text_body_or_selected%}"`
 | `type` | number | `0` = always, `1` = reading only, `2` = composing only |
 | `is_default` | string | `"1"` = built-in (not editable/deletable), `"0"` = custom |
 | `is_dynamic` | string | `"0"` = fixed value, `"1"` = dynamic (takes a parameter after `:`) |
+| `param_optional` | string | Dynamic placeholders only, absent = `"0"`. `"1"` = the parameter may be left out (`{%mail_text_body%}` and `{%mail_text_body:2000%}` are both valid), so the autocomplete offers the plain token instead of `{%id:%}` |
 | `enabled` | number | `0` = disabled, `1` = enabled |
 | `text` | string | Content for custom placeholders only |
 
@@ -25,11 +26,12 @@ Example in a prompt: `"Summarize this email: {%mail_text_body_or_selected%}"`
 
 Defined in `js/mzta-placeholders.js` as the `defaultPlaceholders` array — that
 array is the source of truth for IDs. Listed here in source order. `Dyn` marks
-placeholders with `is_dynamic: "1"` (take a parameter after `:`).
+placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_body` and
+`mail_text_body_or_selected` also have `param_optional: "1"`, since their parameter may be left out.
 
 | ID | Description | Type | Dyn |
 |----|-------------|------|-----|
-| `mail_text_body` | Full plain text of the email | 0 | |
+| `mail_text_body` | Full plain text of the email; `{%mail_text_body:N%}` cuts it to N characters | 0 | ✓ |
 | `mail_html_body` | Full HTML of the email | 0 | |
 | `mail_typed_text` | Text typed so far in compose window (line structure preserved, see below) | 2 | |
 | `mail_quoted_text` | Quoted text in the compose window (line structure preserved, see below) | 2 | |
@@ -56,7 +58,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `thunderai_translate_exclude_lang` | Language to exclude from translation | 0 | |
 | `empty` | Empty string: always resolves to nothing, whatever `placeholders_use_default_value` says (special-cased in `replacePlaceholders()`, never left as the literal token) | 0 | |
 | `mail_attachments_info` | Information about the email's attachments | 1 | |
-| `mail_text_body_or_selected` | Plain text body, or selected text if any | 0 | |
+| `mail_text_body_or_selected` | Plain text body, or selected text if any; `{%mail_text_body_or_selected:N%}` cuts it to N characters | 0 | ✓ |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
 | `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
 
@@ -64,6 +66,39 @@ The newline contracts below are what the model receives: the API chat window pos
 its worker as it comes, line breaks as `\n` and no `<br>` added, both for the prompt the background
 sends and for a message the user types (see [01-architecture.md](01-architecture.md) → *Streaming
 data flow*, "The prompt is plain text").
+
+### Optional length limit on the body placeholders
+
+`mail_text_body` and `mail_text_body_or_selected` accept a character limit after the colon:
+
+```
+{%mail_text_body:2000%}
+{%mail_text_body_or_selected:4000%}
+```
+
+The value is cut to N characters with `truncateText()` (`js/mzta-utils.js`), which prefers a word
+boundary in the last 10% of the window and appends ` [...]` when it actually cut something. The plain
+`{%mail_text_body%}` stays the whole body, and an invalid parameter (not a positive integer) falls
+back to it — an unusable limit must never silently empty the prompt.
+
+Why a placeholder parameter rather than a preference:
+
+- the limit is per prompt, so tagging can run on 2 000 characters while a summary keeps 20 000;
+- it works on every path that resolves placeholders (menu, popup, auto add-tags, summarize, translate)
+  without any of them knowing about it;
+- nothing is mutated: the cut happens at substitution time, so the shared `body_text` / `msg_text`
+  of the other features processing the same message stays whole.
+
+Both are therefore `is_dynamic: "1"`. Two tokens with different limits in one prompt resolve
+independently: the value is stored under the full token key (`mail_text_body:2000`), the same way
+`mail_headers:Subject` already works.
+
+Unlike the other dynamic placeholders, the parameter is **optional**, and the plain form is the
+common one. Both carry `param_optional: "1"`, which `mapPlaceholderToSuggestion()` reads to offer
+the plain token (`{%mail_text_body%}`) in the autocomplete instead of `{%mail_text_body:%}`; a user
+who wants a limit types the colon and the number by hand. Without the flag, making them dynamic
+turned every completion of the body placeholders into a token with a dangling colon (the editor
+suggests `{%id:%}` for every `is_dynamic: "1"` placeholder, see *Placeholder Autocomplete*).
 
 ### Newline contract of the compose placeholders
 
@@ -159,7 +194,8 @@ fragment with `htmlToLines()`); a structure-less plain-text selection has its te
 unbalanced fragment that `DOMParser` auto-closes, so no half-open tag leaks into either twin. The
 autoselect fallback is preserved: with no selection and a prompt that uses `{%mail_typed_text%}`,
 `selection_text` falls back to `only_typed_text` (paragraph-preserving) and its `only_typed_html`
-twin.
+twin. The autoselect itself happens in exactly the same case (no range, collapsed, or whitespace-only):
+a real user selection is never replaced by the typed text's range [#978].
 
 **This contract does not extend to `{%mail_plain_text_part%}`**, which is a third case with the
 opposite whitespace rule — see the next section before assuming the three behave alike.
@@ -406,7 +442,9 @@ mirror painting stale text while the caret advances over glyphs that never get r
 reason the list items handle **`mousedown` with `preventDefault()`**, not `click` — a click lets the
 textarea lose focus and collapse its selection before the insertion runs. Completing a dynamic
 placeholder leaves the caret after the colon, before the closing `%}` (`{%additional_text:|%}`), so the
-value can be typed immediately.
+value can be typed immediately. A dynamic placeholder whose parameter is optional
+(`param_optional: "1"`: the two body placeholders, see *Optional length limit on the body
+placeholders*) completes to the plain token instead, with the caret after it, like a fixed one.
 
 **Positioning.** The dropdown is `position: fixed` and placed at the caret by JS. Fixed, not absolute:
 on the two table pages an absolutely positioned list is clipped by the surrounding `<td>`. The caret
@@ -692,12 +730,12 @@ source field on the path in question:
 
 | Path | Site | Supplies |
 |---|---|---|
-| Interactive menu (reader, message list, popup, calendar event, task, translate-this) | `js/mzta-menus.js` → `preparePrompt` | everything — the only site passing selection/typed/quoted/tags |
+| Interactive menu (reader, message list, popup, calendar event, task) | `js/mzta-menus.js` → `preparePrompt` | everything — the only site passing selection/typed/quoted/tags |
 | Spam filter | `mzta-background.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
 | Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same plus `tags_full_list` |
 | Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
 | Summarize, header + separator prompts | `js/mzta-utils-prompt.js` → `preparePrompt` | only `curr_prompt`/`chatgpt_lang` — every mail placeholder resolves empty |
-| Translation | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject` — **no `body_text`**, so `{%mail_text_body%}` is empty there |
+| Translation (popup and context menu included: `prompt_translate_this` never reaches `preparePrompt`) | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject`, and `body_text` read as in Summarize, only when `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` is in the prompt (no selection: the latter is the body) |
 | `additional_text` late fill | `api_webchat/controller.js` → `replacePlaceholders` | the deferred half of `skip_additional_text: true` |
 
 **The tag lists are the exception: no path leaves them empty.** When the caller supplies no
@@ -721,7 +759,8 @@ Three things bite when adding one:
   function has two call sites, but one of them is `preparePrompt()`, whose own six callers
   feed it with *uneven* coverage (see the table under *Placeholder Resolution Order*): only
   `js/mzta-menus.js` passes selection/typed/quoted/tags, and `buildTranslationPrompt()` —
-  the direct call — passes no `body_text` at all. Check the paths your placeholder needs.
+  the direct call — passes only `msg_text`, `mail_subject` and, on demand, `body_text`. Check the
+  paths your placeholder needs.
 - **`type: 1` means "reading", not "background".** The reader and the message list are reading
   contexts served by the content-script scraper in `js/mzta-menus.js`, which has no access to the
   message's parts. A placeholder that needs part or header data must fetch it there itself —

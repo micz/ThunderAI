@@ -24,6 +24,14 @@ import {
     OpenAIComp,
     extractUsage
 } from '../api/openai_comp.js';
+import {
+    createIdleTimer,
+    idleTimeoutMessage,
+    idleTimeoutReason,
+    isUserStopReason,
+    resolveIdleTimeoutMs,
+    userStopReason
+} from '../api/api-idle-timer.js';
 import { readResponseBody } from '../api/api-retry.js';
 import { taLogger } from '../mzta-logger.js';
 import {
@@ -38,9 +46,14 @@ let i18nStrings = null;
 let do_debug = false;
 let taLog = null;
 // Set only while waiting for the response headers (including the retry
-// backoff): Stop aborts the request then. Once streaming has started the
-// stopStreaming flag takes over, so a pending reader.read() is never rejected.
+// backoff): Stop aborts the request then, and the turn ends as requestAborted.
 let requestAbort = null;
+// The turn's controller while its stream is read: Stop aborts it with
+// userStopReason(), which ends a pending reader.read() at once, a stall
+// included, and the turn ends as a Stop (stopTurn()).
+let streamAbort = null;
+// ms without any data before a stream is given up (api_stream_idle_timeout, 0 = never).
+let idleTimeoutMs = 0;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
@@ -60,7 +73,7 @@ export function getUsageData() {
 }
 
 // Only the provider, the model and the token counts. Never the request URL or the
-// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// headers: some OpenAI-compatible endpoints carry the API key in the
 // query string, and a header map carries it outright.
 function logUsageData(usage) {
     if (!taLog || !taLog.do_debug || usage === null) return;
@@ -106,6 +119,26 @@ function streamErrorText(error) {
     return i18nStrings["OpenAIComp_api_request_failed"] + ": " + (error && error.message ? error.message : String(error));
 }
 
+// A turn stopped by the user once streaming, between two chunks (the stopStreaming
+// flag) or during a pending read (userStopReason()): the partial answer stays in the
+// history and the turn ends with tokensDone, as a completed one.
+function stopTurn() {
+    stopStreaming = false;
+    taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
+    taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
+    conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+    assistantResponseAccumulator = '';
+    // Separate from tokensDone and free of any response text: see usage-emitter.js.
+    postUsageData(usageData, usageMessageId);
+    postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+    thinkingAccumulator = '';
+}
+
+// The text of a stream cut by the idle timeout.
+function idleTimeoutText() {
+    return i18nStrings["OpenAIComp_api_request_failed"] + ": " + idleTimeoutMessage(i18nStrings, idleTimeoutMs);
+}
+
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         let config = { stream: true };
@@ -116,9 +149,13 @@ self.onmessage = async function(event) {
                 config[newKey] = event.data[key];
             }
         }
+        // Checked again by the class before every request: a worker has no UI to ask
+        // with, so it only knows the origins the window or the background approved.
+        config.approved_insecure_origins = event.data.approved_insecure_origins;
         openai_comp = new OpenAIComp(config);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
+        idleTimeoutMs = resolveIdleTimeoutMs(event.data.api_stream_idle_timeout);
         taLog = new taLogger('model-worker-openai_comp', do_debug);
         initUsageEmitter(event.data);
     } else if (event.data.type === 'chatMessage') {
@@ -127,11 +164,19 @@ self.onmessage = async function(event) {
         usageMessageId = nextUsageMessageId();
 
         requestAbort = new AbortController();
+        // Kept past `requestAbort = null`: the idle timeout of the stream aborts it.
+        const turnAbort = requestAbort;
         const response = await openai_comp.fetchResponse(conversationHistory, 0, {
             signal: requestAbort.signal,
             logger: taLog,
             onRetry: (info) => postMessage({ type: 'newRetryAttempt', payload: info }),
         });
+        // The redirect outcome of the request, saved by whoever owns this worker
+        // (js/mzta-endpoint-redirects.js): a worker has no browser.storage [#1000].
+        // The host and the outcome only, never the API key.
+        if (openai_comp.redirect_info !== null) {
+            postMessage({ type: 'endpoint_redirect', payload: { host: openai_comp.host, info: openai_comp.redirect_info } });
+        }
         postMessage({ type: 'messageSent' });
 
         // The body of an HTTP error is read while Stop can still abort it (an abort
@@ -164,6 +209,11 @@ self.onmessage = async function(event) {
                 // Network-level failure: no status/statusText exist on the returned object,
                 // and error_message already carries the provider name.
                 error_text = error_message;
+                // A redirect that could not be followed, or that ended in an error [#1000]:
+                // say so, and how to fix it.
+                if (response.is_redirect === true && i18nStrings?.api_error_redirect) {
+                    error_text = i18nStrings.api_error_redirect;
+                }
             }else{
                 try{
                     const errorJSON = JSON.parse(errorBodyText);
@@ -184,6 +234,14 @@ self.onmessage = async function(event) {
             throw new Error("[ThunderAI] OpenAI Comp API request failed: " + error_text);
         }
 
+        // The idle timeout of the stream (#999). Started only now: until the headers the
+        // per-attempt timeout and the retries of fetchWithRetry() apply, and a stall from
+        // here on is never retried. When it fires, the turn's controller is aborted with its
+        // own reason, which errors the pending reader.read(); a Stop does the same with another
+        // reason (streamAbort), so the catch below tells the three endings apart.
+        const idle = createIdleTimer(idleTimeoutMs, () => turnAbort.abort(idleTimeoutReason(idleTimeoutMs)));
+        idle.start();
+        streamAbort = turnAbort;
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = '';
@@ -191,19 +249,13 @@ self.onmessage = async function(event) {
         try {
             while (true) {
                 if (stopStreaming) {
-                    stopStreaming = false;
                     reader.cancel();
-                    taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
-                    taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
-                    conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
-                    assistantResponseAccumulator = '';
-                    // Separate from tokensDone and free of any response text: see usage-emitter.js.
-                    postUsageData(usageData, usageMessageId);
-                    postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
-                    thinkingAccumulator = '';
+                    stopTurn();
                     break;
                 }
                 const { done, value } = await reader.read();
+                // Any bytes are activity, keep-alives (pings, comments, empty lines) included.
+                idle.touch();
                 if (done) {
                     taLog.log("AI full reasoning: " + thinkingAccumulator);
                     taLog.log("AI full response: " + assistantResponseAccumulator);
@@ -288,13 +340,28 @@ self.onmessage = async function(event) {
                 }
             }
         } catch (error) {
-            // The connection broke while reading: report it, never end the turn silently.
-            console.error('[ThunderAI] OpenAI Comp stream interrupted:', error);
-            abandonTurn();
-            postMessage({ type: 'error', payload: streamErrorText(error) });
+            if (isUserStopReason(turnAbort.signal.reason)) {
+                // Stop ended the pending read, a stall included: the turn ends as after
+                // a Stop between two chunks, with no error.
+                stopTurn();
+            } else {
+                // The connection broke while reading, or the idle timeout cut it: report it,
+                // never end the turn silently.
+                console.error('[ThunderAI] OpenAI Comp stream interrupted:', error);
+                abandonTurn();
+                if (idle.fired) {
+                    postMessage({ type: 'error', payload: idleTimeoutText() });
+                } else {
+                    postMessage({ type: 'error', payload: streamErrorText(error) });
+                }
+            }
+        } finally {
+            idle.stop();
+            streamAbort = null;
         }
     } else if (event.data.type === 'stop') {
         stopStreaming = true;
         if (requestAbort) requestAbort.abort();
+        if (streamAbort) streamAbort.abort(userStopReason());
     }
 };

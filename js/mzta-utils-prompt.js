@@ -204,7 +204,10 @@ export const taPromptUtils = {
         return fullPrompt;
     },
 
-    async getDefaultLang(curr_prompt){
+    // default_lang: the language to use instead of the default_chatgpt_lang preference (Add
+    // Tags passes the value resolved for the message's account, add_tags_account_settings).
+    // Omitted (undefined), the preference is read, as it has always been.
+    async getDefaultLang(curr_prompt, default_lang = undefined){
         if(String(curr_prompt?.define_response_lang) != "1"){
             return '';
         }
@@ -213,8 +216,11 @@ export const taPromptUtils = {
         if(SAME_LANGUAGE_PROMPT_IDS.includes(curr_prompt.id)){
             return browser.i18n.getMessage("reply_same_lang");
         }
-        let prefs = await mztaPrefs.getPrefs(['default_chatgpt_lang']);
-        const lang = String(prefs.default_chatgpt_lang ?? '').trim();
+        if(default_lang === undefined){
+            let prefs = await mztaPrefs.getPrefs(['default_chatgpt_lang']);
+            default_lang = prefs.default_chatgpt_lang;
+        }
+        const lang = String(default_lang ?? '').trim();
         if(lang === ''){
             return browser.i18n.getMessage("reply_same_lang");
         }
@@ -327,8 +333,22 @@ export const taPromptUtils = {
         const bodyHtml = await getMailInlineTextParts(messageId);
         const mailSubject = fullMessage.headers?.subject?.[0] || '';
 
+        // The text body, read the same way as buildSummaryPrompt() does, so that
+        // {%mail_text_body%} and {%mail_text_body_or_selected%} (and their :N limit) are
+        // not empty in a user's translation prompt. Only when one of them is in the
+        // prompt: the shipped text uses {%mail_html_body%} and needs no conversion.
+        let bodyText = '';
+        if (placeholdersUtils.hasPlaceholder(promptText, 'mail_text_body')
+            || placeholdersUtils.hasPlaceholder(promptText, 'mail_text_body_or_selected')) {
+            bodyText = htmlBodyToPlainText(bodyHtml.html);
+            if (bodyText.length === 0) {
+                bodyText = cleanupNewlines(bodyHtml.text || '');
+            }
+        }
+
         const finalSubs = await placeholdersUtils.getPlaceholdersValues({
             prompt_text: promptText,
+            body_text: bodyText,
             msg_text: { html: bodyHtml.html, text: bodyHtml.text },
             mail_subject: mailSubject,
         });

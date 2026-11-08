@@ -17,10 +17,30 @@
  */
 
 
+const IDLE_ICON = "/images/icon-32px.png";
+// The ThunderAI Privacy companion's own icon, shown while its switch is on.
+const PRIVACY_ICON = "/images/privacy-icon-32px.png";
+
 export const taWorkingStatus = {
 
     WorkingLevel: 0,
     taLog: console,
+    privacyOn: false,
+
+    // Follows the ai_processing_enabled switch. While something works the loading
+    // icon stays: the new idle icon shows once the level drops back to zero.
+    setPrivacy(enabled){
+        this.privacyOn = enabled === true;
+        if(this.WorkingLevel<=0){
+            this.setIdleIcon();
+        }
+    },
+
+    setIdleIcon(){
+        const path = this.privacyOn ? PRIVACY_ICON : IDLE_ICON;
+        browser.messageDisplayAction.setIcon({path: path});
+        browser.composeAction.setIcon({path: path});
+    },
 
     startWorking(){
         this.WorkingLevel++;
@@ -34,8 +54,7 @@ export const taWorkingStatus = {
         this.taLog.log("[stopWorking] WorkingLevel: " + this.WorkingLevel);
         if(this.WorkingLevel<=0){
             this.WorkingLevel = 0;
-            browser.messageDisplayAction.setIcon({path: "/images/icon-32px.png"});
-            browser.composeAction.setIcon({path: "/images/icon-32px.png"});
+            this.setIdleIcon();
         }
     }
 };

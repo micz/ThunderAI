@@ -1,8 +1,10 @@
 // Spec 02 "Translate: Inline-Only Prompt System" (buildTranslationPrompt(fullMessage, messageId): the
 // prompt_translate_this text, its placeholders resolved by the standard system; the target language
 // is translate_lang, falling back to default_chatgpt_lang), spec 03 "Placeholder Resolution Order",
-// "Who supplies the values" (Translation: msg_text and mail_subject only - no body_text, so
-// {%mail_text_body%} is empty there), spec 02 "Summarize: Dual-Mode Prompt System"
+// "Who supplies the values" (Translation: msg_text and mail_subject; body_text only when a text
+// body placeholder is in the prompt - that read needs a DOM, so it is tested in
+// tests/dom/compose/compose-09-background-extraction.dom.mjs; the shipped prompt never reaches it,
+// which 'translate-shipped' running without a DOMParser shows), spec 02 "Summarize: Dual-Mode Prompt System"
 // (getSummaryLang(): chatgpt_lang and force_lang_statement), and "Missing special prompts"
 // (getDefaultLang() of a missing prompt is '', issue #855).
 //
@@ -77,14 +79,6 @@ k.test('translate-empty-values', 'an empty exclusion list or subject is sent emp
     await setPrefs({ translate_exclude_lang: 'English', placeholders_use_default_value: false });
 });
 
-k.test('translate-no-body-text', 'the translation path supplies no body_text: {%mail_text_body%} gets no body', async () => {
-    await setPrefs({ translate_lang: 'German' });
-    await prompts.saveSpecialPromptTexts({ prompt_translate_this: 'Into {%thunderai_translate_lang%}: {%mail_subject%} / {%mail_text_body%} status subject body' });
-    const { promptText } = await u.buildTranslationPrompt(FULL_MESSAGE, 42);
-    assert.ok(promptText.startsWith('Into German: Riunione di lunedi / '), promptText);
-    assert.equal(promptText.includes('Ciao Bob'), false, promptText);
-});
-
 k.test('translate-user-text', 'a user text of prompt_translate_this is the one used', async () => {
     await prompts.saveSpecialPromptTexts({ prompt_translate_this: 'To {%thunderai_translate_lang%}: {%mail_html_body%} subject body status' });
     const { promptText } = await u.buildTranslationPrompt(FULL_MESSAGE, 42);
@@ -145,7 +139,39 @@ k.test('default-lang-same-language-prompts', 'the rewrite and proofread prompts 
         'the other prompts keep the default language');
 });
 
-k.test('default-signature', 'getDefaultSignature(): "sign_msg_as NAME.", trimmed, nothing when blank', async () => {
+// Spec 02 "Add tags: per-account settings": getDefaultLang(curr_prompt, default_lang) takes an
+// optional language that replaces the default_chatgpt_lang preference; omitted, the preference is
+// read, as before. Add Tags passes the value resolved for the message's account.
+
+k.test('default-lang-explicit', 'an explicit language replaces the preference: "prompt_lang LANG.", trimmed, one full stop', async () => {
+    await setPrefs({ default_chatgpt_lang: 'Italian' });
+    const p = { id: 'prompt_user', define_response_lang: '1' };
+    assert.equal(await u.getDefaultLang(p, 'French'), msg('prompt_lang') + ' French.');
+    assert.equal(await u.getDefaultLang(p, '  French.  '), msg('prompt_lang') + ' French.');
+});
+
+k.test('default-lang-explicit-empty', 'an explicit "" (or only spaces) gives what an empty preference gives, even with the preference set', async () => {
+    await setPrefs({ default_chatgpt_lang: 'Italian' });
+    const p = { id: 'prompt_user', define_response_lang: '1' };
+    for (const lang of ['', '   ']) {
+        assert.equal(await u.getDefaultLang(p, lang), msg('reply_same_lang'), JSON.stringify(lang));
+    }
+});
+
+k.test('default-lang-explicit-undefined', 'default_lang omitted or undefined: the preference is read', async () => {
+    await setPrefs({ default_chatgpt_lang: 'Italian' });
+    const p = { id: 'prompt_user', define_response_lang: '1' };
+    assert.equal(await u.getDefaultLang(p, undefined), msg('prompt_lang') + ' Italian.');
+    assert.equal(await u.getDefaultLang(p), msg('prompt_lang') + ' Italian.');
+});
+
+k.test('default-lang-explicit-gates', 'the explicit language changes nothing else: define_response_lang "0" gives "", a missing prompt "", a same-language prompt "reply in the same language"', async () => {
+    assert.equal(await u.getDefaultLang({ id: 'prompt_user', define_response_lang: '0' }, 'French'), '');
+    assert.equal(await u.getDefaultLang(undefined, 'French'), '');
+    assert.equal(await u.getDefaultLang(await prompts.loadPrompt('prompt_proofread_this'), 'French'), msg('reply_same_lang'));
+});
+
+k.test('default-signature','getDefaultSignature(): "sign_msg_as NAME.", trimmed, nothing when blank', async () => {
     await setPrefs({ default_sign_name: ' Mic Zelco ' });
     assert.equal(await u.getDefaultSignature(), msg('sign_msg_as') + ' Mic Zelco.');
     await setPrefs({ default_sign_name: 'Mic!' });

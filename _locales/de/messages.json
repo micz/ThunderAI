@@ -1,6 +1,92 @@
 {
+    "ai_processing_unclassified_field": {
+        "message": "Ein nicht klassifiziertes Inhaltsfeld eines Anbieters hat die Verarbeitung blockiert. Aktualisieren Sie ThunderAI, bevor Sie es erneut versuchen."
+    },
+    "ai_processing_busy": {
+        "message": "Es wird bereits eine Anfrage verarbeitet. Warten Sie, bis sie abgeschlossen ist; die zusätzliche Nachricht wurde nicht gesendet."
+    },
+    "ai_processing": {
+        "message": "Inhalt wird lokal verarbeitet…"
+    },
+    "ai_processing_chunks": {
+        "message": "Inhalt wird verarbeitet… Teil $CURRENT$ von $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "ai_processing_unavailable": {
+        "message": "ThunderAI Privacy ist eingeschaltet, aber nicht verfügbar. Durch diesen Vorgang wurde nichts gesendet. Aktivieren oder installieren Sie ThunderAI Privacy neu, oder schalten Sie \"ThunderAI Privacy verwenden\" in den erweiterten Optionen von ThunderAI aus, wenn Sie es nicht mehr verwenden möchten."
+    },
+    "ai_processing_incompatible": {
+        "message": "Der Inhaltsprozessor verwendet eine inkompatible API. Aktualisieren Sie ThunderAI und seine Begleit-Erweiterung gemeinsam. Durch diesen Vorgang wurde nichts gesendet."
+    },
+    "ai_processing_session_expired": {
+        "message": "Die Verarbeitungssitzung ist nicht verfügbar. Schließen Sie diesen Chat und starten Sie den ThunderAI-Prompt erneut."
+    },
+    "ai_processing_failed": {
+        "message": "Die Verarbeitung des Inhalts ist fehlgeschlagen. Der Vorgang wurde blockiert."
+    },
+    "ai_processing_timeout": {
+        "message": "Zeitüberschreitung beim Inhaltsprozessor. Der Vorgang wurde blockiert."
+    },
+    "ai_processing_cancelled": {
+        "message": "Verarbeitung des Inhalts abgebrochen."
+    },
+    "ai_processing_invalid_result": {
+        "message": "Der Prozessor hat ein ungültiges Ergebnis zurückgegeben. Der Vorgang wurde blockiert."
+    },
+    "ai_processing_invalid_sender": {
+        "message": "Die Verarbeitung von Inhalten ist auf vertrauenswürdige Erweiterungskontexte beschränkt."
+    },
+    "ai_processing_chatgpt_web_unsupported": {
+        "message": "ThunderAI Privacy funktioniert nicht mit ChatGPT Web, daher wurde dieser Prompt nicht gesendet. Verwenden Sie eine API-Verbindung oder schalten Sie \"ThunderAI Privacy verwenden\" in den erweiterten Optionen von ThunderAI aus."
+    },
+    "ai_processing_setting_locked": {
+        "message": "Diese Einstellung wird von Ihrer Organisation verwaltet."
+    },
+    "prefs_OptionText_ai_processing_enabled": {
+        "message": "ThunderAI Privacy verwenden"
+    },
+    "prefs_OptionText_ai_processing_enabled_info": {
+        "message": "Personenbezogene Daten werden von der Erweiterung ThunderAI Privacy lokal maskiert, bevor sie an den KI-Anbieter gesendet werden, und in der Antwort wiederhergestellt. Die Option kann eingeschaltet werden, sobald das lokale Modell heruntergeladen ist. Solange sie eingeschaltet ist, werden KI-Anfragen blockiert, wenn ThunderAI Privacy nicht verfügbar ist. Änderungen gelten für neue Chats und Befehle."
+    },
+    "prefs_OptionText_ai_processing_Privacy_not_present": {
+        "message": "Um personenbezogene Daten zu maskieren, bevor sie an den KI-Anbieter gesendet werden, installieren Sie die Erweiterung ThunderAI Privacy."
+    },
+    "prefs_OptionText_ai_processing_Privacy_wrong_version": {
+        "message": "Die installierte Erweiterung ThunderAI Privacy ist nicht mit dieser Version von ThunderAI kompatibel. Aktualisieren Sie ThunderAI Privacy."
+    },
+    "prefs_OptionText_ai_processing_download_now": {
+        "message": "ThunderAI Privacy jetzt herunterladen!"
+    },
+    "prefs_OptionText_ai_processing_model_missing": {
+        "message": "Laden Sie das lokale Modell herunter, bevor Sie die Option einschalten."
+    },
+    "prefs_OptionText_ai_processing_model_downloading": {
+        "message": "Lokales Modell wird heruntergeladen… $PERCENT$%",
+        "placeholders": {
+            "percent": {
+                "content": "$1",
+                "example": "42"
+            }
+        }
+    },
+    "prefs_OptionText_ai_processing_download_model": {
+        "message": "Modell herunterladen"
+    },
+    "prefs_OptionText_ai_processing_open_settings": {
+        "message": "Einstellungen von ThunderAI Privacy öffnen"
+    },
     "prefs_api_extra_body": {
         "message": "Zusätzliche Body-Daten"
+    },
+    "prefs_api_extra_headers": {
+        "message": "Zusätzliche Header"
     },
     "prefs_google_gemini_max_output_tokens_Info": {
         "message": "Die maximale Anzahl an Tokens, die in der Antwort erzeugt werden können. Leer lassen oder auf 0 setzen, um das Modell entscheiden zu lassen.",
@@ -98,6 +184,9 @@
     "customPrompts_form_label_ID_rules": {
         "message": "Muss eindeutig, kleingeschrieben und ohne Leerzeichen sein"
     },
+    "customPrompts_form_label_ID_rules_prompt": {
+        "message": "Muss eindeutig, kleingeschrieben und ohne Leerzeichen sein und darf nicht mit prompt_ beginnen"
+    },
     "customPrompts_form_label_Name": {
         "message": "Name"
     },
@@ -164,6 +253,9 @@
     "customPrompts_substitute_text": {
         "message": "Text ersetzen"
     },
+    "customPrompts_insert_at_cursor": {
+        "message": "An der Cursorposition einfügen"
+    },
     "chatgpt_win_working": {
         "message": "Arbeit in Arbeit..."
     },
@@ -175,6 +267,9 @@
     },
     "chatgpt_win_get_answer": {
         "message": "Verwenden Sie die ausgewählte Antwort"
+    },
+    "chatgpt_win_insert_at_cursor": {
+        "message": "Am Cursor einfügen"
     },
     "chatgpt_win_close": {
         "message": "Schließen"
@@ -264,6 +359,21 @@
     },
     "backToOptionsText": {
         "message": "Optionen"
+    },
+    "releaseNotes_one_change": {
+        "message": "1 Änderung"
+    },
+    "releaseNotes_n_changes": {
+        "message": "$COUNT$ Änderungen",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "12"
+            }
+        }
+    },
+    "releaseNotes_in_development": {
+        "message": "In Entwicklung"
     },
     "customPrompts_ExportAll": {
         "message": "Alle Prompts exportieren"
@@ -358,6 +468,15 @@
     },
     "error_connection_interrupted": {
         "message": "Die Verbindung zum Server wurde unerwartet unterbrochen"
+    },
+    "error_stream_idle_timeout": {
+        "message": "Der Server antwortet nicht mehr: seit $SECONDS$ Sekunden keine Daten empfangen",
+        "placeholders": {
+            "seconds": {
+                "content": "$1",
+                "example": "120"
+            }
+        }
     },
     "ollama_api_request_failed": {
         "message": "Anfrage an die Ollama API fehlgeschlagen"
@@ -488,11 +607,56 @@
     "prefs_extra_body_error_invalid": {
         "message": "Ungültiges JSON:"
     },
+    "prompt_json_error_missing": {
+        "message": "Der Prompt muss das JSON-Antwortformat in geschweiften Klammern enthalten: Diese Funktion liest die KI-Antwort als JSON-Objekt."
+    },
+    "prompt_json_error_invalid": {
+        "message": "Das JSON-Antwortformat im Prompt ist ungültig:"
+    },
     "prefs_extra_body_error_not_object": {
         "message": "Der Wert muss ein JSON-Objekt sein, eingeschlossen in geschweifte Klammern."
     },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Zusätzliche Parameter, die bei jedem API-Aufruf mitgesendet werden, als JSON-Objekt. Nützlich für Optionen, die dieser Dienst unterstützt, ThunderAI aber nicht anbietet, zum Beispiel das Deaktivieren des Denkmodus: {\"chat_template_kwargs\": {\"thinking\": false}} oder {\"top_p\": 0.9}. Die von ThunderAI verwalteten Parameter (model, messages, streaming, temperature) können hier nicht überschrieben werden. Ein ungültiger Wert wird ignoriert."
+    },
+    "prefs_OptionText_openai_comp_extra_headers_info": {
+        "message": "Zusätzliche HTTP-Header, die bei jeder Anfrage an diesen Dienst mitgesendet werden, als JSON-Objekt mit Textwerten, zum Beispiel {\"x-opencode-session\": \"thunderai\"} oder {\"api-key\": \"your-key\"}. Nützlich für Dienste und Gateways, die eigene Header verlangen. Die von ThunderAI gesetzten Header (Content-Type und Authorization, wenn ein API-Schlüssel gesetzt ist) können hier nicht überschrieben werden. Ein ungültiger Header wird ignoriert."
+    },
+    "prefs_extra_headers_error_name": {
+        "message": "\"$header_name$\" ist kein gültiger Header-Name: Verwenden Sie nur Buchstaben, Ziffern und Zeichen wie - oder _.",
+        "placeholders": {
+            "header_name": {
+                "content": "$1",
+                "example": "my header"
+            }
+        }
+    },
+    "prefs_extra_headers_error_forbidden": {
+        "message": "Der Header \"$header_name$\" kann nicht von einer Erweiterung gesetzt werden: Thunderbird ignoriert ihn.",
+        "placeholders": {
+            "header_name": {
+                "content": "$1",
+                "example": "Host"
+            }
+        }
+    },
+    "prefs_extra_headers_error_not_string": {
+        "message": "Der Wert des Headers \"$header_name$\" muss Text sein, in doppelten Anführungszeichen.",
+        "placeholders": {
+            "header_name": {
+                "content": "$1",
+                "example": "x-retry-count"
+            }
+        }
+    },
+    "prefs_extra_headers_error_value": {
+        "message": "Der Wert des Headers \"$header_name$\" darf keine Zeilenumbrüche enthalten.",
+        "placeholders": {
+            "header_name": {
+                "content": "$1",
+                "example": "x-session"
+            }
+        }
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "\"v1\"-Kompatibilität beibehalten"
@@ -581,6 +745,51 @@
     },
     "AddTags_prompt_text_title": {
         "message": "Aktueller Prompt-Text"
+    },
+    "AddTags_account_settings_title": {
+        "message": "Einstellungen für einzelne Konten"
+    },
+    "AddTags_account_settings_infoline": {
+        "message": "Wählen Sie ein Konto, um ihm eigene Einstellungen zu geben. Für die Nachrichten dieses Kontos werden sie anstelle der globalen Einstellungen verwendet."
+    },
+    "AddTags_account_settings_infoline2": {
+        "message": "Jede Option folgt der rechts daneben angezeigten globalen Einstellung, bis Sie den Schalter neben ihrem Namen einschalten: Dann können Sie einen Wert für dieses Konto festlegen."
+    },
+    "AddTags_account_settings_override": {
+        "message": "Einen anderen Wert für dieses Konto verwenden"
+    },
+    "AddTags_account_settings_global": {
+        "message": "Global: $VALUE$",
+        "placeholders": {
+            "value": {
+                "content": "$1",
+                "example": "5"
+            }
+        }
+    },
+    "AddTags_account_settings_global_none": {
+        "message": "keiner"
+    },
+    "AddTags_account_settings_uselist_info": {
+        "message": "Wird wie die Option oben nur beim automatischen Hinzufügen von Tags verwendet."
+    },
+    "AddTags_account_settings_prompt_title": {
+        "message": "Prompt für dieses Konto"
+    },
+    "AddTags_account_settings_placeholder": {
+        "message": "Kein Prompt für dieses Konto, der globale Prompt wird verwendet."
+    },
+    "AddTags_account_settings_copy_prompt": {
+        "message": "Globalen Prompt kopieren"
+    },
+    "AddTags_account_settings_remove": {
+        "message": "Auf globale Einstellungen zurücksetzen"
+    },
+    "AddTags_account_settings_custom_suffix": {
+        "message": "(eigene Einstellungen)"
+    },
+    "AddTags_account_settings_discard_confirm": {
+        "message": "Die Einstellungen des ausgewählten Kontos enthalten ungespeicherte Änderungen. Möchten Sie sie verwerfen?"
     },
     "AddTags_excl_list_title": {
         "message": "Ausschlussliste"
@@ -685,7 +894,7 @@
         "message": "Ein neues Kalenderevent hinzufügen"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Ereignisbeschreibung (eine kurze Zusammenfassung des E-Mail-Kontexts, der Hauptthemen/Agenda, der Aktionspunkte sowie aller Videokonferenz-Links oder Zugangsdaten)\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\n- Ort (falls erwähnt, spezifisches Gebäude, Raum oder online mit Link)\n- Teilnehmer\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nDas sind die Teilnehmer: {%author%}, {%recipients%}, {%cc_list%}. Falls vorhanden, meine Adresse ausschließen: {%account_email_address%}.\nWenn es sich um ein ganztägiges Ereignis handelt, muss endDate ein Tag nach startDate liegen und die Zeit auf \"T000000\" eingestellt sein.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n\"description\": \"Detaillierte Ereignisbeschreibung einschließlich Agenda, Aktionspunkten und relevanter Notizen aus der E-Mail.\",\n \"forceAllDay\": false,\n \"location\": \"Ort oder URL hier\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHier ist der Text: \"{%mail_text_body_or_selected%}\""
+        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Ereignisbeschreibung (eine kurze Zusammenfassung des E-Mail-Kontexts, der Hauptthemen/Agenda, der Aktionspunkte sowie aller Videokonferenz-Links oder Zugangsdaten)\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\n- Ort (falls erwähnt, spezifisches Gebäude, Raum oder online mit Link)\n- Teilnehmer\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nDas sind die Teilnehmer: {%author%}, {%recipients%}, {%cc_list%}. Falls vorhanden, meine Adresse ausschließen: {%account_email_address%}.\nWenn es sich um ein ganztägiges Ereignis handelt, muss endDate ein Tag nach startDate liegen und die Zeit auf \"T000000\" eingestellt sein.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n\"description\": \"Detaillierte Ereignisbeschreibung einschließlich Agenda, Aktionspunkten und relevanter Notizen aus der E-Mail.\",\n \"forceAllDay\": false,\n \"location\": \"Ort oder URL hier\",\n\"attendees\": [\"attendee1@example.com\", \"attendee2@example.com\", \"attendee3@example.com\"]\n}\nHier ist der Text: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Ein neues Kalenderevent aus ausgewähltem Text hinzufügen"
@@ -777,6 +986,32 @@
     "spamfilter_threshold_zero": {
         "message": "Der Spam-Schwellenwert ist null! Sie werden alle E-Mails als Spam markieren!"
     },
+    "spamfilter_report_previous": {
+        "message": "Zurück"
+    },
+    "spamfilter_report_next": {
+        "message": "Weiter"
+    },
+    "spamfilter_report_page_label": {
+        "message": "$FROM$–$TO$ von $TOTAL$",
+        "placeholders": {
+            "from": {
+                "content": "$1"
+            },
+            "to": {
+                "content": "$2"
+            },
+            "total": {
+                "content": "$3"
+            }
+        }
+    },
+    "spamfilter_report_newest_info": {
+        "message": "Die 20 neuesten Berichte."
+    },
+    "spamfilter_report_manage_link": {
+        "message": "Alle gespeicherten Berichte anzeigen"
+    },
     "SpamReport_Title": {
         "message": "Spam-Filter-Berichte"
     },
@@ -817,13 +1052,13 @@
         "message": "Vorhandene Tags erzwingen"
     },
     "spamfilter_no_reports": {
-        "message": "Es wurden noch keine Nachrichten auf Spam geprüft. Hier finden Sie eine Liste der letzten 100 Spam-Berichte."
+        "message": "Es wurde noch keine Nachricht auf Spam geprüft. Hier finden Sie die Liste der Spam-Berichte."
     },
     "prefs_OptionText_spamfilter_Info": {
         "message": "Wenn ausgewählt, wird ThunderAI Spam-E-Mails automatisch in den Spam-Ordner verschieben."
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analysieren Sie die folgende E-Mail und bestimmen Sie, ob es sich um Spam handelt oder nicht. Berücksichtigen Sie Faktoren wie verdächtige Schlüsselwörter, übermäßige Werbesprache, irreführende Betreffzeilen, Anfragen nach persönlichen Informationen und ungewöhnliche Absenderadressen.\nGeben Sie einen Wert von 0 (kein Spam) bis 100 (Spam) und eine Erklärung mit maximal 10 Wörtern an.\nFalls Nachrichtendaten fehlen, setzen Sie den Wert auf 0 (kein Spam) und geben Sie den Grund an.\nGenerieren Sie die Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; liefern Sie nur das JSON. Hier ist das zu verwendende Format:\n{\n\"explanation\": \"Kurze Erklärung Ihrer Begründung\",\n\"spamValue\": <Ganzzahl von 0 bis 100>\n}\nHier sind die Mail-Informationen:\nAbsender: \"{%author%}\"\nBetreff: \"{%mail_subject%}\"\nHTML-Inhalt: \"{%mail_html_body%}\""
+        "message": "Analysieren Sie die folgende E-Mail und bestimmen Sie, ob es sich um Spam handelt oder nicht. Berücksichtigen Sie Faktoren wie verdächtige Schlüsselwörter, übermäßige Werbesprache, irreführende Betreffzeilen, Anfragen nach persönlichen Informationen und ungewöhnliche Absenderadressen.\nGeben Sie einen Wert von 0 (kein Spam) bis 100 (Spam) und eine Erklärung mit maximal 10 Wörtern an.\nFalls Nachrichtendaten fehlen, setzen Sie den Wert auf 0 (kein Spam) und geben Sie den Grund an.\nGenerieren Sie die Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; liefern Sie nur das JSON. Hier ist das zu verwendende Format, wobei spamValue eine Ganzzahl von 0 bis 100 ist:\n{\n\"explanation\": \"Kurze Erklärung Ihrer Begründung\",\n\"spamValue\": 0\n}\nHier sind die Mail-Informationen:\nAbsender: \"{%author%}\"\nBetreff: \"{%mail_subject%}\"\nHTML-Inhalt: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_openai_comp_info_remote": {
         "message": "Hier können Sie auch die Adresse eines entfernten Servers eingeben."
@@ -963,6 +1198,9 @@
                 "example": "foo_api"
             }
         }
+    },
+    "apiwebchat_privacy_active": {
+        "message": "ThunderAI Privacy ist eingeschaltet: Personenbezogene Daten werden maskiert, bevor sie an den KI-Anbieter gesendet werden."
     },
     "apiwebchat_request_cancelled": {
         "message": "Anfrage abgebrochen.",
@@ -1700,6 +1938,9 @@
         "message": "Einrichtungsassistent nicht verfügbar",
         "description": "Title shown in place of the setup wizard when the policy disables it"
     },
+    "managed_restriction_add_tags_account_settings": {
+        "message": "Die Einstellungen für einzelne Konten sind durch die Konfigurationsrichtlinie Ihrer Organisation deaktiviert. Jedes Konto verwendet die obigen Einstellungen."
+    },
     "customPrompts_org_badge": {
         "message": "Organisation",
         "description": "Badge on a prompt supplied by the enterprise policy, when no organization name is configured"
@@ -1764,6 +2005,357 @@
         "message": "$COUNT$ Datensätze entfernt.",
         "placeholders": {
             "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_migration_in_progress": {
+        "message": "ThunderAI verschiebt die gespeicherten Spam-Berichte, Zusammenfassungen und Übersetzungen in einen neuen Speicher. Öffnen Sie diese Seite in wenigen Augenblicken erneut, um sie zu sehen."
+    },
+    "storage_migration_failed": {
+        "message": "Die von der vorherigen Version gespeicherten Spam-Berichte, Zusammenfassungen und Übersetzungen konnten nicht in den neuen Speicher verschoben werden. ThunderAI versucht es beim nächsten Start erneut."
+    },
+    "prefs_storage_manage_button": {
+        "message": "Gespeicherte Daten verwalten…"
+    },
+    "storage_page_title": {
+        "message": "Gespeicherte Daten"
+    },
+    "storage_page_info": {
+        "message": "Die Spam-Berichte, Zusammenfassungen und Übersetzungen, die ThunderAI für Ihre Nachrichten gespeichert hat, die Regeln, die sie automatisch bereinigen, und die Werkzeuge zum Löschen."
+    },
+    "storage_overview_title": {
+        "message": "Übersicht"
+    },
+    "storage_refresh": {
+        "message": "Aktualisieren"
+    },
+    "storage_col_type": {
+        "message": "Typ"
+    },
+    "storage_col_entries": {
+        "message": "Einträge"
+    },
+    "storage_col_errors": {
+        "message": "Mit Fehler"
+    },
+    "storage_col_size": {
+        "message": "Geschätzte Größe"
+    },
+    "storage_col_oldest": {
+        "message": "Ältester Eintrag"
+    },
+    "storage_col_newest": {
+        "message": "Neuester Eintrag"
+    },
+    "storage_col_saved": {
+        "message": "Gespeichert am"
+    },
+    "storage_col_status": {
+        "message": "Status"
+    },
+    "storage_col_language": {
+        "message": "Sprache"
+    },
+    "storage_col_actions": {
+        "message": "Aktionen"
+    },
+    "storage_total": {
+        "message": "Gesamt"
+    },
+    "storage_type_summary": {
+        "message": "Zusammenfassungen"
+    },
+    "storage_type_translation": {
+        "message": "Übersetzungen"
+    },
+    "storage_type_spam": {
+        "message": "Spam-Berichte"
+    },
+    "storage_count_item": {
+        "message": "$TYPE$: $COUNT$",
+        "placeholders": {
+            "type": {
+                "content": "$1"
+            },
+            "count": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_disk_note": {
+        "message": "Der tatsächlich belegte Speicherplatz ist etwa doppelt so groß wie die geschätzte Größe: Jeder Eintrag wird zusätzlich in einer dauerhaften Kopie aufbewahrt, aus der die Daten wiederhergestellt werden, wenn Thunderbird die Datenbank löscht."
+    },
+    "storage_last_cleanup": {
+        "message": "Letzte automatische Bereinigung: $DATE$, entfernte Einträge: $REMOVED$.",
+        "placeholders": {
+            "date": {
+                "content": "$1"
+            },
+            "removed": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_last_cleanup_never": {
+        "message": "Letzte automatische Bereinigung: nie."
+    },
+    "storage_rules_title": {
+        "message": "Aufbewahrungsregeln"
+    },
+    "storage_rules_info": {
+        "message": "Die Bereinigung löscht für jeden Typ zuerst die Einträge mit Fehler, die älter als ihr Höchstalter sind, dann die Einträge, die älter als das Höchstalter sind, und dann die ältesten Einträge über der Höchstanzahl."
+    },
+    "storage_rule_max_age": {
+        "message": "Höchstalter (Tage)"
+    },
+    "storage_rule_max_entries": {
+        "message": "Höchstanzahl an Einträgen"
+    },
+    "storage_rule_error_max_age": {
+        "message": "Höchstalter der Einträge mit Fehler (Tage)"
+    },
+    "storage_rule_zero_hint": {
+        "message": "0 = keine Begrenzung"
+    },
+    "storage_cleanup_auto": {
+        "message": "Automatische Bereinigung"
+    },
+    "storage_cleanup_auto_info": {
+        "message": "Wendet die Regeln automatisch an: beim Start, wenn die letzte Bereinigung mehr als 24 Stunden zurückliegt, andernfalls 2 Stunden nach dem Start, danach alle 24 Stunden."
+    },
+    "storage_rules_invalid": {
+        "message": "Jede Begrenzung muss eine ganze Zahl von 0 oder größer sein."
+    },
+    "storage_rules_saved": {
+        "message": "Regeln gespeichert."
+    },
+    "storage_rules_save_confirm": {
+        "message": "Mit diesen Regeln löscht die nächste automatische Bereinigung $COUNT$ gespeicherte Einträge ($DETAIL$). Trotzdem speichern?",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            },
+            "detail": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_restore_defaults": {
+        "message": "Standardwerte wiederherstellen"
+    },
+    "storage_preview": {
+        "message": "Vorschau"
+    },
+    "storage_preview_result": {
+        "message": "Diese Regeln würden jetzt löschen: $DETAIL$.",
+        "placeholders": {
+            "detail": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_apply_now": {
+        "message": "Regeln jetzt anwenden"
+    },
+    "storage_apply_confirm": {
+        "message": "Die gespeicherten Regeln jetzt anwenden? Die betroffenen Einträge werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "storage_actions_title": {
+        "message": "Gespeicherte Daten löschen"
+    },
+    "storage_delete_summary": {
+        "message": "Alle Zusammenfassungen löschen"
+    },
+    "storage_delete_translation": {
+        "message": "Alle Übersetzungen löschen"
+    },
+    "storage_delete_spam": {
+        "message": "Alle Spam-Berichte löschen"
+    },
+    "storage_delete_summary_confirm": {
+        "message": "Alle gespeicherten Zusammenfassungen löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "storage_delete_translation_confirm": {
+        "message": "Alle gespeicherten Übersetzungen löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "storage_delete_spam_confirm": {
+        "message": "Alle gespeicherten Spam-Berichte löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "storage_delete_errors": {
+        "message": "Einträge mit Fehler löschen"
+    },
+    "storage_delete_errors_confirm": {
+        "message": "Alle gespeicherten Einträge löschen, die einen Fehler enthalten? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "storage_delete_older_label": {
+        "message": "Einträge älter als (Tage):"
+    },
+    "storage_delete_older": {
+        "message": "Löschen"
+    },
+    "storage_delete_older_confirm": {
+        "message": "Alle gespeicherten Einträge löschen, die älter als $DAYS$ Tage sind? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "placeholders": {
+            "days": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_days_invalid": {
+        "message": "Geben Sie eine ganze Zahl von Tagen ein, 1 oder größer."
+    },
+    "storage_removed_result": {
+        "message": "Gelöschte Einträge: $DETAIL$.",
+        "placeholders": {
+            "detail": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_action_error": {
+        "message": "Der Vorgang ist fehlgeschlagen: $ERROR$",
+        "placeholders": {
+            "error": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_action_error_partial": {
+        "message": "Der Vorgang wurde nach dem Löschen von $DETAIL$ mit einem Fehler abgebrochen: $ERROR$",
+        "placeholders": {
+            "detail": {
+                "content": "$1"
+            },
+            "error": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_realign": {
+        "message": "Mit der dauerhaften Kopie abgleichen"
+    },
+    "storage_realign_info": {
+        "message": "Stellt die in der Datenbank fehlenden Einträge wieder her und entfernt die aus der dauerhaften Kopie gelöschten. Nützlich, wenn die Übersicht nicht Ihren Erwartungen entspricht."
+    },
+    "storage_realign_confirm": {
+        "message": "Die Datenbank mit der dauerhaften Kopie der gespeicherten Daten abgleichen?"
+    },
+    "storage_realign_done": {
+        "message": "Abgeglichen: $DETAIL$.",
+        "placeholders": {
+            "detail": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_realign_item": {
+        "message": "$TYPE$ $RESTORED$ wiederhergestellt, $REMOVED$ entfernt",
+        "placeholders": {
+            "type": {
+                "content": "$1"
+            },
+            "restored": {
+                "content": "$2"
+            },
+            "removed": {
+                "content": "$3"
+            }
+        }
+    },
+    "storage_no_answer": {
+        "message": "keine Antwort von ThunderAI"
+    },
+    "storage_entries_title": {
+        "message": "Gespeicherte Einträge"
+    },
+    "storage_no_entries": {
+        "message": "Keine gespeicherten Einträge."
+    },
+    "storage_status_ok": {
+        "message": "OK"
+    },
+    "storage_status_error": {
+        "message": "Fehler"
+    },
+    "storage_open_message": {
+        "message": "Öffnen"
+    },
+    "storage_delete_entry": {
+        "message": "Löschen"
+    },
+    "storage_delete_entry_confirm": {
+        "message": "Diesen gespeicherten Eintrag löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "storage_entry_deleted": {
+        "message": "Eintrag gelöscht."
+    },
+    "storage_message_not_found": {
+        "message": "Die ursprüngliche Nachricht wurde nicht gefunden: Sie wurde möglicherweise gelöscht oder befindet sich in einem Ordner, der nicht synchronisiert oder indiziert ist."
+    },
+    "storage_orphans_title": {
+        "message": "Einträge ohne Nachricht"
+    },
+    "storage_orphans_info": {
+        "message": "Sucht die Nachricht jedes gespeicherten Eintrags, um die Einträge zu finden, deren Nachricht nicht mehr existiert, und um bei Einträgen, denen sie fehlen, Betreff, Absender und Datum zu ergänzen. Bei vielen Einträgen kann dies lange dauern; Sie können die Suche jederzeit stoppen."
+    },
+    "storage_orphans_confirm": {
+        "message": "Die Suche prüft jede Nachricht einzeln: Bei vielen gespeicherten Einträgen kann sie lange dauern. Jetzt starten?"
+    },
+    "storage_orphans_start": {
+        "message": "Suche starten"
+    },
+    "storage_orphans_stop": {
+        "message": "Stoppen"
+    },
+    "storage_orphans_progress": {
+        "message": "$DONE$ von $TOTAL$ Nachrichten geprüft",
+        "placeholders": {
+            "done": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "storage_orphans_stopped": {
+        "message": "Suche gestoppt."
+    },
+    "storage_orphans_found": {
+        "message": "$COUNT$ Einträge, deren Nachricht nicht gefunden wurde.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_orphans_filled": {
+        "message": "$COUNT$ Einträge mit Betreff, Absender und Datum ihrer Nachricht ergänzt.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_orphans_note": {
+        "message": "Diese Liste ist nur ein Anhaltspunkt: Nachrichten aus Ordnern, die nicht synchronisiert oder nicht indiziert sind, können fälschlicherweise als fehlend erscheinen."
+    },
+    "storage_orphans_delete": {
+        "message": "Diese Einträge löschen"
+    },
+    "storage_orphans_delete_confirm": {
+        "message": "Die $COUNT$ Einträge löschen, deren Nachricht nicht gefunden wurde? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "storage_save_failed": {
+        "message": "Dieses Ergebnis konnte nicht gespeichert werden: $ERROR$",
+        "placeholders": {
+            "error": {
                 "content": "$1"
             }
         }
@@ -2227,6 +2819,12 @@
     "prefs_OptionText_special_command_timeout_Info": {
         "message": "Zeit in Millisekunden, bevor eine hängende KI-Anfrage (automatisches Hinzufügen von Tags, Spam-Filter, Zusammenfassen, Übersetzen) abgebrochen wird. Erhöhen Sie diesen Wert, wenn Sie langsame lokale Modelle verwenden. Dies gilt nur für API-basierte Verbindungen, nicht für die ChatGPT-Weboberfläche."
     },
+    "prefs_OptionText_api_stream_idle_timeout": {
+        "message": "API-Stream-Leerlauf-Zeitüberschreitung (ms)"
+    },
+    "prefs_OptionText_api_stream_idle_timeout_Info": {
+        "message": "Zeit in Millisekunden ohne Daten, nachdem die Antwort begonnen hat, bevor die Anfrage mit einem Fehler abgebrochen wird. Reasoning-Modelle und langsame lokale Modelle können lange still bleiben, während sie noch arbeiten: Erhöhen Sie den Wert, wenn ihre Antworten abgeschnitten werden. Dies gilt nur für API-basierte Verbindungen, nicht für die ChatGPT-Weboberfläche."
+    },
     "prefs_OptionText_batch_max_concurrency": {
         "message": "Parallel verarbeitete E-Mails",
         "description": "Label of the option limiting how many emails the automatic features (add tags, spam filter, summarize, translate) process at the same time"
@@ -2455,6 +3053,9 @@
         "message": "ThunderAI-Menü öffnen mit",
         "description": "Label preceding the keyboard shortcut keys, at the bottom of the options page."
     },
+    "prefs_shortcut_change_link": {
+        "message": "So ändern Sie das Tastenkürzel"
+    },
     "prefs_disclaimer_short": {
         "message": "LLM-Modelle können fehlerhafte Informationen erzeugen, und Ihre Daten können vom Anbieter zum Training neuer Modelle verwendet werden.",
         "description": "Shown at the bottom of the options page body, followed by a link to the privacy information."
@@ -2650,6 +3251,9 @@
     "customPrompts_error_id": {
         "message": "Die ID ist erforderlich, darf keine Leerzeichen enthalten und muss eindeutig sein.",
         "description": "Validation message for the prompt ID"
+    },
+    "customPrompts_error_id_reserved": {
+        "message": "Die ID darf nicht mit prompt_ beginnen: Dieses Präfix ist für die integrierten Prompts reserviert."
     },
     "customPrompts_error_required": {
         "message": "Name und Prompt-Text sind erforderlich.",
@@ -3232,6 +3836,19 @@
             }
         }
     },
+    "connTest_ok_redirect": {
+        "message": "Verbunden — $API$ erreichbar, aber der Server leitet an $TO$ weiter: Geben Sie diese Adresse direkt ein. Manche Weiterleitungen verwerfen den Inhalt der Anfragen, und dann funktioniert der Chat nicht.",
+        "placeholders": {
+            "api": {
+                "content": "$1",
+                "example": "Ollama API"
+            },
+            "to": {
+                "content": "$2",
+                "example": "http://localhost:11434/v2"
+            }
+        }
+    },
     "connTest_error": {
         "message": "Fehler — $DETAIL$",
         "description": "Connection test status strip: error state; $DETAIL$ is the error message",
@@ -3407,6 +4024,76 @@
     "editor_placeholder_unterminated": {
         "message": "Nicht abgeschlossener Platzhalter: schließendes %} fehlt",
         "description": "Tooltip on a highlighted placeholder token in the prompt editor when the token opens with {% but never closes with %}"
+    },
+    "endpoint_error_invalid": {
+        "message": "Die Serveradresse ist ungültig. Geben Sie die vollständige Adresse ein, zum Beispiel http://localhost:11434 oder https://api.example.com."
+    },
+    "endpoint_error_scheme": {
+        "message": "Die Serveradresse muss mit http:// oder https:// beginnen."
+    },
+    "endpoint_error_credentials": {
+        "message": "Die Serveradresse enthält einen Benutzernamen oder ein Passwort. Zu Ihrer Sicherheit akzeptiert ThunderAI diese nicht in der Adresse: Entfernen Sie sie und verwenden Sie das Feld für den API-Schlüssel, falls der Server einen benötigt."
+    },
+    "endpoint_insecure_confirm": {
+        "message": "Der Server $origin$ verwendet eine unverschlüsselte Verbindung (http://).\n\nDer Inhalt Ihrer E-Mails und Ihr API-Schlüssel würden als Klartext über das Netzwerk übertragen: Jeder im Netzwerk zwischen Ihnen und dem Server könnte sie lesen oder verändern. Verwenden Sie https://, wann immer der Server es unterstützt.\n\nMöchten Sie die unverschlüsselte Verbindung zu diesem Server trotzdem zulassen?",
+        "placeholders": {
+            "origin": {
+                "content": "$1"
+            }
+        }
+    },
+    "endpoint_insecure_not_confirmed": {
+        "message": "An $origin$ wurde nichts gesendet: Dieser Server verwendet eine unverschlüsselte Verbindung (http://), die nicht zugelassen wurde. Um sie zuzulassen, öffnen Sie die ThunderAI-Einstellungen dieser Verbindung und klicken Sie auf \"Jetzt testen\" oder \"Liste aktualisieren\". Andernfalls verwenden Sie eine https://-Adresse.",
+        "placeholders": {
+            "origin": {
+                "content": "$1"
+            }
+        }
+    },
+    "endpoint_insecure_note": {
+        "message": "Unverschlüsselte Verbindung (http://) noch nicht zugelassen: ThunderAI sendet nichts an diesen Server, bis Sie sie zulassen. Klicken Sie auf \"Jetzt testen\" oder \"Liste aktualisieren\", um sie zuzulassen, oder verwenden Sie eine https://-Adresse."
+    },
+    "api_error_redirect": {
+        "message": "Der Server hat mit einer Weiterleitung geantwortet, der nicht gefolgt werden konnte: Geben Sie die endgültige Adresse des Servers direkt in den Einstellungen ein."
+    },
+    "endpoint_redirect_note": {
+        "message": "Dieser Server leitet die Anfragen an $to$ weiter. ThunderAI folgt der Weiterleitung, es ist aber besser, diese Adresse direkt einzugeben.",
+        "placeholders": {
+            "to": {
+                "content": "$1"
+            }
+        }
+    },
+    "endpoint_redirect_note_unverified": {
+        "message": "Dieser Server leitet die Anfragen an $to$ weiter. Geben Sie diese Adresse direkt ein: Manche Weiterleitungen verwerfen den Inhalt der Anfragen, und dann funktioniert der Chat nicht.",
+        "placeholders": {
+            "to": {
+                "content": "$1"
+            }
+        }
+    },
+    "endpoint_redirect_failed_note": {
+        "message": "Der Server antwortet mit einer Weiterleitung, der nicht gefolgt werden kann: Die Anfragen schlagen fehl, bis Sie die endgültige Adresse des Servers eingeben."
+    },
+    "endpoint_redirect_failed_note_to": {
+        "message": "Dieser Server leitet die Anfragen an $to$ weiter, und sie schlagen nach der Weiterleitung fehl (möglicherweise wird ihr Inhalt verworfen): Geben Sie stattdessen diese Adresse ein.",
+        "placeholders": {
+            "to": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_insecure_origins_title": {
+        "message": "Zugelassene unverschlüsselte Server"
+    },
+    "prefs_insecure_origins_info": {
+        "message": "Server, die Sie über eine unverschlüsselte Verbindung (http://) zugelassen haben. Entfernen Sie einen, um bei der nächsten Verwendung erneut gefragt zu werden."
+    },
+    "prefs_insecure_origins_empty": {
+        "message": "Keine"
+    },
+    "prefs_insecure_origins_remove": {
+        "message": "Entfernen"
     },
     "anthropic_err_hint_temperature": {
         "message": "Das ausgewählte Claude-Modell ($MODEL$) akzeptiert die Einstellung Temperatur nicht. Leeren Sie das Feld Temperatur oder verwenden Sie stattdessen die Einstellung Effort."

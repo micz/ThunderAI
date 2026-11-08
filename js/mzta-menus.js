@@ -18,7 +18,10 @@
 
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
-import { getPrompts } from './mzta-prompts.js';
+import {
+    getPrompts,
+    isMultiMessagePrompt
+} from './mzta-prompts.js';
 import {
     getDynamicSettingsDefaults
 } from '../options/mzta-options-default.js';
@@ -55,6 +58,10 @@ import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
+import {
+    addTags_applyAccountPrompt,
+    addTags_resolveAccountPrefs
+} from './mzta-addtags-account-settings.js';
 import { taWorkingStatus } from './mzta-working-status.js';
 import { taJobRegistry } from './mzta-job-registry.js';
 import { mztaPrefs } from './mzta-prefs.js';
@@ -92,6 +99,16 @@ export class mzta_Menus {
     _rebuildInFlight = null;
     _rebuildPending = null;
 
+    // The context menu items, [{itemId, promptId}], and the enabled state last set on each
+    // (by item id, the parent included). Every item is created enabled, so an item missing from
+    // the map is enabled; loadContextMenus() resets both with the items. See onMenuShown().
+    _contextItems = [];
+    _contextItemEnabled = new Map();
+    // The menus.onShown race guard: each showing gets a new instance id, and a handler only
+    // refreshes the menu if its showing is still the open one (onHidden clears it).
+    _menuInstanceId = 0;
+    _lastMenuInstanceId = 0;
+
     rootMenu = [
     //{ id: 'ItemC', act: (info, tab) => { console.log('ItemC', info, tab, info.menuItemId); alert('ItemC') } },
     ];
@@ -100,13 +117,20 @@ export class mzta_Menus {
     //{ id: 'ItemD', label: 'LabelD' },
     ];
 
-    constructor(openChatGPT, do_debug = false) {
+    constructor(openChatGPT, do_debug = false, processingClient) {
+        this.processingClient = processingClient;
         this.menu_context_compose = getMenuContextCompose();
         this.menu_context_display = getMenuContextDisplay();
         this.openChatGPT = openChatGPT;
         this.allPrompts = [];
         this.listener = this.listener.bind(this);
+        this.onMenuShown = this.onMenuShown.bind(this);
+        this.onMenuHidden = this.onMenuHidden.bind(this);
         this.logger = new taLogger('mzta_Menus', do_debug);
+        // Registered once, unlike the click listener: they only read _contextItems, which each
+        // rebuild replaces.
+        browser.menus.onShown.addListener(this.onMenuShown);
+        browser.menus.onHidden.addListener(this.onMenuHidden);
     }
 
 
@@ -172,6 +196,11 @@ export class mzta_Menus {
 
         const getMailBody = async (tabs, do_autoselect = false) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            // Action "3" (insert at cursor): the caret is saved first, before the autoselect of
+            // getOnlyTypedText below can take it away. insertAtCaret reads it back.
+            if ((tabs[0].type === 'messageCompose') && (String(curr_prompt.action) === '3')) {
+                await browser.tabs.sendMessage(tabs[0].id, { command: "saveCaret" });
+            }
             const raw_selection = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" });
             const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
             // A message display (a mail tab or a message tab or window): read only the mail's
@@ -187,19 +216,18 @@ export class mzta_Menus {
             this.logger.log("getMailBody raw_selection: " + JSON.stringify(raw_selection));
             this.logger.log("getMailBody raw_selection_html: " + JSON.stringify(raw_selection_html));
 
-            // Hoisted out of the object literal below, because the ORDER of the
-            // next two calls is load-bearing.
-            const raw_only_typed_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect });
-            // getOnlyTypedText with do_autoselect has just put a range around the
-            // typed region: read its markup while that range is in force. The
-            // getSelectedHtml above ran BEFORE it, when rangeCount was still 0, so
-            // it returned '' - which left selection_html empty while selection_text
-            // was substituted with the typed text, handing the diff picker a
-            // mismatched text/html pair. Must stay ahead of getOnlyQuotedText,
-            // which has an autoselect branch of its own. [#829]
-            const raw_only_typed_html = do_autoselect
-                ? await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })
-                : '';
+            // with_html: the typed text comes back with its html twin, read from the
+            // typed region's own range. It used to be read with a second getSelectedHtml
+            // after the autoselect, which only worked if the range was in the live
+            // selection - and the autoselect replaced the user's selection to get it
+            // there [#829]. getOnlyTypedText now autoselects only when the user has no
+            // selection (the same case in which selection_text is substituted with the
+            // typed text below), so the user's selection is never lost and the twins
+            // no longer depend on the order of the calls. [#978]
+            const raw_only_typed = await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect, with_html: true });
+            const raw_only_typed_text = raw_only_typed.text;
+            const raw_only_typed_html = raw_only_typed.html;
+            this.logger.log("getMailBody raw_only_typed_text: " + JSON.stringify(raw_only_typed_text));
             this.logger.log("getMailBody raw_only_typed_html: " + JSON.stringify(raw_only_typed_html));
             // Paragraph-preserving: these carry the mail the user typed, and the
             // blank line between greeting and body is part of it. Computed once:
@@ -372,6 +400,24 @@ export class mzta_Menus {
                     break;
             }
 
+            // The prompt whose text builds fullPrompt. For Add Tags the account of the
+            // message may have its own prompt text: addTags_applyAccountPrompt() returns a
+            // copy, so the menu entry's curr_prompt keeps the global text for the next run.
+            let text_prompt = curr_prompt;
+            if (curr_prompt.id === 'prompt_add_tags') {
+                text_prompt = await addTags_applyAccountPrompt(curr_prompt, curr_message?.folder?.accountId);
+                if (text_prompt !== curr_prompt) {
+                    this.logger.log("Add tags: using the custom prompt of account " + curr_message.folder.accountId + ".");
+                    // Same step the menu entry's own text went through at the top of act().
+                    if (placeholdersUtils.hasCustomPlaceholder(text_prompt.text)) {
+                        text_prompt.text = await placeholdersUtils.replaceCustomPlaceholders(text_prompt.text);
+                    }
+                }
+                // The account may also have its own default language (add_tags_account_settings).
+                const lang_at = await addTags_resolveAccountPrefs(await mztaPrefs.getPrefs(['default_chatgpt_lang']), curr_message?.folder?.accountId);
+                chatgpt_lang = await taPromptUtils.getDefaultLang(text_prompt, lang_at.default_chatgpt_lang);
+            }
+
             // {%mail_plain_text_part%} wants the ORIGINAL text/plain part, which the
             // local getMailBody() above cannot supply: it reads the rendered DOM
             // through the content script, so its .text is the HTML converted to text,
@@ -385,7 +431,7 @@ export class mzta_Menus {
             // plain_part is a distinct field, never msg_text.text: the clipboard branch
             // above overwrites .text, and the resolver must be able to tell "no plain
             // part" apart from the scrape rather than silently falling back to it.
-            if (placeholdersUtils.hasPlaceholder(curr_prompt.text, 'mail_plain_text_part')) {
+            if (placeholdersUtils.hasPlaceholder(text_prompt.text, 'mail_plain_text_part')) {
                 // '' rather than leaving it unset: the resolver's ?? would otherwise fall
                 // through to msg_text.text, i.e. the HTML conversion this placeholder
                 // exists to avoid. Compose tabs land here too and must resolve empty.
@@ -401,7 +447,7 @@ export class mzta_Menus {
             }
 
             fullPrompt = await taPromptUtils.preparePrompt({
-                curr_prompt: curr_prompt,
+                curr_prompt: text_prompt,
                 curr_message: curr_message,
                 chatgpt_lang: chatgpt_lang,
                 selection_text: selection_text,
@@ -439,7 +485,10 @@ export class mzta_Menus {
                     case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = [];
                         let tags_current_email_final = [];
-                        let prefs_at = await mztaPrefs.getPrefs([
+                        // The account of the message may have its own Add Tags settings
+                        // (add_tags_account_settings): a copy with them applied. The use list is
+                        // an automatic-tagging setting, never applied here (false, '' below).
+                        let prefs_at = await addTags_resolveAccountPrefs(await mztaPrefs.getPrefs([
                             'add_tags_maxnum',
                             'connection_type',
                             'add_tags_force_lang',
@@ -447,14 +496,14 @@ export class mzta_Menus {
                             'default_chatgpt_lang',
                             'do_debug',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
-                        ]);
+                        ]), curr_message?.folder?.accountId);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'add_tags');
                         if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang, false, '', prefs_at.add_tags_auto_force_existing, tags_full_list[0], curr_prompt.text);
+                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang, false, '', prefs_at.add_tags_auto_force_existing, tags_full_list[0], text_prompt.text);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let create_new_tags = !prefs_at.add_tags_auto_force_existing;
                         let all_tags_list = tags_full_list[1];
@@ -464,6 +513,7 @@ export class mzta_Menus {
                         // console.log(">>>>>>>>>>>>>> prefs_at.connection_type: " + JSON.stringify(prefs_at.connection_type));
                         // console.log(">>>>>>>>>>>>>> def_conntype: " + JSON.stringify(def_conntype));
                         let cmd_addTags = new mzta_specialCommand({
+                            processingClient: this.processingClient,
                             prompt: fullPrompt,
                             llm: def_conntype,
                             custom_model: curr_prompt.model ? curr_prompt.model : '',
@@ -565,13 +615,14 @@ export class mzta_Menus {
                         *   "description": "Detailed event description including agenda, action items, and relevant notes from the email.",
                         *   "forceAllDay": false,
                         *   "location": "YourLocation",
-                        *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]
+                        *   "attendees": ["attendee1@example.com", "attendee2@example.com", "attendee3@example.com"]
                         *  } 
                         *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand({
+                            processingClient: this.processingClient,
                             prompt: fullPrompt,
                             llm: def_conntype,
                             do_debug: true,
@@ -675,6 +726,7 @@ export class mzta_Menus {
                         fullPrompt = taPromptUtils.finalizePrompt_get_task(fullPrompt, curr_prompt.text, prefs_at.task_reminder_enabled, prefs_at.task_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetTask = new mzta_specialCommand({
+                            processingClient: this.processingClient,
                             prompt: fullPrompt,
                             llm: def_conntype,
                             do_debug: true,
@@ -763,7 +815,7 @@ export class mzta_Menus {
             }else{  // Classic prompts for the API webchat
                 this.logger.log("fullPrompt: " + fullPrompt);
                 this.logger.log("curr_prompt: " + JSON.stringify(curr_prompt, (key, value) => {
-                    if (typeof key === 'string' && key.endsWith('_api_key')) {
+                    if (typeof key === 'string' && (key.endsWith('_api_key') || key.endsWith('_extra_headers'))) {
                         return '****************';
                     }
                     return value;
@@ -805,6 +857,8 @@ export class mzta_Menus {
 
     async loadContextMenus() {
         await browser.menus.removeAll();
+        this._contextItems = [];
+        this._contextItemEnabled = new Map();
         const contextPrompts = this.allPrompts.filter(p => {
             const showIn = p.show_in || "popup";
             // Only show prompts that should appear in context menu and are for reading context (type 0 or 1)
@@ -835,7 +889,9 @@ export class mzta_Menus {
             return nameA.localeCompare(nameB);
         });
 
-        // Create child menu items
+        // Create child menu items. Always enabled: onMenuShown() disables the ones that cannot
+        // run on the current selection, so if it fails the menu works as it always did.
+        const contextItems = [];
         for (const prompt of contextPrompts) {
             const title = i18nConditionalGet(prompt.name);
             const iconPath = getContextMenuIcon(prompt);
@@ -851,8 +907,65 @@ export class mzta_Menus {
             await new Promise(resolve =>
                 browser.menus.create(menuOpts, resolve)
             );
+            contextItems.push({ itemId: menuOpts.id, promptId: prompt.id });
         }
+        this._contextItems = contextItems;
         this.logger.log("Context menus loaded: " + contextPrompts.length + " items");
+    }
+
+    // Whether a menus.onShown info describes more than one message: several selected, or a
+    // collapsed thread (Thunderbird hands over all of its messages). A MessageList with an id has
+    // further pages, so it holds more messages than the first page shows - never fetched here.
+    // No selectedMessages at all reads as one message, so the items stay as they are created.
+    static isMultiMessageSelection(selectedMessages) {
+        if (!selectedMessages) return false;
+        if (selectedMessages.id) return true;
+        return (selectedMessages.messages?.length ?? 0) > 1;
+    }
+
+    // menus.onShown: with several messages in the message list context, the prompts that read
+    // only the displayed message are disabled (not hidden), and enabled again on one message
+    // [#979]. Which prompts can take several messages is isMultiMessagePrompt() alone.
+    async onMenuShown(info, tab) {
+        if (!info?.contexts?.includes('message_list') || this._contextItems.length === 0) return;
+        const instanceId = ++this._menuInstanceId;
+        this._lastMenuInstanceId = instanceId;
+
+        const multi = mzta_Menus.isMultiMessageSelection(info.selectedMessages);
+        const wanted = new Map(this._contextItems.map(item =>
+            [item.itemId, !multi || isMultiMessagePrompt(item.promptId)]));
+        // A submenu holding only disabled items is disabled itself.
+        wanted.set('mzta-context-parent', [...wanted.values()].some(Boolean));
+
+        // The map of the items these updates reach: a rebuild replaces it right after removeAll(),
+        // so a failure below never touches the state of the recreated items.
+        const state = this._contextItemEnabled;
+        const updates = [];
+        for (const [itemId, enabled] of wanted) {
+            if ((state.get(itemId) ?? true) === enabled) continue;
+            // Recorded before the call, so a newer showing compares against what is being set.
+            state.set(itemId, enabled);
+            updates.push(browser.menus.update(itemId, { enabled }).catch(e => {
+                // The item was removed by a menu rebuild: the rebuild recreates it enabled.
+                state.delete(itemId);
+                this.logger.log("onMenuShown: menus.update(" + itemId + ") failed: " + e);
+            }));
+        }
+        this.logger.log("onMenuShown: " + (multi ? "several messages" : "one message") + ", " + updates.length + " items changed");
+        if (updates.length === 0) return;
+        await Promise.all(updates);
+        // The menu was closed, or opened again, while the updates ran: refreshing it now would
+        // redraw a menu that is no longer this one. The state is already set for the next showing.
+        if (instanceId !== this._lastMenuInstanceId) return;
+        try {
+            await browser.menus.refresh();
+        } catch (e) {
+            this.logger.log("onMenuShown: menus.refresh() failed: " + e);
+        }
+    }
+
+    onMenuHidden() {
+        this._lastMenuInstanceId = 0;
     }
 
     async _loadMenusUnguarded(also_special = []) {

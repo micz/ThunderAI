@@ -120,7 +120,8 @@ policy-configured profile — and the write guard was inert in pages, because
 - **everywhere else** — it starts `_hydrate()` once and awaits it. `_hydrate()` sends
   `{command: 'get_managed_values'}` and fills this context's copy of the whole policy from
   `{values, lockedKeys, specialPromptsText, specialPromptsConnection, orgPrompts, orgName,
-  active, disablePromptManagement, disableDefaultPrompts, disableSetupWizard}`. What is
+  active, disablePromptManagement, disableDefaultPrompts, disableSetupWizard,
+  disableAddTagsAccountSettings}`. What is
   malformed is dropped: a locked key without a value, a non-string text, a connection entry or
   field that does not have the validated shape, an org prompt that is not an object with a
   string id; a restriction is on only for a literal `true`.
@@ -230,7 +231,7 @@ stores `'inline'` as before.
 
 ## The allowlist
 
-Derived from `Object.keys(prefs_default)`, minus four exclusion rules. Nothing else is
+Derived from `Object.keys(prefs_default)`, minus five exclusion rules. Nothing else is
 hardcoded — a new preference becomes policy-settable the moment it is declared.
 
 ```
@@ -239,21 +240,53 @@ Object.keys(prefs_default)
   minus  /_enabled_accounts$/   account ids, per profile
   minus  api_webchat_font_scale local UI zoom
   minus  custom_prompts_view    custom prompts page layout, local UI
+  minus  add_tags_account_settings  Add Tags overrides keyed by account id, per profile
 ```
 
 The rules are applied in one place, `isPolicyExcludedKey(key)` (exported, pure): `buildAllowlist()`
 uses it, and so does the CI report of [Adding a policy-settable preference](#adding-a-policy-settable-preference).
 
-**138 of 147 keys** are policy-settable. The derivation already covers the generated keys:
+**153 of 163 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
 [`options/mzta-options-default.js`](../options/mzta-options-default.js).
 
-The nine excluded keys are per-machine or per-profile state, not configuration: enforcing
+The per-message storage keys of [#955](https://github.com/micz/ThunderAI/issues/955) /
+[#956](https://github.com/micz/ThunderAI/issues/956) are ordinary entries of the allowlist:
+`{feature}_storage_max_entries`, `{feature}_storage_max_age_days` and
+`{feature}_storage_error_max_age_days` (numbers, any non-negative integer, `0` = no limit, so no
+`PREF_NUMBER_RANGES` entry) for `spamfilter`, `summarize` and `translate`, the boolean
+`message_storage_cleanup_auto`, and `message_storage_batch_size` (the lot size of the bulk removals,
+**policy-only**: no control in any page; `PREF_NUMBER_RANGES` 1 to 10000). There is no switch per type any more: every result is saved (the
+`{feature}_storage_enabled` keys of the development builds were removed before any release). The first ten
+keys are set on the storage management page (`pages/storage/`), whose rule controls carry
+`data-mzta-pref`, so a locked key is disabled and marked there, its value is left out of the page's
+Save, and Restore defaults skips it (covered by `storage/02-sweep-locked` and `03-sweep-unlocked`).
+The scheduled cleanup reads them through `mztaPrefs`, so a policy value applies at its next run; the
+background's listener on `message_storage_cleanup_auto` re-reads it through `mztaPrefs` too, so a
+locked value wins over the stored one. See
+[01-architecture.md](01-architecture.md#per-message-data-storage).
+
+The per-message storage also keeps `storage.local` keys that are **not preferences**, and so are
+never policy-settable nor read through `mztaPrefs`: the mirror records, one key per record under
+the prefixes `spam:`, `summary:` and `translation:` followed by the Message-ID
+(`MIRROR_PREFIXES` in `js/mzta-storage.js`), and the underscore keys `_message_data_migrating`,
+`_message_data_migration_version` and `_message_data_last_cleanup` (`{ time, removed }`). No `prefs_default` key starts
+with one of the three prefixes, and none may.
+
+The ten excluded keys are per-machine or per-profile state, not configuration: enforcing
 them across a fleet would push window coordinates from another screen, a font zoom from
 another display, a page layout the user chose for themselves, or account ids that do not
 exist in this profile.
+
+**`add_tags_account_settings` is excluded, but it never bypasses the policy.** Its per-account
+overrides use the global keys' own names, and `addTags_resolveAccountPrefs()` skips every one whose
+global key the policy locks: a locked global Add Tags key is never overridden per account. The
+account prompt text is ignored when the policy enforces the Add Tags text (see
+[08a-managed-prompts.md](08a-managed-prompts.md) and 02 "Add tags: per-account settings"). To take
+the per-account settings away altogether, the policy has a restriction,
+[`_disable_add_tags_account_settings`](08a-managed-prompts.md#_disable_add_tags_account_settings).
 
 **`{feature}_enabled_accounts_match` is allowed while `{feature}_enabled_accounts` stays
 excluded** (`spamfilter_…`, `add_tags_…`). The anchored `/_enabled_accounts$/` does not
@@ -284,7 +317,7 @@ key, with an API key masked) and not applied, exactly like a type mismatch, neve
 | `connection_type` | one of `valid_connection_types` (`''`, "no connection yet", is not a value to enforce) |
 | `{prefix}_connection_type` | one of `featureConnectionTypes()`: never `chatgpt_web`, which the feature panels do not offer |
 | `reply_type`, `diff_granularity`, `summarize_display_mode`, `summarize_auto`, `translate_auto` | one of the values its settings select offers (`PREF_ENUMS`) |
-| any other number | a non-negative integer; tighter ranges in `PREF_NUMBER_RANGES`, from the inputs' `min`/`max`: `spamfilter_threshold` 0–100, `max_prompt_length`, `batch_max_concurrency` ≥ 1 (`special_command_timeout`, `summarize_max_messages` and `add_tags_maxnum` have the general rule: 0 is accepted, and means "no limit" for the last two, as on their pages) |
+| any other number | a non-negative integer; tighter ranges in `PREF_NUMBER_RANGES`, from the inputs' `min`/`max`: `spamfilter_threshold` 0–100, `max_prompt_length`, `batch_max_concurrency` ≥ 1 (`special_command_timeout`, `api_stream_idle_timeout`, `summarize_max_messages` and `add_tags_maxnum` have the general rule: 0 is accepted, and means "no idle timeout" for `api_stream_idle_timeout`, whose input's `min` of 1000 is a UI bound, not a policy range, and "no limit" for the last two, as on their pages) |
 | `calendar_timezone` | `''` (no zone enforced, the select's empty option) or a zone of `Intl.supportedValuesOf('timeZone')`, the list the calendar pages' select is built from, so the page can always show it (a lowercased id or an alias `Intl.DateTimeFormat` would accept is refused); without `supportedValuesOf()`, any id the engine accepts |
 
 Free-text preferences (languages, sign name, prompts' extra instructions…) have no rule: any
@@ -353,6 +386,7 @@ Keys starting with `_` are structures and metadata, never preferences. **No key 
 | `_disable_prompt_management` | restriction: no prompt creation, copy, import or export; existing custom prompts read-only and inactive |
 | `_disable_default_prompts` | restriction: the built-in prompts are not available in the menus |
 | `_disable_setup_wizard` | restriction: the setup wizard cannot be opened |
+| `_disable_add_tags_account_settings` | restriction: no per-account Add Tags settings; every account uses the global ones, the stored entries ignored, never deleted |
 | `_lock_unlisted` | strict mode: every preference the policy does not set is enforced at its `prefs_default` value; on only for a literal `true`, see [Strict mode](#strict-mode-_lock_unlisted-_user_editable) |
 | `_user_editable` | strict mode: array of preference keys that stay the user's; only meaningful with `_lock_unlisted: true` |
 
@@ -498,14 +532,8 @@ overlays read), the page guard of [The connection panel](08b-managed-connections
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too. So do the "138 of 147" count in [The allowlist](#the-allowlist) and the counts in
-`tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated. The
-`policy-docs-issue` workflow (`.github/workflows/policy-docs-issue.yml`) tracks it: on every
-push to `dev` touching `prefs_default` or `js/mzta-managed.js` it compares the policy surface
-with the previous revision (`.github/scripts/policy-keys-diff.mjs`: preferences added or
-removed, defaults changed, structural `_` keys, exclusion rules) and, if it changed, opens an
-issue on the site repository with the report, or comments on the one already open. The
-reference update itself remains manual.
+there too. So do the "153 of 163" count in [The allowlist](#the-allowlist) and the counts in
+`tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
 
 ## Adding a restriction
 
@@ -533,13 +561,12 @@ is genuinely no user-facing setting to lock.
 This file is the contract the automated suite in [`tests/`](../tests/) checks, at two levels:
 
 ```sh
-node --test "tests/**/*.test.mjs"   # level 1: the modules; Node 22+, nothing to install
-npm ci                              # once: installs jsdom (Node ^22.22.2 || ^24.15.0 || >=26)
+npm ci                              # once: installs jsdom and fake-indexeddb (Node ^22.22.2 || ^24.15.0 || >=26)
+node --test "tests/**/*.test.mjs"   # level 1: the modules
 npm test                            # both levels
 ```
 
-Run from the repository root. CI runs level 1 **before** installing anything, then
-`npm ci && npm test`, on demand only: by hand (`workflow_dispatch`, any branch) or when the
+Run from the repository root. CI runs `npm ci && npm test`, on demand only: by hand (`workflow_dispatch`, any branch) or when the
 `run-tests` label is added to a pull request, which `.github/workflows/tests-unlabel.yml`
 removes right away (`.github/workflows/tests.yml`). How it
 works: [`tests/README.md`](../tests/README.md); how to add a managed scenario or a page:
@@ -547,7 +574,7 @@ works: [`tests/README.md`](../tests/README.md); how to add a managed scenario or
 
 - **Level 1** (`tests/managed/*.test.mjs`) imports the shipped modules as they are.
 - **DOM** (`tests/dom/<page>/*.dom.mjs`) loads each page's real HTML file and real module
-  script in jsdom - the project's only dependency, a pinned dev dependency, never shipped and
+  script in jsdom - a pinned dev dependency, like fake-indexeddb, never shipped and
   never imported by runtime code - with the page's background answered by the real
   background code: the `get_managed_values` listener, the one channel a page gets the policy
   through, is cut out of `mzta-background.js` and run verbatim. The browser
@@ -572,13 +599,14 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | No seeding from policy values | - | `spamfilter/05-no-seeding-from-policy` |
 | A locked per-feature connection type | - | `<feature>/02-sweep-locked`, `spamfilter/06-locked-connection-type` |
 | An automatic summary is always inline | `09` | `summarize/02-sweep-locked` (`expected`), `summarize/18`-`20` (no display mode stored from a policy `summarize_auto` on page open) |
-| Organization prompts | `06a-org-prompts`, `06b-org-prompts-*`, `12-org-prompts-never-stored` | - |
+| Organization prompts | `06a-org-prompts`, `06b-org-prompts-*`, `06j-org-prompts-display-properties`, `12-org-prompts-never-stored` | `menu_order/11-org-prompts-display` |
 | Enforced special prompt texts (and its UI) | `06c`-`06e` | `<feature>/07-special-prompts-text`, `get-calendar-event/08-…-calendar-named` |
 | Enforced per-feature connections (and its UI) | `10a`-`10i` (validation, malformed, resolution and `initWorker()`, conflicts, never persisted / export / write guard / removal, hydration, webchat, feature-page coverage, the chat window's connection and configuration checks) | `<feature>/13-connection-enforced`, `<feature>/14-connection-unlocked` (generated from `tests/helpers/feature-pages.mjs`) |
 | Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |
 | Account lists by policy (and the account checkboxes) | `07a`, `07b` | `spamfilter/08`, `spamfilter/09`, `addtags/08`, `addtags/09` |
 | Interaction points: per-feature provider override | `08-provider-override-locked-off` | - |
 | Strict mode | `13a`-`13f` (all keys at default, exceptions, restore on removal, marker-free keys; explicit / initial / implied keys win; `_user_editable`; malformed keys; `false`) | `options/15-lock-unlisted`, `summarize/21-lock-unlisted` |
+| Per-account Add Tags settings never bypass the policy (locked keys, enforced text) | `background/06-addtags-account-settings`, `background/24b-add-tags-accounts` (the `background` area) | `addtags/18-account-settings-locked`, `addtags/19-account-settings-enforced-text` |
 | The connection mode | `12b-specific-integration-mode` | `<feature>/17-locked-on-switch` (generated from `tests/helpers/feature-pages.mjs`) |
 | UI: controls (a Tom Select disabled too), `data-mzta-pref`, marker placement and inertness | - | `02-sweep-locked`, `03-sweep-unlocked`, `<page>/04-respect-managed` |
 | The setup wizard | - | `setup-wizard/02`, `03`, `04-locked-provider`, `07`, `10` |
@@ -590,7 +618,7 @@ locks - or offers as an initial value - every allowlisted key that has an `.opti
 policy. A new preference with a control on one of those pages is covered the moment it is
 declared.
 
-`04-allowlist-derivation` also checks the **138 of 147** count in [The allowlist](#the-allowlist).
+`04-allowlist-derivation` also checks the **153 of 163** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the

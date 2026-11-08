@@ -24,7 +24,7 @@ Stored flat in `prefs_default` with `{provider}_{key}` naming:
 ```
 chatgpt_api_key, chatgpt_model, chatgpt_developer_messages, chatgpt_temperature, chatgpt_store, chatgpt_reasoning_summary, chatgpt_reasoning_effort, chatgpt_extra_body, chatgpt_max_output_tokens, chatgpt_verbosity, chatgpt_text_format, chatgpt_text_format_schema_name, chatgpt_text_format_schema, chatgpt_top_p, chatgpt_truncation, chatgpt_prompt_cache_key, chatgpt_service_tier, chatgpt_safety_identifier, chatgpt_include_encrypted_reasoning
 ollama_host, ollama_api_key, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think, ollama_format_json, ollama_keep_alive, ollama_system_prompt, ollama_extra_options
-openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature, openai_comp_extra_body
+openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature, openai_comp_extra_body, openai_comp_extra_headers
 google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature, google_gemini_max_output_tokens, google_gemini_top_p, google_gemini_top_k, google_gemini_extra_body
 anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature, anthropic_top_p, anthropic_top_k, anthropic_stop_sequences, anthropic_extended_thinking_budget, anthropic_effort
 ```
@@ -34,6 +34,9 @@ free-text field. The UI validates advisorily (`warn_InvalidJson` → red border)
 persists the value regardless, so the consumer must tolerate malformed input: `parseExtraBody()`
 (`js/api/api-utils.js`) falls back to `{}`. See
 [Extra body data](04-api-integrations.md#extra-body-data).
+`openai_comp_extra_headers` holds raw JSON too (an object of string header values), with the same
+advisory validation and the same tolerance at request time: see
+[Extra headers](04-api-integrations.md#extra-headers).
 
 Plus the global connection selector:
 ```
@@ -199,8 +202,19 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `chat_show_usage_data` | `true` | Show the token counts the API reports as a chip in each answer's action bar in the chat window, whose detail popover also shows the context used and the session total. **Row visibility is conditional**: `disable_ChatShowUsageData()` in `options/mzta-options.js` hides `#chat_show_usage_data_tr` unless at least one *currently configured* integration reports usage — the global `connection_type` or any `special_prompts_with_integration` prefix resolved through `getConnectionType()`, tested with `supportsUsageData()` from `js/mzta-utils.js`. A web-only setup never sees the row. The nested `#chat_show_usage_data_openai_comp_note` is shown only when one of those types is `openai_comp_api`, because availability then depends on the specific server. Both are `display:none` in the markup so there is no flash before the function runs, and the function is called at load, on every `connection_type` change, and from the `storage.onChanged` handler that also refreshes the feature rows. |
 | `diff_granularity` | `'words'` | Comparison unit the proofreading change picker **opens with**: `'words'` or `'sentences'`. The picker's own toolbar toggle changes it for the current review; there is no per-prompt override — see [07-diff-picker.md](07-diff-picker.md). Rendered as a `<select>` in the advanced section; needs an explicit entry in `restoreOptions()`'s `select-one` branch, since a select restoring to `''` would render blank. |
 | `max_prompt_length` | `30000` | Max prompt string length |
-| `special_command_timeout` | `120000` | Timeout (ms) before a hung special-command API worker is aborted (`js/mzta-special-commands.js`). Exposed in the main options page as a number input; **always shown** (not hidden for ChatGPT Web), because a single special prompt may use a specific API even when the global `connection_type` is `chatgpt_web`. Has no effect on ChatGPT Web connections, which use no API worker. |
+| `special_command_timeout` | `120000` | Timeout (ms) for special commands (`js/mzta-special-commands.js`). Active companion progress renews the processing budget; provider dispatch starts a fresh response budget. Stalled initialization/queueing also times out. Without active processing, it bounds the whole request. **Always shown**, because a special prompt can use an API even when the global connection is ChatGPT Web; it does not time out ChatGPT Web automation itself. |
+| `api_stream_idle_timeout` | `120000` | Idle timeout (ms) of an API stream: with no data for this long once the answer has started, the worker gives the request up and shows `error_stream_idle_timeout` (#999). `0` = no idle timeout. Exposed in the advanced options of the main options page, right after `special_command_timeout`, as a number input (`min="1000"`, `step="1000"`) with a reset button; **always shown**, like `special_command_timeout` and for the same reason (a special prompt may use an API while the global `connection_type` is `chatgpt_web`). The field's `min` is UI only: `0` comes from storage or a policy, which accepts any non-negative integer (the general number rule, so no `PREF_NUMBER_RANGES` entry, see [08-managed-configuration.md](08-managed-configuration.md)). The workers validate it with `resolveIdleTimeoutMs()` (`js/api/api-idle-timer.js`): a value that is not a non-negative number (the `null` of an emptied field included) falls back to the default. Has no effect on ChatGPT Web connections, which stream through no API worker. Sent in the workers' `init` message by `api_webchat/controller.js` and `js/mzta-special-commands.js`. See [04-api-integrations.md](04-api-integrations.md#stream-idle-timeout). |
 | `batch_max_concurrency` | `1` | Maximum messages processed at once by one `processEmails()` call (auto add tags, spam filter, summarize and translate — on receive and from the context menu). Each message runs its features in series (spam, add_tags, summary, translate), so this is also the maximum number of AI requests in flight. There are no per-feature caps. Overlapping calls (several accounts) can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the advanced section of the main options page, with its default wired into `restoreOptions()`. Does not affect the context-menu summarize flow. See [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails). |
+
+### Companion processing
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `ai_processing_enabled` | `false` | "Use ThunderAI Privacy": mask content through the ThunderAI Privacy companion. The **one** activation switch: the companion's settings page mirrors it through cross-extension messages. While on, a missing companion blocks every AI request (never a silent bypass). A `.option-input` toggle in the advanced section right before Debug; `updatePrivacyCompanion()` / `renderPrivacyCompanion()` in `options/mzta-options.js` show its row (`#ai_processing_tr`) when a compatible companion answers or while the switch is on, and the `#no_privacy` notice otherwise. It can be turned on only once the companion's model is ready (disabled otherwise, unless already on); meanwhile the row shows the model note, the "Download the model" button and the download progress. "Open ThunderAI Privacy settings" shows whenever a compatible companion answers. See [09 "Model readiness"](09-ai-processing.md#model-readiness). Boolean, so policy-settable with no extra rule; a lock also disables the companion's mirror. |
+| `ai_processing_model_autodownload` | `false` | **No UI, meant for a policy.** When ThunderAI Privacy is installed without its model, ask it to download the model: at ThunderAI startup and when the companion announces itself, once per companion start, and again when a model that was ready is lost (an evicted cache). Off by default because every machine downloads the model from Hugging Face. See [09 "Model readiness"](09-ai-processing.md#model-readiness). |
+
+ThunderAI Privacy owns model management and diagnostics. See
+[09-ai-processing.md](09-ai-processing.md).
 
 ### Feature Flags
 
@@ -211,6 +225,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_max_messages` | `0` | Maximum number of messages tagged at once from the **context menu**. Above this limit `processEmails()` (`mzta-background.js`) blocks the run and shows the `add_tags_too_many_messages` warning. `0` = no limit. Automatic tagging of incoming mail is never capped. Exposed in the add tags settings page as a number input (`min="0"`, no reset button: the page's restore fallback for number inputs is already `0`). Meant for providers with a daily quota (#901), where a large selection cannot fit anyway. |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
+| `add_tags_account_settings` | `{}` | Per-account Add Tags overrides: `{ <account id>: { <global key>: value, ..., prompt_text: <text> } }`, the override keys being `prompt_text`, `add_tags_maxnum`, `add_tags_force_lang`, `default_chatgpt_lang`, `add_tags_auto_force_existing`, `add_tags_auto_uselist`, `add_tags_auto_uselist_list`, `add_tags_exclusions`, `add_tags_exclusions_exact_match`. A key missing from an entry inherits the global value; an override replaces it for that account's messages. Edited in the per-account section of the Add Tags page, read and written through `mztaPrefs` by `js/mzta-addtags-account-settings.js` (the setter drops unknown keys and wrong-typed values and removes an empty entry). An override is ignored when the policy locks its global key, `prompt_text` when the policy enforces the Add Tags text. **Not** policy-settable (account ids are per profile). See [02-prompts.md](02-prompts.md#add-tags-per-account-settings). |
 | `add_tags_exclusions` | `[]` | Tags never assigned: array of strings, substring match unless `add_tags_exclusions_exact_match`. Read and written through `mztaPrefs` by `js/mzta-addtags-exclusion-list.js` (background and the Add Tags page) and, for the tag dialog in `js/mzta-compose-script.js`, through the `addtags_get_exclusion_prefs` / `addtags_set_exclusions` background commands. Entries are stored lowercase by both writers (the page via `normalizeStringList()`, the dialog's exclude icon by lowercasing), and the dialog adds and removes them case-insensitively. The storage key predates its declaration, so existing lists carry over with no migration. Policy-settable. |
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
 | `add_tags_force_lang` | `true` | Force language for tags |
@@ -243,6 +258,11 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `spamfilter_skip_addressbook` | `false` | Skip senders found in any address book (`browser.contacts.quickSearch`). A permission-gated toggle (see "Permission-gated toggles" below) needing `addressBooks`, so it defaults to `false` like the other gated features (it was `true` before 5.1.0, on with no permission behind it). On the settings page the switch is saved by the shared handler, not by the page's `saveOptions()`: switching it **on** first requests the optional `addressBooks` permission and stores `true` only once it is granted; refused, the switch goes back off, an `alert()` says why (`addressbook_permission_denied`, or `addressbook_permission_error` when the request throws) and nothing is stored. Switching it **off** stores `false` and requests nothing. |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `spamfilter_only_inbox` | `false` | Auto spam filter runs only on inbox messages |
+| `spamfilter_storage_max_entries` / `summarize_storage_max_entries` / `translate_storage_max_entries` | `0` | Set on the storage management page (`pages/storage/`). The cleanup removes the oldest records of that type beyond this count, after the error and age rules; `0` = no limit. Any non-negative integer, so policy-settable with no extra rule. |
+| `spamfilter_storage_max_age_days` / `summarize_storage_max_age_days` / `translate_storage_max_age_days` | `0` | Set on the storage management page. The cleanup removes the records of that type older than this many days (by `createdAt`), after the error rule and before the count rule; `0` = no limit. |
+| `spamfilter_storage_error_max_age_days` / `summarize_storage_error_max_age_days` / `translate_storage_error_max_age_days` | `90` | Set on the storage management page. The cleanup first removes the records of that type that hold an error (`failed` 1) older than this many days; `0` = keep them. Any non-negative integer. |
+| `message_storage_batch_size` | `100` | **Policy-only**, no control in any page: the records a bulk removal of the per-message data handles per lot (it releases the storage lock between two lots, so the background's writes wait for one lot at most). An integer from 1 to 10000 (`PREF_NUMBER_RANGES`), anything else read as `100`. The startup rebuild always uses `100` (it runs before the policy is loaded). See [01-architecture.md](01-architecture.md#per-message-data-storage), "The cleanup lock and the lots". |
+| `message_storage_cleanup_auto` | `true` | Set on the storage management page. The scheduled cleanup of the per-message data: at startup if the last one is more than 24 hours old, else 2 hours after startup, then every 24 hours. `false` stops it (the background reacts to the change at once); "Apply rules now" still works. See [01-architecture.md](01-architecture.md#per-message-data-storage). |
 | `summarize` | `false` | Enable email summarization |
 | `summarize_auto` | `1` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
 | `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` and `summarize_auto = 3` always use inline regardless of this setting. |
@@ -290,7 +310,8 @@ options, wizard and calendar switches stay `.option-input` (for `restoreOptions(
 `applyManagedUI()`).
 
 **Locked on without its permission**: `showLockedPermissionWarning(element, key)` adds an amber
-`.feature_locked_note` (`feature_permission_missing_managed`) to the switch's `.feature_info`
+`.feature_locked_note` (`feature_permission_missing_managed`) to the switch's `.feature_info` (the
+`.mzta_adv_info` of its `.mzta_adv_row` in the options page's advanced section)
 when the policy locks the key on and Thunderbird has not granted its permissions. Neither the
 reconciliation (which skips locked keys) nor the user can fix it; see
 [08c-managed-ui.md](08c-managed-ui.md).
@@ -338,6 +359,99 @@ pages: one checkbox per account (`accounts.list()`), checked as stored (`[]` che
   boxes, and the selection shown was not the one stored until a box itself was clicked.
 - With a policy `*_enabled_accounts_match` the selector is read-only and nothing is stored (see
   [08b-managed-connections.md](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match)).
+
+#### Settings for single accounts (Add Tags page)
+
+The `.mzta_section` `#addtags_account_settings_container` of `pages/addtags/`, the last section of
+the page (after the account selector), a card tinted with `--accent` (7% over `--panel`, border 35%
+over `--line`, so it follows the theme) to read apart from the global settings, edits
+`add_tags_account_settings` (the override keys and their
+run-time meaning are in [02-prompts.md](02-prompts.md#add-tags-per-account-settings)).
+`initAccountSettings()` in `mzta-add-tags.js` builds it; none of its controls is an `.option-input`
+or carries `data-mzta-pref` (they edit an override, not the preference: the generic save and the
+allowlist sweep must not take them for the global controls).
+
+- **Account selector** `#addtags_account_settings_account`, with the "Reset to the global
+  settings" button at its right (it acts on the whole entry, so it sits by the account, not by
+  the prompt editor): one option per account
+  (`getAccountsList()`), the name followed by `AddTags_account_settings_custom_suffix` ("(own
+  settings)") when the account has a stored entry. Switching account with unsaved changes asks
+  `AddTags_account_settings_discard_confirm`; cancelling puts the previous account back.
+- **One row per override key** (every key of `ADD_TAGS_ACCOUNT_KEYS`, `prompt_text` last; but
+  see "Use only these tags" below, one row for two keys), a
+  `.mzta_field.addtags_account_row` laid out as a grid of direct children: the override toggle
+  `#addtags_account_<key>_override` (a small `.mzta_switch`, tooltip and `aria-label`
+  `AddTags_account_settings_override`) left of the title `.addtags_account_title` (the global
+  control's own label), the global summary `#addtags_account_<key>_global` at the right, and the
+  `.addtags_account_value` holding the control `#addtags_account_<key>` below. The controls:
+  `add_tags_maxnum` a number input (`min="0"`); `add_tags_force_lang`,
+  `add_tags_auto_force_existing`, `add_tags_auto_uselist`, `add_tags_exclusions_exact_match` a
+  segmented Yes / No pair of radios (`.addtags_yesno`, `yes_string` / `no_string`): the control is
+  the "Yes" radio, `#addtags_account_<key>_no` the "No" one, so the row's only switch is the
+  override toggle; `default_chatgpt_lang` a text input (the page has no global control for it: its
+  global value is read from `mztaPrefs` at load); `add_tags_exclusions` a textarea, one entry per
+  line; `prompt_text` the prompt editor (below).
+- **"Use only these tags" is one row for two keys**, as the global option (a switch with its list
+  under it): the row carries the ids of `add_tags_auto_uselist` (`ACCOUNT_KEY_ROW` in
+  `mzta-add-tags.js` maps `add_tags_auto_uselist_list` to it), its one toggle overrides both keys
+  together, and its `.addtags_account_value` holds the Yes / No pair, the global
+  `prefs_OptionText_add_tags_auto_uselist_list_Info` note and the list textarea
+  `#addtags_account_add_tags_auto_uselist_list` (one entry per line), disabled while "No" is chosen
+  (as the global list while its switch is off). The toggle is on when the entry holds either key;
+  Save then writes both. Its summary adds the global list in brackets when the global option is on
+  ("Global: Yes (urgent, work)"). Under the title, `AddTags_account_settings_uselist_info` says the
+  option is used only by the automatic tagging.
+- **The override rule.** A toggle off (the default, and the state of every key missing from the
+  entry) means the account uses the global value: the `.addtags_account_value` is `hidden` and the
+  summary shows `AddTags_account_settings_global` ("Global: $1") with the current global value
+  (Yes/No, the lists comma-separated, `AddTags_account_settings_global_none` when empty; also as its
+  `title`, since a long one is ellipsized), kept in step with the global controls above (their
+  `change`, and the exclusion list's Save, which updates the saved global list it shows). The prompt
+  row has no summary: off, it shows nothing (the prompt above is in sight). Turning a toggle on hides
+  the summary and shows the control, starting from the account's own value (the stored one, or the
+  last one the user gave since the account was loaded, so off and on again loses nothing) or else
+  from the global value; the prompt editor likewise from the account's text or else the global
+  editor's text. The own values are reset on every account load.
+- **Prompt editor** `#addtags_account_prompt_text` (titled by an `.addtags_account_title.opt_title_small`,
+  `AddTags_account_settings_prompt_title`, which is where the managed marker of an enforced text
+  lands), with placeholder highlighting, autocomplete (type 1, as the global editor) and the
+  `AddTags_account_settings_placeholder` placeholder: emptied with its toggle on, it still means
+  the prompt above. `#btn_account_settings_copy_prompt`, under the editor, copies the global
+  editor's text into it. The preview and Save sit after the rows, outside the prompt row, so they
+  stay visible with the prompt toggle off.
+- **Save** `#btn_save_account_settings` stores the whole entry at once through
+  `addTags_setAccountSettings()`: only the rows whose toggle is on, `add_tags_maxnum` as a
+  number (an emptied field is no key), `add_tags_auto_uselist_list` through `normalizeStringList()`
+  (the comma-joined string the global list stores), `add_tags_exclusions` through
+  `normalizeStringList(value, 2)` (lowercase, as the global list), the prompt text when its toggle
+  is on and it is not blank.
+  Saving an entry with no key removes the account. **"Reset to the global settings"**
+  `#btn_account_settings_remove` (`AddTags_account_settings_remove`) removes the entry; it is enabled
+  when the account has something stored the page may drop, or unsaved changes. After either the
+  account is reloaded from storage.
+- **Unsaved marker** `#addtags_account_settings_unsaved`: the entry the section shows differs from
+  the one it loaded. The Save button follows the same state, so `pages/_lib/unsaved-guard.js` (an
+  enabled `btn_save*`) guards leaving the page.
+- **Preview** `#addtags_account_info_additional_statements`: the statements
+  `finalizePrompt_add_tags()` would append for the selected account, with its EFFECTIVE values (the
+  row's value when overridden, the global value when not overridden or locked) and the account
+  prompt text (the global one when its toggle is off or it is empty), refreshed on every change in the section and in the global
+  settings. `updateAdditionalPromptStatements(values, prompt_text, target_el)` is shared with the
+  global preview (`updateGlobalAdditionalStatements()`, which reads the stored values).
+- **No accounts**: the selector, every toggle, the editor and the copy button are disabled, every
+  toggle off (the rows show the global values in their summaries).
+- **Policy.** A row whose global key the policy locks is locked too, through
+  `lockOverrideControls()` (see [08c-managed-ui.md](08c-managed-ui.md#controls-with-their-own-loadsave-logic-data-mzta-pref)):
+  toggle off and disabled, controls disabled, the summary showing the policy value, the marker in
+  the row's title (the `anchor`). When the policy enforces the Add Tags text the editor is locked
+  by `lockEnforcedPromptText()` (read-only, the prompt toggle off and inert with the copy button, see [08a-managed-prompts.md](08a-managed-prompts.md)). The page never writes a
+  value the policy owns: Save and the removal keep, as stored, the entry's values of the locked keys
+  and its `prompt_text` when the text is enforced (they are ignored at run time anyway), and the
+  other settings of the account stay editable. With the restriction
+  `_disable_add_tags_account_settings` the section is hidden altogether and the note
+  `#managed_restriction_account_settings_note` (`managed_restriction_add_tags_account_settings`,
+  placed just before it) is shown instead; `initAccountSettings()` is not run (see
+  [08a-managed-prompts.md](08a-managed-prompts.md#_disable_add_tags_account_settings)).
 
 ### Timezone Select (`pages/_lib/mzta-timezones.js`)
 
@@ -408,6 +522,111 @@ The timezone `<select>` shown on the Calendar Event (`pages/get-calendar-event/`
   red "missing value" border when nothing is selected — otherwise every fresh profile would open the
   page with the field already flagged as an error. For every other Tom Select, which has no such
   attribute, an empty value keeps being highlighted in red.
+
+### Spam Filter Page — the spam log (`pages/spamfilter/`)
+
+The page ends with the spam log, `#report_data`: one row per saved spam report (Message-ID, message
+date, sender, subject, score, moved with the threshold, explanation, report date), read straight from
+the per-message storage ([01-architecture.md](01-architecture.md#per-message-data-storage)), not
+through the background. The rows are built by `renderSpamReportRows()` of `pages/_lib/spam-log.js`
+(with the explanation's resize strip, `attachRowResizer()`), shared with the storage management page.
+- **The 20 newest only** ([#956](https://github.com/micz/ThunderAI/issues/956)), newest first:
+  `taSpamReport.getReportPage(0, 20)` (a cursor on the `createdAt` index). No pager (the
+  `report_pager` and its Previous / Next are gone), no search, no sorting.
+- **The link.** Under the table, `.report_more`: `spamfilter_report_newest_info` and the link
+  `#report_manage_link` (`spamfilter_report_manage_link`), which opens the storage management page on
+  its spam list, `pages/storage/mzta-storage-manager.html#spam`, in a new tab with `tabs.create()`
+  (not `openTab()`: a `tabs.query()` match pattern cannot carry the hash).
+- **Cells.** The arrays `subject` and `from` are joined; a report without them (an error saved when
+  the message could not be read, or moved from an older version) shows empty cells. The report date is
+  the record's `createdAt`.
+- **Empty.** With no report, one row spanning the 8 columns says `spamfilter_no_reports`.
+- **Migrating.** While the background is still moving the reports out of `storage.local` (the
+  migration flag), the one row says `storage_migration_in_progress` instead.
+- **Migration failed.** When the last attempt failed (the flag `'failed'`), `#report_migration_failed`
+  (`storage_migration_failed`) is shown above the log, which shows what the database holds as usual.
+
+### Storage Management Page (`pages/storage/`)
+
+`pages/storage/mzta-storage-manager.html` / `.js` / `.css` ([#956](https://github.com/micz/ThunderAI/issues/956)):
+the saved spam reports, summaries and translations
+([01-architecture.md](01-architecture.md#per-message-data-storage)). Opened in a tab by the options
+page's `#btnManageMessageStorage` and by the spam log's link (`#spam`). Same look as the other
+settings pages (`mzta-design.css`, `body.mzta_feature_page`); the managed banner
+(`showManagedBanner()`) and `applyManagedUI()` after the rules are loaded, so a locked rule is shown
+disabled with its marker. It reads IndexedDB directly through `js/mzta-storage.js` and never rebuilds,
+realigns or migrates it; it shows the migration notices of `getMigrationState()` at the top
+(`#storage_migrating`, `#storage_migration_failed`) and still shows what the database holds. Its one
+`storage.onChanged` listener skips the mirror keys (`isMirrorKey()`) and reloads the rules form when a
+rule key changes elsewhere, unless the form holds unsaved edits. The types are shown in the order
+summaries, translations, spam reports (`storage_type_*`); a count per type reads
+`storage_count_item` ("Summaries: 3"), joined with commas. Every result or error goes in the result
+line of its section (`.storage_result`, red with `.storage_error`), never swallowed. The bulk
+removals work in lots and are not atomic: when one fails after removing something, the line says
+what it removed before the error (`storage_action_error_partial`, from `error.removed`), else
+`storage_action_error`.
+- **Overview** (`#stats_table`, `taStorage.getStats()`): per type entries, entries with an error,
+  estimated size (`formatBytes()`, exported by `js/mzta-utils.js`), oldest and newest entry date;
+  the total row; `storage_disk_note` (the disk used is about twice: the durable copy); the last
+  automatic cleanup, `storage_last_cleanup` with its date and what it removed per type, or
+  `storage_last_cleanup_never` (`getLastCleanup()`). **Refresh** (`#btn_refresh`) reads the notices,
+  the overview and the list again; there is no automatic refresh.
+- **Entry list** (`#entries_section`, right after the overview): a type selector (`#entries_type`, summaries first); 50 entries
+  per page, newest first (`taStorage.getPage()`), with Previous / Next and "1–50 of 60" (it reuses
+  `spamfilter_report_previous` / `_next` / `_page_label`, whose translations already exist); a page
+  past the end falls back to the last one; no search. Summaries and translations: saved on
+  (`createdAt`), status (`storage_status_ok` / `_error`, by `taStorage.isFailed()`; an error carries
+  its message as a tooltip), subject and sender (arrays joined), message date, the language for the
+  translations. Spam reports: the eight columns of the spam log (`renderSpamReportRows()`), then
+  status and actions. Per row **Open** (`messages.query({ headerMessageId })`, then
+  `messageDisplay.open({ messageId, location: 'tab' })`; `storage_message_not_found` when no folder
+  holds it) and **Delete** (`storage_delete_entry_confirm`, then the `delete*Field()` of that type).
+  **A plain hash** selects the type when the page opens and on `hashchange`: `#summary`,
+  `#translation`, `#spam`; the list is then scrolled into view; any other hash is ignored.
+  **Full-tab mode**: next to the selector, the icon-only `#entries_fullscreen_btn` (no label, so no
+  string; the state in `aria-pressed`, which swaps the two icons in CSS), the same as the spam log's
+  `#report_fullscreen_btn`: the section gets `entries_fullscreen_on` (`position: fixed` over the whole
+  tab, margins zeroed, the scroll box taking the leftover height) and the body `entries_fullscreen`
+  (locked). The button again or Escape restores it and scrolls the list back into view
+  (`attachEntriesFullscreen()`).
+- **Retention rules**: per type maximum age, maximum number of entries and maximum age of the entries
+  with an error (`storage_rule_*`, number inputs with `data-mzta-pref`, class `rule_input`; hint
+  `storage_rule_zero_hint`, 0 = no limit); the switch `message_storage_cleanup_auto` with
+  `storage_cleanup_auto_info` (when it runs). **Saved by Save only** (`#btn_save_rules`, disabled until
+  an edit, so the unsaved-changes guard covers it), every rule at once with `mztaPrefs.setPrefs()`,
+  locked keys left out. A value that is not an integer ≥ 0 shows `#rules_invalid` and nothing is
+  saved. **The save warning**: when the automatic cleanup in the form is on and
+  `previewCleanup()` of the form's rules is above 0, Save first asks `storage_rules_save_confirm`
+  (the total and the count per type the next automatic cleanup would delete); refused, nothing is
+  saved and Save stays enabled. With the automatic cleanup off nothing is asked (saving deletes
+  nothing). **Restore defaults** (`#btn_restore_rules`) puts the `prefs_default` values in the form,
+  locked keys skipped, and enables Save: nothing is stored until Save. **Preview** (`#btn_preview`)
+  shows `storage_preview_result`: `previewCleanup()` with the values in the form, saved or not;
+  nothing deleted or stored. **Apply rules now** (`#btn_apply_now`, confirmed with
+  `storage_apply_confirm`) runs `taStorage.cleanup()` with the **saved** rules and shows
+  `storage_removed_result`; it is not the scheduled run (no last cleanup stored, no timer moved).
+- **Manual actions** (`#actions_section`), each confirmed first (a refusal changes nothing), then its
+  outcome shown and the overview and the list read again: delete one type (`#btn_delete_summary` /
+  `_translation` / `_spam`, `storage_delete_<type>_confirm`, `taStorage.clear(type)`); delete the
+  errors (`#btn_delete_errors`, `deleteErrors()`); delete the entries older than N days
+  (`#delete_older_days`, default 30, `#btn_delete_older`, `storage_delete_older_confirm`,
+  `deleteOlderThan(days)`; a number below 1 shows `storage_days_invalid` and asks nothing); delete
+  everything (`#btn_delete_all`, `prefs_storage_clear_button` / `_confirm` / `_done`,
+  `clearAllRecords()`); **Realign** (`#btn_realign`, `storage_realign_confirm`): the background's
+  `reconcileMessageStorage` command, answered with `storage_realign_done` (restored / removed per
+  type) or the error it returned.
+- **Orphan scan** (`#orphans_section`): started by `#btn_orphans_start` after the warning
+  `storage_orphans_confirm` (one lookup per message, it can take long). It reads every
+  `{ messageId, createdAt }` of the three types (`getEntryKeys()`), and looks each distinct
+  Message-ID up once with `messages.query({ headerMessageId })`, showing `storage_orphans_progress`;
+  `#btn_orphans_stop` stops it between two lookups (`storage_orphans_stopped`). A message not found:
+  its entries are listed (type, Message-ID, saved on) with `storage_orphans_note` (indicative:
+  folders not synchronized or not indexed may wrongly appear as missing). A message found: each of
+  its entries gets `taStorage.fillMetadata()` with `buildMessageMetadata(message, null)` (only those
+  with empty metadata and an unchanged `createdAt` are rewritten; `storage_orphans_filled` counts
+  them). A lookup that fails is logged and neither listed nor filled. **Delete these entries**
+  (`#btn_orphans_delete`, `storage_orphans_delete_confirm`) removes exactly the listed ones with
+  `taStorage.removeEntries()` (each only while it still has the `createdAt` seen).
 
 ### Summarize Settings Page (`pages/summarize/`)
 
@@ -482,10 +701,10 @@ The prompt CRUD screen, **design "2a": one list, two views**. A single card (`#p
 **Detail editor (`#detail_pane`).** A single static editor, never a List.js item. `detailMode` is `'none' | 'edit' | 'new'`, and `selectedIdnum` identifies the item in edit mode.
 - `loadDetail(item)` → `fillDetail(values)` + `applyDetailState(rowState(values))`.
 - **Header**: title + read-only badge + id on the left, the action buttons on the right, and the **Menu position** button (edit mode only) centred between them by two `.toolbar_spacer`s.
-- **Fields**: ID and Name inputs (one per row, full width, `.field_stack`), the highlighted prompt textarea, Add to menu / Action selects, and two disclosures for the per-prompt connection override:
+- **Fields**: ID and Name inputs (one per row, full width, `.field_stack`), the highlighted prompt textarea, Add to menu / Action selects (Action: close, reply, substitute text, insert at cursor position — values `"0"`–`"3"`, spec 02), and two disclosures for the per-prompt connection override:
   - **[API]**: `injectConnectionUI()` runs **once**, with prefix `detail_prompt_`, into `#detail_api_panel`. Its `.conn_adv` rows are relocated behind `.conn_adv_btn` by `relocateConnAdvRows()` and kept in sync by `showAdvConnectionOptions()`. `populateConnectionUI()` falls back to the global pref for an unset value, restores TomSelect values, and re-runs `updateWarnings()` / `checkJsonFieldsByPrefix()` because `.value` writes fire no `input`. The Reset button (`resetApiSettings()`) only clears the pane, as a pending edit.
   - **[ChatGPT Web]**: model / project / custom GPT, shown only while the global connection is `chatgpt_web`, the prompt sets no `api_type` and the prompt is editable (`updateChatGPTWebVisibility()`, re-run on every api_type change). Both disclosures auto-open when the prompt already carries an override: [API] only when it has an `api_type` (`hasApiOverrideValues()`; every save stores all the integration fields, seeded from the global prefs, so their presence alone means nothing and nothing reads them without an `api_type`), [ChatGPT Web] when it has a model, project or custom GPT. `setDisclosure()` opens and closes both, keeping `aria-expanded` and the toggle's tooltip in step: `customPrompts_show_additional_info` while closed (also the markup's initial `title`), `customPrompts_hide_additional_info` while open.
-- **ID from the name**: when `fillDetail()` finds the ID empty (a blank new prompt), `detailIdAuto` links it to the name: every `input` on `#detail_name` rewrites `#detail_id` with `promptIdFromName()` — accents dropped (NFD), lowercased, each run of characters outside `[a-z0-9]` collapsed into `_` and trimmed, made unique among the other prompts with `_2`, `_3`, …; a name with no Latin letters or digits gives `''`. Typing in the ID breaks the link, emptying it restores it. A copy's seed has an ID, so it is never linked.
+- **ID from the name**: when `fillDetail()` finds the ID empty (a blank new prompt), `detailIdAuto` links it to the name: every `input` on `#detail_name` rewrites `#detail_id` with `promptIdFromName()` — accents dropped (NFD), lowercased, each run of characters outside `[a-z0-9]` collapsed into `_` and trimmed, a leading `prompt_` dropped (`withoutReservedPrefix()`, see [02-prompts.md](02-prompts.md#prompt-ids)), made unique among the other prompts with `_2`, `_3`, …; a name with no Latin letters or digits gives `''`. Typing in the ID breaks the link, emptying it restores it. A copy's seed has an ID, so it is never linked.
 - **Options** column: the five flags as 34×20 switches (`.flag_switch` in `.flag_row`).
   - `use_diff_viewer` is only selectable when the action is "substitute text" (`updateDiffViewerState()`), with `#detail_diff_hint` explaining why.
   - `checkPromptsConfigForPlaceholders()` rings (`.invalid_flag`) `need_custom_text` / `need_selected` when the text uses `{%additional_text%}` / `{%selected_text%}` / `{%selected_html%}` but the flag is off.
@@ -503,9 +722,9 @@ The prompt CRUD screen, **design "2a": one list, two views**. A single card (`#p
   | Built-in / org / shadowed / inert | Duplicate and edit |
 
   Duplicate, Duplicate and edit, and Export are disabled whenever the management policy is on (see [08a-managed-prompts.md](08a-managed-prompts.md#_disable_prompt_management)).
-- **Save** (`commitDetail()`) validates the fields and applies them to the List.js item with `item.values()`, then calls `savePrompts()`. Validation: the id is non-empty, has no whitespace and is unique among the other prompts; name and text are required; the name cannot contain `%` (`customPrompts_error_name_percent`: the name travels in the chat window's url as `prompt_name`, see [01-architecture.md](01-architecture.md#component-structure)); errors show in `#detail_error` and as `.input_error` borders. Flags are written as numbers `1`/`0`, which `normalizePromptFlags()` collapses on the next read.
+- **Save** (`commitDetail()`) validates the fields and applies them to the List.js item with `item.values()`, then calls `savePrompts()`. Validation: the id is non-empty, has no whitespace and is unique among the other prompts (`customPrompts_error_id`); a new id, or a changed one, may not start with `prompt_`, ignoring case (`customPrompts_error_id_reserved`, `isReservedPromptId()`), while an existing prompt whose id already starts with it saves as long as the id is left unchanged (see [02-prompts.md](02-prompts.md#prompt-ids)); the hint under the field is `customPrompts_form_label_ID_rules_prompt` (the Custom Data Placeholders page keeps `customPrompts_form_label_ID_rules`); name and text are required; the name cannot contain `%` (`customPrompts_error_name_percent`: the name travels in the chat window's url as `prompt_name`, see [01-architecture.md](01-architecture.md#component-structure)); errors show in `#detail_error` and as `.input_error` borders. Flags are written as numbers `1`/`0`, which `normalizePromptFlags()` collapses on the next read.
 - **New prompt** (`startNewPrompt()`) puts the pane in `'new'` mode, with empty fields and the global API defaults. Save creates the item with the same shape as before (`position_*Max + 1`, next `idnum`, `is_default: 0`, `show_in: 'popup'`), after clearing the search so the new row is visible, and selects it. Cancel returns to the previous selection.
-- **Duplicate / Duplicate and edit** (`duplicatePrompt()`) seed `'new'` mode from a copy. The id becomes `id_<copy_text>`, made unique among the listed prompts with `_2`, `_3`, … like the ID derived from a name (`uniquePromptId()`), so a second copy of the same prompt is not refused by Save; the name becomes `<resolved name> (<copy_text>)`, API values included. Ownership and policy markers (`is_default`, `is_org`, `_shadowed_by_org`, …) are stripped from the seed.
+- **Duplicate / Duplicate and edit** (`duplicatePrompt()`) seed `'new'` mode from a copy. The id becomes `id_<copy_text>` without a leading `prompt_` (a copy of `prompt_reply` is `reply_copy`), made unique among the listed prompts with `_2`, `_3`, … like the ID derived from a name (`uniquePromptId()`, exported by `js/mzta-prompts.js`), so a second copy of the same prompt is not refused by Save; the name becomes `<resolved name> (<copy_text>)`, API values included. Ownership and policy markers (`is_default`, `is_org`, `_shadowed_by_org`, …) are stripped from the seed.
 - **Delete** confirms (`customPrompts_btnDelete_confirmText`), removes the item and selects the next visible one.
 - **Export** (row menu) runs `exportPrompts([values])`, the same function as Export All, so a single-prompt file has the full format and re-imports like any backup.
 - **Dirty guard**: `detailDirty` is set by any user input in the pane, ignoring programmatic fills (`detailLoading`). Before the pane is repointed — selecting another prompt, Edit/Open from the table, New, Duplicate, Import — `confirmLeaveDetail()` shows `showChoiceDialog()` with Cancel / Discard / Apply. Apply runs `commitDetail()`, and a failed validation keeps the user in place. `beforeunload` also warns while `detailDirty` is set.
@@ -797,7 +1016,14 @@ except `chatgpt_web` (which has no API endpoint). `refreshConnTestVisibility()` 
 `pages/_lib/mzta-design.css`): `idle` (grey dot, "Connection not tested yet", link "Test
 now"), `loading` (dot becomes a spinner via the `mztaspin` keyframe, "Testing
 connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", link
-"Re-test"), `error` (red dot + red text with the error detail, link "Retry").
+"Re-test"), `warning` (amber dot + amber text, `connTest_ok_redirect`, link "Re-test": a
+custom endpoint answered through a redirect; it names the address to enter instead, and says the
+chat may not work through it, since the test is a GET and only a POST shows whether a redirect
+keeps the content of the requests, see [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)),
+`error` (red dot + red text with the error detail, link "Retry").
+`showConnTestResult(result, strip)` shows a `runConnectionTest()` result: `error` when it failed,
+`warning` when it carries a `redirectTo`, `ok` otherwise; the options page, the wizard and the
+strips of `connection-ui.js` all call it.
 `setConnTestState(state, message, strip)`, exported by `js/mzta-connection-test.js` and
 shared by every host, updates dot/text/link of `strip` (found via `.conn_test_text` /
 `.conn_test_link`; it defaults to `#mzta_conn_test`); i18n keys are `connTest_*` in
@@ -860,6 +1086,59 @@ The two optional registry fields:
 A successful Ollama test also re-runs `updateOllamaModelCapabilityUI()`, because granting the
 host permission through the test is often what makes `/api/show` reachable in the first place
 — see [04-api-integrations.md](04-api-integrations.md#ollama-ollama_api).
+
+### Connection Settings Panel — Custom Endpoint Address
+
+The address of the two custom endpoints (`{prefix}ollama_host`, `{prefix}openai_comp_host`) follows
+the rules of [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)
+[#1000]. Each host field has two notes under it, in every panel `injectConnectionUI()` builds
+(options page, feature pages, custom prompts, setup wizard). The two integrations are
+`ENDPOINT_INTEGRATIONS`.
+
+- **The red note** (`#{prefix}{integration}_host_endpoint_note`, `.endpoint_note`, `[hidden]` when
+  empty), filled by `checkEndpointField(modelId_prefix, integration)`: a non-empty address goes
+  through `resolveEndpointAccess(host)` **without `ask`**, so the field never shows a dialog. When the
+  address cannot be used the note says why: the localized `endpoint_error_*` message, or
+  `endpoint_insecure_note` for an unencrypted server on another machine not yet allowed. It runs:
+  - at page load, for the restored values: `updateEndpointNotes(modelId_prefix)`, called by
+    `updateWarnings()` (options page, feature pages, custom prompts when a prompt is loaded into
+    the form) and by the setup wizard after its `restoreOptions()`. A user with a remote `http:`
+    Ollama not yet allowed sees the note at once;
+  - on `change` of the field;
+  - on every `storage.local` change of `_approved_insecure_origins`, so the note goes away as soon
+    as the user allows the server with "Test now" or "Update list" (here or on another page).
+
+  Saving is never blocked; the requests are. A field the policy locked (`data-mzta-managed="1"`) is
+  skipped: its host is approved without asking.
+- **The amber note** (`#{prefix}{integration}_host_redirect_note`, `.endpoint_note.endpoint_note_warning`,
+  the `--warnColor` of `mzta-design.css`), filled by `showEndpointRedirectNote()` from the stored
+  redirect of the address in the field (`getEndpointRedirect()`, see
+  [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)):
+  - a redirect that a POST went through (`method: 'POST'`, a 307/308): `endpoint_redirect_note`,
+    naming the destination `to`;
+  - a redirect only a GET went through (the test, the model list): `endpoint_redirect_note_unverified`,
+    naming `to` and saying the chat may not work through it;
+  - a redirect that failed: `endpoint_redirect_failed_note_to` naming `to` when it is known,
+    `endpoint_redirect_failed_note` otherwise;
+  - no entry: hidden.
+
+  It is filled at page load (`updateEndpointNotes()`) and on every `storage.local` change of
+  `_endpoint_redirects`, so a redirect found by a request made meanwhile (the chat, a feature, the
+  buttons of the panel) shows at once. It **stays until the value of the field changes**: on
+  `change`, `onEndpointHostChange()` removes the stored redirect of the previous address
+  (`clearEndpointRedirect()`, the value the field held when its notes were last filled) and hides
+  the note; the storage change then shows the entry of the new address, if it has one. An address
+  that only gained or lost spaces or trailing slashes is the same host, and keeps both. No buttons.
+- **"Test now" and "Update list"** check the address with `resolveEndpointAccess(host, {ask: true})`
+  before anything is sent: an unencrypted server on another machine not yet allowed gets the
+  `endpoint_insecure_confirm` dialog, once per origin. "Test now" asks it after the host permission:
+  `permissions.request()` is only allowed from a user input handler, so it must be the first `await`
+  of the click, before anything reads the storage; an unusable address (not a URL, credentials in
+  it) is refused before it with the synchronous `parseEndpoint()`, so it asks for nothing. Refused, their own error shows the message,
+  and nothing is sent. An empty host keeps its previous behaviour (the disabled button; the
+  connection test's permission error). After the request, both save its redirect outcome.
+- **The Ollama capability probe** never asks: an unencrypted server not yet allowed is simply not
+  probed, like an unreachable one. It saves its redirect outcome too.
 
 ### Connection Settings Panel — "Update list" Model Fetch Buttons
 
@@ -1381,19 +1660,35 @@ unchanged so `updateDescription()` keeps working.
 
 The note itself is **untinted**: only the body text carries the provider colour, as a 3px
 `--tint-accent` left bar on the `.conntype_<provider> .info_specific` spans
-(`prefsInfoDesc_1/2/3/4/7/8`). The single `#mzta_info_guide` link (`prefs_full_guide`) is
-**moved inside the active provider's span** by `updateDescription()`, so it reads inline at
-the end of that sentence instead of breaking onto its own line below the accent bar.
+(`prefsInfoDesc_1/2/3/4/7/8`). The provider's links sit in one row, `#mzta_info_links`,
+**moved inside the active provider's span** by `updateDescription()`, so it stays within the
+accent bar. The row holds two links: `#mzta_info_guide` (`prefs_full_guide`) and
+`#mzta_info_extra`, a second page for the providers that have one. They are **chips centred on
+their own line below the text** (the row is a centred, wrapping flex; each chip has a pill
+border and a light background mixed from `--tint-accent`, so it takes the provider colour
+too). Like `.info_specific`, the row and the chips must keep their `display` in CSS:
+`updateDescription()` reveals them with `style.display = ""`.
 
 **Provider reactivity.** `updateDescription()` (`options/mzta-options.js`) does three
 things per provider, all driven by the existing `change` listener on `#connection_type`
 (plus one call at init): toggles the `.conntype_*` span visibility via inline `display`,
-toggles the `tint_*` class on `#miczDescription`, and moves `#mzta_info_guide` into the
-active span (idempotent — it only re-appends when the parent differs) while pointing it at
-`getMiczItUrl(CONN_GUIDE_PATH[conntype])`. `CONN_GUIDE_PATH` is **sparse on purpose** —
-only `chatgpt_web` (status page) and `ollama_api` (CORS page) have a dedicated
-documentation page, and the link is hidden (`display:none`) for the other four rather
-than falling back to a generic page.
+toggles the `tint_*` class on `#miczDescription`, and fills `#mzta_info_links` and moves it into
+the active span (idempotent — it only re-appends when the parent differs).
+- `#mzta_info_guide` points at `getMiczItUrl(CONN_GUIDE_PATH[conntype])`, the provider's setup
+  guide on micz.it (`thunderbird-addon-thunderai/guides/<provider>/`: `chatgpt-web`, `openai-api`,
+  `ollama`, `openai-compatible-api`, `google-gemini`, `claude-api`). Every provider has one,
+  translated in all the languages of `getMiczItUrl()`, so it is always shown.
+- `#mzta_info_extra` comes from `CONN_EXTRA_LINK[conntype]` (its text from the entry's message,
+  plus ` ›`), and is hidden for the providers without an entry. **ChatGPT Web** gets
+  `prefs_status_page` (the same lowercase text as the link in the ChatGPT Web window; the chip
+  capitalises its first letter in CSS, `#mzta_info_links a::first-letter`) → `https://micz.it/thunderbird-addon-thunderai/chatgptweb_status/`, always the
+  English page; **Ollama** gets `CORS_alternative_1` ("Problems setting CORS?", the same text as in the
+  connection panel) → the CORS page through `getMiczItUrl()`.
+
+A provider with neither link would get the whole row hidden (`display:none`) rather than
+pointed somewhere generic; with nothing selected the row is hidden too. Only pages that micz.it
+translates may go through `getMiczItUrl()`: the status page, for one, exists only in English (a
+language prefix gives a 404).
 
 Note `.info_specific` must keep `display: block` in CSS, because `updateDescription()`
 reveals the active provider's text with `style.display = ""`, which falls back to the
@@ -1431,6 +1726,11 @@ inside space themselves with their own `margin-top`.
      at its natural shrink-to-fit width (`flex: 0 0 auto; align-self: center`) so it never
      spans the full width: a `--field` box with the `prefs_shortcut_label` label and the
      `#mzta_shortcut_keys` `<kbd>` chips.
+   - **Change-shortcut link** (`#mzta_shortcut_help`, `prefs_shortcut_change_link`)
+     centred **below** the strip (`margin-top: -6px` to sit closer to it than the stack
+     gap). Its `href` is set at init, next to the guides/tutorial links, to
+     `getMiczItUrl('thunderbird-addon-keyboard-shortcut/')`, since micz.it translates that
+     page; the English URL in the HTML is only the fallback before init.
 2. **Footer** (`#mzta_footer`) — three **plain `<a>` links** on one centered `flex-wrap`
    row (was a stacked column of `<div>`s, each with an introductory sentence before the
    link). The lead-in sentences are gone: `TranslateText` + `TranslateLink` and
@@ -1454,7 +1754,8 @@ this page.
 and `prefsDonation_2` are no longer referenced by this page but are **left in the locale
 files** — deleting them would churn all the Weblate-managed locales. New keys (English only,
 per the localization rule): `prefs_full_guide`, `prefs_shortcut_label`,
-`prefs_disclaimer_short`, `prefs_footer_translate`, `prefs_footer_donate`.
+`prefs_disclaimer_short`, `prefs_footer_translate`, `prefs_footer_donate`,
+`prefs_shortcut_change_link`.
 
 `prefs_info_pill` ("Important information") was also introduced here, but it was
 **deleted from `_locales/en/messages.json`** when the provider setup note moved into the
@@ -1467,8 +1768,9 @@ the "leave retired keys in place" handling of the older keys above.
 The app-level "Advanced options" disclosure is the `#mzta_adv_toggle` button and the
 `#mzta_adv_panel` it opens below itself (the connection panel's own disclosure mirrors it, see
 "Connection Settings Panel — Advanced Options Disclosure"). The panel holds the chat window size and
-position, `max_prompt_length`, `special_command_timeout`, `batch_max_concurrency`, the behaviour
-switches, `diff_granularity`, `do_debug` and the cache block below.
+position, `max_prompt_length`, `special_command_timeout`, `api_stream_idle_timeout`,
+`batch_max_concurrency`, the behaviour switches, `diff_granularity`, `ai_processing_enabled` (or
+its `#no_privacy` notice), `do_debug`, the allowed unencrypted servers and the storage block below.
 
 - **Collapsed on every open.** The page opens with `aria-expanded="false"` and `.hidden` on the
   panel; a click flips both. The state is purely local UI: **no preference is persisted**.
@@ -1476,19 +1778,34 @@ switches, `diff_granularity`, `do_debug` and the cache block below.
   hides its row (`#max_prompt_length_tr`) while the global select holds `chatgpt_web` or nothing,
   and shows and enables it for any API; it runs at load and on every `connection_type` change. The
   row follows *relevance*, not the field's `disabled` flag: a policy lock disables the field too, and
-  that must grey it out, never hide the row it explains. `special_command_timeout` is always shown
-  (see its row in "UI & Feature Preferences").
-- **Reset buttons.** `#reset_max_prompt_length` and `#reset_special_command_timeout` (each marked
+  that must grey it out, never hide the row it explains. `special_command_timeout` and
+  `api_stream_idle_timeout` are always shown (see their rows in "UI & Feature Preferences").
+- **Reset buttons.** `#reset_max_prompt_length`, `#reset_special_command_timeout` and
+  `#reset_api_stream_idle_timeout` (each marked
   `data-mzta-companion-of` its field) put the `prefs_default` value back in the field and store it
   with `setPref()`, as a number. They fire no `change`. For a policy-locked key they do nothing
   (`isLockedKey()`), without relying on the button being disabled. `batch_max_concurrency` has none.
-- **Cache block.** `#cache_storage_size` shows the space taken by the per-message records (the
-  `msg:` keys of `storage.local`, see [01-architecture.md](01-architecture.md#per-message-data-storage)),
-  as computed by `getCacheStorageUsedSpace()` (`js/mzta-utils.js`) and read once at load.
-  `#btnClearCache` asks a native `confirm()` (`prefs_storage_clear_confirm`): cancelled, nothing
-  happens; confirmed, `taStorage.clearAllRecords()` removes every `msg:` record - never a preference
-  or any other key - then an `alert()` reports the count (`prefs_storage_clear_done`) and the size is
-  read again.
+- **Storage block.** `#message_storage_size`: the space taken by the saved spam reports, summaries and
+  translations (IndexedDB, see [01-architecture.md](01-architecture.md#per-message-data-storage)), the
+  sum of the `size` of every record of the three stores, as computed by
+  `getMessageStorageUsedSpace()` (`js/mzta-utils.js`, over `taStorage.getTotalSize()`) and read at
+  load. It is the IndexedDB total only: every record is also kept in its `storage.local` mirror key,
+  so the disk actually used is roughly twice that. `#btnManageMessageStorage`
+  (`prefs_storage_manage_button`) opens the storage management page
+  (`pages/storage/mzta-storage-manager.html`, `openTab()`), where the rules and every deletion are
+  ("Storage Management Page" above); the options page deletes nothing itself (its Clear button moved
+  there as "Delete everything"). While the background is still moving the legacy `msg:` records (the
+  migration flag), `#message_storage_migrating` (`storage_migration_in_progress`) is shown under it;
+  after a failed attempt (the flag `'failed'`), `#message_storage_migration_failed`
+  (`storage_migration_failed`) instead.
+- **Allowed unencrypted servers.** `#insecure_origins_list` lists the user's own approvals
+  (`getUserApprovedInsecureOrigins()`, see
+  [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)),
+  one origin per line with a "Remove" button (`revokeInsecureOrigin()`), or
+  `prefs_insecure_origins_empty`. Removed, the next request to that server is blocked until it is
+  allowed again. The hosts the policy sets are not listed: they are never asked about. The list is
+  rendered at load and again on every `storage.local` change of `_approved_insecure_origins`, so an
+  approval given in the connection panel of the same page shows at once.
 
 ### Owl for Exchange Warning (`#owl_warning`)
 
@@ -1512,7 +1829,8 @@ inline `btn.disabled = ...` toggling for these six buttons (on checkbox `click`,
 ### Unsaved-Changes Guard (`pages/_lib/unsaved-guard.js`)
 
 The six feature settings pages (Add Tags, Spam Filter, Summarize, Translate, Calendar
-Event, Task) mix two kinds of controls: plain `.option-input` fields, written to storage
+Event, Task) and the storage management page (its retention rules, saved by
+`#btn_save_rules`) mix two kinds of controls: plain `.option-input` fields, written to storage
 on `change` (never pending), and **textareas saved explicitly** by a companion Save
 button. Only the latter can hold unsaved text when the tab is closed.
 
@@ -1616,8 +1934,8 @@ on this and guard with `Number.isInteger()` / `Number.isFinite()` (the `summariz
 `translate_auto`, `max_prompt_length` and `special_command_timeout` reads). The accessor adds
 **no** null coercion, and must not start doing so.
 
-**Logging** uses `taLogger`, never `console` directly, and masks any `*_api_key` value — the
-same rule `isAPIKeyValue()` applies in the options page. The `do_debug` flag is read once,
+**Logging** uses `taLogger`, never `console` directly, and masks any `*_api_key` or
+`*_extra_headers` value — the same rule `isAPIKeyValue()` applies in the options page. The `do_debug` flag is read once,
 lazily, and refreshed from `storage.onChanged`; it cannot be fetched through `getPref()`
 without recursing on every read.
 
@@ -1674,8 +1992,10 @@ case for nearly every user and is swallowed silently.
   module context and cannot import. It no longer reads storage at all: the tag dialog gets
   `add_tags_exclusions`, `add_tags_hide_exclusions` and `add_tags_exclusions_exact_match`
   from the `addtags_get_exclusion_prefs` background command, resolved by `mztaPrefs` (so the
-  enterprise policy applies), and writes the list with `addtags_set_exclusions` (so the write
-  guard applies). Any preference it needs in future must go the same way.
+  enterprise policy applies) and then for the message's account (`add_tags_account_settings`),
+  and writes the list with `addtags_set_exclusions` (so the write guard applies), to the
+  account's own list when the effective one came from it. Any preference it needs in future must
+  go the same way.
 - **`migrateCalendarNoSelection()`** in `js/mzta-prompts.js` reads the raw stored
   `calendar_no_selection` and `_special_prompts` on purpose: it compares the user's own
   stored values, before the policy is loaded.
@@ -1688,13 +2008,29 @@ case for nearly every user and is swallowed silently.
   that raw read cannot see the enterprise policy, the function returns early when the key has
   a policy-supplied value: a locked one is refused by the write guard anyway, and an initial
   one must not be stored as a user choice the user never made.
-- **The `storage.local` / `storage.session` record stores** (`taStorage`, `taSummaryStore`,
-  `taTranslationStore`, `taSpamReport`, the custom prompt/placeholder payloads) are not
-  preferences and are out of scope. They now share an area with the preferences, which is safe
-  by construction: every key they own is prefixed (`msg:`, or a leading `_`), no `prefs_default`
-  key uses either prefix, and each of the five `storage.local.get(null)` enumerations in
-  `js/mzta-storage.js` filters on `msg:` before touching a record — including
-  `clearAllRecords()`, which would otherwise delete every preference.
+- **The record stores** are not preferences and are out of scope: the per-message data
+  (`taStorage`, `taSummaryStore`, `taTranslationStore`, `taSpamReport`) is read from IndexedDB,
+  and its durable copy, the **mirror**, is in `storage.local`, one key per record under the
+  prefixes `spam:`, `summary:`, `translation:` followed by the Message-ID (`MIRROR_PREFIXES`; see
+  [01-architecture.md](01-architecture.md#per-message-data-storage)); no `prefs_default` key uses
+  those prefixes. The custom prompt/placeholder payloads share `storage.local` with the
+  preferences, under keys with a leading `_` that no `prefs_default` key uses. So do the three
+  underscore keys of the per-message storage, `_message_data_migrating` (the migration flag),
+  `_message_data_migration_version` (the version the move of the legacy records last ran for) and
+  `_message_data_last_cleanup` (`{ time, removed }`). Every mirror write fires `storage.onChanged` in every context with
+  the record as `newValue`: each listener filters on the exact keys it watches (the options page's
+  `_connection_type` suffix test skips `isMirrorKey()` keys explicitly). `storage.local` is
+  enumerated (`get(null)`) only by the move of the legacy records (once per add-on version), by
+  `taStorage.clear()` / `clearAllRecords()` and by `taStorage.reconcileWithMirror()`; the one-shot
+  `migratePrefsToLocal()` read runs before the marker exists and only tests key presence.
+- **The approved unencrypted servers** (`_approved_insecure_origins` in `storage.local`, see
+  [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy))
+  are not a preference: no `prefs_default` entry, no policy key, read and written only by
+  `js/mzta-endpoint-approvals.js`. The leading underscore keeps it out of every preference scan.
+- **The redirects of the custom endpoints** (`_endpoint_redirects` in `storage.local`, see
+  [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)) are not a preference
+  either: one entry per configured host, read and written only by `js/mzta-endpoint-redirects.js`,
+  with the same leading underscore.
 - **The two #129 legacy reads** in `js/mzta-utils.js` (`migrateCustomPromptsStorage()`,
   `migrateDefaultPromptsPropStorage()`) keep pointing at `storage.sync` on purpose: their job is
   to drain old data *out* of it. They always end with the key removed from sync: when

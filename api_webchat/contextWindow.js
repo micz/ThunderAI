@@ -27,6 +27,8 @@
 import { Ollama } from '../js/api/ollama.js';
 import { GoogleGemini } from '../js/api/google_gemini.js';
 import { Anthropic } from '../js/api/anthropic.js';
+import { getApprovedInsecureOrigins } from '../js/mzta-endpoint-approvals.js';
+import { saveEndpointRedirect } from '../js/mzta-endpoint-redirects.js';
 
 function positive(value) {
     const n = Number(value);
@@ -56,10 +58,16 @@ async function resolveOllama(prefs) {
     const configured = positive(prefs.ollama_num_ctx);
     if (configured !== null) return configured;
 
-    const api = new Ollama({ host: prefs.ollama_host, api_key: prefs.ollama_api_key, model: prefs.ollama_model });
+    // The chat window confirmed the endpoint before the first message: only the approved
+    // origins are needed here, never a new question.
+    const api = new Ollama({ host: prefs.ollama_host, api_key: prefs.ollama_api_key, model: prefs.ollama_model,
+        approved_insecure_origins: await getApprovedInsecureOrigins() });
     const model = prefs.ollama_model;
 
+    // Each probe reports whether the server redirected it [#1000]: saved for the note
+    // under the host field of the connection panels.
     const ps = await api.fetchRunningModels();
+    await saveEndpointRedirect(api.host, api.redirect_info);
     if (ps.ok && Array.isArray(ps.response?.models)) {
         const running = ps.response.models.find(m => sameOllamaModel(m?.model, model) || sameOllamaModel(m?.name, model));
         const ctx = positive(running?.context_length);
@@ -67,6 +75,7 @@ async function resolveOllama(prefs) {
     }
 
     const show = await api.fetchModelInfo(model);
+    await saveEndpointRedirect(api.host, api.redirect_info);
     if (!show.ok || show.response === null || typeof show.response !== 'object') return null;
     const params = typeof show.response.parameters === 'string' ? show.response.parameters : '';
     const match = params.match(/^\s*num_ctx\s+(\d+)\s*$/m);

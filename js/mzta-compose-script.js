@@ -114,7 +114,7 @@ function keepOutOfInjected(range) {
   }
 }
 
-// The insertion of replaceSelectedText and insertReply. It goes through the editor
+// The insertion of replaceSelectedText, insertAtCaret and insertReply. It goes through the editor
 // (document.execCommand), so it is one transaction of the editor's undo stack: one Ctrl+Z
 // restores the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it. A DOM mutation bypasses the transaction
 // manager, and the old way of making it undoable - two compose.setComposeDetails() calls
@@ -159,6 +159,43 @@ function insertIntoEditor(range, text, isPlainText) {
     Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
     range.insertNode(fragment);
   }
+  // The caret after the inserted text, where the editor command leaves it. insertNode() on a
+  // collapsed range (deleteContents() above collapsed it) moves its end past what it inserted.
+  range.collapse(false);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+// A collapsed range at the start of the email: before everything but ThunderAI's own
+// elements, so above any quote or signature. With an empty body, inside it.
+function startOfBodyRange() {
+  let first = document.body.firstChild;
+  while (first && isInjectedNode(first)) first = first.nextSibling;
+  const r = document.createRange();
+  if (first) r.setStartBefore(first);
+  else r.selectNodeContents(document.body);
+  r.collapse(true);
+  return r;
+}
+
+// The caret an "insert at cursor" prompt (action "3") started from, saved by saveCaret before
+// anything else of the prompt runs. It cannot be read when the answer arrives: a prompt with
+// {%mail_typed_text%} autoselects the typed text when it starts (getOnlyTypedText), which takes
+// the caret away. A clone of the selection's range is a live Range: it follows the edits made
+// to the body in the meantime. One per compose window, so the latest prompt's wins.
+let _mztaSavedCaret = null;
+
+// The range itself when it is a usable place to insert at: inside the body (not, say, at the
+// document's root) and not inside one of ThunderAI's own elements. null otherwise.
+function usableCaret(range) {
+  if (!range) return null;
+  const body = document.body;
+  if (!body.contains(range.startContainer) || !body.contains(range.endContainer)) return null;
+  for (const node of Array.from(body.childNodes)) {
+    if (isInjectedNode(node) && (node.contains(range.startContainer) || node.contains(range.endContainer))) return null;
+  }
+  return range;
 }
 
 // The top-level block a reply's answer goes above: the first quoted mail (reply, or
@@ -393,6 +430,20 @@ function _removeToolbarItem(id) {
     _updateToolbarVisibility();
 }
 
+// The red notice at the top of a result panel whose result could not be saved (data.storage_error,
+// set by the background when the per-message storage write failed): the result is still shown
+// below it, and the notice says why it will not be there next time.
+function _buildStorageErrorNotice(errorText) {
+    const colors = _getThemeColors();
+    const ec = colors.summaryErr;
+    const notice = document.createElement('div');
+    notice.className = 'thunderai-storage-error';
+    notice.setAttribute('role', 'alert');
+    notice.style.cssText = `background-color: ${ec.bg}; color: ${ec.text}; border: 1px solid #cc0000; border-radius: 4px; padding: 2px 6px; margin-bottom: 4px; font-size: 12px; font-weight: normal; white-space: normal;`;
+    notice.textContent = browser.i18n.getMessage("storage_save_failed", [String(errorText)]);
+    return notice;
+}
+
 const _PANEL_ORDER = [
     'mzta-generic-error', 'mzta-generic-info',
     'mzta-spam-check-progress', 'mzta-spam-report-banner',
@@ -624,12 +675,41 @@ switch (message.command) {
       r = sel.getRangeAt(0).cloneRange();
       keepOutOfInjected(r);
     } else {
-      r = document.createRange();
-      let first = document.body.firstChild;
-      while (first && isInjectedNode(first)) first = first.nextSibling;
-      if (first) r.setStartBefore(first);
-      else r.selectNodeContents(document.body);
-      r.collapse(true);
+      r = startOfBodyRange();
+    }
+    insertIntoEditor(r, message.text, message.isPlainText === true);
+    return Promise.resolve(true);
+  }
+
+  case "saveCaret": {
+    const sel = window.getSelection();
+    _mztaSavedCaret = (sel && sel.rangeCount) ? sel.getRangeAt(0).cloneRange() : null;
+    return Promise.resolve(true);
+  }
+
+  case "insertAtCaret": {
+    // Action "3": the answer goes where the cursor was when the prompt started, with no
+    // confirmation and replacing nothing. In order: the caret saved by saveCaret, the current
+    // one, and with neither (an editor never clicked into) the start of the email, which is
+    // above any quote or signature. A selection is not replaced: the answer goes at its end.
+    const sel = window.getSelection();
+    const saved = usableCaret(_mztaSavedCaret);
+    _mztaSavedCaret = null;
+    const current = saved ? null : usableCaret((sel && sel.rangeCount) ? sel.getRangeAt(0) : null);
+    let r;
+    if (saved || current) {
+      r = (saved || current).cloneRange();
+      r.collapse(false);
+      // A caret right before one of ThunderAI's own top-level elements goes after it:
+      // #mzta-container must stay the body's first child.
+      let next = r.startContainer === document.body ? document.body.childNodes[r.startOffset] : null;
+      while (next && isInjectedNode(next)) {
+        r.setStartAfter(next);
+        r.collapse(true);
+        next = next.nextSibling;
+      }
+    } else {
+      r = startOfBodyRange();
     }
     insertIntoEditor(r, message.text, message.isPlainText === true);
     return Promise.resolve(true);
@@ -723,16 +803,36 @@ switch (message.command) {
       lastNode = firstNode;
     }
 
-    //if(message.do_autoselect && selection.isCollapsed && firstNode && lastNode) {
-      if(message.do_autoselect && firstNode && lastNode) {
-      const range = document.createRange();
+    // The typed region as a detached range: its markup is read from it directly, so the
+    // html twin no longer depends on the range being put in the live selection. [#978]
+    let range = null;
+    if (firstNode && lastNode) {
+      range = document.createRange();
       range.setStartBefore(firstNode);
       range.setEndAfter(lastNode);
+    }
+
+    // Autoselect only when the user has no meaningful selection: the same case in which the
+    // background substitutes selection_text with the typed text (selection_text === '' after
+    // whitespace normalization and trim, mzta-menus.js). A real selection is left untouched,
+    // so the prompt and the replacement work on the same range. [#978]
+    const noUserSelection = !selection || selection.rangeCount === 0 || selection.isCollapsed
+      || selection.toString().trim() === '';
+    if (message.do_autoselect && range && noUserSelection) {
       selection.removeAllRanges();
       selection.addRange(range);
     }
 
-    return Promise.resolve(lines.text());
+    if (!message.with_html) {
+      return Promise.resolve(lines.text());
+    }
+    let html = '';
+    if (range) {
+      const div = document.createElement('div');
+      div.appendChild(range.cloneContents());
+      html = div.innerHTML;
+    }
+    return Promise.resolve({ text: lines.text(), html: html });
   }
 
   case "getOnlyQuotedText": {
@@ -943,8 +1043,11 @@ switch (message.command) {
     // import js/mzta-prefs.js (issue #163), and a direct read would ignore the enterprise
     // policy while a direct write would bypass its write guard. The background resolves them
     // through mztaPrefs, so the tag dialog sees exactly what auto-tagging uses.
-    function addTags_setExclusionList(add_tags_exclusions) {
-      browser.runtime.sendMessage({ command: "addtags_set_exclusions", list: add_tags_exclusions });
+    // The list shown is the EFFECTIVE one of the message's account (add_tags_account_settings):
+    // accountId is the exclusions_account_id the background returned with it, so the write
+    // goes to the list it came from ('' = the global list, otherwise that account's own list).
+    function addTags_setExclusionList(add_tags_exclusions, accountId = '') {
+      browser.runtime.sendMessage({ command: "addtags_set_exclusions", list: add_tags_exclusions, accountId: accountId });
     }
 
     // ===== This method is also defined in the file /js/mzta-addtags-exclusion-list.js
@@ -1091,7 +1194,7 @@ switch (message.command) {
       // what an unmanaged profile with no stored value would get anyway.
       let prefs_tags = null;
       try {
-        prefs_tags = await browser.runtime.sendMessage({ command: "addtags_get_exclusion_prefs" });
+        prefs_tags = await browser.runtime.sendMessage({ command: "addtags_get_exclusion_prefs", messageId: message.messageId });
       } catch (e) {
         console.error("[ThunderAI] Could not read the tag exclusion preferences: " + e);
       }
@@ -1103,6 +1206,9 @@ switch (message.command) {
       // per-tag "exclude" action is not offered at all (the background would refuse the
       // write anyway).
       const exclusions_locked = prefs_tags.exclusions_locked === true;
+      // Where the list comes from: '' for the global list, an account id when that account
+      // has its own list. Sent back with every write.
+      const exclusions_account_id = typeof prefs_tags.exclusions_account_id === 'string' ? prefs_tags.exclusions_account_id : '';
 
       // console.log(">>>>>>>>>>>>> add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
 
@@ -1148,14 +1254,14 @@ switch (message.command) {
             label.classList.add('tag_excluded');
             if (!add_tags_exclusions_list.some(ex => ex.toLowerCase() === tag_lc)) {
               add_tags_exclusions_list.push(tag_lc);
-              addTags_setExclusionList(add_tags_exclusions_list);
+              addTags_setExclusionList(add_tags_exclusions_list, exclusions_account_id);
             }
           } else {
             label.classList.remove('tag_excluded');
             const new_list = add_tags_exclusions_list.filter(ex => ex.toLowerCase() !== tag_lc);
             if (new_list.length !== add_tags_exclusions_list.length) {
               add_tags_exclusions_list = new_list;
-              addTags_setExclusionList(add_tags_exclusions_list);
+              addTags_setExclusionList(add_tags_exclusions_list, exclusions_account_id);
             }
           }
         });
@@ -1436,6 +1542,7 @@ switch (message.command) {
     spamMenu.style.display = 'none';
     topRow.appendChild(spamMenu);
 
+    if (data.storage_error) badge.appendChild(_buildStorageErrorNotice(data.storage_error));
     badge.appendChild(topRow);
 
     // Bottom row (only when expanded): branding right-aligned, hidden via zero height
@@ -1676,6 +1783,7 @@ switch (message.command) {
     summaryBody.appendChild(summaryTextWrapper);
     summaryContainer.appendChild(summaryBody);
 
+    if (summaryData.storage_error) summaryContainer.prepend(_buildStorageErrorNotice(summaryData.storage_error));
     _addPanel('mzta-summary-banner', summaryContainer);
     return Promise.resolve(true);
   }
@@ -1945,6 +2053,7 @@ switch (message.command) {
 
     translationContainer.appendChild(translationTextWrapper);
 
+    if (translationData.storage_error) translationContainer.prepend(_buildStorageErrorNotice(translationData.storage_error));
     _addPanel('mzta-translation-banner', translationContainer);
     return Promise.resolve(true);
   }

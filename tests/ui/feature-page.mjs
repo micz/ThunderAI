@@ -41,6 +41,7 @@ export const S_AUTH = 'spec 05 "The Prompt Is Authoritative For API Parameters"'
 export const S_ADV = 'spec 05 "Connection Settings Panel — Advanced Options Disclosure"';
 export const S_TEST = 'spec 05 "Connection Settings Panel — Connection Test Status Strip"';
 export const S_GUARD = 'spec 05 "Unsaved-Changes Guard (`pages/_lib/unsaved-guard.js`)"';
+export const S_FORMAT = 'spec 02 "The text carries the response format"';
 
 const EN = JSON.parse(readFileSync(repoPath('_locales/en/messages.json'), 'utf8'));
 /** The shipped (English) text of an i18n key, readable before any page is open. */
@@ -184,9 +185,56 @@ export function inheritedIntegrationTests(ctx, k, { prefix, promptId }) {
     });
 }
 
+/** The special prompts whose parser reads a JSON answer (spec 02 "The text carries the response format"). */
+const JSON_PROMPTS = ['prompt_spamfilter', 'prompt_add_tags', 'prompt_get_calendar_event',
+    'prompt_get_calendar_event_from_clipboard', 'prompt_get_task', 'prompt_translate_this'];
+
+/**
+ * The JSON format check of a JSON prompt's editor: the reason under the editor, the red border,
+ * advisory only. Leaves the shipped text in the textarea, as editor-load found it.
+ */
+function promptJsonTests(ctx, k, { textareaId, defaultMsgKey, saveId, tag }) {
+    const $ = ctx.$;
+    const ta = () => $('#' + textareaId);
+    const box = () => $('#' + textareaId + '_json_error');
+    const typed = async text => { ta().value = text; await ctx.fire(ta(), 'input'); };
+
+    k.test(tag + 'json-shipped-ok', S_FORMAT, 'the shipped text carries a valid format: no reason, no red border', () => {
+        assert.ok(box(), 'no reason box under the editor');
+        assert.equal(box().classList.contains('json_error'), true);
+        assert.equal(shown(box()), false);
+        assert.equal(ta().style.borderColor, '');
+    });
+
+    k.test(tag + 'json-missing', S_FORMAT, 'a text with no JSON object says so in red; Save stays available', async () => {
+        await typed('Analyze the email and answer. {%mail_text_body%}');
+        assert.equal(shown(box()), true);
+        assert.equal(box().textContent, msg('prompt_json_error_missing'));
+        assert.notEqual(ta().style.borderColor, '');
+        assert.equal($('#' + saveId).disabled, false, 'advisory only: Save is blocked');
+    });
+
+    k.test(tag + 'json-invalid', S_FORMAT, 'a malformed object gives the reason followed by the parser message', async () => {
+        await typed('Answer with this JSON:\n{\n"summary": "x",\n}\nThe text: {%mail_text_body%}');
+        assert.equal(shown(box()), true);
+        assert.ok(box().textContent.startsWith(msg('prompt_json_error_invalid') + ' '), box().textContent);
+        assert.ok(box().textContent.length > msg('prompt_json_error_invalid').length + 1, 'no parser message');
+        assert.notEqual(ta().style.borderColor, '');
+    });
+
+    k.test(tag + 'json-fixed', S_FORMAT, 'a valid object inside the instructions clears the reason and the border', async () => {
+        await typed('Answer with this JSON:\n{\n"summary": "{%mail_subject%}"\n}\nThe text: {%mail_text_body%}');
+        assert.equal(shown(box()), false);
+        assert.equal(ta().style.borderColor, '');
+        await typed(msg(defaultMsgKey));
+        assert.equal(shown(box()), false);
+    });
+}
+
 /**
  * The prompt editor (textarea, Save, Reset) and the unsaved-changes guard. A page with several
  * editors runs it once per editor, with its button ids and a `tag` that keeps the case ids apart.
+ * On a JSON prompt it also runs promptJsonTests().
  */
 export function promptEditorTests(ctx, k, {
     promptId, textareaId, defaultMsgKey, extraPromptIds = [],
@@ -203,6 +251,8 @@ export function promptEditorTests(ctx, k, {
         assert.equal(reset().disabled, true, 'Reset enabled on the shipped text');
         assert.equal(leaveBlocked(ctx), false);
     });
+
+    if (JSON_PROMPTS.includes(promptId)) promptJsonTests(ctx, k, { textareaId, defaultMsgKey, saveId, tag });
 
     k.test(tag + 'editor-dirty', S_GUARD, 'an edit enables Save, and leaving the page then asks', async () => {
         ta().value = msg(defaultMsgKey) + ' Be brief.';

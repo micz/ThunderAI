@@ -19,8 +19,9 @@
 // headerMessageId. "Panel HTML sanitization": the broadcast payload crosses the sanitizer, the
 // stored object is never modified.
 // Spec 04 "Worker Lifecycle & Timeout": a fresh mzta_specialCommand (and worker) per prompt.
-// (Spec 01 "Per-Message Data Storage": summaries and translations are not truncated at the moment,
-// so there is no cache limit to assert here; the seeded 100 old records only make the store full.)
+// (Spec 01 "Per-Message Data Storage": the storage limits are 0, no limit, by default, and only
+// the scheduled cleanup applies them, so there is no limit to assert here; the 100 old records,
+// seeded in storage.local and moved to IndexedDB at the start, only make the store full.)
 
 import assert from 'node:assert/strict';
 import { bgContext, flush } from './context.mjs';
@@ -80,16 +81,16 @@ k.test('process-incoming', 'with summarize_auto = 3 or translate_auto = 3, incom
 await receive(ctx, [H.a]);
 await flush();
 
-k.test('summary-stored', 'the summary is stored on the message it was generated for', () => {
-    const rec = record(ctx, 'a@example.test');
+k.test('summary-stored', 'the summary is stored on the message it was generated for', async () => {
+    const rec = (await record(ctx, 'a@example.test'));
     assert.ok(rec && rec.summary, 'a summary for a@example.test');
     assert.equal(rec.summary.error, false);
     assert.match(rec.summary.summary, /a@example\.test/);
     assert.match(rec.summary.summary_html, /<strong>a@example\.test<\/strong>/, 'the HTML rendering of the answer');
 });
 
-k.test('translation-stored', 'the translation is stored on the message, with its subject, body, status and target language', () => {
-    const t = record(ctx, 'a@example.test').translation;
+k.test('translation-stored', 'the translation is stored on the message, with its subject, body, status and target language', async () => {
+    const t = (await record(ctx, 'a@example.test')).translation;
     assert.equal(t.translated_text, 'Corpo a@example.test');
     assert.equal(t.translated_subject, 'Oggetto a@example.test');
     assert.equal(t.translation_status, '1');
@@ -125,10 +126,10 @@ k.test('result-has-id', 'the result panels carry their message id (the banner bu
     assert.equal(ctx.m.sentTo(7, 'showTranslation')[0].data.headerMessageId, 'a@example.test');
 });
 
-k.test('sanitized-not-stored', 'the broadcast summary HTML crossed the sanitizer; the stored one is left as it was', () => {
+k.test('sanitized-not-stored', 'the broadcast summary HTML crossed the sanitizer; the stored one is left as it was', async () => {
     const shown = ctx.m.sentTo(7, 'showSummary')[0].data.summary_html;
     assert.ok(shown.startsWith('<!--sanitized-->'), 'sanitized on the way out');
-    assert.equal(shown, '<!--sanitized-->' + record(ctx, 'a@example.test').summary.summary_html);
+    assert.equal(shown, '<!--sanitized-->' + (await record(ctx, 'a@example.test')).summary.summary_html);
 });
 
 k.test('fresh-worker-per-prompt', 'one worker per prompt, each terminated once answered', () => {
@@ -169,7 +170,7 @@ for (const folderId of ['f-junk', 'f-trash', 'f-drafts', 'f-templates', 'f-outbo
         await receive(ctx, [h]);
         await flush();
         assert.deepEqual(ctx.workers.prompts().slice(before), []);
-        assert.equal(record(ctx, h.headerMessageId), null);
+        assert.equal((await record(ctx, h.headerMessageId)), null);
     });
 }
 
@@ -177,7 +178,7 @@ k.test('archives-processed', 'archives is not a skipped folder: an archived mess
     const h = ctx.m.addMessage({ headerMessageId: 'arch@example.test', folderId: 'f-archives' });
     await receive(ctx, [h]);
     await flush();
-    const rec = record(ctx, 'arch@example.test');
+    const rec = (await record(ctx, 'arch@example.test'));
     assert.ok(rec?.summary && rec?.translation);
 });
 
@@ -185,7 +186,7 @@ k.test('plain-folder-processed', 'a message delivered to a plain folder (a serve
     const h = ctx.m.addMessage({ headerMessageId: 'list@example.test', folderId: 'f-lists' });
     await receive(ctx, [h]);
     await flush();
-    assert.ok(record(ctx, 'list@example.test')?.summary);
+    assert.ok((await record(ctx, 'list@example.test'))?.summary);
 });
 
 k.test('several-messages', 'a batch of several messages: each gets its own summary and translation, none on another', async () => {
@@ -193,7 +194,7 @@ k.test('several-messages', 'a batch of several messages: each gets its own summa
     await receive(ctx, hs);
     await flush();
     for (const h of hs) {
-        const rec = record(ctx, h.headerMessageId);
+        const rec = (await record(ctx, h.headerMessageId));
         assert.match(rec.summary.summary, new RegExp(h.headerMessageId.replace(/[.@]/g, '\\$&')));
         assert.equal(rec.translation.translated_text, 'Corpo ' + h.headerMessageId);
     }

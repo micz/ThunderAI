@@ -56,8 +56,9 @@ by their Save buttons),
 `spamfilter_skip_addressbook` (a checkbox whose change handler requests the `addressBooks`
 permission). They opt in explicitly with `data-mzta-pref="<preference key>"`.
 The other permission-gated switches (`add_tags`, `spamfilter`,
-`get_calendar_event_from_clipboard`) stay `.option-input` for `restoreOptions()`, and their
-page's `saveOptions()` skips them instead (`isPermissionGatedPref()`); all four are saved by
+`get_calendar_event_from_clipboard`) stay `.option-input` for
+`restoreOptions()`, and their page's `saveOptions()` skips them instead
+(`isPermissionGatedPref()`); all four are saved by
 `bindPermissionToggle()` (`pages/_lib/permission-toggle.js`), which also puts back a locked
 switch's change with no prompt and no write. When the policy locks one of them **on** while
 Thunderbird has not granted its permissions, `showLockedPermissionWarning()` appends an amber
@@ -82,7 +83,8 @@ on every `summarize_auto` change, uses the respecting setter too: it could previ
 re-enable a locked `summarize_auto_senders` toggle.
 
 **A plain `.option-input` can have companions too**: a number input's "Reset to default" button
-(`reset_max_prompt_length`, `reset_special_command_timeout` on the options page,
+(`reset_max_prompt_length`, `reset_special_command_timeout`, `reset_api_stream_idle_timeout` on the
+options page,
 `reset_summarize_max_messages` on the summarize page) refills the input and writes the default.
 Such a button carries `data-mzta-companion-of="<preference key>"` in the markup, and
 `applyManagedUI()` locks it together with its key, exactly as `lockCompanions()` would, with no
@@ -97,6 +99,24 @@ The account checkboxes of the spam filter and Add Tags pages are the same patter
 twist — the locked key (`*_enabled_accounts_match`) is not the one the checkboxes save — and
 have their own helper, `lockAccountSelector()`; see [Account lists by policy](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match).
 
+Controls that edit an **override** of a preference rather than the preference itself - the rows
+of the Add Tags page's "Settings for single accounts" section (`#addtags_account_<key>`, the
+"No" radio `#addtags_account_<key>_no` of a Yes/No row, and the override toggle
+`#addtags_account_<key>_override`, see
+[05-options.md](05-options.md#settings-for-single-accounts-add-tags-page)) - are not
+`.option-input` nor `data-mzta-pref`: applyManagedUI() and the allowlist sweep would take them for
+the global control. They have their own helper, `lockOverrideControls(key, elements, anchor)`:
+when `key` is locked it gives every element the companion treatment (disabled,
+`data-mzta-managed="1"`, `managed_marker_tooltip` title), the `lockControl()` inertness, and puts
+the marker next to the first element by the usual rules (before the `.mzta_switch` in a
+`.feature_row`, appended to the `.mzta_field` column for a text row), or in `anchor` when given
+(every row passes its `.addtags_account_title`, so the marker lands right of the title, visible
+with the row's control hidden). The toggle is locked only when every key its row edits is (the
+"Use only these tags" row edits two): with one of them locked, the toggle stays usable and only
+that key's control is locked. An override of a locked key is ignored at run
+time (`addTags_resolveAccountPrefs()`), so the row shows the policy value; the page's handlers
+skip the key and never write it.
+
 `applyManagedUI()` covers locked *preferences*, plus the connection-panel fields a policy
 connection enforces, which are matched by their `${prefix}_${field}` id in the same pass (see
 [The connection panel](08b-managed-connections.md#the-connection-panel)). A restriction has no preference behind
@@ -108,7 +128,8 @@ a restriction covers. It marks the element with the same `data-mzta-managed` att
 `disabled` property the browser honours — it also strips the `href` and adds
 `.managed_disabled`.
 
-`isPromptManagementDisabled()` and `isSetupWizardDisabled()` are synchronous, like
+`isPromptManagementDisabled()`, `areDefaultPromptsDisabled()`, `isSetupWizardDisabled()` and
+`isAddTagsAccountSettingsDisabled()` are synchronous, like
 `isLockedKey()`: the policy must have been hydrated first (`getManagedState()`, or any awaited
 preference read). A caller that has not gets `false`, which is the safe default for a page
 that could not reach the background at all — the same fallback the rest of this module takes.

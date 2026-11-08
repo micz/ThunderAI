@@ -16,15 +16,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { taStorage } from './mzta-storage.js';
+import {
+    SPAM_ERROR_VALUE,
+    taStorage
+} from './mzta-storage.js';
 import { taLogger } from './mzta-logger.js';
 
 export class taSpamReport {
 
-    // In-flight state lives in taJobRegistry (js/mzta-job-registry.js). The prefix is kept
-    // only so clear*() still sweeps keys written to storage.session by older versions.
-    _processing_prefix = 'mzta-spam-processing-';
-    _max_reports = 100;
     _storage = null;
     taLog = null;
 
@@ -33,6 +32,7 @@ export class taSpamReport {
         this.taLog = new taLogger('mzta-spamreport', do_debug);
     }
 
+    /** Store a spam report. Rejects when the write fails (see js/mzta-storage.js). */
     async saveReportData(data, data_id) {
         this.taLog.log("[saveReportData] data_id: " + data_id);
         try {
@@ -43,18 +43,25 @@ export class taSpamReport {
         }
     }
 
-    async saveError(data_id, error_message, metadata = {}) {
-        this.taLog.log("[saveError] data_id: " + data_id + ", error_message: " + error_message);
-        // Merge any available message metadata so the spam log entry does not show
-        // blank fields when the message became unreadable during analysis.
-        let data = {
-            spamValue: -999,
+    /**
+     * The report of an analysis that failed, as it is stored and shown. Any available message
+     * metadata is merged in, so the spam log entry does not show blank fields when the message
+     * became unreadable during analysis.
+     */
+    buildError(data_id, error_message, metadata = {}) {
+        return {
+            spamValue: SPAM_ERROR_VALUE,
             explanation: error_message,
             report_date: new Date(),
             headerMessageId: data_id,
             moved: false,
             ...metadata
         };
+    }
+
+    async saveError(data_id, error_message, metadata = {}) {
+        this.taLog.log("[saveError] data_id: " + data_id + ", error_message: " + error_message);
+        let data = this.buildError(data_id, error_message, metadata);
         await this.saveReportData(data, data_id);
         return data;
     }
@@ -66,12 +73,16 @@ export class taSpamReport {
             this.taLog.log("[loadReportData] no record found for data_id: " + data_id);
             return null;
         }
-        let spam = record.spam;
+        return taSpamReport.toReport(record.spam);
+    }
+
+    /** A stored spam record in the shape the panel and the spam log show. */
+    static toReport(spam) {
         return {
-            headerMessageId: data_id,
+            headerMessageId: spam.messageId,
             spamValue: spam.spamValue,
             explanation: spam.explanation,
-            report_date: new Date(spam.ts),
+            report_date: new Date(spam.createdAt),
             subject: spam.subject,
             from: spam.from,
             message_date: spam.message_date,
@@ -85,57 +96,15 @@ export class taSpamReport {
         await this._storage.deleteSpamField(data_id);
     }
 
-    async getAllReportData() {
-        this.taLog.log("[getAllReportData] loading all reports");
-        return await this._storage.getAllSpamRecords();
+    /** A page of reports, newest first, in the shape of toReport(). */
+    async getReportPage(offset = 0, limit = 50) {
+        this.taLog.log("[getReportPage] offset: " + offset + ", limit: " + limit);
+        const records = await taStorage.getPage(taStorage.FIELD_SPAM, { offset, limit });
+        return records.map(r => taSpamReport.toReport(r));
     }
 
-    async clearReportData() {
-        this.taLog.log("[clearReportData] clearing all report data");
-        let allSpam = await this._storage.getAllSpamRecords();
-        let spamKeys = Object.keys(allSpam);
-        this.taLog.log("[clearReportData] deleting " + spamKeys.length + " spam records");
-        for (let messageId of spamKeys) {
-            await this._storage.deleteSpamField(messageId);
-        }
-        let allSession = await browser.storage.session.get(null);
-        let keysToDelete = Object.keys(allSession).filter(k => k.startsWith(this._processing_prefix));
-        this.taLog.log("[clearReportData] deleting " + keysToDelete.length + " session keys");
-        for (let key of keysToDelete) {
-            await browser.storage.session.remove(key);
-        }
-    }
-
-    async truncReportData() {
-        this.taLog.log("[truncReportData] checking report count");
-        let data = await this._storage.getAllSpamRecords();
-        let sortedData = this.sortReportsByDate(data);
-        let keys = Object.keys(sortedData);
-        this.taLog.log("[truncReportData] total reports: " + keys.length + ", max: " + this._max_reports);
-
-        if (keys.length > this._max_reports) {
-            let toDelete = keys.length - this._max_reports;
-            this.taLog.log("[truncReportData] truncating " + toDelete + " oldest reports");
-            for (let i = this._max_reports; i < keys.length; i++) {
-                await this._storage.deleteSpamField(keys[i]);
-            }
-        }
-    }
-
-    sortReportsByDate(data) {
-        if (!data) return {};
-        const reportKeys = Object.keys(data);
-        reportKeys.sort((a, b) => {
-            const dateA = new Date(data[a].report_date);
-            const dateB = new Date(data[b].report_date);
-            return dateB - dateA;
-        });
-
-        let sortedReports = {};
-        reportKeys.forEach((key) => {
-            sortedReports[key] = data[key];
-        });
-
-        return sortedReports;
+    /** The number of stored reports. */
+    async countReports() {
+        return await taStorage.count(taStorage.FIELD_SPAM);
     }
 }

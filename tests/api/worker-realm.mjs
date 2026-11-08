@@ -86,11 +86,12 @@ export function startTurn(w, message) {
 
 /**
  * The messages of a turn in protocol order, without 'messageSent' (whose position spec 04 does
- * not fix) - each as [type, the field that matters]: newToken/newThinkingToken -> token,
+ * not fix) and 'endpoint_redirect' (the redirect outcome of the Ollama and OpenAI Comp requests,
+ * spec 04 "Redirects", checked by 12-endpoint-guard and 37) - each as [type, the field that matters]: newToken/newThinkingToken -> token,
  * usage -> messageId, tokensDone -> thinking, error -> payload, newRetryAttempt -> status.
  */
 export function shape(msgs) {
-    return msgs.filter(m => m.type !== 'messageSent').map(m => {
+    return msgs.filter(m => m.type !== 'messageSent' && m.type !== 'endpoint_redirect').map(m => {
         switch (m.type) {
             case 'newToken':
             case 'newThinkingToken': return [m.type, m.payload.token];

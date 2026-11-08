@@ -41,7 +41,10 @@ import {
     preparePromptsForExport,
     preparePromptsForImport,
     promptBooleanFlags,
-    isPromptFlagOn
+    isPromptFlagOn,
+    isReservedPromptId,
+    uniquePromptId,
+    RESERVED_PROMPT_ID_PREFIX
 } from "../../js/mzta-prompts.js";
 import {
     injectConnectionUI,
@@ -321,6 +324,7 @@ function actionLabel(action) {
         case "0": return browser.i18n.getMessage('customPrompts_close_button');
         case "1": return browser.i18n.getMessage('customPrompts_do_reply');
         case "2": return browser.i18n.getMessage('customPrompts_substitute_text');
+        case "3": return browser.i18n.getMessage('customPrompts_insert_at_cursor');
     }
     return '';
 }
@@ -1236,15 +1240,20 @@ function readDetailFields() {
 }
 
 // Returns an error message key, or '' when the fields are valid. The id must be
-// non-empty, contain no whitespace and be unique among the other prompts.
+// non-empty, contain no whitespace and be unique among the other prompts. A new or changed id
+// may not start with the prefix of the built-in prompts; a prompt that already has such an id
+// keeps it while the id is left as it is.
 function validateDetail(values) {
     const self = currentItem();
     let error = '';
     const idEl = detailEl('detail_id');
     const idBad = (values.id === '') || /\s/.test(values.id)
         || promptsList.items.some(it => it !== self && String(it.values().id).toLowerCase() === values.id);
-    idEl.classList.toggle('input_error', idBad);
+    const idChanged = (detailMode === 'new') || !self || String(self.values().id).toLowerCase() !== values.id;
+    const idReserved = !idBad && idChanged && isReservedPromptId(values.id);
+    idEl.classList.toggle('input_error', idBad || idReserved);
     if (idBad) error = 'customPrompts_error_id';
+    if (idReserved) error = 'customPrompts_error_id_reserved';
 
     const nameBad = values.name === '';
     // "%" is refused in a name: the name travels in the chat window's url (prompt_name),
@@ -1259,11 +1268,12 @@ function validateDetail(values) {
 }
 
 // Derive a valid ID from a name: accents dropped, lowercased, every run of characters
-// other than a-z and 0-9 collapsed into "_", made unique among the other prompts with a
-// _2, _3, ... suffix. A name with no Latin letters or digits gives ''.
+// other than a-z and 0-9 collapsed into "_", the prefix of the built-in prompts dropped, made
+// unique among the other prompts with a _2, _3, ... suffix. A name with no Latin letters or
+// digits gives ''.
 function promptIdFromName(name) {
-    const base = String(name).normalize('NFD').replace(/[̀-ͯ]/g, '')
-        .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const base = withoutReservedPrefix(String(name).normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''));
     if (base === '') return '';
     const self = currentItem();
     const taken = new Set(promptsList.items
@@ -1272,11 +1282,12 @@ function promptIdFromName(name) {
     return uniquePromptId(base, taken);
 }
 
-// `base`, or `base_2`, `base_3`, ... : the first one not in `taken` (a Set of lowercase ids).
-function uniquePromptId(base, taken) {
-    let id = base;
-    for (let n = 2; taken.has(id); n++) id = base + '_' + n;
-    return id;
+// An id without the prefix the built-in prompts' ids start with (prompt_reply -> reply), so a
+// derived id is one Save accepts.
+function withoutReservedPrefix(id) {
+    let out = String(id);
+    while (isReservedPromptId(out)) out = out.slice(RESERVED_PROMPT_ID_PREFIX.length);
+    return out;
 }
 
 function clearDetailError() {
@@ -1381,8 +1392,9 @@ async function duplicatePrompt(item) {
     // Flags inherited from policy state or ownership must not ride along into the copy.
     ['idnum', 'is_default', 'is_org', 'is_special', '_shadowed_by_org', '_inert_by_policy', '_default_inert_by_policy'].forEach(k => delete seed[k]);
     // Unique among the listed prompts, as the ID derived from a name is: a second copy of
-    // the same prompt gets _2, a third _3, ... instead of an id Save would refuse.
-    seed.id = uniquePromptId((cleanString(v.id) + '_' + copyText).toLowerCase(),
+    // the same prompt gets _2, a third _3, ... instead of an id Save would refuse. Without the
+    // built-in prefix, for the same reason: a copy of prompt_reply is reply_copy.
+    seed.id = uniquePromptId(withoutReservedPrefix((cleanString(v.id) + '_' + copyText).toLowerCase()),
         new Set(promptsList.items.map(it => String(it.values().id).toLowerCase())));
     seed.name = resolvePromptName(v.name) + ' (' + copyText + ')';
     startNewPrompt(seed);

@@ -174,9 +174,9 @@ test('API models: an unmodelled API throws and is recorded', () => {
     const m = mailModel();
     const browser = {};
     installApis(browser, m);
-    assert.throws(() => browser.tabs.executeScript, /unmodelled API browser\.tabs\.executeScript/);
+    assert.throws(() => browser.tabs.remove, /unmodelled API browser\.tabs\.remove/);
     assert.throws(() => browser.messages.archive, /unmodelled/);
-    assert.deepEqual(m.unmodelled, ['browser.tabs.executeScript', 'browser.messages.archive']);
+    assert.deepEqual(m.unmodelled, ['browser.tabs.remove', 'browser.messages.archive']);
     assert.equal(browser.tabs.then, undefined, 'awaiting a namespace does not throw');
 });
 

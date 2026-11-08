@@ -77,8 +77,8 @@ So the background's answers to a page are:
   instance of `mztaManaged`. It is the only channel a page gets the policy through (values,
   locks, org prompts, restrictions, banner state), so the page hydrates, and sees exactly the
   state, it would in Thunderbird;
-- `reload_menus`, `get_active_special_ids`, `popup_menu_ready`: the core's fixed minimal answer
-  (`defaultCommands()`). These are not managed-configuration code;
+- `reload_menus`, `get_active_special_ids`, `popup_menu_ready`, the `ai_processing` probe: the
+  core's fixed minimal answer (`defaultCommands()`). These are not managed-configuration code;
 - anything else: a recorded violation.
 
 The listener is located by `helpers/background-handler.mjs` (its command guard), with the core
@@ -162,9 +162,10 @@ the policy loader resolves to `'inline'` because the sweep locks `summarize_auto
 
 On top of the general steps ([`tests/README.md`](../README.md#adding-a-page)):
 
-1. Add it to `PAGES`: the pages managed tests open today are all core pages (`CORE_PAGES` in
-   `helpers/core/dom-harness.mjs`); a page only the managed configuration needs would go in
-   the `pages` of `helpers/plugins/managed.mjs`.
+1. Add it to `PAGES`: the pages managed tests open today are core pages (`CORE_PAGES` in
+   `helpers/core/dom-harness.mjs`), but for the storage management page, `storage`, which the `ui`
+   area's plugin defines (`helpers/plugins/ui.mjs`); a page only the managed configuration needs
+   would go in the `pages` of `helpers/plugins/managed.mjs`.
 2. Create `tests/dom/<page>/01-no-policy.dom.mjs` with `noPolicyScenario()`, and, for a page
    with managed controls, the two sweep files (copy an existing pair: they are three lines).
 3. If `assertHarnessClean()` fails with an unmocked API, model it in `addPageApis()`; an

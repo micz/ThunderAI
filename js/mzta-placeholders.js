@@ -19,7 +19,8 @@
 import {
     getMailHeader,
     sanitizeMailHeaders,
-    joinAddressList
+    joinAddressList,
+    truncateText
  } from './mzta-utils.js';
 
 /*  ================= PLACEHOLDERS PROPERTIES ========================================
@@ -43,6 +44,10 @@ import {
     0: it's a fixed placeholder
     1: it's a dynamic placehoder (it means that it will have a : and then a value, like {%my_placeholder:test_value%})
 
+    param_optional attribute (dynamic placeholders only, absent means "0"):
+    1: the parameter may be left out ({%mail_text_body%} and {%mail_text_body:2000%} are both valid),
+       so the autocomplete completes to the plain token instead of '{%id:%}'
+
     ================ USER PROPERTIES
     enabled attribute:
     0: Disabled
@@ -62,12 +67,15 @@ import { mztaPrefs } from './mzta-prefs.js';
 
 const defaultPlaceholders = [
     {
+        // Dynamic form {%mail_text_body:2000%} cuts the body to 2000 characters;
+        // the plain {%mail_text_body%} stays the full body.
         id: 'mail_text_body',
         name: "__MSG_placeholder_mail_text_body__",
         default_value: "",
         type: 0,
         is_default: "1",
-        is_dynamic: "0",
+        is_dynamic: "1",
+        param_optional: "1",
         enabled: 1,
     },
     {
@@ -305,12 +313,14 @@ const defaultPlaceholders = [
         enabled: 1,
     },
     {
+        // Same optional length limit as {%mail_text_body:N%}.
         id: 'mail_text_body_or_selected',
         name: "__MSG_placeholder_mail_text_body_or_selected__",
         default_value: "",
         type: 0,
         is_default: "1",
-        is_dynamic: "0",
+        is_dynamic: "1",
+        param_optional: "1",
         enabled: 1,
     },
     {
@@ -426,8 +436,12 @@ export function mapPlaceholderToSuggestion(p) {
     // `id` and `label` are additive: existing consumers read only command/type/
     // is_dynamic, and the autocomplete falls back to the command when there is
     // no label (customdataplaceholders builds its suggestions inline).
+    // A dynamic placeholder completes to '{%id:%}' so the value can be typed
+    // straight away, unless its parameter is optional (the body placeholders,
+    // whose plain form is the common one): then the plain token is offered.
+    const needsParam = p.is_dynamic == 1 && p.param_optional != 1;
     return {
-        command: '{%' + p.id + (p.is_dynamic == 1 ? ':' : '') + '%}',
+        command: '{%' + p.id + (needsParam ? ':' : '') + '%}',
         type: p.type,
         is_dynamic: p.is_dynamic,
         id: p.id,
@@ -697,6 +711,16 @@ export const placeholdersUtils = {
             // console.log(">>>>>>>>>> currPH: " + JSON.stringify(currPH));
             switch(currPH.id){
                 case 'mail_text_body':
+                    // {%mail_text_body:2000%} cuts the body to 2000 characters; the
+                    // plain form keeps the whole body. The value is stored under the
+                    // full token key so two different limits can coexist in one prompt.
+                    if (currPH.custom_value !== undefined) {
+                        const max_chars = parseInt(currPH.custom_value, 10);
+                        if (max_chars > 0) {
+                            finalSubs['mail_text_body:' + currPH.custom_value] = placeholdersUtils.failSafePlaceholders(truncateText(body_text, max_chars));
+                            break;
+                        }
+                    }
                     finalSubs['mail_text_body'] = placeholdersUtils.failSafePlaceholders(body_text);
                     break;
                 case 'mail_html_body':
@@ -744,6 +768,13 @@ export const placeholdersUtils = {
                     finalSubs['selected_html'] = placeholdersUtils.failSafePlaceholders(selection_html);
                     break;
                 case 'mail_text_body_or_selected':
+                    if (currPH.custom_value !== undefined) {
+                        const max_chars = parseInt(currPH.custom_value, 10);
+                        if (max_chars > 0) {
+                            finalSubs['mail_text_body_or_selected:' + currPH.custom_value] = placeholdersUtils.failSafePlaceholders(truncateText(selection_text || body_text, max_chars));
+                            break;
+                        }
+                    }
                     finalSubs['mail_text_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_text || body_text);
                     break;
                 case 'mail_html_body_or_selected':

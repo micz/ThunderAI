@@ -40,6 +40,10 @@ const STORED = {
     add_tags: true,
     summarize: true,
     translate: false,
+    // The fixture's Ollama host is an unencrypted server on another machine: this user allowed
+    // it earlier (spec 04 "Custom endpoint policy"), or the capability probe, which never asks,
+    // would send nothing to it.
+    _approved_insecure_origins: [new URL(FIELDS.ollama_host).origin],
 };
 
 const ctx = await openPage('setup-wizard', { local: STORED });

@@ -11,8 +11,8 @@
 //    root keys such as safetySettings or tools are accepted, contents and system_instruction can
 //    never be overridden.
 // Request: streamGenerateContent?alt=sse (generateContent when not streaming); the API key in the
-// query string ("Gemini ... carry the API key in the query string", spec 04 "Logging") and in no
-// header.
+// x-goog-api-key header of all three requests (chat, model list, model info), never in the URL
+// (spec 04 "Google Gemini").
 
 import assert from 'node:assert/strict';
 import { areaFile } from './harness.mjs';
@@ -31,29 +31,42 @@ async function send(cfg) {
 }
 const gc = async cfg => (await send(cfg)).generationConfig || {};
 
-k.test('url-stream', 'streaming: POST models/<model>:streamGenerateContent?alt=sse with the key in the query string', async () => {
+k.test('url-stream', 'streaming: POST models/<model>:streamGenerateContent?alt=sse, with no key in the URL', async () => {
     await send({});
     const c = net.calls[0];
     const u = new URL(c.url);
     assert.equal(c.method, 'POST');
     assert.equal(u.origin + u.pathname, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent');
     assert.equal(u.searchParams.get('alt'), 'sse');
-    assert.equal(u.searchParams.get('key'), KEY);
+    assert.equal(u.searchParams.has('key'), false);
+    assert.equal(c.url.includes(KEY), false);
 });
 
 k.test('url-no-stream', 'not streaming: models/<model>:generateContent', async () => {
     await send({ stream: false });
     const u = new URL(net.calls[0].url);
     assert.equal(u.pathname, '/v1beta/models/gemini-2.5-flash:generateContent');
-    assert.equal(u.searchParams.get('key'), KEY);
+    assert.equal(u.search, '');
 });
 
-k.test('auth-query-only', 'the key travels in no header', async () => {
+k.test('auth-header', 'the key travels in the x-goog-api-key header only, never in the URL', async () => {
     await send({});
     const h = net.calls[0].headers;
+    assert.equal(h['x-goog-api-key'], KEY);
     assert.equal('authorization' in h, false);
-    assert.equal('x-goog-api-key' in h, false);
-    assert.equal(Object.values(h).some(v => v.includes(KEY)), false);
+    assert.equal(net.calls[0].url.includes(KEY), false);
+});
+
+k.test('auth-header-models', 'the model list and the model info carry the key in the header too', async () => {
+    net.expect(/\/v1beta\/models$/, () => jsonResponse({ models: [] }))
+        .expect(/\/v1beta\/models\/gemini-x$/, () => jsonResponse({ inputTokenLimit: 1 }));
+    const client = new GoogleGemini({ apiKey: KEY, model: 'gemini-x' });
+    await client.fetchModels({ maxRetries: 0 });
+    await client.fetchModelInfo('gemini-x');
+    for (const c of net.calls) {
+        assert.equal(c.headers['x-goog-api-key'], KEY);
+        assert.equal(c.url.includes(KEY), false);
+    }
 });
 
 k.test('contents', 'the messages are sent as contents', async () => {

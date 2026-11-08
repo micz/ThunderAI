@@ -42,6 +42,22 @@ policy is reflected at the next start and nothing of the user's is ever touched.
   `position_display`, `position_compose`, `position_context`, `show_in`, `custom_icon`,
   `need_custom_text`, `api_type`, `chatgpt_web_model`, `chatgpt_web_project`,
   `chatgpt_web_custom_gpt` — never the prompt text.
+  On the way back, `getOrgPrompts()` applies only the **display** fields of the entry stored
+  under the org prompt's composed id (`applyOrgPromptDisplayProperties()`, whitelist
+  `ORG_PROMPT_DISPLAY_FIELDS`): `position_display`, `position_compose`, `position_context`,
+  `show_in`, `custom_icon`. They override what the policy says (the policy has no way to lock
+  them), each only when in domain (a number or numeric string, one of the four `show_in`
+  values, a string); a missing or malformed entry or field leaves the policy value, or the
+  `normalizePromptFields()` default. The other five fields, and anything else an entry holds,
+  are ignored: `need_custom_text`, `api_type` and the ChatGPT Web fields of an org prompt stay
+  the policy's. An entry whose id the policy no longer supplies (a removed prompt, a changed
+  `_org_id`) is never applied, and disappears at the next Save of either prompt page, which
+  rewrites the whole store from what it lists.
+  `savePrompt()` routes an org prompt (`is_default: "0"` like a custom one) to the built-ins'
+  branch, not to `setCustomPrompts()`: it writes that prompt's entry and every built-in's,
+  **keeping** the other entries of the store, so saving one prompt never erases the org
+  prompts' preferences. `clearPromptAPI()` on an org prompt therefore changes nothing that is
+  read back: its `api_type` and connection fields are the policy's.
 
 **Three getters, deliberately.** All three are thin views over `buildPromptSet()`, which
 merges the four sets once and **marks** the three reasons a prompt can be inactive —
@@ -85,6 +101,39 @@ user's storage or deletes the user's shadowed prompt for real. The same split ap
 at startup. `setCustomPrompts()` also drops any `is_org: "1"` entry it is handed, so a writer
 that forgets the filter still cannot store an org prompt.
 
+### Prompt ids
+
+Every shipped prompt id, default or special, starts with `prompt_` (`RESERVED_PROMPT_ID_PREFIX`).
+Organization ids start with `org_`. A custom id is what the user typed, trimmed and lowercased, with
+no prefix added. Much of the code knows a built-in prompt by its id alone: the context menu routing
+(`specialContextMenuActions`), the menu item ids (`mzta-ctx-<id>`) and `menu_listeners`, `loadPrompt()`
+(which returns the built-in first), `isMultiMessagePrompt()`, the permission gates, the icons, and the
+chat window's `prompt_id`. So **a custom prompt must never have a shipped id**. Otherwise it runs as
+the built-in prompt, or hides it.
+
+- **A new or changed custom id may not start with `prompt_`**, ignoring case (`isReservedPromptId()`,
+  checked by `validateDetail()` in `pages/customprompts/`, see [05-options.md](05-options.md)). An
+  existing custom id with the prefix is **kept** while it is left as it is. The Copy of a built-in
+  used to create one (`prompt_reply_copy`, since 4.0.0), and renaming all of them would change
+  prompts that work. Copy and the ID derived from the name now drop the prefix.
+- **An exact shipped id is renamed**, ignoring case, by `renameCollidingPromptIds()`. The new id is
+  the shipped one without `prompt_` (`prompt_summarize` → `summarize`), made unique with `_2`,
+  `_3`, … (`uniquePromptId()`) against every listed id and every shipped id. This happens in two places:
+  - **at every startup**, by `migrateCustomPromptIdCollisions()`, on every entry of `_custom_prompt`.
+    There is no done-flag, because a later version can ship an id a user already has, and the user's
+    prompt must give it back on that version's first start. It writes only when it renames
+    something;
+  - **on import**, in `preparePromptsForImport()`, before the merge, on the file's custom entries
+    (`isImportedCustomPrompt()`: not `is_special`, and either `is_default` off or, with no
+    `is_default`, an id that is not exactly a shipped one). A built-in entry of the file, exported
+    with its exact id and no `is_default`, still merges into the built-in row. Without the rename,
+    a custom `prompt_reply` would turn that row into a custom prompt, and a custom
+    `prompt_summarize` would collide with the special prompt. Importing the same old file twice
+    gives two renamed copies (`summarize`, `summarize_2`), since a renamed id no longer matches
+    the file's.
+- Organization prompts are not affected. Their composed `org_` id never equals a shipped one, and
+  shadowing (above) keeps comparing the custom id as stored.
+
 ## Prompt Properties
 
 ### Base Properties (built-in only)
@@ -95,7 +144,7 @@ that forgets the filter still cannot store an org prompt.
 | `name` | string | `__MSG_key__` i18n reference or plain text |
 | `text` | string | The prompt template text — usually an i18n key (e.g. `prompt_reply_full_text`); may contain `{%placeholder%}` tokens |
 | `type` | string | `"0"` = always visible, `"1"` = reading email only, `"2"` = composing only |
-| `action` | string | `"0"` = close, `"1"` = reply (open compose), `"2"` = substitute text in-place |
+| `action` | string | `"0"` = close, `"1"` = reply (open compose), `"2"` = substitute text in-place, `"3"` = insert at the cursor position (compose window, nothing replaced, no confirmation). Not validated anywhere (editor, import, export, policy): any value round-trips, and an unknown one behaves as before (`"0"` in the ChatGPT web window, `"2"` in the API chat from a compose window) |
 | `need_selected` | string | `"0"` = use full message body, `"1"` = requires text selection. For `prompt_get_calendar_event` it is **derived**, see below |
 | `need_signature` | string | `"0"` = no signature, `"1"` = include signature |
 | `need_custom_text` | string | `"0"` = no custom input, `"1"` = show custom text input field |
@@ -182,10 +231,10 @@ original side is the prompt's `selection_html`, the twin of the `selection_text`
 `_buildDiffButton` resolves first (see [07-diff-picker.md](07-diff-picker.md)).
 
 `prompt_proofread_this` used to send `{%mail_typed_text%}`, plain text, because there is no
-`mail_typed_html` placeholder (`getOnlyTypedText` in `js/mzta-compose-script.js` returns text, not
-markup). It was moved to `{%selected_html%}` with `need_selected: "1"` (3507e368), like the two rewrite
+`mail_typed_html` placeholder (`getOnlyTypedText` in `js/mzta-compose-script.js` feeds the
+placeholder text, not markup). It was moved to `{%selected_html%}` with `need_selected: "1"` (3507e368), like the two rewrite
 prompts. A **custom** prompt that uses `{%mail_typed_text%}` still sends text; its picker original
-side is the `only_typed_html` twin that `getMailBody()` reads off the autoselect range (see
+side is the `only_typed_html` twin that `getOnlyTypedText` returns from the typed region's range (see
 [07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its twin*).
 `textToBlockHtml()` remains the backstop for an HTML twin with no block structure.
 
@@ -423,7 +472,7 @@ Both flows read the tags with it (the automatic one passes the use list as `filt
   of the list ignoring case, and is returned **as written in the list** — the user's spelling, as
   with the force-existing statement — each once. An empty list filters nothing.
 
-The Add Tags settings page (`updateAdditionalPromptStatements()` in `pages/addtags/mzta-add-tags.js`) previews the same statements with the same rules, and must be kept in sync with `finalizePrompt_add_tags()`.
+The Add Tags settings page (`updateAdditionalPromptStatements(values, prompt_text, target_el)` in `pages/addtags/mzta-add-tags.js`) previews the same statements with the same rules, for the global settings and for the selected account of the "Settings for single accounts" section (its effective values), and must be kept in sync with `finalizePrompt_add_tags()`.
 
 ### The text carries the response format
 
@@ -439,8 +488,81 @@ the feature pages do not apply it to the user's own edits. **A change to a shipp
 output format, or to a parser, must update that table**, or valid policies start being
 rejected.
 
+**The feature pages check that the JSON format is still there and valid.** For a special
+prompt whose parser reads a JSON answer — `specialPromptNeedsJson(id)`, i.e. the ids with
+`responseKeys` in the contract: spam filter, add tags, both calendar ids, task, translate —
+`bindSpecialPromptEditor()` (`pages/_lib/feature-page.js`) runs `checkPromptTextJson(text)`
+(`js/mzta-prompts.js`) on load, on every input and on Reset. The text is the whole prompt,
+instructions included, so the check looks for the format **inside** it:
+
+- the candidates are the **top-level** `{...}` blocks, braces matched outside JSON strings; a
+  `{%placeholder%}` outside a string is skipped whole (its braces are not the format's), one
+  inside a string is just string content. A block left open runs to the end of the text and
+  nothing after its opening brace is a candidate of its own, so an inner object never passes
+  for the format when the outer one lost its closing brace;
+- the text is fine when one candidate is **strict JSON** (`JSON.parse`): straight double
+  quotes, ASCII whitespace only, no `<...>` or unquoted example values;
+- no block at all → `prompt_json_error_missing`; blocks but none valid →
+  `prompt_json_error_invalid` followed by the parser message of the longest candidate (its
+  position is relative to the block), without SpiderMonkey's `JSON.parse:` prefix.
+
+The reason goes into a `div.json_error` (id: the textarea id + `_json_error`) created right
+after the `.editor-wrap`, via `textContent`, and the textarea gets a red **border-color**
+(`--jsonError`) inline — never a wider border, which would shift the text off the placeholder
+highlight mirror (same 1px border box). **Advisory only**, like the connection panel's JSON
+fields: Save stays available and the text is saved as typed. A text enforced by the policy is
+not flagged (the user cannot fix it; the policy validation has its own contract). Every shipped
+`en` text passes; that is why the spam filter example reads `"spamValue": 0` (the range stated
+in the sentence before it) and the calendar `attendees` example is an array of quoted strings.
+A user text saved before that change, still holding the old examples, is flagged until edited
+or reset. Translations that do not pass are fixed through Weblate (the five
+`prompt_*_full_text` descriptions say the example must stay valid JSON).
+
 When the policy enforces a text, the feature page shows it read-only (`lockEnforcedPromptText()`
 in `pages/_lib/managed-ui.js`) with the managed marker, and its Save/Reset buttons are inert.
+
+### Add tags: per-account settings
+
+Each Thunderbird account can override the global Add Tags settings and prompt text, edited in the "Settings for single accounts" section of `pages/addtags/` (see [05-options.md](05-options.md)). The overrides are the declared preference `add_tags_account_settings`, read and written through `mztaPrefs` by `js/mzta-addtags-account-settings.js`:
+
+```js
+add_tags_account_settings: { "<account id>": { "<global key>": value, ..., "prompt_text": "..." } }
+```
+
+The override keys ARE the global preference keys (exported as `ADD_TAGS_ACCOUNT_KEYS`), so applying an entry is a plain merge over the global values; `prompt_text` is the Add Tags prompt text:
+
+| Override key | Type | Global source |
+|---|---|---|
+| `prompt_text` | non-blank string | the `prompt_add_tags` special prompt text |
+| `add_tags_maxnum` | integer >= 0 | `add_tags_maxnum` |
+| `add_tags_force_lang` | boolean | `add_tags_force_lang` |
+| `default_chatgpt_lang` | string | `default_chatgpt_lang` |
+| `add_tags_auto_force_existing` | boolean | `add_tags_auto_force_existing` |
+| `add_tags_auto_uselist` | boolean | `add_tags_auto_uselist` |
+| `add_tags_auto_uselist_list` | string | `add_tags_auto_uselist_list` |
+| `add_tags_exclusions` | array of strings (lowercase, like the global) | `add_tags_exclusions` |
+| `add_tags_exclusions_exact_match` | boolean | `add_tags_exclusions_exact_match` |
+
+**Semantics.** A key missing from an account's entry inherits the global value; an account without an entry uses the global settings. An override REPLACES the global value for the messages of that account, it never extends it: an account's exclusion list is the whole list for that account. A key is used only where the global one would be: the use list (`add_tags_auto_uselist` / `_list`) applies on the automatic/batch path only, and the menu path keeps passing `false, ''` to `finalizePrompt_add_tags()`. Connection type, model and the automatic tagging behaviour (`add_tags_auto`, only inbox, include sent, enabled accounts) are not per account. The key holds per-profile account ids, so it is excluded from the enterprise policy allowlist.
+
+**Module** (`js/mzta-addtags-account-settings.js`):
+
+- `addTags_getAccountSettings()`: the whole object (`{}` when missing or not a plain object).
+- `addTags_getAccountEntry(accountId)`: that account's entry, cleaned (known keys with a valid value), or `{}`.
+- `addTags_setAccountSettings(accountId, entry)`: keeps only the known keys with the right type (a blank `prompt_text` is no key, arrays must hold strings and are copied), stores a copy, deletes the account when the entry ends up empty, returns the whole updated object. It never mutates what the preference layer handed out. Saving an empty entry is how "use the global settings" is done.
+- `addTags_resolveAccountPrefs(prefs, accountId)` (async): a COPY of `prefs` with the account's overrides applied, for every override key present in `prefs` whose global key the policy does not lock; `prompt_text` is never copied into prefs. With no account id, no entry, or the per-account settings disabled by the policy, it is still a fresh copy equal to `prefs`. It logs nothing.
+- `addTags_applyAccountPrompt(curr_prompt, accountId)` (async): a shallow copy of the prompt with `text: entry.prompt_text`, or `curr_prompt` itself when the account has no prompt text (or the text is enforced, or the per-account settings are disabled by the policy). It must be a copy: `preparePrompt()` rewrites `prompt.text` in place, and on the menu path `curr_prompt` is the long-lived menu entry object.
+
+`finalizePrompt_add_tags()` and `getTagsFromResponse()` keep their signatures: the callers pass the resolved values. `finalizePrompt_add_tags()` takes the text actually used as its last argument (it looks for `{%tags_full_list%}` in it), so both callers pass the account text, not the global one. `taPromptUtils.getDefaultLang(curr_prompt, default_lang)` takes an optional language that replaces the `default_chatgpt_lang` preference (omitted = the preference is read, as before), so the response-language statement follows the account's `default_chatgpt_lang` too.
+
+**Resolution points.** The account is `message.folder.accountId`; a message without a folder (e.g. an opened `.eml` file) uses the global settings.
+
+1. Auto/batch path (`runAddTagsJob()` in `mzta-background.js`), per message: `resolveAddTagsSetup()` resolves the prompt and the connection once per batch and is memoized, so no per-account value is ever applied inside it. After it, `addTags_applyAccountPrompt()` gives the prompt and `prefs_msg = addTags_resolveAccountPrefs(prefs_aats, accountId)` the values used for `getDefaultLang()`, `finalizePrompt_add_tags()`, `getTagsFromResponse()` and `_assign_tags()`. The job logs "using the custom prompt of account" and, when some value differs from the global one, "using the settings of account ... for: <keys>".
+2. Menu path (`act()` in `js/mzta-menus.js`, popup): once `curr_message` is known the account text goes into `text_prompt` (custom placeholders are expanded on that copy, as `act()` does for the entry's own text), which feeds the `{%mail_plain_text_part%}` presence check, `preparePrompt()` and `finalizePrompt_add_tags()`; `curr_prompt` itself is left untouched. `chatgpt_lang` is recomputed with the account's `default_chatgpt_lang`, and the `prompt_add_tags` branch reads `prefs_at` through `addTags_resolveAccountPrefs()` (max number, force language, language, force existing); the use list stays `false, ''`.
+3. Tag assignment: `_assign_tags(_data, create_new_tags, exclusions_exact_match, accountId)` / `_assign_tags_now()` apply the account's exclusion list (the global one read through `addTags_getExclusionList()`, then `addTags_resolveAccountPrefs()`), with the exact-match flag the caller resolved for the same account. The batch passes `msg.folder.accountId`; the `assign_tags` command from the tag dialog has only `messageId`, so it reads the header (`messenger.messages.get()`, `''` when it has no folder or cannot be read) to get the account, and resolves `add_tags_exclusions_exact_match` for it. The header is not read at all when no account has settings.
+4. The tag dialog (`getTags`, `js/mzta-compose-script.js`, opened from the menu path with `{command: "getTags", tags, messageId}`): it shows and filters with the EFFECTIVE list of the message's account, and its "exclude this tag" icon writes to the list the effective one comes from. `addtags_get_exclusion_prefs` takes an optional `messageId`, resolves the account the same way and returns the effective `add_tags_exclusions`, `add_tags_exclusions_exact_match`, `add_tags_hide_exclusions`, plus `exclusions_locked` (the policy locks the global `add_tags_exclusions`) and `exclusions_account_id` (the account id when that account has its own `add_tags_exclusions` override and the global key is not locked, `''` when the global list is the effective one). `addtags_set_exclusions` takes `{list, accountId}`: a non-empty `accountId` writes that account's `add_tags_exclusions` through `addTags_setAccountSettings()` (the rest of its entry kept), otherwise the global list as before. The dialog passes its `messageId` and sends back the `exclusions_account_id` it received.
+
+**Policy.** The per-account settings can never bypass a policy: an override is ignored at run time when the policy locks the corresponding global key (`mztaManaged.isManagedLocked(key)`, checked by `addTags_resolveAccountPrefs()`), and `prompt_text` is ignored when `_special_prompts_text` enforces the Add Tags text (the prompt carries `_text_by_policy`, see [08a-managed-prompts.md](08a-managed-prompts.md)): `addTags_applyAccountPrompt()` returns the prompt untouched. On the Add Tags page the matching rows are locked (`lockOverrideControls()`), and the prompt editor is locked by `lockEnforcedPromptText()` (read-only, its override toggle and "Copy the global prompt" inert); Save and the removal keep those stored values as they are (see [05-options.md](05-options.md#settings-for-single-accounts-add-tags-page)). The policy can also disable the per-account settings altogether (`_disable_add_tags_account_settings`, see [08a-managed-prompts.md](08a-managed-prompts.md#_disable_add_tags_account_settings)): both functions then ignore every entry (kept in storage, never deleted), `_accountIdOfMessage()` answers `''` so the tag dialog works on the global values and list, `addtags_set_exclusions` ignores an `accountId`, and the page hides the section.
 
 ### Missing special prompts
 
@@ -464,7 +586,7 @@ Guarded callers, each reporting through the mechanism its feature already has:
 - Auto add-tags (`mzta-background.js`): logs an error and sets `skipAddTags = true`, leaving the rest of the message pipeline running.
 - Spam filter (`mzta-background.js`): logs an error, then `spamReport.saveError()` + `updateSpamPanel(…, "showSpamReport", …)` and returns `{ success: false }`. `saveError()` goes through `saveReportData()`, which clears the session `processing` flag — without this the message would stay stuck showing "check in progress". The text passed to `saveError()` becomes the report's `explanation` and is rendered in the spam panel, so it must be localized (`spamfilter_prompt_missing_explanation`), like the other skip-reason explanations; only the `taLog.error()` line stays English.
 
-`spamReport.saveError(data_id, error_message, metadata = {})` takes an optional third argument that is spread over the stored record. `_generateSpamReportForMessage()` captures a `message_metadata` snapshot via `_buildReportMetadata()` (subject / from / message_date) and passes it to every `saveError()` call except the "Message not found" one, so error rows in the spam log keep their subject, sender and date columns instead of rendering `undefined`. The snapshot prefers the `getFull()` MIME headers and falls back to the `MessageHeader` fields (`message.subject` / `message.author` / `message.date`), which stay readable when a user filter deletes or moves the message mid-analysis. `subject` and `from` are therefore arrays (MIME header shape) — the log table in `pages/spamfilter/mzta-spamfilter.js` joins them with `Array.isArray(...) ? .join(", ") : ...`, so any fallback value must be array-wrapped too. The renderer tolerates records written before this change: a missing `message_date`, `from` or `subject` renders as an empty cell rather than "Invalid Date" / "undefined". `getAllReportData()` resolves to `{}` (never `undefined`) when nothing has been screened, so the `spamfilter_no_reports` placeholder is appended as a `colSpan=8` row inside `#report_data_body` — `#report_data` is the `<table>` itself, so writing to it would remove the header row and the tbody.
+`spamReport.saveError(data_id, error_message, metadata = {})` takes an optional third argument that is spread over the stored record. `_runSpamJob()` (`mzta-background.js`) captures a `message_metadata` snapshot via `_buildReportMetadata()` (subject / from / message_date) and passes it, through `_saveSpamError()`, to every error report except the "Message not found" one, so error rows in the spam log keep their subject, sender and date columns instead of rendering `undefined`. The snapshot prefers the `getFull()` MIME headers and falls back to the `MessageHeader` fields (`message.subject` / `message.author` / `message.date`), which stay readable when a user filter deletes or moves the message mid-analysis. `subject` and `from` are therefore arrays (MIME header shape) — the log table in `pages/spamfilter/mzta-spamfilter.js` joins them with `Array.isArray(...) ? .join(", ") : ...`, so any fallback value must be array-wrapped too. The renderer tolerates records written before this change: a missing `message_date`, `from` or `subject` renders as an empty cell rather than "Invalid Date" / "undefined". With no report (`getReportPage()` returns `[]`), the `spamfilter_no_reports` placeholder is appended as a `colSpan=8` row inside `#report_data_body` — `#report_data` is the `<table>` itself, so writing to it would remove the header row and the tbody.
 
 ## Menu System
 
@@ -509,6 +631,14 @@ To give a new default prompt a shipped icon, drop the PNG in `images/context_men
 - Special prompts (add_tags, spamfilter, summarize, translate) route through `processEmails()` for batch processing; regular prompts execute via `menus.executeMenuAction()`
 - Icons: resolved by `getContextMenuIcon()` (see Icon Resolution) — a user-chosen `custom_icon` first, otherwise the prompt's built-in icon (`contextMenuIconsPath` for special prompts, `defaultPromptIconsPath` for the other defaults). Prompts with no icon get none: `defaultContextMenuIcon` is `''`, so `menuOpts.icons` is left unset
 - Add Tags in context menu assigns tags automatically (`addTagsAuto: true`), while in the popup it shows the interactive tag selection form
+- **Several messages** [#979]: only the four prompts routed to `processEmails()` (add tags, spam filter, summarize, translate) can work on a message list; every other one reads the single message shown in the pane, which with a multi-selection or a collapsed thread is the thread summary. So with more than one message in the `message_list` context those items are **disabled, not hidden**, and enabled again with one message:
+  - **Which prompts:** `isMultiMessagePrompt(promptId)` (`js/mzta-prompts.js`), the single source of truth. It reads `allow_multi: true` from the shipped `specialPrompts` definitions only, by id — see "Built-in-only fields" below.
+  - **When:** a `menus.onShown` listener, `mzta_Menus.onMenuShown()`, registered once in the constructor. It acts only when `info.contexts` includes `message_list`. Several messages = `info.selectedMessages` with more than one message, or with a non-null `id` (a paginated MessageList, whose further pages are never fetched). A collapsed thread row comes through as all the thread's messages. A missing `selectedMessages` counts as one message.
+  - **Updates:** `menus.update(itemId, {enabled})` only for the items whose state changes (the last state set is kept per item in `_contextItemEnabled`, reset on every rebuild), then one `menus.refresh()`, and only if something changed. The `ThunderAI` parent is disabled too when none of its items is enabled.
+  - **Race guard:** each showing gets an instance id. `menus.onHidden` (`onMenuHidden()`) clears it, and a handler whose showing is no longer the open one does not refresh. The state it set stays recorded for the next showing. An update rejected because a rebuild removed the item is dropped (the rebuild recreates it enabled).
+  - **Fail-safe:** items are always **created enabled**, so if `onShown` fails the menu behaves as before.
+  - The popup and the reading/compose menus are not affected: they run on the displayed message or the compose window.
+- **Built-in-only fields:** `allow_multi` (only on the four prompts above) is a property of the code, not a prompt property. It is not user-settable, not shown in any page, and never read from a prompt object. `stripBuiltInOnlyFields()` (list `BUILT_IN_ONLY_PROMPT_FIELDS`) removes it from every prompt object built from a shipped definition, from storage (`getSpecialPrompts()`, `normalizePromptFields()` for custom and organization prompts) or from an import (`preparePromptsForImport()`), at the storage gates (`stripTransientFlags()`) and from exports (`preparePromptsForExport()`). An `allow_multi` in an import file, a policy or storage is therefore dropped and never makes a prompt multi-message.
 
 ### Menu Order Page (`pages/menu_order/`)
 
@@ -546,6 +676,8 @@ Both sections are draggable and act as drop targets; the section the row lands i
 - Special prompts whose base definition has `show_in: "none"` (internal prompts like `prompt_summarize_email_template` and `prompt_summarize_email_separator`) — retrieved via `getHiddenSpecialPromptIds()`
 - Special prompts whose feature is not active — retrieved from background via `get_active_special_ids` message, which calls `getActiveSpecialPromptsIDs()` with current prefs and `_sparks_presence`
 
+Both are chosen among the prompts with `is_special: "1"` only, and taken out of the list by object, never by id. Matched by id, a custom prompt with such an id (see "Prompt ids") was saved into `_special_prompts`, or left out of the list and so deleted from `_custom_prompt` by Save All.
+
 **Cross-tab reload** — the page listens on `browser.storage.onChanged` for changes to `_default_prompts_properties`, `_custom_prompt`, or `_special_prompts`. When one of those keys changes (e.g. user saves from the Custom Prompts page in another tab), the page reloads its data with a 200ms debounce. Any unsaved local changes are discarded to avoid overwriting the other page's work; the reloader calls `markSaved()` so the page also drops its dirty state and does not warn about changes it just threw away.
 
 **Unsaved-changes tracking** — every mutating interaction (drag, icon pick, Reset all) funnels through `markUnsaved()`, which sets the module-level `somethingChanged` flag, enables `#btnSaveAll` and shows the red `customPrompts_unsaved_changes` banner in `#msgDisplay`. `markSaved()` is the inverse (flag cleared, button disabled, banner hidden). A `beforeunload` listener calls `event.preventDefault()` while `somethingChanged` is set, so closing the tab or navigating away with a pending Save All raises Thunderbird's native confirmation dialog — the same mechanism as the Custom Data Placeholders page (Thunderbird 128+ only; the extension supplies no text for that dialog). Note `saveAll()` clears the flag **after** its `await`s complete, so a failed write leaves the warning armed. A failed write is caught: `#msgDisplay` shows `menu_order_save_error` and the error in red, and `#btnSaveAll` (disabled while the write is in flight) is enabled again so the user can retry. While `saveAll()` is writing, `saveInProgress` makes the `storage.onChanged` reloader ignore the page's own writes (and the error path cancels a pending `reloadDebounce`): otherwise a save failing halfway, after one of the three stores was written, would reload the page 200 ms later and discard both the pending changes and the error message.
@@ -574,7 +706,7 @@ The reset is **in-memory only**: it closes any open icon popover, clears the dee
 The `dynamic_menu_order_alphabet` preference (previously a user-facing option) has been retired and removed from the UI, but the key still exists in storage as a one-shot migration flag. At every background startup, `migrateMenuOrderAlphabetic()` in `js/mzta-prompts.js` runs:
 
 1. Reads `dynamic_menu_order_alphabet` from `browser.storage.local` (defaults to `true` if unset)
-2. If `true`: sorts every prompt except the hidden special prompts — special prompts first (alphabetically), then the rest (alphabetically) — and assigns sequential `position_display` = `position_compose` = `position_context` numbers. The hidden special prompts, the ones with `show_in: "none"` in their **base definition** (`getHiddenSpecialPromptIds()`: the summarize email template and separator), are preserved untouched. Every other prompt gets a position, including a prompt the user has hidden (`show_in: "none"`) and a special prompt whose feature is off: while hidden the position is unused (the Menu Order page lists hidden items alphabetically, the menus skip them), and if the prompt is shown again it already has a slot in the alphabetical order instead of none. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
+2. If `true`: sorts every prompt except the hidden special prompts — special prompts first (alphabetically), then the rest (alphabetically) — and assigns sequential `position_display` = `position_compose` = `position_context` numbers. The hidden special prompts, the ones with `show_in: "none"` in their **base definition** (`getHiddenSpecialPromptIds()`: the summarize email template and separator), are preserved untouched. They are matched by `is_special: "1"` as well as by id, so a custom prompt with one of those ids stays a custom prompt. Every other prompt gets a position, including a prompt the user has hidden (`show_in: "none"`) and a special prompt whose feature is off: while hidden the position is unused (the Menu Order page lists hidden items alphabetically, the menus skip them), and if the prompt is shown again it already has a slot in the alphabetical order instead of none. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
 3. Persists the new positions via `setDefaultPromptsProperties` / `setCustomPrompts` / `setSpecialPrompts`. The prompts are saved from the normalized view, so a stored prompt may gain the fields it lacked, at the defaults every read already applies: no stored value changes, and every prompt reads back as before, its positions aside. The one visible difference: a field the read view lacked may now hold its empty default `''` (today `custom_icon` of a built-in prompt that was never customized), which every reader treats exactly as the absent field
 4. Sets `dynamic_menu_order_alphabet = false` in `browser.storage.local` so the migration does not run again. The flag is read directly, not through `js/mzta-prefs.js` (it is not a preference), but it must sit in the same area as `PREFS_AREA`, and `migratePrefsToLocal()` carries it across from sync: since its default means "not yet run", reading it from an area the relocation did not fill would rerun the migration and overwrite the user's ordering (see [05-options.md](05-options.md))
 
@@ -652,7 +784,7 @@ The summarize feature uses two distinct prompt pathways:
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner at the top of the message body via `mzta-compose-script.js`
 - Banner includes a refresh button (↻) to regenerate the summary
-- Cached per-message via `taSummaryStore` / `taStorage`. Not truncated at the moment: the store has a 100-entry truncation that nothing calls (see [01-architecture.md](01-architecture.md#per-message-data-storage))
+- Saved per message via `taSummaryStore` / `taStorage` (IndexedDB, with its durable `storage.local` mirror), with the message's subject, sender and date; kept until the scheduled cleanup removes it under the `summarize_storage_*` limits, none by default (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 
 **Unified Prompt Building** — `taPromptUtils.buildSummaryPrompt(messageDataArray)`:
 - All summary paths (inline, webchat single, webchat multi) use this single method
@@ -680,7 +812,7 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
 - Banner includes refresh (↻) and delete (×) buttons
-- Cached per-message via `taTranslationStore` / `taStorage`. Not truncated at the moment: the store has a 100-entry truncation that nothing calls (see [01-architecture.md](01-architecture.md#per-message-data-storage))
+- Saved per message via `taTranslationStore` / `taStorage` (IndexedDB, with its durable `storage.local` mirror), one per message whatever the language, with the message's subject, sender and date; kept until the scheduled cleanup removes it under the `translate_storage_*` limits, none by default (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 - The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
 
 **Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, messageId)`:
@@ -689,6 +821,12 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
   alongside `fullMessage` on **both** of its branches, and its `options.messageData` now requires
   `message` as well as `fullMessage`.
 - Retrieves the `prompt_translate_this` special prompt text
+- When the text holds `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` (with or without
+  the `:N` limit), reads the text body as `buildSummaryPrompt()` does (`htmlBodyToPlainText()` of
+  the html, `cleanupNewlines()` of the text part when that is empty) and passes it as `body_text`.
+  The shipped text uses `{%mail_html_body%}`, but the prompt is editable on the Translate page and
+  the autocomplete offers both: without this they were sent empty, and the translation of the
+  subject alone was cached as a good result
 - Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`,
   **always with the default values** (`use_default_value: true`), whatever
   `placeholders_use_default_value` says: an empty value becomes `""`, never the literal token. The
@@ -711,15 +849,23 @@ type 2  → shown only when composing an email
 action 0  → no output, just close (e.g. for tag/spam actions handled in background)
 action 1  → open a reply compose window with AI response
 action 2  → replace selected text (or insert) in compose window
+action 3  → insert at the cursor position in compose window (a selection is kept, the answer goes
+            at its end; no cursor → start of the email, above quote and signature). The cursor is
+            saved when the prompt starts: see 01-architecture.md "Inserting at the cursor in a
+            compose window"
 ```
+
+Like `"2"`, `"3"` is offered for every prompt type in the Custom Prompts editor. In the API chat
+window its button reads "Insert at cursor" (`chatgpt_win_insert_at_cursor`), and it is the one
+action not forced to `"2"` from a compose window; the ChatGPT web window has the same button.
 
 ## Adding a New Built-in Prompt
 
-1. Add the prompt object to the `defaultPrompts` array in `js/mzta-prompts.js`
+1. Add the prompt object to the `defaultPrompts` array in `js/mzta-prompts.js`, with an id starting with `prompt_`. A custom prompt that already has the same id is renamed at the first start of the new version (see "Prompt ids")
 2. Add the `name` string key to `_locales/en/messages.json`
 3. If the prompt text needs a localized string, add it to `_locales/en/messages.json` as well
 4. Reference any needed placeholders using `{%placeholder_id%}` syntax in the `text` property (the prompt body)
 
 ## Custom Prompts
 
-Custom prompts are stored in `browser.storage.local` and managed via `pages/customprompts/`. They follow the same property structure as built-in prompts but are created/edited/deleted by the user through the UI. Custom placeholders can also be referenced in custom prompt text.
+Custom prompts are stored in `browser.storage.local` and managed via `pages/customprompts/`. They follow the same property structure as built-in prompts but are created/edited/deleted by the user through the UI. Custom placeholders can also be referenced in custom prompt text. Their id may not be a shipped one, and a new one may not start with `prompt_` (see "Prompt ids").

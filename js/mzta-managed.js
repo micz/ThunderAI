@@ -56,6 +56,12 @@ import {
     OLLAMA_THINK_LEVELS
 } from '../options/mzta-options-default.js';
 import { taLogger } from './mzta-logger.js';
+import {
+    ENDPOINT_PROBLEM,
+    maskUrlCredentials,
+    parseEndpoint
+} from './mzta-endpoint-policy.js';
+import { extraHeaderProblem } from './api/api-utils.js';
 
 // Policy keys starting with an underscore are structures and metadata, never preferences.
 // No key in prefs_default starts with an underscore, so the two namespaces cannot collide.
@@ -79,6 +85,7 @@ const POLICY_SPECIAL_PROMPTS_CONNECTION = '_special_prompts_connection';
 const POLICY_DISABLE_PROMPT_MANAGEMENT = '_disable_prompt_management';
 const POLICY_DISABLE_DEFAULT_PROMPTS = '_disable_default_prompts';
 const POLICY_DISABLE_SETUP_WIZARD = '_disable_setup_wizard';
+const POLICY_DISABLE_ADD_TAGS_ACCOUNT_SETTINGS = '_disable_add_tags_account_settings';
 
 // Strict mode: with _lock_unlisted true, every allowlisted preference the policy does not set
 // is enforced at its prefs_default value, so an option a later version adds is locked from the
@@ -130,6 +137,7 @@ const EXCLUDED_KEY_PATTERNS = [
 const EXCLUDED_KEYS = new Set([
     'api_webchat_font_scale', // local UI zoom
     'custom_prompts_view',    // custom prompts page layout (split/table), local UI
+    'add_tags_account_settings', // Add Tags overrides keyed by account id, per profile
 ]);
 
 /**
@@ -209,6 +217,7 @@ export const mztaManaged = {
     _disablePromptManagement: false,
     _disableDefaultPrompts: false,
     _disableSetupWizard: false,
+    _disableAddTagsAccountSettings: false,
     _lockUnlisted: false,
     // The keys strict mode enforced at their default, a subset of _locked. Background only:
     // a page receives them as ordinary values and locks (see isLockedByDefault()).
@@ -229,8 +238,12 @@ export const mztaManaged = {
 
     // Same masking rule as js/mzta-prefs.js: a policy file is world-readable, but that is
     // no reason to copy a provider key into the error console as well.
+    // A host may hold a user name and password, which are never logged either [#1000].
+    // The extra request headers may carry a key too.
     _logValue(key, value) {
-        return key.endsWith('_api_key') ? '****************' : JSON.stringify(value);
+        if (key.endsWith('_api_key') || key.endsWith('_extra_headers')) return '****************';
+        return key.endsWith('_host') && typeof value === 'string'
+            ? maskUrlCredentials(JSON.stringify(value)) : JSON.stringify(value);
     },
 
     /**
@@ -334,6 +347,7 @@ export const mztaManaged = {
             this._disablePromptManagement = reply.disablePromptManagement === true;
             this._disableDefaultPrompts = reply.disableDefaultPrompts === true;
             this._disableSetupWizard = reply.disableSetupWizard === true;
+            this._disableAddTagsAccountSettings = reply.disableAddTagsAccountSettings === true;
             this._active = reply.active === true;
         } catch (e) {
             this.logger.warn('Could not hydrate the managed configuration: ' + e);
@@ -402,6 +416,10 @@ export const mztaManaged = {
                         break;
                     case POLICY_DISABLE_SETUP_WIZARD:
                         this._disableSetupWizard = readRestriction(
+                            raw_key, value, this.logger);
+                        break;
+                    case POLICY_DISABLE_ADD_TAGS_ACCOUNT_SETTINGS:
+                        this._disableAddTagsAccountSettings = readRestriction(
                             raw_key, value, this.logger);
                         break;
                     case POLICY_LOCK_UNLISTED:
@@ -555,7 +573,8 @@ export const mztaManaged = {
                        (Object.keys(this._specialPromptsConnection).length > 0) ||
                        this._disablePromptManagement ||
                        this._disableDefaultPrompts ||
-                       this._disableSetupWizard;
+                       this._disableSetupWizard ||
+                       this._disableAddTagsAccountSettings;
         this._loaded = true;
 
         if (this._active) {
@@ -586,6 +605,7 @@ export const mztaManaged = {
             if (this._disablePromptManagement) restrictions.push(POLICY_DISABLE_PROMPT_MANAGEMENT);
             if (this._disableDefaultPrompts) restrictions.push(POLICY_DISABLE_DEFAULT_PROMPTS);
             if (this._disableSetupWizard) restrictions.push(POLICY_DISABLE_SETUP_WIZARD);
+            if (this._disableAddTagsAccountSettings) restrictions.push(POLICY_DISABLE_ADD_TAGS_ACCOUNT_SETTINGS);
             if (restrictions.length > 0) {
                 this.logger.log('Managed restrictions: ' + restrictions.join(', '));
             }
@@ -736,6 +756,15 @@ export const mztaManaged = {
     /** True when the policy forbids opening the setup wizard. */
     isSetupWizardDisabled() {
         return this._disableSetupWizard;
+    },
+
+    /**
+     * True when the policy takes away the per-account Add Tags settings
+     * (add_tags_account_settings): every account uses the global ones. The stored entries are
+     * kept, only ignored, and apply again once the restriction is lifted.
+     */
+    isAddTagsAccountSettingsDisabled() {
+        return this._disableAddTagsAccountSettings;
     },
 };
 
@@ -1080,13 +1109,13 @@ function integrationOfField(name) {
     return '';
 }
 
-function isHttpUrl(value) {
-    try {
-        const url = new URL(value);
-        return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch (e) {
-        return false;
-    }
+// The address rules of js/mzta-endpoint-policy.js, except the unencrypted-server one: a
+// policy host counts as approved (js/mzta-endpoint-approvals.js).
+function hostProblem(value) {
+    const parsed = parseEndpoint(value);
+    if (parsed.ok) return '';
+    return parsed.problem === ENDPOINT_PROBLEM.CREDENTIALS
+        ? 'must not contain a user name or password' : 'must be an http:// or https:// URL';
 }
 
 /**
@@ -1119,7 +1148,7 @@ function connectionFieldProblem(integration, key, value, defaultValue) {
     }
     switch (key) {
         case 'host':
-            return isHttpUrl(value) ? '' : 'must be an http:// or https:// URL';
+            return hostProblem(value);
         case 'model':
             return value.trim() !== '' ? '' : 'must not be empty';
         case 'temperature': {
@@ -1155,6 +1184,10 @@ function connectionFieldProblem(integration, key, value, defaultValue) {
             // The contract of parseExtraBody() in js/api/api-utils.js, which would otherwise
             // silently send nothing.
             return jsonObjectProblem(value);
+        case 'extra_headers':
+            // parseExtraHeaders() in js/api/api-utils.js drops an unusable header on its own:
+            // a policy is held to the whole value being usable.
+            return jsonObjectProblem(value) || extraHeadersProblem(value);
         case 'text_format_schema':
             // _parseTextFormatSchema() in js/api/openai_responses.js drops a schema that is not
             // a JSON object, and with it the whole json_schema format.
@@ -1170,6 +1203,24 @@ function jsonObjectProblem(value) {
     } catch (e) {
         return 'must be a JSON object (' + e.message + ')';
     }
+}
+
+// Names the header, never its value: it may carry a secret.
+function extraHeadersProblem(value) {
+    if (value.trim() === '') return '';
+    for (const [name, headerValue] of Object.entries(JSON.parse(value))) {
+        switch (extraHeaderProblem(name, headerValue)) {
+            case 'invalid_name':
+                return 'must not hold ' + JSON.stringify(name) + ', which is not a valid header name';
+            case 'forbidden':
+                return 'must not hold ' + JSON.stringify(name) + ', a header the browser does not let an add-on set';
+            case 'not_string':
+                return 'must give the header ' + JSON.stringify(name) + ' a string value';
+            case 'invalid_value':
+                return 'must give the header ' + JSON.stringify(name) + ' a value with no line break or NUL character';
+        }
+    }
+    return '';
 }
 
 // Go's time.ParseDuration grammar, which Ollama applies to a keep_alive string.
@@ -1219,6 +1270,7 @@ const PREF_NUMBER_RANGES = {
     spamfilter_threshold: { min: 0, max: 100 },
     max_prompt_length: { min: 1 },
     batch_max_concurrency: { min: 1 },
+    message_storage_batch_size: { min: 1, max: 10000 },
 };
 
 // A time zone the calendar pages' select offers: it is built from

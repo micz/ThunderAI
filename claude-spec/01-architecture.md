@@ -41,6 +41,13 @@ js/mzta-prompts.js       (builds final prompt string)
 js/mzta-compose-script.js  (inserts text into Thunderbird compose window and display window)
 ```
 
+API chat and special-command workers use `js/mzta-processing-worker.js`:
+async companion hooks precede dispatch and UI actions, parsing and storage.
+Inactive hooks preserve content and streaming. ChatGPT Web is not covered: with the
+switch on, a prompt on that connection is blocked with an alert before any tab opens.
+See [Async content processing](04-api-integrations.md#async-content-processing)
+for boundaries and failure behavior.
+
 ### Data Flow: Inline Summary on Message Display
 
 The `summarize_display_mode` preference (`'inline'` or `'webchat'`) controls where
@@ -137,6 +144,15 @@ taSummaryStore.saveSummary()
 [later] user opens the message → initSummary → cache hit → showSummary instantly
 [meanwhile] user opens it while the job runs → initSummary joins the job → spinner → result
 ```
+
+The batch decides its targets when it starts, but a message can wait in the queue
+(`batch_max_concurrency`) long after. So in the automatic runs (`isAutoMode`) the pipeline
+re-reads the settings just before each summary and translation step (`autoSummaryStillWanted()`:
+`summarize` and `summarize_auto === 3`, or the sender list still matching;
+`autoTranslateStillWanted()`: `translate` and `translate_auto === 3`) and skips the step when the
+user has meanwhile turned the feature off or back to the manual button. A call already in flight
+finishes. A message skipped this way offers the manual button when opened. Manual actions
+(context menu) are never re-checked.
 
 ### Data Flow: Auto-Summarize by Sender Address List
 
@@ -303,7 +319,8 @@ once for all its features.
   promise chain, and re-reads `getTagsList()` inside it. `createTag()` gives each new tag a random
   key, so two parallel pipelines that both found the same label missing would otherwise create two
   tags with that label. The queue also covers the context-menu/popup path, which can overlap with
-  an automatic batch. The pipeline awaits `_assign_tags()`. The tag list embedded in the *prompt*
+  an automatic batch. The pipeline awaits `_assign_tags()`, passing the message's account id: the
+  exclusion list applied is that account's (02 "Add tags: per-account settings"). The tag list embedded in the *prompt*
   is still read per message, so parallel pipelines do not see each other's new tags there; only
   exact-label duplicates are prevented.
 - **Translate tab.** The manual action (`translate: true`) resolves its UI tab once, before the
@@ -779,10 +796,15 @@ test area, `tests/compose/README.md`):
   removes the dialog and its stylesheet. In any other tab it is the window's `alert()`. The message is
   always text. The command resolves `true`.
 - **`getTags`** opens the tag confirmation dialog (*Unreachable message pane*: the user's
-  confirmation step). Its exclusion list and flags come from `addtags_get_exclusion_prefs` (spec 05);
+  confirmation step). Its exclusion list and flags come from `addtags_get_exclusion_prefs` (spec 05),
+  called with the `messageId` of the command, so they are the effective ones of the message's
+  account; the exclude icon writes with `addtags_set_exclusions`, sending back the
+  `exclusions_account_id` it received (02 "Add tags: per-account settings");
   when that command fails, the dialog logs it and opens with the defaults — no exclusion, both flags
-  off, not locked.
+  off, not locked, the global list.
 - **`replaceSelectedText`** (compose window): see *Replacing text in a compose window*.
+- **`saveCaret`** / **`insertAtCaret`** (compose window): see *Inserting at the cursor in a compose
+  window*.
 
 ### Batch cancellation (`taBatchController`)
 
@@ -851,8 +873,11 @@ separate `summarize` block (before each `getFull` and before opening the webchat
 triggers are not batches and are never gated by a cancel.
 
 **Abort latency (v1):** cancellation is checked *between* messages (and between the features of a message),
-so the AI calls currently in flight — up to `batch_max_concurrency` — finish first — bounded by `special_command_timeout` (default 120s). There is no
-mid-request worker termination in v1.
+so the AI calls currently in flight — up to `batch_max_concurrency` — finish first.
+`special_command_timeout` bounds stalled local chunks and the provider phase, not
+a progressing multi-part processing operation's total duration. Batch Stop does not
+terminate an in-flight command; API chat's Stop independently cancels remaining
+preprocessing work before dispatch.
 
 **What a stop leaves behind.** The messages a Stop or a rate limit kept from starting (and the
 features an in-flight message did not reach) are **not resumed**: no queue outlives the batch, and
@@ -871,7 +896,8 @@ runtime messages and the `preparePopupMenu` payload.
 The interactive chat window used by every API provider (not ChatGPT Web) lives in
 `api_webchat/`. It is a standalone extension page (`index.html`) built from two native
 Web Components with Shadow DOM and a controller that wires them to a per-provider Web
-Worker. No framework, no build step; plain ES6 modules under the strict default MV2 CSP.
+Worker. No framework, no build step; plain ES6 modules under the strict default MV2 CSP, plus
+the page's own, stricter meta CSP (see *Content Security Policy* below).
 
 ### Component structure
 
@@ -924,9 +950,33 @@ from `windows.getCurrent()`). The background listener registered for that `call_
 sending the window `api_send` (the prompt), or `api_error` when the configuration is unusable
 (an empty key or model). Nothing is sent to the worker before that answer.
 
+**The background's ready listener and its lifetime.** `openChatGPT()` waits for the ready message
+through `addReadyListener(command, onReady)` (`mzta-background.js`), the same for the five API
+providers and for ChatGPT Web (whose loader sends `chatgpt_web_ready_<call_id>`, see
+[04-api-integrations.md](04-api-integrations.md)):
+
+- **Registered** before the window is opened: one `runtime.onMessage` listener that calls
+  `onReady(message, sender.tab)` for exactly that command and returns `false` for any other. Then
+  `openWindow(win_options)` calls `windows.create()` and, with the id it returns, registers one
+  `windows.onRemoved` listener for that window.
+- **Removed**, both listeners together by the one `cleanup()`, on whichever end comes first:
+  1. the ready message answered with `api_send` (or `chatgpt_send`, after the script injection);
+  2. the ready message answered with `api_error` (an empty key, model, host or version): each
+     branch calls `cleanup()` before its `return`;
+  3. the window closed before any ready message was answered: the window never got ready, the user
+     closed it first, or the page refused to start (an unknown `llm`, see above).
+  `windows.create()` rejecting removes the message listener too. When the ready message is answered
+  while `windows.create()` is still pending, the `onRemoved` listener is never registered.
+
+So no listener outlives its window: before, the message listener was removed only on the
+`api_send` path, and every other opening left one behind for the rest of the session.
+`tests/background/40-chat-window-ready` checks the three ends for every provider.
+
 **Startup notice.** The first turn is an info notice (`.turn-info > .message.info`) built by
 `getAPIsInitMessageString()` (`js/mzta-utils.js`): the API, the model, the host, the version, the
-prompt (`[id] name`) and the provider's non-empty text settings. The window parses it as HTML (its
+prompt (`[id] name`) and the provider's non-empty text settings. A setting given as a section
+(`{label, items}`, today the OpenAI Comp extra headers) takes a line for its label and one
+indented `label: value` line per item. The window parses it as HTML (its
 own `<i>`/`<span>` labels, newlines → `<br>`), so **every value is escaped** with
 `mztaEscapeHtml()`: a prompt name, a model or a system prompt holding markup is shown as text and
 never becomes an element. The three values always there are the most exposed: the prompt name (the
@@ -1546,7 +1596,10 @@ line.
 The node-walking logic is unchanged — the `moz-cite-prefix` / `moz-forward-container` breaks, the
 `firstNode`/`lastNode` tracking and the `do_autoselect` range all behave exactly as before. In
 particular `lastNode` is still keyed off `node.textContent`, **not** the new projection, so the
-autoselect range is provably identical.
+autoselect range is provably identical. Since [#978] `getOnlyTypedText` puts that range in the live
+selection only when the user has no meaningful selection (none, collapsed or whitespace-only), and
+with `with_html: true` returns `{ text, html }`, the html read from the detached range itself (see
+[07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its twin*).
 
 **The add-on's own elements and the signature, on the live body.** The walkers cannot use
 `getCleanBodyHtml()`: it returns a detached clone, and the autoselect range needs live nodes. So they
@@ -1681,6 +1734,40 @@ editor.clearUndoRedo();` instead of `editor.rebuildDocumentFromSource(body)`, so
 The reply of `chatgpt_replyMessage` goes through the same editor path (*Writing a reply*); the only
 `setComposeDetails` left is that path's fallback, `replaceBody()`.
 
+### Inserting at the cursor in a compose window
+
+Action `"3"` (spec 02, issue #937): the answer goes **where the cursor is**, never replacing text and
+never asking. `chatgpt_insertAtCaret` (the AI chat window's "Insert at cursor", and the ChatGPT web
+window's) converts the answer exactly as `chatgpt_replaceSelectedText` does — both go through
+`_prepareComposeAnswer()` in `mzta-background.js` (the window's format, `stripHtmlKeepLines()` for
+plain text, `sanitizeBlockHtml()` for HTML) — and sends `insertAtCaret` to the compose tab. The
+insertion is `insertIntoEditor()`, the same editor path, focus handling and fallback as
+*Replacing text in a compose window*, so it is one undo step and the caret ends after the answer.
+
+- **The caret is saved when the prompt starts.** It cannot be read when the answer arrives: a prompt
+  with `{%mail_typed_text%}` autoselects the typed text when it starts (`getOnlyTypedText` with
+  `do_autoselect`), which replaces a collapsed caret with a selection. So `getMailBody()`
+  (`js/mzta-menus.js`) sends `saveCaret` to a compose tab first, before any other read, when the
+  prompt's action is `"3"`; the compose script keeps a clone of the selection's range in
+  `_mztaSavedCaret`. A clone is a live `Range`: it follows the edits made in the meantime. There is
+  one per compose window, so of two Insert prompts running at once from the same window, both
+  insert where the latest one started. A click in the compose window while the chat is open does
+  not move it: the saved caret wins.
+- **Which range** (`insertAtCaret`): the saved one if it is usable, else the current selection's
+  if usable, else the **start of the email** (`startOfBodyRange()`: before the first node that is
+  not one of ThunderAI's own elements, the same point the confirmed Replace uses) — which is above
+  any quote or signature, so the answer never lands inside or in place of them. *Usable*
+  (`usableCaret()`): both ends inside the body and neither inside one of ThunderAI's elements. The
+  saved caret is cleared on use.
+- **A selection is not replaced:** the range is collapsed to its end. A caret right before one of
+  ThunderAI's top-level elements moves after it, so `#mzta-container` stays the body's first child.
+  A caret the user put inside the signature or the quote is respected: only the no-caret case
+  avoids them.
+- The command resolves `true`.
+
+The direct-DOM fallback of `insertIntoEditor()` (shared with Replace) puts the caret after what it
+inserted, as the editor command does.
+
 ### Writing a reply
 
 `chatgpt_replyMessage` opens the reply (`compose.beginReply`, *Writing into a plain text compose
@@ -1735,7 +1822,11 @@ they are the theming channel: component styles consume `var(--token)` and must n
 literal colours or their own `prefers-color-scheme` block. Rules that are not custom
 properties (focus rings, `@keyframes`, the reduced-motion opt-out, the shared button
 families) live in `api_webchat/sharedStyles.js` as CSS strings that each component
-concatenates into its own `<style>`.
+concatenates into its own stylesheet. That stylesheet is a constructable `CSSStyleSheet`
+(`buildStyleSheet()` in `sharedStyles.js`, built once per module) set as the shadow root's
+`adoptedStyleSheets`, **never a `<style>` element**: the page's CSP has `style-src 'self'`,
+which blocks every `<style>` element, including one created by script, and every `style="…"`
+attribute in markup. Setting `el.style.x` from script (CSSOM) is not affected and stays allowed.
 
 `--accent` mirrors `pages/_lib/mzta-design.css` so the whole add-on shares one blue.
 
@@ -1800,6 +1891,71 @@ waiting for it, so the promise rejects with `Actor 'Conduits' destroyed before q
 is needed before the window goes away. Same pattern in `js/mzta-chatgpt.js` (the legacy
 fixed-div buttons).
 
+### Links in the transcript
+
+Model output is untrusted: a prompt injection hidden in a mail can make the model write links,
+and the sanitizer keeps `http:`, `https:` and `mailto:` hrefs (issue #1001). No link in the
+transcript is ever left to the page's default action, which Thunderbird decides and which could
+navigate the chat window itself. `MessagesArea` listens on `#messages` (added in
+`connectedCallback()`, removed in `disconnectedCallback()`):
+
+- **`click` and `auxclick`** (`_onLinkActivate()`): when the event's `composedPath()` holds an
+  `<a>` below `#messages`, the event is **always** `preventDefault()`ed. `click` covers the left
+  button and Enter on a focused link (turned into a click by the browser), with or without
+  Ctrl/Cmd/Shift; `auxclick` the middle button, which Gecko does not report as a click. Only a
+  `click` with `button` 0 and an `auxclick` with `button` 1 open the link, so the right button
+  never does and a middle button reported as both opens it once.
+- **What opens:** the href, parsed by `new URL()` with **no base** (`openableLinkUrl()`), opened
+  with `browser.windows.openDefaultBrowser(url.href)` only when the protocol is exactly `http:` or
+  `https:` and both `username` and `password` are empty. Everything else stays inert: `mailto:`,
+  a relative URL, a fragment, any other scheme, a malformed or missing href, a link with
+  credentials (`https://user:pass@host` can disguise the real host). A rejection of
+  `openDefaultBrowser()` is logged with `console.error`. No permission is needed.
+- **The diff picker:** a link inside `<diff-picker>` (found on the composed path, the event's
+  target being retargeted to the picker) is cancelled but **never opened**: there a click chooses
+  a side (REVIEW) or places the caret (EDIT).
+- **`dragstart`** (`_onLinkDragStart()`): cancelled when it starts on a link, so a link cannot be
+  dragged to somewhere that would load it. Dragging other text is unaffected.
+
+Delegation on `#messages` covers every turn. Today only answers (and the picker) can hold an
+anchor: the user bubble is text, the startup notice holds only its own `<i>`/`<span>`/`<br>`,
+errors and the thinking block are `textContent`.
+
+The summary and translation panels of the message pane are not concerned: they live in the mail
+document, where Thunderbird's own link handling for messages applies.
+
+### Content Security Policy
+
+`api_webchat/index.html` declares, as the first element of `<head>`:
+
+```
+default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self';
+connect-src 'self' http: https:; worker-src 'self'; object-src 'none'; frame-src 'none';
+base-uri 'none'; form-action 'none'
+```
+
+It is defense in depth on top of the sanitizer, combined with (not replacing) the manifest's
+default MV2 CSP. What each directive relies on:
+
+- **`script-src 'self'`**: no inline script, inline handler, `eval` or `new Function` in the page
+  or what it loads (`markdown-it.min.js`, `diff.js`, `mzta-html-lines.js` included).
+- **`style-src 'self'`**: `styles.css` only; the components use `adoptedStyleSheets` (see
+  *Theming*) and `index.html` holds no `style` attribute (`message-input { position: relative }`
+  is in `styles.css`).
+- **`img-src 'self'`**: the page's images are the add-on's own (`images/*.svg`, `loading.gif`);
+  the icons are built with `createElementNS`. A remote `<img>` would not load even if the
+  sanitizer let one through.
+- **`connect-src 'self' http: https:`**: the page itself fetches, not only its worker:
+  `contextWindow.js` asks Ollama (`/api/ps`, `/api/show`, at the user's host, often
+  `http://localhost`), Gemini and Anthropic for the model's context window. The provider requests
+  run in the worker; allowing any http(s) host keeps them working whether or not the worker
+  inherits the page's policy, including user-defined custom and local endpoints.
+- **`worker-src 'self'`**: the module workers of `js/workers/`.
+- **`object-src`, `frame-src`, `base-uri`, `form-action` `'none'`**: nothing is embedded, no
+  `<base>`, no form.
+
+`frame-ancestors` is left out: a meta CSP ignores it.
+
 ### Actions on an answer
 
 What the buttons under an answer send, what they act on, and which of them each kind of session
@@ -1813,7 +1969,8 @@ and nothing else:
 | Command | Sent by | Fields besides `command` and `text` | What the background uses |
 |---|---|---|---|
 | `chatgpt_replyMessage` | "use this answer", action `"1"` with a real message | `tabId`, `mailMessageId` (both from `api_send`), `replyType` (`reply_sender` / `reply_all`) | `mailMessageId`, to open the reply (`messages.get` → `compose.beginReply`); `tabId` is not read |
-| `chatgpt_replaceSelectedText` | "use this answer", action `"2"`, or action `"1"` with `mailMessageId` -1 (forced to `"2"`, [07-diff-picker.md](07-diff-picker.md#scope)) | `tabId` (the compose tab), `mailMessageId` (-1 from a compose window) | `tabId`, the compose window it writes into; `mailMessageId` is not read |
+| `chatgpt_replaceSelectedText` | "use this answer", action `"2"`, or any other action but `"3"` with `mailMessageId` -1 (forced to `"2"`, [07-diff-picker.md](07-diff-picker.md#scope)) | `tabId` (the compose tab), `mailMessageId` (-1 from a compose window) | `tabId`, the compose window it writes into; `mailMessageId` is not read |
+| `chatgpt_insertAtCaret` | "Insert at cursor", action `"3"` (never forced, *Inserting at the cursor in a compose window*) | as `chatgpt_replaceSelectedText` | as `chatgpt_replaceSelectedText` |
 | `chatgpt_saveSummary` | Save as Summary, summary sessions only | `headerMessageId` (`prompt_info.headerMessageId`), `tabId` (`prompt_info.summaryTabId`) | `headerMessageId` to store the summary; `tabId` to show it in that tab's message pane if the message is still displayed there |
 
 `chatgpt_saveSummary`'s `tabId` is `summaryTabId`, always set, since the button exists only when it
@@ -2010,8 +2167,8 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 |------|------|
 | `api_webchat/controller.js` | Wires components ↔ worker (DI); owns `promptData`, font-zoom, runtime-command handling |
 | `api_webchat/styles.css` | Design tokens (`:root` + dark override), page shell and header bar — the single source of truth for colour |
-| `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's `<style>`: focus rings, keyframes, reduced motion, button families |
-| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, prompt-anchored scrolling + `#jumpToLatest` button, orchestrates the render helpers below |
+| `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's stylesheet: focus rings, keyframes, reduced motion, button families; `buildStyleSheet()`, the constructable sheet each component adopts |
+| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, prompt-anchored scrolling + `#jumpToLatest` button, link handling (see *Links in the transcript*), orchestrates the render helpers below |
 | `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, floating status pill (waiting / streaming / done / error), custom-text flow |
 | `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click and Escape listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
 | `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |
@@ -2032,17 +2189,23 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary button, translation button, in that order) and content panels (generic error, generic info, translation, summary, in that order) in message display via `#mzta-container` — see [The message-display panels and dialogs](#the-message-display-panels-and-dialogs-jsmzta-compose-scriptjs) |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
+| `js/mzta-endpoint-policy.js` | The address rules of the custom endpoints (Ollama, OpenAI Compatible): http/https only, no credentials, unencrypted only to loopback or an approved origin. Pure, worker-safe: see [04 "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy) |
+| `js/mzta-endpoint-approvals.js` | The approved unencrypted origins (`storage.local` `_approved_insecure_origins`, plus the policy's hosts) and `resolveEndpointAccess()`, the check every caller runs before a request. Pages and background only |
+| `js/mzta-endpoint-redirects.js` | The redirects of the custom endpoints (`storage.local` `_endpoint_redirects`, one entry per host): `saveEndpointRedirect()` stores the outcome reported by the API classes (`redirect_info`, forwarded by the workers with `endpoint_redirect`), read by the amber note under the host fields. Pages and background only: see [04 "Redirects"](04-api-integrations.md#redirects) |
 | `js/mzta-spamreport.js` | Spam filter logic |
 | `js/mzta-i18n.js` | i18n helper (wraps `browser.i18n.getMessage`) |
 | `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |
 | `js/mzta-store.js` | Storage abstraction helpers |
-| `js/mzta-storage.js` | Unified per-message storage layer (`taStorage` class) for summary, spam, and translation data |
-| `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching and truncation |
-| `js/mzta-translationstore.js` | Translation-specific storage wrapper (`taTranslationStore` class) with caching and truncation |
+| `js/mzta-storage.js` | The per-message data storage (`taStorage` class): spam reports, summaries, translations in IndexedDB (the working copy: their pages, counts and size, the cleanup and its schedule) and in their `storage.local` mirror (the durable copy), the rebuild and the realignment of the two. See [Per-Message Data Storage](#per-message-data-storage) |
+| `js/mzta-storage-migration.js` | `migrateMessageDataToIndexedDB()`: moves the legacy `msg:` records of `storage.local` into the storage, at every background start |
+| `js/mzta-summarystore.js` | Summary wrapper over `taStorage` (`taSummaryStore` class): load / save / remove, error states, the metadata |
+| `js/mzta-translationstore.js` | Translation wrapper over `taStorage` (`taTranslationStore` class): load / save / remove, error states, the metadata |
+| `js/lib/idb.js` | `idb` 8.0.4 by Jake Archibald (vendored ES module, see `VENDORS.md`): the promise wrapper of IndexedDB `js/mzta-storage.js` opens the database with |
 | `js/mzta-job-registry.js` | In-flight job registry (`taJobRegistry`): one summary / translation / spam / add_tags job per message, joined by later callers |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
 | `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |
+| `js/mzta-addtags-account-settings.js` | Per-account Add Tags settings and prompt texts (`add_tags_account_settings` preference, through `mztaPrefs`): validation, per-message resolution honouring the policy locks (see 02 "Add tags: per-account settings") |
 | `js/mzta-placeholders-autocomplete.js` | Caret-anchored autocomplete for placeholders in prompt editors (shared by 8 pages); styled by `pages/_lib/autocomplete.css` |
 | `js/mzta-editor-highlight.js` | Live `{%placeholder%}` highlighting for a textarea via a backdrop mirror; exports the shared `PLACEHOLDER_RE` token pattern |
 
@@ -2058,7 +2221,7 @@ Each file handles HTTP communication for one provider:
 | `openai_comp.js` | OpenAI-compatible APIs |
 | `openai_comp_configs.js` | Pre-configured providers (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity) |
 | `openai_responses.js` | OpenAI Responses API |
-| `api-utils.js` | Shared worker-safe helpers (`parseExtraBody()`) |
+| `api-utils.js` | Shared worker-safe helpers (`parseExtraBody()`, `parseExtraHeaders()`, `extraHeaderProblem()`, `mergeHeaders()`, `isCredentialHeader()`) |
 | `api-retry.js` | `fetchWithRetry()`: automatic retry with backoff, see [04-api-integrations.md](04-api-integrations.md#automatic-retry-handling) |
 
 ## Web Workers (`js/workers/`)
@@ -2086,16 +2249,19 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 | `get-task/` | Task creation settings |
 | `menu_order/` | Drag-and-drop reordering and visibility control for popup and context menus |
 | `spamfilter/` | Spam filter settings |
+| `storage/` | Storage management: the saved spam reports, summaries and translations, their retention rules and cleanup ([#956](https://github.com/micz/ThunderAI/issues/956), see [Per-Message Data Storage](#per-message-data-storage) and [05-options.md](05-options.md)) |
 | `summarize/` | Email summarization settings |
 | `translate/` | Email translation settings |
 | `onboarding/` | First-run welcome page |
-| `_lib/` | Shared libraries used by pages: `connection-ui.js` (API connection UI), `feature-page.js` (what the six feature pages share: the per-feature connection kept in step with the `{prefix}_*` preferences, the connection panel tint, the special prompt text editors), `managed-ui.js` (enterprise policy presentation, see [08-managed-configuration.md](08-managed-configuration.md)), `mzta-timezones.js` (runtime-generated IANA timezone list for the calendar event / task selects, see [05-options.md](05-options.md)), `mzta-design.css` (shared design system), `autocomplete.css` (placeholder autocomplete dropdown, linked by all 8 pages that use it — written against both token systems via fallback chains), `editor-highlight.css` (backdrop-mirror structure for live `{%placeholder%}` highlighting, parameterized by `--ed-*` custom properties each page supplies), plus the vendored `tom-select.*` and `list.js` |
+| `_lib/` | Shared libraries used by pages: `connection-ui.js` (API connection UI), `feature-page.js` (what the six feature pages share: the per-feature connection kept in step with the `{prefix}_*` preferences, the connection panel tint, the special prompt text editors), `managed-ui.js` (enterprise policy presentation, see [08-managed-configuration.md](08-managed-configuration.md)), `mzta-timezones.js` (runtime-generated IANA timezone list for the calendar event / task selects, see [05-options.md](05-options.md)), `mzta-design.css` (shared design system), `spam-log.js` (the rows of a spam log table and their resize strip, shared by the spam filter page and the storage management page), `autocomplete.css` (placeholder autocomplete dropdown, linked by all 8 pages that use it — written against both token systems via fallback chains), `editor-highlight.css` (backdrop-mirror structure for live `{%placeholder%}` highlighting, parameterized by `--ed-*` custom properties each page supplies), plus the vendored `tom-select.*` and `list.js` |
 
 ## Storage
 
 Regular preferences (feature flags, connection settings, `ollama_*`/`chatgpt_*`/etc., `reply_type`, `connection_type`, ...) live in `browser.storage.local`, keyed by `prefs_default` in `options/mzta-options-default.js`. They are read through the accessor module `js/mzta-prefs.js` (`mztaPrefs.getPref` / `getPrefs` / `getAllPrefs` / `setPref`), the single choke point for preference access — see [05-options.md](05-options.md#preference-access-jsmzta-prefsjs) for the API, the preserved missing-vs-`null` semantics and the handful of deliberate bypasses. The large-payload keys — `_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder` — live in the same area (`add_tags_exclusions`, once one of them, is now a regular declared preference), where they went first, because `storage.sync` has a narrow storage quota (the one-time migrations in `js/mzta-utils.js`, `migrateCustomPromptsStorage()` / `migrateDefaultPromptsPropStorage()`, added for [#129](https://github.com/micz/ThunderAI/issues/129)). Each copies its key to local and then removes it from sync; when local already holds the key (a move interrupted between the copy and the remove), the local copy is kept and the stale sync copy is removed all the same, so `storage.sync` always ends drained.
 
 **The preferences followed them out of `storage.sync` for the same quota reason.** The move is carried by `migratePrefsToLocal()` (`js/mzta-prefs-migration.js`), the first `await` and the first storage access of `mzta-background.js` (only synchronous listener registrations, which touch no storage, come before it): it copies every key `storage.sync` still holds, skipping any already present in local (so it never reverts a later change), and **leaves the sync copy in place** so a downgrade still finds the user's settings. It then records `_prefs_migrated_from_sync` in `storage.local` and short-circuits on that marker at every subsequent startup, rather than re-reading both areas forever. Two consequences worth knowing: preferences **no longer sync across profiles or devices**, and every `storage.onChanged` listener that watches preferences gates on `areaName === 'local'` — a gate left on `'sync'` does not error, it simply stops firing. The area itself is decided once, by `PREFS_AREA` in `js/mzta-prefs.js`.
+
+**Two startup steps are not one-time migrations.** `migrateCustomPromptIdCollisions()` (`js/mzta-prompts.js`) runs after the migration block, at every start, unguarded and with no flag. It renames a custom prompt whose id is a shipped prompt's (see [02-prompts.md](02-prompts.md#prompt-ids)), because a new version can ship an id a user already has. It reads only `_custom_prompt` and writes it only when it renames something, so a normal start costs one read. It runs before the menus are built, so they never see two prompts with one id. Right after it, `migrateMessageDataToIndexedDB()` (`js/mzta-storage-migration.js`) moves the legacy per-message records, also called at every start and unguarded, but gated on its own stored version (it scans only at the first start of a new version), and then `taStorage.reconcileIfNew()` rebuilds the per-message database from its mirror when that database is new: see [Per-Message Data Storage](#per-message-data-storage), "Migration from the `msg:` records" and "Eviction and rebuild".
 
 ### Background Preference Snapshot and Menu Invalidation
 
@@ -2148,22 +2314,365 @@ The module also gives `hasFeaturePermissions()` (`permissions.contains`), `reque
 
 ### Per-Message Data Storage
 
-Per-message data (summaries, spam reports, translations) is stored via `js/mzta-storage.js` (`taStorage` class). Each record is keyed by `msg:<headerMessageId>` in `messenger.storage.local` and follows schema version 1. Records contain optional fields: `summary`, `spam`, `translation`, plus metadata (`v`, `ts`). The `taStorage` class provides typed read/write/delete methods per field, automatic record cleanup when all fields are removed, and age-based cleanup. Every write of a record is a read-modify-write of the whole object, so the writes of one message (`writeSpam/Summary/Translation()`, `delete*Field()`, `deleteRecord()`) are **queued per record**: each waits for the earlier ones on the same `msg:` key and reads what they wrote, so writers of different fields running together (a summary saved while the spam job removes the previous report, a translation saved during a panel Refresh) never drop each other's field. The queue is module-level, shared by the three stores, and lives in the background, the context that writes these records; writes to different messages still run in parallel, and a failed write never blocks the next one. The spam job awaits its `saveReportData()` before it returns, so its outcome means the report is stored.
+The per-message data - spam reports, summaries, translations - is what the AI said about a message,
+shown again every time the message is opened. It is kept in two places
+([#955](https://github.com/micz/ThunderAI/issues/955)), both through `js/mzta-storage.js`
+(`taStorage`):
+- **IndexedDB**, the *working copy*: every read (getRecord, the pages, the counts, the size, the
+  cleanup cursors) uses it, through the vendored `idb` 8.0.4 (`js/lib/idb.js`), for its indexes;
+- the **mirror** in `storage.local`, the *durable copy* and the source of truth: one key per record.
+  `storage.local` is never evicted; the add-on's IndexedDB may be (see "Eviction and rebuild"), and
+  is then rebuilt from the mirror.
+It used to be one `msg:<headerMessageId>` record per message in `storage.local`, with a field per
+type; those records are moved at startup (below).
 
-`js/mzta-summarystore.js` (`taSummaryStore` class) wraps `taStorage` for summary-specific operations: load/save/remove summaries and store error states. It also has `truncSummaries()` (keep the 100 newest summaries, oldest-first truncation), but **nothing calls it at the moment**: summaries are not truncated and accumulate in `storage.local`.
+**The mirror.** One `storage.local` key per record: `spam:<messageId>`, `summary:<messageId>`,
+`translation:<messageId>` (the Message-ID as `headerMessageId` gives it, without angle brackets).
+The prefixes are `MIRROR_PREFIXES`, next to `MESSAGE_STORES` in `js/mzta-storage.js`, with
+`mirrorKey(type, id)`, `mirrorKeyType(key)` and `isMirrorKey(key)` derived from them. The value is
+the very object `taStorage.buildRecord()` builds - the record of the store, `size` included - so a
+rebuild is a direct `put`:
 
-`js/mzta-translationstore.js` (`taTranslationStore` class) wraps `taStorage` for translation-specific operations: load/save/remove translations and store error states. Likewise it has `truncTranslations()`, which **nothing calls at the moment**: translations are not truncated either.
+```json
+"spam:CAF1x2y3@mail.example.com": {
+  "messageId": "CAF1x2y3@mail.example.com", "createdAt": 1762247700000,
+  "subject": ["Your invoice is ready"], "from": ["Billing <billing@example.com>"],
+  "message_date": "2026-11-04T09:15:00.000Z", "spamValue": 82,
+  "explanation": "Urgent payment request from an unknown sender, with a shortened link.",
+  "moved": true, "SpamThreshold": 70, "size": 331
+}
+```
 
-**Cleanup and truncation, as of today.** Besides the two truncations above, nothing removes old
-per-message records automatically:
-- **Age-based cleanup.** `taStorage.cleanup(maxAgeDays)` (remove the records whose `ts` is older
-  than that, every field included; `0` does nothing) exists but **nothing calls it**, and no
-  preference sets an age. The only bulk removal is `taStorage.clearAllRecords()`, from the options
-  page.
-- **Spam reports.** `js/mzta-spamreport.js` (`taSpamReport`) has `truncReportData()` (keep the 100
-  most recent reports, by their `ts`), called **only** by `newEmailListener()` after an incoming
-  batch, and only with `spamfilter` on. Reports of manual checks (context menu, panel Refresh)
-  accumulate until the next such batch; with the spam filter off they are never truncated.
+Not one "main" key: `storage.local.set()` rewrites a key's whole value, so a single key would read
+and rewrite every record at each save and bring back the concurrent-write races of the old layout.
+Per-record keys keep every routine write a single `set` that reads nothing else. **No routine path
+enumerates `storage.local`**: `get(null)` (filtered on the prefixes) is used only by `clear(type)`,
+`clearAllRecords()` (rare, user-initiated), `reconcileWithMirror()` and the move of the legacy
+records (once per version). The other bulk removals read only the keys they remove (a targeted
+`get(keys)`, see "The mirror of a bulk removal" below). Every mirror write fires `storage.onChanged` in every context with the
+record as `newValue`; every listener filters on the exact keys it watches (see
+[05-options.md](05-options.md), the record stores). The disk used is roughly twice the IndexedDB
+total the options page and the storage management page show.
 
-When to clean up, with which age and which limits is still to be decided (one job for all three
-stores). Each translation record stores `translated_text`, `lang`, and optional error information.
+**Schema.** Database `thunderai-message-data`, version 1; the name, the version, the store and index
+names are constants at the top of `js/mzta-storage.js` (`MESSAGE_DB_NAME`, `MESSAGE_DB_VERSION`,
+`MESSAGE_STORES`, `INDEX_CREATED_AT`, `INDEX_SIZE`, `INDEX_FAILED_CREATED_AT`). Future versions go in
+the `upgrade` callback (`openMessageDB()`). Three object stores, `spam`, `summary`, `translation`,
+each with `keyPath: 'messageId'` and three indexes: `createdAt` (paging, cleanup, the orphan scan's
+key list), `size` (the size total) and `failed_createdAt`, keyPath `['failed', 'createdAt']` (the
+error rule of the cleanup, the error counts, the deletion of the errors). The error queries are
+ranges on it, `IDBKeyRange.bound([1, -Infinity], [1, cutoff])`, never a scan; `failed` is a number,
+not a boolean, because a boolean cannot be an IndexedDB key. The `failed_createdAt` index was added
+inside the `oldVersion < 1` branch, with no schema migration: no database of an earlier layout was
+ever released. The key is the header Message-ID **alone**: a new translation replaces the previous
+one even in another language.
+
+| Field | |
+|---|---|
+| `messageId` | the header Message-ID |
+| `createdAt` | ms timestamp of the write, overwritten when the record is rewritten |
+| `size` | bytes: `new TextEncoder().encode(JSON.stringify(record)).byteLength` of the record **without** `size`, computed first and then added, so it does not depend on itself |
+| `failed` | `1` when the record holds an error, else `0`, computed by `buildRecord()` (`taStorage.isFailed(type, record)`), so the mirror value holds it and the rebuild keeps it: a summary or a translation with `error` set (a translation with `translation_status` `"-1"`, skipped, is a valid result: `0`), a spam report whose `spamValue` is `SPAM_ERROR_VALUE` (`-999`, exported by `js/mzta-storage.js`, used by `taSpamReport.buildError()` and the background's unsaved config-error report; the compose script, a classic script, keeps the literal) |
+| `subject`, `from`, `message_date` | the shape `buildMessageMetadata(message, fullMessage)` builds (`js/mzta-storage.js`, imported by the background and by the storage management page): `subject` and `from` arrays (MIME headers, else the MessageHeader field), `message_date` an ISO string; `[]`, `[]`, `''` when not known |
+| spam | `spamValue`, `explanation`, `moved`, `SpamThreshold` |
+| summary | `summary`, `summary_html`, `error`, `message`, `summary_date` (ISO) |
+| translation | `translated_text`, `translated_subject`, `translation_status` (`"1"` ok, `"-1"` skipped), `lang`, `error`, `message` |
+
+No record has a `ts`: `createdAt` replaces it. A field whose value is `undefined` is left out.
+`taStorage.buildRecord(type, messageId, data, createdAt)` builds every record, written or migrated.
+
+**`taStorage`.** `getRecord(id)` reads the three stores in one readonly transaction and returns
+`{ spam, summary, translation }`, each key present only when that store has a record (the stored
+record itself), `null` when none has; `hasField(record, type)`. `writeSpam` / `writeSummary` /
+`writeTranslation(id, data, force = true)` store one record (with `force` false an existing one is
+kept); `deleteSpamField` / `deleteSummaryField` / `deleteTranslationField(id)` delete the record of
+that type only; `deleteRecord(id)` the three, in one readwrite transaction (no caller today). Static:
+`getPage(type, {offset, limit})` (newest first: a cursor on `createdAt` in `prev` direction,
+`advance(offset)` only when `offset > 0`), `count(type)`, `getTotalSize()` (the sum of `size` with a
+key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAllRecords()`,
+`cleanup()`, `previewCleanup()`, `startCleanupSchedule()`, `getLastCleanup()`, `getMigrationState()`,
+`isMigrating()`, `reconcileWithMirror()`, `reconcileIfNew()`, `startRebuildWatch()` (below), and the
+methods of the storage management page:
+- `getStats()` → `{ [type]: { count, errors, size, oldest, newest } }`, in one readonly transaction
+  with no record loaded: `count()`, a `count()` on `failed_createdAt` over the error range, the `size`
+  key cursor, the first `createdAt` key in each direction (`null` for an empty store); answered as
+  empty (zeros, `null` dates) when the database cannot be read;
+- `getEntryKeys(type)` → `[{ messageId, createdAt }]`, oldest first, from a **key** cursor on
+  `createdAt` (its key is `createdAt`, its primary key the Message-ID): no record loaded; `[]` when
+  the database cannot be read. The orphan scan walks it;
+- `deleteErrors(now)` → removed per type: a cursor on `failed_createdAt` over the errors created up
+  to `now` (the start: an error saved while it runs is kept);
+- `deleteOlderThan(days, now)` → removed per type (`days` a positive integer, else it rejects);
+- `removeEntries([{ type, messageId, createdAt }])` → removed per type: each record only while the
+  store still holds it with that `createdAt` (`putNewerRecords([], removals)`);
+- `fillMetadata(type, messageId, createdAt, metadata)` → whether the record was rewritten: the empty
+  metadata of one record (`subject`, `from`, `message_date` all empty), only if both the mirror value
+  and the database record still have the `createdAt` given and empty metadata. The record is rebuilt
+  with `buildRecord()` and the **same** `createdAt` (so `size` is recomputed), written to the mirror
+  first, then put in the database by a readwrite transaction that checks the record again. Nothing
+  is written when the metadata given is empty too. It holds the cleanup lock for the whole entry,
+  and the writes take it too, so no write lands between its reads and its writes.
+The bulk methods (`clear()`, `clearAllRecords()`, `deleteErrors()`, `deleteOlderThan()`,
+`removeEntries()`, `cleanup()`) work **in lots** and reject on a failure (see "The cleanup lock and
+the lots" below). The rules of every method:
+- nothing but IndexedDB requests is awaited inside a transaction (it commits as soon as the event
+  loop is idle): the preference reads and the mirror calls come before it, or after it is done;
+- **every write and every single delete takes the cleanup lock** (`_write()`, `delete*Field()`,
+  `deleteRecord()`), see "The cleanup lock and the lots" below; `createdAt` is taken once the lock is
+  held;
+- **writes go to the mirror first, then to IndexedDB** (`_write()`): a failed mirror write rejects
+  before IndexedDB is touched; a failed IndexedDB write after a successful mirror write rejects too
+  and leaves the mirror key (the durable copy wins; the next rebuild restores the record). With
+  `force` false, a record found in either place is kept;
+- **every delete removes the mirror keys too**: `delete*Field()` and `deleteRecord()` remove them
+  first (a failure rejects); `cleanup()`, `deleteErrors()`, `deleteOlderThan()` and `removeEntries()`
+  collect `{ messageId, createdAt }` from their IndexedDB cursors (or are given them) and, after the
+  transaction of each lot has committed, remove the mirror keys through
+  `removeMirrorKeysIfUnchanged()` (below); `clear(type)` and `clearAllRecords()` delete the records
+  in lots up to their start, then, in one last step, the mirror keys of their types the lots did not
+  reach (found with `get(null)`) that are not newer than their start;
+- `openDB()` always passes `blocked`, `blocking` (it closes the connection, so another context can
+  upgrade or delete the database) and `terminated`; the connection is shared per context and
+  reopened after either. A failed open is logged and not kept: the next call tries again;
+- every transaction is opened through `openTransaction()` (exported: the migration's write too): a connection found closed
+  (`InvalidStateError`) is reopened once, and the transaction's `done` gets a handler at once, so
+  an aborted transaction is never an unhandled rejection (awaiting `done` still rejects);
+- **a write never swallows its error**: it logs it and rejects, so the caller can tell the user
+  (below);
+- **a read never throws**: when the database cannot be reached it logs and answers as empty -
+  `getRecord()` `null`, `getPage()` `[]`, `count()` and `getTotalSize()` `0` (the reads never fall
+  back to the mirror: it has no indexes);
+- a delete (`delete*Field()`, `deleteRecord()`) on a database that cannot be opened removes the
+  mirror keys, logs and resolves: there is nothing more to delete. A delete failing on an open database rejects. The jobs
+  that drop the old record before generating a new one (the summary and translation refresh,
+  the spam analysis) only log that failure and go on: the new record overwrites it;
+- an empty or missing Message-ID is never written (logged);
+- every result is saved: there is no switch per type (the `{feature}_storage_enabled` preferences of
+  the #955 development builds were removed before any release).
+Separate stores need no write queue: the per-record queue the `storage.local` layout needed
+(`_pending`) is gone.
+
+**The cleanup lock and the lots.** One Web Lock, `navigator.locks.request('thunderai-storage-cleanup', ...)`
+(`CLEANUP_LOCK_NAME`, `withCleanupLock()`), shared by the background and the pages, serializes
+every change to the per-message data: each write (`_write()`) and single delete (`delete*Field()`,
+`deleteRecord()`), each lot of a bulk removal, the two steps of the realignment and each metadata
+fill. Web Locks are not reentrant, so nothing holding it asks for it again. It closes the two races
+a write of the background used to have against the page's operations: a bulk removal's cursor
+deleting the old record, the write saving the new one, then the removal dropping the new mirror key
+by id (the new record then lost at the next realignment); and a metadata fill rewriting the mirror
+with the old record plus its metadata over a newer one. Both need a write to land inside the
+operation, which the lock now forbids.
+
+So that a long operation does not hold the writes up, **the bulk removals work in lots** of
+`message_storage_batch_size` records (default `100`, `DEFAULT_BATCH_SIZE`; a policy-only preference,
+an integer from 1 to `BATCH_SIZE_MAX` = 10000, anything else read as the default): each lot takes
+the lock, deletes its records in one transaction, removes their mirror keys and releases it.
+Web Locks grant the requests in order, so a write queued during a lot runs before the next lot: it
+waits for one lot at most. Every operation touches only what existed when it started:
+- the error and age rules of `cleanup()` and `deleteOlderThan()` have their cutoff fixed at the
+  start; the next lot starts its cursor again from the start of the range (what the lots before
+  deleted is gone);
+- the count rule computes its excess (`count − maxEntries`) again at each lot, so it ends with at
+  most `maxEntries` records;
+- `deleteErrors()` takes the errors created up to its start;
+- `clear()` and `clearAllRecords()` take the records created up to their start (or up to the newest
+  record they find, if a clock moved back), then the stale mirror keys up to the same bound; a write
+  made while they run gets a later `createdAt` (taken under the lock) and is kept in both places. A
+  write in the very millisecond the emptying starts counts as made before it;
+- `removeEntries()` splits its list into lots;
+- `reconcileWithMirror()` reads the mirror and the stores in one hold, then puts and removes in lots
+  (each `putNewerRecords()` under the lock): a write or a delete made between two lots goes through
+  the lock too, and wins (a record the store holds as new or newer is kept, one whose `createdAt`
+  changed is not removed). The rebuild (`reconcileIfNew()`) uses `DEFAULT_BATCH_SIZE` without
+  reading the preference: at startup it runs before the background has loaded the policy, and a
+  preference read there would make the background ask itself for the policy values; the manual
+  realignment reads it.
+An operation in lots is **not atomic**: on a failure the lots done stay done, and the error carries
+what was removed before it (`error.removed`, per type: the storage management page shows it,
+`storage_action_error_partial`). The preview still equals the cleanup: with no concurrent write the
+lots remove exactly what one pass would.
+
+**The mirror of a bulk removal** (`removeMirrorKeysIfUnchanged(byType)`, internal). The removals
+work on `{ messageId, createdAt }` pairs taken from their cursors; once the transaction of a lot has
+committed, in the same hold of the lock, the helper reads those mirror keys with a **targeted**
+`storage.local.get(keys)` (never `get(null)`) and removes, with one `remove()` per type, those whose
+value still has the `createdAt` seen. A key already gone is skipped. With the writes under the lock
+the check always matches; it stays as a defence for a context without the Web Locks API (where every
+operation runs unlocked, logged once).
+
+**The wrappers.** `taSummaryStore` (`js/mzta-summarystore.js`), `taTranslationStore`
+(`js/mzta-translationstore.js`) and `taSpamReport` (`js/mzta-spamreport.js`) load, save and remove
+their type and store error states; their dates (`summary_date` fallback, `translation_date`,
+`report_date`) come from `createdAt`. `saveSummary(data, id, metadata = {})`,
+`saveTranslation(data, id, metadata = {})` and the three `saveError(id, message, metadata = {})` take
+the metadata `buildMessageMetadata()` builds; `taSpamReport.buildError()` builds an error report
+without saving it. The spam log reads `getReportPage(0, 20)`, the 20 newest; `countReports()` is kept.
+There is no truncation and no bulk read any more: the limits are the cleanup's.
+
+**The metadata.** `buildMessageMetadata(message, fullMessage)` (`js/mzta-storage.js`) builds it: the
+full MIME headers first (`fullMessage.headers.subject` / `.from`, arrays), else the MessageHeader
+fields (`message.subject` / `message.author`, wrapped in an array), `message_date` from
+`message.date`; a field that cannot be known is `undefined` (stored empty). It used to be
+`_buildReportMetadata()` in `mzta-background.js`; it moved so the storage management page's orphan
+scan builds the very same shape (from the MessageHeader only: no `getFull()` per entry). The
+summary and translation jobs (`_runSummaryJob()`, `_runTranslationJob()`)
+build it as soon as the message is known (from `options.messageData`, else from the resolved
+message, then again from the full message once fetched) and pass it to every save, error saves
+included. The webchat save (`chatgpt_saveSummary`) has only the Message-ID and the text: it resolves
+the message with `_resolveMessage(headerMessageId, null, msg.tabId)` and builds it from that, or
+saves with `{}` when it cannot. "Message not found" errors are saved with `{}`, the spam report's
+included, so its row in the spam log has empty date, sender and subject.
+
+**A failed save.** A result shown in a panel whose save failed is still shown: `_endSummaryJob()` /
+`_endTranslationJob()` catch the store failure and add its message to the data they send
+(`storage_error`); the spam job saves through `_saveSpamReport()` / `_saveSpamError()`, which do the
+same for the report; the webchat save too. The message-display panels then put a red notice at the
+top of the panel (`storage_save_failed`, followed by the error, `_buildStorageErrorNotice()` in
+`js/mzta-compose-script.js`). An automatic run with no panel open only logs it.
+
+**Who opens the database.** The **background** owns it: the migration, the rebuild and the
+realignment with the mirror, the scheduled cleanup and every read and write of the message flow.
+The message display and compose scripts never open it: they go through the background, as before.
+The **management pages** open it directly through `js/mzta-storage.js`: the options page (size),
+the spam filter page (the 20 newest reports) and the storage management page (`pages/storage/`:
+the overview, the rules, the deletions, the list, the orphan scan). They never rebuild or realign it: they show what
+IndexedDB holds, and a page that wants a realignment asks the background (`reconcileMessageStorage`,
+below). On open they
+read the migration flag (`taStorage.getMigrationState()`: `'migrating'`, `'failed'` or `null`).
+While the move is in progress they show `storage_migration_in_progress` instead of an empty table
+(the spam log), next to the size (the options page) or at the top (the storage management page,
+which still shows what the database holds). After a failed attempt they show
+`storage_migration_failed` (above the log, next to the size, at the top) and otherwise behave
+normally, showing what the database holds. They never migrate.
+
+**Limits and cleanup.** Per type: `{feature}_storage_max_entries` and `{feature}_storage_max_age_days`
+(default `0`, no limit) and `{feature}_storage_error_max_age_days` (default `90`), with `{feature}`
+`spamfilter`, `summarize`, `translate`; and one switch, `message_storage_cleanup_auto` (default
+`true`) (see [05-options.md](05-options.md); `STORAGE_PREFS` and `CLEANUP_AUTO_PREF` in
+`js/mzta-storage.js`; `readLimits()` returns `{ maxEntries, maxAgeDays, errorMaxAgeDays }` per type).
+The count and age limits are off by default: the spam reports, once cut to the 100 newest after each
+incoming batch, are unlimited too; only the errors go after 90 days. `taStorage.cleanup(limits, now)`
+is the one routine; for each type, in this order:
+1. **the error rule**: the records with `failed` 1 older than the maximum error age, with a cursor
+   on `failed_createdAt` over `bound([1, -Infinity], [1, cutoff], false, true)`;
+2. **the age rule**: the records older than the maximum age, with a cursor on `createdAt`;
+3. **the count rule**: the oldest records beyond the maximum count, on what the first two left.
+A limit of `0` disables its rule. Each rule runs in lots (above), the mirror keys of each lot removed
+through `removeMirrorKeysIfUnchanged()`. It returns the count per type. The storage management page's "Apply rules now" calls it directly: that run stores no last
+cleanup and moves no timer.
+
+**The dry-run** is a separate method, `taStorage.previewCleanup(limits, now)`, not an option of
+`cleanup()`: it only reads, so it takes no lock and loads no record (one readonly transaction,
+`count()` on the indexes only). For each type it gives exactly what `cleanup(limits, now)` would
+remove: the records older than the age cutoff, plus the errors the age rule does not reach (between
+the age cutoff and the error cutoff: all the errors older than the error cutoff with no age rule,
+none when the error cutoff is not newer than the age cutoff), plus
+`max(0, total − those two − maxEntries)` for the count rule (the errors removed count too: the count
+rule applies to what the first two rules left). The storage management page passes the values of
+its form, saved or not. Answered `0` per type when the database cannot be read.
+
+Every lot of a cleanup, of `clear(type)`, `clearAllRecords()`, `deleteErrors()`,
+`deleteOlderThan()`, `removeEntries()` and `reconcileWithMirror()`, every `fillMetadata()` and every
+write and single delete run under the cleanup lock (above), so they never overlap.
+
+**Scheduling**, in the background, without the `alarms` permission (`startCleanupSchedule()`, called
+once the policy is loaded). It first reads `message_storage_cleanup_auto` through `mztaPrefs` (so a
+policy value counts): when it is `false` it only stops the pending timer and does nothing else. The
+last completed scheduled cleanup is kept in `storage.local` (`_message_data_last_cleanup`,
+`LAST_CLEANUP_KEY`) as `{ time, removed }`: `time` in ms, `removed` what `cleanup()` returned per
+type; there is no reading of an older numeric format (nothing was released with it).
+`taStorage.getLastCleanup()` reads it for the page (`null` when there is none, or it is not of that
+shape). At startup, with none or one older than 24 hours, the cleanup runs at once; otherwise it is
+set 2 hours after the start. After each run `{ time, removed }` is saved (only on success) and the
+next run is set 24 hours later. One timer at a time, no periodic checks; a generation counter, bumped
+by every `stopCleanupSchedule()`, makes a run in progress when the schedule is stopped or restarted
+not set its next run, and a start overtaken by a later one give up. A lowered limit applies at the
+next scheduled cleanup. **The switch**: `setupCleanupScheduleListener()` in `mzta-background.js` (a
+dedicated `storage.onChanged` listener, like the ThunderAI Privacy one) calls `startCleanupSchedule()`
+on every change of `message_storage_cleanup_auto`: turned off, it stops the timer; turned on, it
+starts the schedule again (at once when the last run is more than 24 hours old).
+
+**Migration from the `msg:` records.** `migrateMessageDataToIndexedDB()` (`js/mzta-storage-migration.js`)
+runs in the startup migration block of `mzta-background.js`, after the other steps, awaited with a
+`.catch()` that only logs. Never from a page. It is called at every start but **scans only once per
+add-on version**: it first reads (one targeted `get`) `_message_data_migration_version`
+(`MIGRATION_VERSION_KEY`, the `manifest.json` version it last completed for) and the flag; when the
+version is the running one and no flag is left, it stops there. A scan is a `storage.local.get(null)`,
+which now also loads every mirror record, so it must not run at every start. The gate still covers a
+downgrade followed by an update: the old version writes `msg:` records again, and the next version
+differs from the one stored. It does **not** cover a downgrade followed by reinstalling the very
+version that ran before (the stored version is then the running one): those `msg:` records wait for
+the next version. A scan with no `msg:` key removes a flag left by an interrupted run and stores the
+version. Otherwise:
+1. read the legacy keys (the scan);
+2. set the migration flag `_message_data_migrating` to `true` in `storage.local` ("legacy data is
+   being migrated"), also over the `'failed'` of a previous attempt; there is no "done" value;
+3. write the mirror keys, in one `set()`: each legacy field becomes a record of its type,
+   `createdAt` = the field's `ts`, else the record's `ts`, else the time of the migration (`ts` is
+   not copied), `size` computed, the metadata empty for summaries and translations (no message is
+   queried). A record the mirror already holds with a `createdAt` as new or newer is never
+   overwritten (on a tie the mirror wins: it is the source of truth). A field that is not an
+   object is logged and dropped with its key;
+4. open the database and put the winners of step 3 in one transaction (`putNewerRecords()`, the
+   write loop shared with the reconcile; a record the database holds as new or newer is kept; a
+   request that throws aborts the whole transaction);
+5. remove the legacy keys, only once that transaction has committed;
+6. remove the flag, store the version.
+A failure rejects and keeps the legacy keys and the old version: the next start retries. The flag
+has three states: `true` (moving), `'failed'` (`MIGRATION_FAILED`: steps 3-4 failed - the mirror
+could not be written, or the database could not be opened or written - so the pages stop announcing a
+move nobody is making), absent (done, or nothing to move). A failure of the other steps leaves the
+flag as it is; failing to write `'failed'` is only logged. A flag left behind forces a scan even
+with the running version stored. The background registers the listeners that read or write these
+records (the main `onMessage` listener, the new mail listener) and starts the cleanup only after the
+block, so nothing reads or writes the stores before the migration and the rebuild have finished.
+
+**Eviction and rebuild.** `storage.local` is never evicted by Firefox (Thunderbird); the extension's
+IndexedDB is *temporary* storage, subject to a quota and, when the disk is almost full, to the
+eviction of whole databases, least recently used origins first, without notice. Nothing protects it:
+`unlimitedStorage` is not accepted by Thunderbird in `optional_permissions` (the entry is dropped
+with an "Error processing optional_permissions" manifest warning), it is deliberately not a required
+permission (an update would ask every user for it), and `navigator.storage.persist()` always resolves
+`false` in Thunderbird, even from a user gesture. So the data is made durable by the mirror, and the
+database is the working copy, rebuilt from it:
+- **A new database.** `openMessageDB()`'s `upgrade` callback marks the database new (a module flag,
+  per context) when it runs with `oldVersion === 0`: a first start, an evicted database, or one that
+  `openCheckedMessageDB()` deleted and created again because it opened without its three object
+  stores (its second open upgrades from 0 too).
+- **`taStorage.reconcileIfNew()`** opens the database and, when the flag is set, clears it and runs
+  `reconcileWithMirror()`; it resolves its counts, or `null` when the database was not new. A failed
+  rebuild sets the flag again, so the next call retries. The background calls it at startup, right
+  after `migrateMessageDataToIndexedDB()` and before the listeners are registered (a failure is
+  logged; the reads then answer from what the database holds).
+- **`taStorage.startRebuildWatch()`**, called by the background right after: from then on, a lost
+  connection (`blocking`, `terminated`) is opened again at once (a `setTimeout(0)` after the close)
+  through `reconcileIfNew()`, so a database evicted while Thunderbird runs is rebuilt then. The
+  reopen is immediate, not lazy, on purpose: if a page opened the database first, it would create it
+  (the page never rebuilds) and the background would then find it at version 1, not new, and never
+  rebuild it. **The reads wait for that rebuild**: from the moment the connection is lost until the
+  rebuild ends, `getRecord()`, `getPage()`, `count()` and `getTotalSize()` of the background first
+  await it, so a summary asked for meanwhile finds the saved one instead of being generated again
+  by the AI. The writes do not wait for the rebuild as such, only for the lock between two of its
+  steps (above): they go to the mirror first, and the rebuild keeps a record the store holds as new
+  or newer. The pages never call either method, and never wait.
+- **`taStorage.reconcileWithMirror({ batchSize })`**, under the cleanup lock, a read step then lots: the rebuild above and the manual
+  realignment. It is **one way, mirror -> IndexedDB**, and never writes to `storage.local`: the
+  mirror is the source of truth. It reads the mirror (`get(null)` filtered on the prefixes) and the
+  three stores (`getAll()`, one readonly transaction), then for each type and Message-ID: a mirror
+  record missing from IndexedDB, or newer by `createdAt`, is put into its store (*restored*); an
+  IndexedDB record with no mirror key is removed from its store (*removed*): it was deleted from the
+  durable copy, by a delete whose IndexedDB part did not complete, and is never copied back; equal
+  `createdAt`, or an IndexedDB copy newer than the mirror one, nothing. A mirror value that is not a
+  record of its key (not an object, another `messageId`) is logged and left alone, and so is the
+  IndexedDB record of that Message-ID. Puts and removals run in lots, each one transaction
+  (`putNewerRecords(records, removals)`): a failure leaves the lots done (running it again
+  finishes the job), and a write made since the reads wins: a record the store holds as new or
+  newer is not overwritten, and a record is removed only if it still has the `createdAt` seen when
+  it was chosen. It resolves
+  `{ spam: { restored, removed }, summary: {...}, translation: {...} }`, logs it, and rejects on a
+  failure.
+- **The `reconcileMessageStorage` command** of the main `onMessage` listener of the background runs
+  `reconcileWithMirror()` for a page (the "Realign with the durable copy" button of the storage
+  management page, [#956](https://github.com/micz/ThunderAI/issues/956)): it answers
+  `{ ok: true, counts }` with the counts above, or `{ ok: false, error }` with the error message
+  (logged). `browser.runtime.sendMessage({ command: 'reconcileMessageStorage' })`.

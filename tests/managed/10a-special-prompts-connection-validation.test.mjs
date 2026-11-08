@@ -67,6 +67,7 @@ test('invalid fields are skipped one by one, valid ones kept', () => {
     assert.ok(warned(/"openai_comp_temperature"\] must be empty or a number not below 0, skipped/));
     assert.ok(warned(/"openai_comp_use_v1"\] must be of type boolean, got string, skipped/));
     assert.ok(warned(/"openai_comp_extra_body"\] must be a JSON object, skipped/));
+    assert.ok(warned(/"openai_comp_extra_headers"\] must not hold "Host", a header the browser does not let an add-on set, skipped/));
 });
 
 test('a field of another provider is named as such; an unknown one as unknown', () => {

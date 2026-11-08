@@ -199,8 +199,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 // The calendar_no_selection option sends the whole message body, which only works if the
 // prompt reads it through one of these two placeholders.
 function hasBodyPlaceholder(text) {
+  // hasPlaceholder(), not includes(): the body placeholder accepts an optional length
+  // limit ({%mail_text_body_or_selected:2000%}) that a literal substring match would miss.
   return (typeof text === 'string') &&
-    (text.includes('{%mail_text_body_or_selected%}') || text.includes('{%mail_html_body_or_selected%}'));
+    (placeholdersUtils.hasPlaceholder(text, 'mail_text_body_or_selected') || placeholdersUtils.hasPlaceholder(text, 'mail_html_body_or_selected'));
 }
 
 // Methods to manage options, derived from: /options/mzta-options.js

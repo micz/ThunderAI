@@ -23,11 +23,16 @@ import {
 
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 import { mztaPrefs } from './mzta-prefs.js';
-import { mztaManaged, managedReady, ACCOUNT_MATCH_LOCAL } from './mzta-managed.js';
+import {
+  mztaManaged,
+  managedReady,
+  ACCOUNT_MATCH_LOCAL
+} from './mzta-managed.js';
 import { taLogger } from './mzta-logger.js';
+import { taStorage } from './mzta-storage.js';
 
 const sparks_min = '3.1.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
-const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
+const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it', 'ja'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
@@ -569,6 +574,24 @@ export function convertNewlinesToBr(text) {
   return globalThis.mztaLinesToHtml(text, { mode: 'br' });
 }
 
+// Cuts a text to about maxChars characters, preferring a word boundary near the end.
+// Used by the dynamic {%mail_text_body:N%} style placeholders to keep very long
+// emails inside the context window of small (local) models.
+// maxChars <= 0, a non-string input, or a text already within the limit is
+// returned untouched, so an invalid parameter degrades to "no limit".
+export function truncateText(text, maxChars) {
+  if (!(maxChars > 0) || typeof text !== 'string' || text.length <= maxChars) {
+    return text;
+  }
+  let cutPos = text.lastIndexOf(' ', maxChars);
+  // No usable word boundary in the last 10%: cut hard rather than losing the tail
+  // of the allowed window to a much earlier space.
+  if (cutPos < maxChars * 0.9) {
+    cutPos = maxChars;
+  }
+  return text.substring(0, cutPos).trimEnd() + ' [...]';
+}
+
 // Collapses the source newlines of an HTML string without turning them into markup.
 // In HTML the source newlines are not line breaks: the line structure is carried by
 // the tags (<div>, <p>, and any <br> already present in the body), so collapsing them
@@ -1066,7 +1089,12 @@ export function getAPIsInitMessageString(args = {}) {
   }
   let additional_message = '';
   if (additional_messages.length > 0) {
-    additional_message = additional_messages.map(msg => "<span class='info_obj'>" + esc(msg.label) + ":</span> " + esc(msg.value)).join("\n");
+    // A message with `items` is a section: its label on a line of its own, then one
+    // indented "label: value" line per item.
+    const line = (msg, indent = '') => indent + "<span class='info_obj'>" + esc(msg.label) + ":</span> " + esc(msg.value);
+    additional_message = additional_messages.map(msg => Array.isArray(msg.items)
+      ? ["<span class='info_obj'>" + esc(msg.label) + ":</span>", ...msg.items.map(item => line(item, '    '))].join("\n")
+      : line(msg)).join("\n");
   }
   if (additional_message !== '') {
     output += "\n" + additional_message;
@@ -1311,8 +1339,10 @@ export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = nu
   logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes));
 }
 
+// The values never logged: the API keys, and the extra request headers, which may
+// carry one (e.g. Azure's api-key).
 export function isAPIKeyValue(id){
-  return id.endsWith('_api_key');
+  return id.endsWith('_api_key') || id.endsWith('_extra_headers');
 }
 
 export function getConnectionType(prefs, prompt, prefix = null) {
@@ -1509,16 +1539,14 @@ export async function getLocalStorageUsedSpace(){
   return formatBytes(customprompts_space);
 }
 
-export async function getCacheStorageUsedSpace(){
-  let all = await browser.storage.local.get(null);
-  let cacheSpace = Object.entries(all)
-    .filter(([key]) => key.startsWith('msg:'))
-    .map(([key, value]) => key.length + JSON.stringify(value).length)
-    .reduce((acc, x) => acc + x, 0);
-  return formatBytes(cacheSpace);
+// The space taken by the per-message data (spam reports, summaries, translations): the sum of
+// the size field of every record of the three IndexedDB stores, read with a key cursor on their
+// size index (taStorage.getTotalSize()), formatted.
+export async function getMessageStorageUsedSpace(){
+  return formatBytes(await taStorage.getTotalSize());
 }
 
-function formatBytes(bytes, decimals = 2) {
+export function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const step = 1024;
   const suffixes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];

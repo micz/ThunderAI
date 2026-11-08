@@ -27,7 +27,11 @@
 import { integration_options_config, valid_connection_types } from '../../options/mzta-options-default.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import { isApiUsableConnection } from '../../js/mzta-utils.js';
-import { saveSpecialPromptTexts } from '../../js/mzta-prompts.js';
+import {
+    saveSpecialPromptTexts,
+    specialPromptNeedsJson,
+    checkPromptTextJson
+} from '../../js/mzta-prompts.js';
 import { getConnectionTypeLabel } from './connection-ui.js';
 import {
     seedFromGlobal,
@@ -137,6 +141,41 @@ export function bindConnPanelTint(prefix) {
 }
 
 /**
+ * For a special prompt whose feature parses a JSON answer (specialPromptNeedsJson()): check
+ * that its text still carries a valid JSON response format (checkPromptTextJson()), and say
+ * why not in a div.json_error created under the editor, as the connection panel does for its
+ * JSON fields. Advisory only, like those: Save stays available.
+ *
+ * The textarea gets only a red border-color, never a wider border: the placeholder highlight
+ * mirror behind it has the same 1px border box, and a 2px one would shift the text off it.
+ * Inline, so it beats the focus rule's accent colour. Returns the check to run on each change.
+ */
+function bindPromptJsonCheck(textarea, promptIds) {
+    if (!promptIds.some(id => specialPromptNeedsJson(id))) return () => {};
+    const errorBox = document.createElement('div');
+    errorBox.className = 'json_error';
+    errorBox.id = textarea.id + '_json_error';
+    errorBox.hidden = true;
+    (textarea.closest('.editor-wrap') || textarea).after(errorBox);
+
+    return () => {
+        let errorText = '';
+        // A text the policy enforces cannot be fixed here: flagging it would only be noise.
+        if (!promptIds.some(id => isEnforcedPromptText(id))) {
+            const result = checkPromptTextJson(textarea.value);
+            if (!result.found) {
+                errorText = browser.i18n.getMessage('prompt_json_error_missing');
+            } else if (result.error !== '') {
+                errorText = browser.i18n.getMessage('prompt_json_error_invalid') + ' ' + result.error;
+            }
+        }
+        textarea.style.borderColor = errorText === '' ? '' : 'var(--jsonError, #b3261e)';
+        errorBox.textContent = errorText;
+        errorBox.hidden = (errorText === '');
+    };
+}
+
+/**
  * Wire a special prompt text editor: the textarea with its Save and Reset buttons and its
  * optional "unsaved changes" note.
  *
@@ -151,6 +190,9 @@ export function bindConnPanelTint(prefix) {
  * disabled (lockEnforcedPromptText()), and both handlers return early on it: a control
  * re-enabled from the developer tools is not the same as the action being available. The
  * buttons' state goes through setDisabledRespectingManaged(), so no input can re-enable them.
+ *
+ * A prompt whose feature parses a JSON answer gets its text checked (bindPromptJsonCheck()) on
+ * load, on every input and on Reset, which dispatches an input.
  */
 export async function bindSpecialPromptEditor({
     textarea, saveBtn, resetBtn, unsavedEl = null, specialPrompts, promptIds, defaultMsgKey,
@@ -160,12 +202,14 @@ export async function bindSpecialPromptEditor({
     const defaultText = () => browser.i18n.getMessage(defaultMsgKey);
     const enforced = () => promptIds.some(id => isEnforcedPromptText(id));
     const showUnsaved = unsaved => { if (unsavedEl) unsavedEl.classList.toggle('hidden', !unsaved); };
+    const checkJson = bindPromptJsonCheck(textarea, promptIds);
 
     textarea.addEventListener('input', (event) => {
         setDisabledRespectingManaged(resetBtn, event.target.value === defaultText());
         const unchanged = event.target.value === prompt.text;
         setDisabledRespectingManaged(saveBtn, unchanged);
         showUnsaved(!unchanged);
+        checkJson();
     });
 
     resetBtn.addEventListener('click', () => {
@@ -198,4 +242,6 @@ export async function bindSpecialPromptEditor({
     setDisabledRespectingManaged(resetBtn, textarea.value === defaultText());
     // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
     await lockEnforcedPromptText(textarea, promptIds, [saveBtn, resetBtn], do_debug);
+    // Assigning .value fires no input: flag a text saved broken by an earlier session now.
+    checkJson();
 }

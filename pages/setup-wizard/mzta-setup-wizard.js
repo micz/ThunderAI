@@ -30,12 +30,14 @@ import {
   checkJsonFields,
   updateAnthropicModelCapabilityUI,
   updateOllamaModelCapabilityUI,
-  updateOpenAIModelCapabilityUI
+  updateOpenAIModelCapabilityUI,
+  updateEndpointNotes
 } from '../_lib/connection-ui.js';
 import {
   isTestableConnection,
   runConnectionTest,
-  setConnTestState
+  setConnTestState,
+  showConnTestResult
 } from '../../js/mzta-connection-test.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
@@ -417,6 +419,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateOllamaModelCapabilityUI();
   updateOpenAIModelCapabilityUI();
 
+  // The notes under the custom endpoint host fields, for the restored addresses: an
+  // unencrypted server not yet allowed, a server known to redirect.
+  updateEndpointNotes();
+
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ['<all_urls>'] });
 
   i18n.updateDocument();
@@ -468,11 +474,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!isTestableConnection(state.provider)) return;
     setConnTestState('loading');
     let result = await runConnectionTest(state.provider);
-    if (result.status === 'ok') {
-      setConnTestState('ok', result.apiName);
-    } else {
-      setConnTestState('error', result.message);
-    }
+    showConnTestResult(result);
     // Same as the options page: a successful test may be what granted the host
     // permission, so re-probe the model capabilities now that /api/show is reachable.
     if (state.provider === 'ollama_api' && result.status === 'ok') {

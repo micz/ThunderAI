@@ -14,16 +14,18 @@ The contract is the spec, as everywhere in the suite:
   … on Message Display" flows; "Per-message pipelines in `processEmails()`", "Resolving a message",
   "Stale-result guard", "In-flight jobs (`taJobRegistry`)", "Context-menu actions", "Unreachable
   message pane", "Batch cancellation (`taBatchController`)"; "Background Preference Snapshot and
-  Menu Invalidation" (its four invariants) and "Per-Message Data Storage";
+  Menu Invalidation" (its four invariants), "Per-Message Data Storage" and, in "API WebChat", the
+  background's side of the "Ready handshake";
 - [`claude-spec/02-prompts.md`](../../claude-spec/02-prompts.md): "Menu System" ("Popup Menu",
   "Context Menu", "Special Prompt Visibility Dependencies"), "Missing special prompts", "Add tags:
-  extra prompt statements" (which tags land where), "Summarize" and "Translate";
+  extra prompt statements" (which tags land where), "Add tags: per-account settings", "Summarize"
+  and "Translate";
 - [`claude-spec/04-api-integrations.md`](../../claude-spec/04-api-integrations.md): "Worker Lifecycle
   & Timeout", "Thinking in special commands", "Configuration Validation" (the callers' side),
   "Batch cancellation (user-triggered stop)" and its rate-limit stop;
 - [`claude-spec/05-options.md`](../../claude-spec/05-options.md): the rows of the preferences these
   flows read (`spamfilter_threshold`, `add_tags_exclusions`, `batch_max_concurrency`,
-  `summarize_max_messages`, …).
+  `summarize_max_messages`, `add_tags_account_settings`, …).
 
 How to run the suite, the two levels, the core mock and the known-issue mechanism are in the
 general [`tests/README.md`](../README.md). Paths below are relative to `tests/`. Everything runs
@@ -35,7 +37,7 @@ with **no managed policy**.
 node --test "tests/background/*.test.mjs"     # this area only, from the repository root
 ```
 
-Level 1 only: nothing to install, no jsdom. The area imports only `helpers/core/` (and its own
+Level 1 only (after `npm ci`, see [`../README.md`](../README.md)): no jsdom. The area imports only `helpers/core/` (and its own
 `helpers/known-issues/background.mjs`), and has **no plugin**: the APIs the core mock lacks are added
 per context (see "The API models"). The run takes about 16 s (360 tests); nothing waits for real
 time: the debounce, the worker timeout and the batch yield points run on node:test's mock timers.
@@ -46,15 +48,18 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 |---|---|---|
 | `01-job-registry` | `taJobRegistry`: one entry per kind and message, synchronous registration, the job body not run inside `start()`, the promise never rejecting (thrown, rate-limited, synchronous throw, no outcome), the entry removed on every path, a retry in the same session, joiners sharing the outcome, `invalidate()` / `revive()`, the log lines | 01 "In-flight jobs" |
 | `02-batch-controller` | `taBatchController`: tokens, `endBatch()`'s snapshot and the reset on the last exit, a cancel flagging the active batches only, later batches unaffected, overlapping batches and one notice, `rate_limit` never overwritten, the longest `retryAfterMs`, `getStatus()`, independence from `WorkingLevel` | 01 "Batch cancellation", 04 "Batch cancellation" |
-| `03-working-status-exclusions` | `taWorkingStatus` (level, icons, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 05 `add_tags_exclusions` |
-| `04-storage` | `taStorage`: the `msg:<id>` key and schema, the three fields in one record, force / no force, deleting a field and the last field, `deleteRecord()`, `getAll*Records()`, age-based `cleanup()`, `clearAllRecords()`, the preferences never touched, the per-record write queue (concurrent fields, delete + write, two instances, order, other messages in parallel) | 01 "Per-Message Data Storage" |
-| `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, records written by older versions, removal, the 100-entry truncation (as methods: the background calls only the spam one), `saveError()` metadata, `getAllReportData()` → `{}`, clearing one field only, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
+| `03-working-status-exclusions` | `taWorkingStatus` (level, icons, the ThunderAI Privacy idle icon, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 09 "Activation switch", 05 `add_tags_exclusions` |
+| `04-storage` | `taStorage` on IndexedDB: the database, its stores and indexes, the record fields (`createdAt`, `size` without itself, no `ts`), the `failed_createdAt` index, one store per type, `getRecord()`, the key on the Message-ID alone, force / no force, deleting one type, `deleteRecord()`, three types written together, an empty Message-ID never saved, every result saved (no switch per type), a failed write logged and rejected, `getPage()` / `count()` (order, paging, offset 0), the size total, `clear()` / `clearAllRecords()`, the cleanup lock, the cleanup by age, by count, both, per type, `0` = no limit, from the preferences, and its schedule (at once, 2 hours, 24 hours, one timer, a failed run, `{ time, removed }` stored), eviction (a deleted database answers as empty and is created again, one without its stores deleted and created again, a database that cannot be opened: empty reads, resolved deletes, a rejected write; an aborted transaction leaves no unhandled rejection); the `storage.local` mirror (the prefixes, a write in both places with the same record, mirror first, no routine path enumerating `storage.local`, the deletes, the cleanup with one `remove` per type, `clear()` / `clearAllRecords()`, a failed IndexedDB write keeping the mirror key, a failed mirror write never reaching IndexedDB, force false seeing the mirror); `reconcileWithMirror()`, one way (a mirror-only record restored, an IndexedDB-only one removed and never copied back, a newer mirror copy put, a newer IndexedDB copy kept, `storage.local` never written, nothing changed when aligned, a removal skipped when the record changed since, a value that is not a record left alone with its IndexedDB record, the lock, a failure with nothing half-written), `reconcileIfNew()` after an eviction and after a recreation, and the background's rebuild watch (last: it cannot be turned off) with the reads asked meanwhile waiting for it | 01 "Per-Message Data Storage" |
+| `42-storage-management` | what the storage management page uses (#956): `failed` per type (the skipped translation a result, `SPAM_ERROR_VALUE` in `buildError()`, the size counting it, kept by the rebuild), the error index ranges, `getStats()` (and empty when unreachable), `getEntryKeys()` with no record loaded, the cleanup's error rule and its order (errors, age, count), `0` disabling every rule, `previewCleanup()` equal to `cleanup()` over a grid of limits and reading only (no cursor, no delete, no lock), `deleteErrors()`, `deleteOlderThan()`, the four bulk methods under the lock, the mirror helper (a key rewritten between the cursor and the removal kept, never `get(null)`), `removeEntries()`, `fillMetadata()` (filled with the same `createdAt` and a recomputed `size`, skipped when the `createdAt` changed in either place or the metadata is there), `buildMessageMetadata()`, `getLastCleanup()`, "Apply rules now" storing nothing, the writes and the single deletes under the lock, the lots (`message_storage_batch_size`, an invalid size read as 100, one hold per lot, the cleanup in lots of 2 equal to the preview, a write asked during the first lot ending before the operation and kept, an emptying or `deleteErrors()` keeping what was written after it started, a failure in a later lot keeping the lots done and carrying `error.removed`, the realignment's read then its lots), the schedule off with `message_storage_cleanup_auto`, the background's listener on that switch (cut out as an extra root, `setupCleanupScheduleListener`), a run in progress when stopped setting no next run | 01 "Per-Message Data Storage" |
+| `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, the metadata saved with summaries and translations (and empty without it), records written by older versions (moved at the start), removal, `saveError()` metadata, the spam log pages, a failed write rejecting, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
+| `06-addtags-account-settings` | `js/mzta-addtags-account-settings.js` on its own: the nine override keys, the getters on a missing or malformed value, the setter's validation key by key (unknown keys, wrong types, blank `prompt_text`, the valid edge values), an empty entry removing the account, copies (nothing shared with the caller, nothing handed out mutated), `addTags_resolveAccountPrefs()` (a fresh copy, only the keys present, `prompt_text` never, a malformed value ignored, a locked key skipped), `addTags_applyAccountPrompt()` (itself / a copy / ignored when `_text_by_policy`), both ignoring every entry under `_disable_add_tags_account_settings` | 02 "Add tags: per-account settings"; 05 `add_tags_account_settings`; 08a "_disable_add_tags_account_settings" |
 | `10-special-command` | `mzta_specialCommand` after `initWorker()`: the prompt posted, the answer accumulated, `newRetryAttempt` / `messageSent` ignored, thinking tokens and `<think>` blocks (closed, leading whitespace, unterminated), errors with `rateLimited` / `retryAfterMs`, a worker crash, the timeout (the preference, the default, after a 429, after a 503, never after an answer), `dispose()` on every path | 04 "Worker Lifecycle & Timeout", "Thinking in special commands", #batch-stop-on-rate-limit |
 | `20-receive-summary-translation` | `summarize_auto = 3` / `translate_auto = 3`: the listener registration, what is stored on which message, the prompts, the broadcast to the displaying tabs, the ids, the sanitizer on the way out, one worker per prompt, the cache hit, the same id twice in a batch, the skipped folders and archives, several messages | 01 "Background Summary / Translation on Email Receive", "Per-message pipelines", "Shared guards", "In-flight jobs" |
 | `21-sender-list` | the sender list on reception and on open: exact, domain, subdomain, other senders, no tab, skipped folders, the cached summary, both triggers = one call, an unusable connection, a legacy `['']` list | 01 "Auto-Summarize by Sender Address List" |
 | `22-spam-rules` | the allow / block lists and the address book: every precedence case, never moving an allow-list report (threshold 0), the pipeline stopped by a block, a manual check, legacy `['']` lists | 01 "Spam filter sender rules" |
 | `23-spam-actions` | the AI verdict: moved to junk (marked, then moved), the threshold, the panels, an account with no junk folder, the account list, skipped folders, a message gone after the analysis, `getFull()` failing, a non-JSON answer, serialized moves, the manual path, `spamfilter_only_inbox`, the outcome only after the report is stored | 01 "Per-message pipelines", "Spam filter sender rules", "Shared guards" |
 | `24-add-tags` | automatic tagging and the context-menu Add tags: tags assigned (existing and new), existing tags kept, exclusions, not tagging a spam message, spam first, only-inbox and sent, one new tag from parallel pipelines, the right tags on the right message, the selection cap, force existing, include sent, an unusable connection | 01 "Per-message pipelines", "Shared guards", "Add tags selection cap"; 02 "Add tags: extra prompt statements" |
+| `24b-add-tags-accounts` | the per-account Add Tags settings at run time, an entry for one of two accounts: on the automatic path, the context menu and the popup (`act()`, driven through `executeMenuAction()` with the content script's reads answered), the account's max number, language, force language, force existing, exclusions and exact match, the use list (automatic path only, never on the popup), the prompt text (the batch's memoized prompt and the menu entry never mutated), a malformed value ignored; `assign_tags` with the account's exclusions (the header not read with no settings), `addtags_get_exclusion_prefs` with a `messageId` (effective values, `exclusions_account_id`), `addtags_set_exclusions` with and without `accountId`; a policy lock (simulated by stubbing `mztaManaged`) and an enforced Add Tags text winning over the overrides; `_disable_add_tags_account_settings` (stubbed the same way) ignoring every entry on every path, the dialog commands included, the entry kept | 02 "Add tags: per-account settings", "Add tags: extra prompt statements"; 05 `add_tags_account_settings`; 08 "The allowlist"; 08a "_disable_add_tags_account_settings" |
 | `25-inline-summary` | `initSummary` / `triggerSummaryGeneration` / `refreshSummary` / `removeSummary` / `getDisplayedMessageId`: every `summarize_auto` mode, both display modes, the cache, stale results, a deletion while generating, delete-then-generate-again, an unreachable pane | 01 "Inline Summary on Message Display", "Stale-result guard", "In-flight jobs", "Unreachable message pane" |
 | `26-inline-translation` | the same for the translation: the target language and its fallback, status `-1`, HTML / plain text through the sanitizer, no language configured | 01 "Inline Translation on Message Display", 02 "Translate" |
 | `27-dedup` | joining across callers: the batch joining a manual summary, the panel joining the batch's summary and translation, the batch joining a manual spam Refresh (moved once), `checkSpamReport` joining, the context menu and the batch sharing add_tags, overlapping batches, the working level | 01 "In-flight jobs" |
@@ -65,10 +70,14 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `32-menu-coalescing` | invariant 4: three rebuilds → one plus one trailing rerun, the newest arguments, every caller waiting for the final state, one click listener, the three real triggers together | 01 "Background Preference Snapshot and Menu Invalidation" |
 | `33-context-menu` | the context-menu special actions: the selection of the clicked tab (and its fallback), the UI tab, inline / other message displayed / unreachable pane / several messages / the cap, Translate's UI tab | 01 "Context-menu actions", "Inline Summary" (context menu), "Unreachable message pane" |
 | `34-config-errors` | a missing API key on every automatic feature: no worker, nothing stored, each panel (generic for add_tags), nothing in progress, the retry once fixed | 04 "Configuration Validation"; 01 "In-flight jobs" |
-| `35-compose-commands` | `chatgpt_replaceSelectedText` / `chatgpt_replyMessage`: what the compose script is sent, HTML through `sanitizeBlockHtml` (it ends in `execCommand('insertHTML')`), plain text converted and never sanitized (`stripHtmlKeepLines` a stand-in of this file: it needs a DOMParser) | 01 "Replacing text in a compose window", "Writing a reply" |
+| `35-compose-commands` | `chatgpt_replaceSelectedText` / `chatgpt_insertAtCaret` / `chatgpt_replyMessage`: what the compose script is sent, HTML through `sanitizeBlockHtml` (it ends in `execCommand('insertHTML')`), plain text converted and never sanitized (`stripHtmlKeepLines` a stand-in of this file: it needs a DOMParser); a menu prompt with action `"3"` on a compose tab sends `saveCaret` before any read, no other prompt or tab does (the run stopped at the first read with `m.tabAnswer`) | 01 "Replacing text in a compose window", "Inserting at the cursor in a compose window", "Writing a reply" |
 | `36-special-show-in` | the shipped `show_in` of the special prompts, from a fresh profile: summarize and translate (`"both"`) handed to the popup for a message tab and in the context menu, the spam filter (`"context"`) only in the latter; the popup running summarize / translate; feature off or a non-API connection: in neither menu; a saved `"context"` kept, never migrated | 02 "User Properties", "Shipped menus of the special prompts", "Special Prompt Visibility Dependencies" |
 | `37-permission-reconcile` | the permission map; the reconciliation's permission rule for every gated preference (missing → off, granted → on, at startup and on a storage change), with a specific integration, the sub-option alone, Sparks absent, locked keys skipped (simulated by stubbing `mztaManaged`), the log line; `permissions.onRemoved` (a shared permission, `addressBooks`, `clipboardRead`, host permissions only, a locked key) | 01 "Feature permissions" |
 | `38-permission-guards` | the runtime guards: automatic and context-menu add_tags / spam filter without their permissions (one red panel per run, the other features go on), the address book rule skipped with one blue notice (batch and Refresh), `assign_tags` blocked and a tag that cannot be created, `createTag()` / `assignTagsToMessage()` rejecting, the popup Add tags and calendar-from-clipboard menu actions refused with their alert | 01 "Feature permissions" |
+| `39-context-menu-multi` | several messages in the context menu: items created enabled, only the four multi-message prompts kept enabled with two messages or a paginated MessageList (pages not fetched), all enabled again with one, update and refresh only on a change, other contexts left alone, a closed or replaced showing not refreshed, the parent disabled when no item is left enabled, a custom prompt saved with `allow_multi` still disabled | 02 "Context Menu" ("Several messages", "Built-in-only fields") |
+| `40-chat-window-ready` | the chat window's ready listener (`addReadyListener()` in `openChatGPT()`, an extra root): for each of the five API providers and ChatGPT Web, one `runtime.onMessage` and one `windows.onRemoved` listener while the window has not answered, both removed on a usable configuration (`api_send` / `chatgpt_send`), on each empty required field (`api_error`), and on the window closed first (a late ready message is then not answered); another window closing changes nothing; two windows waiting at once | 01 "Ready handshake" |
+| `41-storage-flows` | what the background saves and when saving fails: the metadata of summaries and translations (the jobs, incoming mail, the webchat save, a message not found), a result whose save failed still shown with `storage_error` (summary, translation, manual spam check, webchat save), an automatic run only logging it; a generated summary in its mirror key; the `reconcileMessageStorage` command (its counts, its error message) | 01 "Per-Message Data Storage" |
+| `43-auto-setting-changed` | `summarize_auto` / `translate_auto` moved from 3 to 1 while an incoming batch runs one message at a time: the call in flight finishes, nothing else is requested (not the in-flight message's translation, not the queued messages), nothing stored for the queued ones, the manual buttons on open | 01 "Data Flow: Background Summary on Email Receive", "Per-message pipelines" |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/background.mjs` | harness |
 | `99-harness-scope` | the statement splitter and the cut (small cases and the real file), the fake Worker, the strict API models | harness |
 
@@ -76,10 +85,13 @@ Helpers, named without the test suffix so the level-1 glob never runs them:
 
 - `scope.mjs`: cuts and runs the background's code (see below);
 - `context.mjs`: `bgContext()` (a background started the way the background starts) and
-  `moduleContext()` (the modules alone), `ROOTS`, `STARTUP`, the stand-ins;
+  `moduleContext()` (the modules alone), `ROOTS`, `STARTUP`, the stand-ins. Both run the real
+  `migrateMessageDataToIndexedDB()` when the seeded `storage.local` holds `msg:` records, as the
+  background's start does, so a test seeds stored data the way an older version left it;
 - `apis.mjs`: the API models; `fake-worker.mjs`: the scripted Worker;
 - `flows.mjs`: what the flow files share (`receive()`, `fromTab()`, `clickContextMenu()`,
-  `setPrefs()`, `drive()`, `featureResponder()`, `assertClean()`…).
+  `setPrefs()`, `drive()`, `featureResponder()`, `assertClean()`, `record()` - async: the stored
+  data of a message, `taStorage.getRecord()`…).
 
 No fixture file: each test seeds what it needs in the context's options.
 
@@ -172,9 +184,12 @@ modules, then loads the policy with no policy installed, as the background does)
   pane, "Invalid tab ID" on a missing tab), `messageDisplay.getDisplayedMessage`,
   `compose.getComposeDetails` (a `messageCompose` tab's `isPlainText`) and `compose.beginReply` (a
   loaded reply tab of the model's `replyPlainText` format, recorded in `replies`),
-  `mailTabs.getSelectedMessages`, the two action icons, `windows.create` (the chat window opening);
+  `mailTabs.getSelectedMessages`, the two action icons, `windows.create` (the chat window opening)
+  and `windows.onRemoved` (a test closes a window by calling its listeners), `tabs.executeScript`
+  (the ChatGPT Web injection: recorded in `calls`, never run);
 - **menus**: `removeAll`, `create` (with its callback; a duplicate id is recorded in `menuErrors`,
-  which is how an interleaved rebuild would show), `onClicked`;
+  which is how an interleaved rebuild would show), `update` (sets the item's props; a missing id
+  rejects and is recorded in `menuErrors`), `refresh`, `onClicked`, `onShown`, `onHidden`;
 - `permissions.contains` and `permissions.onRemoved`, `contacts.quickSearch`. The optional API
   permissions granted are `m.permissions` (default `DEFAULT_PERMISSIONS`: every one a feature
   needs); `messages.tags.create`, `messages.update`, `messages.move` and `contacts.quickSearch`
@@ -219,16 +234,23 @@ None today.
   the sanitizer and `buildSummaryPrompt()`'s own body reading need a DOM (compose area). The model's
   messages have a text/plain part only.
 - **The chat window** (`openChatGPT()` past `windows.create`, `api_webchat/`): the webchat area; here
-  only that the window opens, for which messages. The regular prompts' menu actions
-  (`executeMenuAction()`) and the popup's Add tags dialog path (`act()` in `js/mzta-menus.js`, the
-  `getTags` confirmation) are not run.
+  only that the window opens, for which messages, and the lifetime of its ready listener
+  (`40-chat-window-ready`: what the background answers the ready message, not what the window does
+  with it). The regular prompts' menu actions
+  (`executeMenuAction()`) are not run; of the popup's Add tags path (`act()` in `js/mzta-menus.js`)
+  only what `24b-add-tags-accounts` needs: the prompt it sends and the `getTags` it hands the dialog,
+  not the dialog itself.
 - **The compose-window commands** past what they send the compose tab (`35-compose-commands`):
   the `replaceBody()` fallback of a reply, the retry while the compose script is not loaded;
-  `chatgpt_close`, `chatgpt_saveSummary`, `assign_tags`,
-  `addtags_get_exclusion_prefs` / `addtags_set_exclusions` (compose and ui areas' callers).
+  `chatgpt_close`, `chatgpt_saveSummary`; `assign_tags`, `addtags_get_exclusion_prefs` /
+  `addtags_set_exclusions` only for their per-account behaviour (`24b-add-tags-accounts`) and the
+  permission guard (`38-permission-guards`): their callers are the compose and ui areas'.
 - What the background does at startup besides `STARTUP` (see above) and the keyboard shortcut.
-- **The real Thunderbird storage and its timing**: the core mock resolves at once; the write races of
-  a slow storage are tested with direct concurrent calls (`04-storage`), not through a flow.
+- **The real Thunderbird storage and its timing**: the core mock resolves at once, and IndexedDB is
+  fake-indexeddb (in memory, no quota, no eviction): the write races are tested with direct
+  concurrent calls (`04-storage`), not through a flow, and a full disk only as an injected failure.
+- **The scheduled cleanup at startup**: `taStorage.startCleanupSchedule()` is not a `STARTUP`
+  statement; the schedule is tested on the module (`04-storage` `schedule-*`).
 
 ## Under-specified
 
@@ -243,9 +265,9 @@ says how (fixed, documented as it is, or left to a separate job).
    summarized. *Decided:* the target is to stop only the features that use the connection that hit
    the rate limit, in every batch; a separate job, not pinned by a test here until then.
 2. *(resolved: concurrent writes to one `msg:` record used to drop each other's field, and the spam
-   job did not await its report. `taStorage` now queues the writes of each record, and the job
-   awaits the save; spec 01 "Per-Message Data Storage" says so, `04-storage` `concurrent-*` /
-   `queue-*` and `23-spam-actions` `outcome-after-save` test it.)*
+   job did not await its report. The job awaits the save (`23-spam-actions` `outcome-after-save`);
+   since #955 each type has its own IndexedDB store, so writers of different types no longer share a
+   record (`04-storage` `concurrent-types`).)*
 3. *(resolved: the messages a Stop or a rate limit left unprocessed are not resumed, by design; spec 01
    "Batch cancellation", "What a stop leaves behind", says what stays available. `28-batch-stop`
    `not-resumed` / `button-on-open` test it.)*
@@ -270,3 +292,17 @@ says how (fixed, documented as it is, or left to a separate job).
     panel more than once - the panel buttons, Refresh, the context-menu inline Summarize, a click
     joining a running job - and that the content script draws one. `33-context-menu` asserts the
     two sends of the context-menu path.)*
+## AI processing companion hooks
+
+`11-ai-processing.test.mjs` and `12-processing-worker.test.mjs` cover the contract
+in `claude-spec/09-ai-processing.md` against `processing-companion.mjs`, a scripted
+external add-on, not a detector. They run the real broker/adapter: the activation
+switch (`ai_processing_enabled`, set by the fake's `activate()`; `getSetting` /
+`setSetting` / `settingChanged`, the policy lock), the model readiness (`readinessChanged`
+from the fake's `readinessChanged()`, `downloadModel` / `openSettings`, the
+`ai_processing_model_autodownload` policy once per instance, again after a model that was
+ready is lost), discovery and `probe`, validation,
+fail-closed blocking while switched on, progress/timeout, Stop, inactive forwarding,
+response buffering and provider/UI isolation. `bgContext`
+models Privacy absent independently of Sparks' `external` stub; use `processor`
+to opt in to a fake Privacy responder. No runtime/model dependency is needed.

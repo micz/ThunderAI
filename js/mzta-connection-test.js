@@ -28,6 +28,15 @@ import { Ollama } from './api/ollama.js';
 import { OpenAIComp } from './api/openai_comp.js';
 import { prepareOriginURL } from './mzta-utils.js';
 import { MANAGED_SECRET_MARKER } from './mzta-managed.js';
+import {
+    endpointProblemMessage,
+    resolveEndpointAccess
+} from './mzta-endpoint-approvals.js';
+import { parseEndpoint } from './mzta-endpoint-policy.js';
+import {
+    redirectTarget,
+    saveEndpointRedirect
+} from './mzta-endpoint-redirects.js';
 
 const CONN_TEST_TIMEOUT_MS = 10000;
 
@@ -39,7 +48,8 @@ function _val(id) {
 // Provider registry: for each testable connection_type, how to build the client from the
 // current form fields (each callback gets the field-id prefix: '' on the options page and
 // in the wizard, e.g. 'summarize_' on the feature pages), its display-name i18n key, the id
-// of its API key field without the prefix (if any), and how to obtain the needed host
+// of its API key field without the prefix (if any), the id of its host field for a custom
+// endpoint (checked by js/mzta-endpoint-approvals.js), and how to obtain the needed host
 // permission. chatgpt_web is intentionally absent (no testable endpoint).
 const TESTABLE = {
   chatgpt_api: {
@@ -69,9 +79,11 @@ const TESTABLE = {
   ollama_api: {
     nameKey: 'prefs_Connection_type_Ollama_API',
     keyId: 'ollama_api_key',
-    makeClient: (p) => new Ollama({
+    hostId: 'ollama_host',
+    makeClient: (p, approvedOrigins) => new Ollama({
       host: _val(p + 'ollama_host'),
       api_key: _val(p + 'ollama_api_key'),
+      approved_insecure_origins: approvedOrigins,
     }),
     // /api/version rather than the default fetchModels() (/api/tags): it answers
     // whatever is installed, so it separates "server unreachable / CORS not
@@ -82,12 +94,15 @@ const TESTABLE = {
   openai_comp_api: {
     nameKey: 'prefs_Connection_type_OpenAI_Comp_API',
     keyId: 'openai_comp_api_key',
-    makeClient: (p) => {
+    hostId: 'openai_comp_host',
+    makeClient: (p, approvedOrigins) => {
       const use_v1_el = document.getElementById(p + 'openai_comp_use_v1');
       return new OpenAIComp({
         host: _val(p + 'openai_comp_host'),
         apiKey: _val(p + 'openai_comp_api_key'),
         use_v1: use_v1_el ? use_v1_el.checked : true,
+        extra_headers: _val(p + 'openai_comp_extra_headers'),
+        approved_insecure_origins: approvedOrigins,
       });
     },
     requestPermission: async (p) => _requestHostPermission(_val(p + 'openai_comp_host')),
@@ -117,6 +132,11 @@ export function isTestableConnection(connType) {
 
 // Interpret a fetchModels() result / thrown error into a user-facing message key.
 function _mapError(data) {
+  // A redirect that could not be followed, or that ended in an error: say so, and what
+  // to enter instead.
+  if (data && data.is_redirect) {
+    return browser.i18n.getMessage('api_error_redirect');
+  }
   // Network / CORS / thrown exception (no HTTP response reached us).
   if (data && data.is_exception) {
     return browser.i18n.getMessage('connTest_error_network');
@@ -149,7 +169,9 @@ function _mapError(data) {
 
 // Runs the connectivity check for the current form values of `connType`, read from the
 // fields whose ids start with `idPrefix`.
-// Returns { status: 'ok', apiName } or { status: 'error', message }.
+// Returns { status: 'ok', apiName, redirectTo } or { status: 'error', message };
+// redirectTo is the address a custom endpoint redirected to ('' when it did not).
+// showConnTestResult() shows it on a strip.
 // Non-destructive: reads form fields only, saves nothing.
 export async function runConnectionTest(connType, idPrefix = '') {
   const entry = getTestableConnection(connType);
@@ -165,13 +187,34 @@ export async function runConnectionTest(connType, idPrefix = '') {
     return { status: 'error', message: browser.i18n.getMessage('connTest_managed_api_key') };
   }
 
+  // A custom endpoint that cannot be used at all (not a URL, credentials in it) ends here,
+  // before anything is asked or sent [#1000]. Synchronous on purpose: see below. An empty
+  // host is left to the permission step, which reports it as before.
+  const host = entry.hostId ? _val(idPrefix + entry.hostId) : '';
+  const hostSet = host.trim() !== '';
+  if (hostSet) {
+    const parsed = parseEndpoint(host);
+    if (!parsed.ok) return { status: 'error', message: endpointProblemMessage(parsed.problem) };
+  }
+
   // Ensure we have the host permission the request needs (mirrors the fetch-models buttons).
+  // permissions.request() is only allowed from a user input handler: it must be the first
+  // await after the click, so nothing that reads the storage may come before it.
   const granted = await entry.requestPermission(idPrefix);
   if (!granted) {
     return { status: 'error', message: browser.i18n.getMessage('Optional_Permission_Denied_Model_Fetching') };
   }
 
-  const client = entry.makeClient(idPrefix);
+  // The test is the user's explicit action, so an unencrypted remote server not yet
+  // allowed is asked about here, still before anything is sent [#1000].
+  let approvedOrigins = [];
+  if (hostSet) {
+    const access = await resolveEndpointAccess(host, { ask: true });
+    if (!access.ok) return { status: 'error', message: access.message };
+    approvedOrigins = access.approvedOrigins;
+  }
+
+  const client = entry.makeClient(idPrefix, approvedOrigins);
 
   const timeout = new Promise((resolve) =>
     setTimeout(() => resolve({ __timeout: true }), CONN_TEST_TIMEOUT_MS));
@@ -192,21 +235,42 @@ export async function runConnectionTest(connType, idPrefix = '') {
     return { status: 'error', message: browser.i18n.getMessage('connTest_error_network') };
   }
 
+  // A custom endpoint reports whether it redirected [#1000]: saved for the note under its
+  // host field, which the panel shows from the storage.
+  if (entry.hostId) await saveEndpointRedirect(client.host, client.redirect_info);
+
   if (data && data.__timeout) {
     return { status: 'error', message: browser.i18n.getMessage('connTest_error_timeout') };
   }
 
   if (data && data.ok) {
-    return { status: 'ok', apiName };
+    // Reached through a redirect [#1000]: the test is a GET, which every redirect keeps,
+    // so it cannot tell whether the chat (a POST) survives it: the strip says so.
+    const info = entry.hostId ? client.redirect_info : null;
+    const redirectTo = info?.redirected === true ? redirectTarget(client.host, info.url, info.from) : '';
+    return { status: 'ok', apiName, redirectTo };
   }
 
   return { status: 'error', message: _mapError(data || {}) };
 }
 
+// Show the result of runConnectionTest() on a strip: green when the server answered,
+// amber when it answered through a redirect, red otherwise.
+export function showConnTestResult(result, strip = document.getElementById('mzta_conn_test')) {
+  if (result.status !== 'ok') {
+    setConnTestState('error', result.message, strip);
+  } else if (result.redirectTo) {
+    setConnTestState('warning', browser.i18n.getMessage('connTest_ok_redirect', [result.apiName, result.redirectTo]), strip);
+  } else {
+    setConnTestState('ok', result.apiName, strip);
+  }
+}
+
 // Update a connection test strip (.conn_test_strip): visual state, status text and
 // action link. `strip` defaults to the single #mzta_conn_test of the options page, the
 // setup wizard and the feature pages; Custom Prompts passes the strip of one form.
-// state: 'idle' | 'loading' | 'ok' | 'error'. message: ok→api name, error→detail.
+// state: 'idle' | 'loading' | 'ok' | 'warning' | 'error'. message: ok→api name,
+// warning→the whole text, error→detail.
 export function setConnTestState(state, message, strip = document.getElementById('mzta_conn_test')) {
   const textEl = strip?.querySelector('.conn_test_text');
   const linkEl = strip?.querySelector('.conn_test_link');
@@ -219,6 +283,11 @@ export function setConnTestState(state, message, strip = document.getElementById
       break;
     case 'ok':
       textEl.textContent = browser.i18n.getMessage('connTest_ok', [message || '']);
+      linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
+      linkEl.style.display = '';
+      break;
+    case 'warning':
+      textEl.textContent = message || '';
       linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
       linkEl.style.display = '';
       break;

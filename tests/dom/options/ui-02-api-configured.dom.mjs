@@ -45,6 +45,7 @@ const STORED = {
     chatgpt_win_left: null,
     max_prompt_length: 12345,
     special_command_timeout: 30000,
+    api_stream_idle_timeout: 240000,
     batch_max_concurrency: 4,
     do_debug: true,
     hide_thinking: false,
@@ -107,7 +108,7 @@ k.test('restore-ui', S_UI, 'every stored preference is shown at load', () => {
     for (const id of ['default_sign_name', 'default_chatgpt_lang', 'reply_type', 'diff_granularity']) {
         assert.equal($('#' + id).value, STORED[id], id);
     }
-    for (const id of ['chatgpt_win_height', 'chatgpt_win_width', 'max_prompt_length', 'special_command_timeout', 'batch_max_concurrency']) {
+    for (const id of ['chatgpt_win_height', 'chatgpt_win_width', 'max_prompt_length', 'special_command_timeout', 'api_stream_idle_timeout', 'batch_max_concurrency']) {
         assert.equal($('#' + id).valueAsNumber, STORED[id], id);
     }
     for (const id of ['do_debug', 'hide_thinking', 'chat_show_usage_data', 'dynamic_menu_force_enter', 'placeholders_use_default_value', 'chatgpt_win_save_position']) {
@@ -167,6 +168,28 @@ k.test('json-saved-anyway', S_GLOBAL, 'a malformed extra body is still saved as 
     const w = await writesDuring(() => userSets(ctx, $('#chatgpt_extra_body'), '{"b": '));
     assert.equal(w.at(-1)?.items.chatgpt_extra_body, '{"b":');
     assert.match($('#chatgpt_extra_body').style.border, /red/);
+});
+
+k.test('json-extra-headers', S_ADV, 'the extra headers field names the first header that would not be sent, never its value', async () => {
+    const field = $('#openai_comp_extra_headers');
+    const box = $('#openai_comp_extra_headers_error');
+    for (const [value, key, name] of [
+        ['{"x bad": "v"}', 'prefs_extra_headers_error_name', 'x bad'],
+        ['{"x-ok": "v", "Host": "h"}', 'prefs_extra_headers_error_forbidden', 'Host'],
+        ['{"x-n": 1}', 'prefs_extra_headers_error_not_string', 'x-n'],
+        ['{"x-v": "a\\nb"}', 'prefs_extra_headers_error_value', 'x-v'],
+    ]) {
+        await userSets(ctx, field, value);
+        assert.match(field.style.border, /red/, value);
+        assert.equal(box.hidden, false, value);
+        assert.equal(box.textContent, msg(key, [name]), value);
+    }
+    await userSets(ctx, field, '[1]');
+    assert.equal(box.textContent, msg('prefs_extra_body_error_not_object'));
+    await userSets(ctx, field, '{"x-opencode-session": "s"}');
+    assert.equal(field.style.border, '');
+    assert.equal(box.hidden, true);
+    await userSets(ctx, field, '');
 });
 
 k.test('adv-provider-rows', S_ADV, 'the advanced table shows only the stored provider\'s rows', () => {

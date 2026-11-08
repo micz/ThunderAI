@@ -31,9 +31,22 @@ import {
     supportsUsageData
 } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
-import { buildChatBubbleIcon } from './svgIcons.js';
+import {
+    buildChatBubbleIcon,
+    buildShieldIcon
+} from './svgIcons.js';
 import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import {
+    createProviderWorker,
+    ProcessingWorker
+} from '../js/mzta-processing-worker.js';
+import { resolveEndpointAccess } from '../js/mzta-endpoint-approvals.js';
+import { saveEndpointRedirect } from '../js/mzta-endpoint-redirects.js';
+import {
+    isCredentialHeader,
+    parseExtraHeaders
+} from '../js/api/api-utils.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -118,7 +131,22 @@ const worker_path_map = {
 const worker_path = Object.hasOwn(worker_path_map, integration) ? worker_path_map[integration] : null;
 
 if (worker_path) {
-    worker = new Worker(worker_path, { type: 'module' });
+    let closed = false;
+    window.addEventListener('pagehide', () => {
+        closed = true;
+        worker?.terminate();
+    }, { once: true });
+    try {
+        worker = await createProviderWorker(worker_path);
+        if (closed) {
+            worker.terminate();
+            worker = null;
+        }
+    } catch (error) {
+        messagesArea.appendBotMessage(error.message, 'error');
+        messageInput.disableInput();
+        messageInput.showErrorStatus();
+    }
 } else {
     // No worker can serve this connection type, so nothing can ever be sent: say so in the
     // transcript, lock the input, and announce nothing to the background (no ready message).
@@ -141,6 +169,7 @@ if (worker) {
             do_debug: prefs_default.do_debug,
             hide_thinking: prefs_default.hide_thinking,
             chat_show_usage_data: prefs_default.chat_show_usage_data,
+            api_stream_idle_timeout: prefs_default.api_stream_idle_timeout,
         };
         for (const key in options_config) {
             prefsToGet[`${integration_prefix}_${key}`] = prefs_default[`${integration_prefix}_${key}`];
@@ -167,10 +196,23 @@ if (worker) {
             }
         }
 
+        // A custom endpoint is checked before anything is sent to it [#1000]. This window
+        // is in front of the user, so an unencrypted remote server not yet confirmed is
+        // asked about here; refused, the window stays inert: no init, no ready message.
+        // An empty host is left to the background's own check, which says so.
+        let endpointAccess = { ok: true, approvedOrigins: [] };
+        const endpointHost = prefs_api[`${integration_prefix}_host`];
+        if ((integration === 'ollama' || integration === 'openai_comp') && (endpointHost ?? '').trim() !== '') {
+            endpointAccess = await resolveEndpointAccess(endpointHost, { ask: true });
+        }
+
         let i18nStrings = {};
         const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;
         i18nStrings[i18n_msg_key] = browser.i18n.getMessage(i18n_msg_key);
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
+        // The literal "$SECONDS$" is filled in by the worker with the timeout it applies.
+        i18nStrings["error_stream_idle_timeout"] = browser.i18n.getMessage('error_stream_idle_timeout', ['$SECONDS$']);
+        i18nStrings["api_error_redirect"] = browser.i18n.getMessage('api_error_redirect');
         if (integration === 'anthropic') {
             // 400 hints for describeAnthropicError(). The literal "$MODEL$" is passed
             // as the substitution so the worker can fill in the model it actually sent.
@@ -214,6 +256,23 @@ if (worker) {
         // belongs to the status pill above the input, so there is only one
         // thing to keep in sync with the request lifecycle.
         document.getElementById('appHeaderLogo').appendChild(buildChatBubbleIcon());
+        // A shield on the logo while the ThunderAI Privacy switch is on (policy-resolved),
+        // kept in step with the switch for as long as the window stays open. The tooltip
+        // sits on the whole brand (logo and name), not on the small badge alone.
+        const shield = document.getElementById('appHeaderShield');
+        const brand = document.getElementById('appHeaderBrand');
+        shield.appendChild(buildShieldIcon());
+        const privacy_tooltip = browser.i18n.getMessage('apiwebchat_privacy_active');
+        const syncPrivacyShield = () => mztaPrefs.getPref('ai_processing_enabled')
+            .then(enabled => {
+                shield.hidden = enabled !== true;
+                brand.title = enabled === true ? privacy_tooltip : '';
+            })
+            .catch(e => console.error('[ThunderAI] Could not read the ThunderAI Privacy switch:', e));
+        syncPrivacyShield();
+        browser.storage.onChanged.addListener((changes, areaName) => {
+            if (areaName === 'local' && Object.hasOwn(changes, 'ai_processing_enabled')) syncPrivacyShield();
+        });
         const apiChip = document.getElementById('appHeaderApi');
         if (api_strings[integration]) {
             document.getElementById('appHeaderApiName').textContent = api_strings[integration];
@@ -238,14 +297,16 @@ if (worker) {
             // Gates the 'usage' message at the source: with this false the worker
             // still extracts and debug-logs the usage, but emits nothing.
             chat_show_usage_data: show_usage,
+            api_stream_idle_timeout: prefs_api.api_stream_idle_timeout,
+            approved_insecure_origins: endpointAccess.ok ? endpointAccess.approvedOrigins : [],
         };
 
         for (const key in options_config) {
             const prefKey = `${integration_prefix}_${key}`;
             workerInitMessage[prefKey] = prefs_api[prefKey];
         }
-        
-        worker.postMessage(workerInitMessage);
+
+        if (endpointAccess.ok) worker.postMessage(workerInitMessage);
 
         const additional_messages_config = {
             chatgpt: [
@@ -288,7 +349,8 @@ if (worker) {
             ],
             openai_comp: [
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
-                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' }
+                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' },
+                { key: 'extra_headers', labelKey: 'prefs_api_extra_headers', type: 'headers' }
             ],
             anthropic: [
                 { key: 'system_prompt', labelKey: 'Anthropic_System_Prompt', type: 'string' },
@@ -312,6 +374,7 @@ if (worker) {
 
                 if (value !== undefined && value !== null && value !== '') {
                     let displayValue;
+                    let displayItems;
                     let shouldAdd = false;
 
                     switch (item.type) {
@@ -331,9 +394,21 @@ if (worker) {
                                 shouldAdd = true;
                             }
                             break;
+                        case 'headers': {
+                            // One line per header actually sent, never the raw JSON: the
+                            // entries parseExtraHeaders() drops are not listed. The value of
+                            // a header that looks like a credential is hidden.
+                            displayItems = Object.entries(parseExtraHeaders(value))
+                                .map(([name, headerValue]) => ({ label: name,
+                                    value: isCredentialHeader(name) ? '****************' : headerValue }));
+                            shouldAdd = displayItems.length > 0;
+                            break;
+                        }
                     }
                     if (shouldAdd) {
-                        messages.push({ label: browser.i18n.getMessage(item.labelKey), value: displayValue });
+                        messages.push(displayItems
+                            ? { label: browser.i18n.getMessage(item.labelKey), items: displayItems }
+                            : { label: browser.i18n.getMessage(item.labelKey), value: displayValue });
                     }
                 }
             }
@@ -354,16 +429,46 @@ if (worker) {
         
         //console.log(`>>>>>>>>>>>>> command: ${llm}_ready_${call_id}`,)
 
-        browser.runtime.sendMessage({
-            command: `${llm}_ready_${call_id}`,
-            window_id: (await browser.windows.getCurrent()).id
-        });
+        if (endpointAccess.ok) {
+            browser.runtime.sendMessage({
+                command: `${llm}_ready_${call_id}`,
+                window_id: (await browser.windows.getCurrent()).id
+            });
+        } else {
+            messagesArea.appendBotMessage(endpointAccess.message, 'error');
+            messageInput.disableInput();
+            messageInput.showErrorStatus();
+        }
     }
 }
 
 //let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
 
 // Event listeners for worker messages (none without a worker: an unknown connection type)
+if (worker instanceof ProcessingWorker) {
+    worker.onprocessingstatus = ({ type, progress }) => {
+        switch (type) {
+            case 'started':
+            case 'progress':
+                messageInput.setStatusMessage(progress?.total > 1 ?
+                    browser.i18n.getMessage('ai_processing_chunks', [String(progress.current), String(progress.total)]) :
+                    browser.i18n.getMessage('ai_processing'));
+                messageInput.showStatusMessage();
+                break;
+            case 'busy':
+                messageInput.setStatusMessage(browser.i18n.getMessage('ai_processing_busy'));
+                messageInput.showStatusMessage();
+                break;
+            case 'complete':
+                messageInput.showWaitingStatus();
+                break;
+            case 'receiving':
+                messageInput.showStreamingStatus();
+                break;
+        }
+    };
+}
+
 if (worker) worker.onmessage = async function(event) {
     const { type, payload } = event.data;
     switch (type) {
@@ -381,12 +486,18 @@ if (worker) worker.onmessage = async function(event) {
             messageInput.enableInput(false);
             break;
         case 'newToken':
-            messagesArea.handleNewToken(payload.token);
+            messagesArea.handleNewToken(payload.token, payload.thinkingSeparated);
             messageInput.showStreamingStatus();
             break;
         case 'newThinkingToken':
             messagesArea.handleNewThinkingToken(payload.token);
             messageInput.showStreamingStatus();
+            break;
+        case 'endpoint_redirect':
+            // The redirect outcome of a request to a custom endpoint [#1000]: saved for the
+            // note under the host field of the connection panels. Nothing shown here: a
+            // redirect that failed also comes as an 'error'.
+            await saveEndpointRedirect(payload.host, payload.info);
             break;
         case 'usage':
             // A message of its own, carrying no response text. Handled BEFORE the

@@ -162,13 +162,26 @@ export async function bgContext(o = {}) {
         local: o.local || {},
         accounts: m.accounts,
         tags: m.tags,
-        external: o.external ?? SPARKS_ABSENT,
+        external: (id, message) => {
+            if (id === 'thunderai-privacy@micz.it') {
+                if (o.processor) return o.processor(message);
+                throw new Error('Could not establish connection. Receiving end does not exist.');
+            }
+            return (o.external ?? SPARKS_ABSENT)(id, message);
+        },
     });
     installApis(ctl.browser, m);
     loadClassicScripts();
     const workers = installFakeWorker();
     const con = captureConsole();
     const mods = await loadModules();
+    // The startup migration block of mzta-background.js moves the msg: records of storage.local
+    // into IndexedDB before any listener is registered: a context seeded with such records starts
+    // the same way, with the real migration (js/mzta-storage-migration.js).
+    if (Object.keys(o.local || {}).some(key => key.startsWith('msg:'))) {
+        const { migrateMessageDataToIndexedDB } = await import('../../js/mzta-storage-migration.js');
+        await migrateMessageDataToIndexedDB();
+    }
     if (o.setup) await o.setup(m);
     const rec = { sanitizeBlockHtml: [], htmlBodyToPlainText: [], buildSummaryPrompt: [] };
     const given = { ...(await standIns(rec)), ...(o.overrides || {}) };
@@ -189,14 +202,30 @@ export async function bgContext(o = {}) {
  */
 export async function moduleContext(o = {}) {
     const m = mailModel(o.mail || {});
-    const ctl = installBrowserMock({ policy: null, local: o.local || {}, session: o.session || {}, accounts: m.accounts, tags: m.tags });
+    const ctl = installBrowserMock({ policy: null, local: o.local || {}, session: o.session || {}, accounts: m.accounts, tags: m.tags,
+        external: (id, message) => {
+            if (id === 'thunderai-privacy@micz.it' && o.processor) return o.processor(message);
+            throw new Error('Could not establish connection. Receiving end does not exist.');
+        } });
     installApis(ctl.browser, m);
     const workers = installFakeWorker();
     const con = captureConsole();
     const mods = await loadModules();
     const { mztaManaged } = await import('../../js/mzta-managed.js');
     await mztaManaged.loadManaged();
-    return { ctl, con, m, workers, ...mods };
+    // As in bgContext(): seeded msg: records are moved to IndexedDB, as the background's start does.
+    if (Object.keys(o.local || {}).some(key => key.startsWith('msg:'))) {
+        const { migrateMessageDataToIndexedDB } = await import('../../js/mzta-storage-migration.js');
+        await migrateMessageDataToIndexedDB();
+    }
+    const { createAIProcessingBroker } = await import('../../js/mzta-ai-processing-broker.js');
+    const { createAIProcessingClient } = await import('../../js/mzta-ai-processing-client.js');
+    const processingBroker = createAIProcessingBroker();
+    await processingBroker.ready;
+    const processingClient = createAIProcessingClient(processingBroker.dispatch);
+    // Module-only callers model a page reaching its background through messaging.
+    ctl.setRemote((message, sender) => ctl.dispatchMessage(message, sender));
+    return { ctl, con, m, workers, processingBroker, processingClient, ...mods };
 }
 
 /** Let every pending promise chain (and setImmediate) run: n turns of the event loop. */

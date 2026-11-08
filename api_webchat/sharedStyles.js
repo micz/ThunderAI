@@ -24,7 +24,18 @@
 // inherited is plain CSS text — a rule like :focus-visible or a @keyframes
 // declared in styles.css has no effect inside a shadow root — so the handful
 // of rules every component needs are exported as strings and concatenated
-// into each component's own <style>.textContent.
+// into each component's own stylesheet (buildStyleSheet() below).
+
+// A component's CSS as a constructable stylesheet, for its shadow root's
+// adoptedStyleSheets. Not a <style> element: index.html's CSP has
+// style-src 'self', which blocks every <style> element, including those
+// created by script, while an adopted sheet is not inline markup and is
+// allowed. Built once per module and shared by every instance.
+export function buildStyleSheet(cssText) {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(cssText);
+    return sheet;
+}
 
 // Focus rings and the reduced-motion opt-out.
 export const SHARED_BASE_CSS = `

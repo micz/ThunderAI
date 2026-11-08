@@ -17,7 +17,10 @@
  */
 
 import { buildDropdownArrowIcon } from './svgIcons.js';
-import { SHARED_BASE_CSS } from './sharedStyles.js';
+import {
+    SHARED_BASE_CSS,
+    buildStyleSheet
+} from './sharedStyles.js';
 
 // <split-button> encapsulates the "use this answer" action button used by
 // <messages-area>. It owns a main button (label + optional info line + click
@@ -36,8 +39,7 @@ import { SHARED_BASE_CSS } from './sharedStyles.js';
 
 const splitButtonTemplate = document.createElement('template');
 
-const splitButtonStyle = document.createElement('style');
-splitButtonStyle.textContent = SHARED_BASE_CSS + `
+const splitButtonSheet = buildStyleSheet(SHARED_BASE_CSS + `
     :host {
       display: inline-flex;
     }
@@ -135,8 +137,7 @@ splitButtonStyle.textContent = SHARED_BASE_CSS + `
       from { opacity: 0; transform: translateY(-4px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-`;
-splitButtonTemplate.content.appendChild(splitButtonStyle);
+`);
 
 const splitButtonContainer = document.createElement('div');
 splitButtonContainer.className = 'split-button';
@@ -147,6 +148,7 @@ class SplitButton extends HTMLElement {
     constructor() {
         super();
         const shadowRoot = this.attachShadow({ mode: 'open' });
+        shadowRoot.adoptedStyleSheets = [splitButtonSheet];
         shadowRoot.appendChild(splitButtonTemplate.content.cloneNode(true));
 
         this._container = shadowRoot.querySelector('.split-button');

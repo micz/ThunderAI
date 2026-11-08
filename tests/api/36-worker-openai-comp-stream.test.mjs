@@ -2,6 +2,8 @@
 // instance for the file:
 //  - "Web Worker Pattern": init maps the openai_comp_* fields into the client, streaming on (so
 //    stream_options.include_usage is requested);
+//  - "Extra headers": openai_comp_extra_headers reaches the chat request, and its values never
+//    the console, even with the debug log on;
 //  - "Thinking output in the webchat UI": the reasoning token is the FIRST PRESENT of
 //    delta.reasoning_content (DeepSeek, vLLM, SGLang), delta.reasoning (OpenRouter - a string or
 //    an object with .text), delta.thinking (llama.cpp / LM Studio);
@@ -50,6 +52,7 @@ await w.send(initMessage({
     openai_comp_chat_name: 'DeepSeek',
     openai_comp_temperature: '',
     openai_comp_extra_body: '',
+    openai_comp_extra_headers: '{"x-opencode-session": "thunderai-SECRET-SESSION"}',
 }, { do_debug: true, chat_show_usage_data: true, i18nStrings: { OpenAIComp_api_request_failed: 'OpenAI Comp API request failed' } }));
 
 const usageTokens = u => ({ input: u.input_tokens, output: u.output_tokens, total: u.total_tokens, cached: u.cached_input_tokens, reasoning: u.reasoning_tokens });
@@ -61,6 +64,8 @@ k.test('turn1-deepseek', 'turn 1 (DeepSeek): reasoning_content tokens, content t
     await t.done;
     const req = net.calls[0];
     assert.equal(req.headers.authorization, 'Bearer ' + KEY);
+    assert.equal(req.headers['x-opencode-session'], 'thunderai-SECRET-SESSION');
+    assert.equal(consoleText(con).includes('SECRET-SESSION'), false, 'an extra header value was logged');
     const body = req.json();
     assert.equal(body.model, 'deepseek-reasoner');
     assert.equal(body.stream, true);

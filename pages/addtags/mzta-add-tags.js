@@ -37,6 +37,11 @@ import {
   addTags_setExclusionList
 } from "../../js/mzta-addtags-exclusion-list.js";
 import {
+    ADD_TAGS_ACCOUNT_KEYS,
+    addTags_getAccountEntry,
+    addTags_setAccountSettings
+} from "../../js/mzta-addtags-account-settings.js";
+import {
   getAccountsList,
   getTagsList,
   intersectTagsLists,
@@ -55,7 +60,11 @@ import {
     isLockedKey,
     lockCompanions,
     setDisabledRespectingManaged,
-    lockAccountSelector
+    lockAccountSelector,
+    isEnforcedPromptText,
+    lockEnforcedPromptText,
+    lockOverrideControls,
+    isAddTagsAccountSettingsDisabled
 } from '../_lib/managed-ui.js';
 import {
     persistPromptConnectionToPrefs,
@@ -143,14 +152,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         do_debug: taLog.do_debug,
     });
 
-    document.getElementById('add_tags_maxnum').addEventListener('change', updateAdditionalPromptStatements);
-    document.getElementById('add_tags_force_lang').addEventListener('change', updateAdditionalPromptStatements);
-    document.getElementById('add_tags_auto_uselist').addEventListener('change', updateAdditionalPromptStatements);
-    document.getElementById('add_tags_auto_uselist_list').addEventListener('change', updateAdditionalPromptStatements);
-    document.getElementById('add_tags_auto_force_existing').addEventListener('change', updateAdditionalPromptStatements);
-    addtags_textarea.addEventListener('change', updateAdditionalPromptStatements);
+    document.getElementById('add_tags_maxnum').addEventListener('change', updateGlobalAdditionalStatements);
+    document.getElementById('add_tags_force_lang').addEventListener('change', updateGlobalAdditionalStatements);
+    document.getElementById('add_tags_auto_uselist').addEventListener('change', updateGlobalAdditionalStatements);
+    document.getElementById('add_tags_auto_uselist_list').addEventListener('change', updateGlobalAdditionalStatements);
+    document.getElementById('add_tags_auto_force_existing').addEventListener('change', updateGlobalAdditionalStatements);
+    addtags_textarea.addEventListener('change', updateGlobalAdditionalStatements);
 
-    updateAdditionalPromptStatements();
+    updateGlobalAdditionalStatements();
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply
@@ -199,6 +208,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         excl_list_textarea.value = excl_list_string;
         document.getElementById('excl_list_unsaved').classList.add('hidden');
     });
+
+    // After the exclusion list's Save handler: the section follows the saved global list.
+    // A policy that disables the per-account settings hides the section, with a note in its
+    // place, and the section is never set up: no handler of it can write an entry.
+    if (isAddTagsAccountSettingsDisabled()) {
+        document.getElementById('addtags_account_settings_container').style.display = 'none';
+        document.getElementById('managed_restriction_account_settings_note').classList.add('shown');
+    } else {
+        try {
+            await initAccountSettings(addtags_textarea);
+        } catch (err) {
+            console.error("[ThunderAI] Error initializing the settings for single accounts: ", err);
+        }
+    }
 
     //Accounts manager
     let accounts = await getAccountsList();
@@ -276,7 +299,446 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-async function updateAdditionalPromptStatements(){
+// Settings for single accounts (add_tags_account_settings, js/mzta-addtags-account-settings.js).
+// The account selector picks which entry the section edits. Every override key has a row, the
+// prompt text included: the toggle addtags_account_<key>_override left of its title. Off (the
+// default) means the key is not in the entry: the row shows only the current global value
+// (addtags_account_<key>_global, kept in step with the global controls above; nothing for the
+// prompt). On shows the control addtags_account_<key>, starting from the value the account had
+// (stored, or edited since the account was loaded) or else from the global one. A Yes/No row is
+// two radios, addtags_account_<key> ("Yes") and addtags_account_<key>_no. "Use only these tags"
+// is one row for two keys, as the global option: its toggle overrides add_tags_auto_uselist and
+// add_tags_auto_uselist_list together, and the list is disabled while "No" is chosen. Save
+// stores the whole entry at once; "Reset to the global settings" removes it.
+//
+// Policy: a key whose global key is locked is locked here too (its override would be ignored at
+// run time): its control disabled, showing the policy value, and its stored value, if any, kept
+// as it is; when every key of a row is locked, its toggle too (off and disabled). The same for
+// the prompt text when the policy enforces the Add Tags text. So neither Save nor the removal
+// ever writes a value the policy owns.
+const ACCOUNT_ROW_KEYS = ADD_TAGS_ACCOUNT_KEYS.filter(key => key !== 'prompt_text');
+const ACCOUNT_BOOLEAN_KEYS = [
+    'add_tags_force_lang',
+    'add_tags_auto_force_existing',
+    'add_tags_auto_uselist',
+    'add_tags_exclusions_exact_match',
+];
+// The keys edited in another key's row (the one whose ids it carries).
+const ACCOUNT_KEY_ROW = {
+    add_tags_auto_uselist_list: 'add_tags_auto_uselist',
+};
+const accountRowOf = (key) => ACCOUNT_KEY_ROW[key] ?? key;
+// The rows, by the key whose ids they carry.
+const ACCOUNT_ROWS = ACCOUNT_ROW_KEYS.filter(key => !ACCOUNT_KEY_ROW[key]);
+
+async function initAccountSettings(global_textarea) {
+    const account_select = document.getElementById('addtags_account_settings_account');
+    const account_textarea = document.getElementById('addtags_account_prompt_text');
+    const prompt_override = document.getElementById('addtags_account_prompt_text_override');
+    const prompt_value_el = account_textarea.closest('.addtags_account_value');
+    const save_btn = document.getElementById('btn_save_account_settings');
+    const remove_btn = document.getElementById('btn_account_settings_remove');
+    const copy_btn = document.getElementById('btn_account_settings_copy_prompt');
+    const unsaved_el = document.getElementById('addtags_account_settings_unsaved');
+    const preview_el = document.getElementById('addtags_account_info_additional_statements');
+    const excl_list_textarea = document.getElementById('addtags_excl_list');
+
+    // The controls, by override key; the rows, by the key whose ids they carry.
+    const controls = {};
+    for (const key of ACCOUNT_ROW_KEYS) {
+        controls[key] = {
+            control: document.getElementById('addtags_account_' + key),
+            control_no: document.getElementById('addtags_account_' + key + '_no'),    // Yes/No only
+        };
+    }
+    const rows = {};
+    for (const row_key of ACCOUNT_ROWS) {
+        const override = document.getElementById('addtags_account_' + row_key + '_override');
+        const row_el = override.closest('.addtags_account_row');
+        rows[row_key] = {
+            keys: ACCOUNT_ROW_KEYS.filter(key => accountRowOf(key) === row_key),
+            override: override,
+            value_el: row_el.querySelector('.addtags_account_value'),
+            global_el: document.getElementById('addtags_account_' + row_key + '_global'),
+            title_el: row_el.querySelector('.addtags_account_title'),
+        };
+    }
+    const uselist_list = controls.add_tags_auto_uselist_list.control;
+
+    const accounts = await getAccountsList();
+    let entries = {};
+    for (const account of accounts) {
+        entries[account.id] = await addTags_getAccountEntry(account.id);
+    }
+    let current_account_id = '';
+    let baseline = '';
+    // The account's own values, by key (prompt_text included): the stored ones at load, then the
+    // last ones the user gave. Switching a toggle on starts from them, so turning it off and on
+    // again does not lose them. Reset on every account load.
+    let own_values = {};
+
+    // The global values, in their stored form. The page has no control for default_chatgpt_lang
+    // (it is set on the options page), and the exclusion list is the saved one, not what the
+    // global textarea may hold unsaved.
+    let global_lang = String((await mztaPrefs.getPrefs(['default_chatgpt_lang'])).default_chatgpt_lang ?? '');
+    let global_exclusions = await addTags_getExclusionList();
+
+    function globalValue(key) {
+        switch (key) {
+            case 'default_chatgpt_lang':
+                return global_lang;
+            case 'add_tags_exclusions':
+                return global_exclusions;
+            case 'add_tags_maxnum':
+                return document.getElementById(key).valueAsNumber;
+            case 'add_tags_auto_uselist_list':
+                return normalizeStringList(document.getElementById(key).value);
+            default:
+                return document.getElementById(key).checked;
+        }
+    }
+
+    // A global value as the summaries show it: Yes/No, the lists comma-separated.
+    function valueText(key) {
+        const value = globalValue(key);
+        let text;
+        if (ACCOUNT_BOOLEAN_KEYS.includes(key)) {
+            text = browser.i18n.getMessage(value ? 'yes_string' : 'no_string');
+        } else if (key === 'add_tags_maxnum') {
+            text = Number.isFinite(value) ? String(value) : '';
+        } else if (key === 'add_tags_exclusions') {
+            text = Array.isArray(value) ? value.join(', ') : '';
+        } else {
+            text = String(value ?? '').trim();
+        }
+        return text === '' ? browser.i18n.getMessage('AddTags_account_settings_global_none') : text;
+    }
+
+    // The row's summary: "Use only these tags" adds its list, in brackets, when it is on.
+    function globalText(row_key) {
+        let text = valueText(row_key);
+        if (row_key === 'add_tags_auto_uselist' && globalValue(row_key)) {
+            text += ' (' + valueText('add_tags_auto_uselist_list') + ')';
+        }
+        return browser.i18n.getMessage('AddTags_account_settings_global', [text]);
+    }
+
+    // Shows a value, in its stored form, in the key's control.
+    function showValue(key, value) {
+        const ctl = controls[key];
+        if (ACCOUNT_BOOLEAN_KEYS.includes(key)) {
+            ctl.control.checked = value === true;
+            ctl.control_no.checked = value !== true;
+        } else if (key === 'add_tags_maxnum') {
+            ctl.control.value = Number.isFinite(value) ? String(value) : '';
+        } else if (key === 'add_tags_auto_uselist_list') {
+            ctl.control.value = normalizeStringList(value, 1);
+        } else if (key === 'add_tags_exclusions') {
+            ctl.control.value = Array.isArray(value) ? value.join('\n') : '';
+        } else {
+            ctl.control.value = String(value ?? '');
+        }
+    }
+
+    // The key's control value, in its stored form; undefined when it holds no valid value
+    // (an emptied tag limit), which saves as "use the global setting".
+    function readValue(key) {
+        const control = controls[key].control;
+        if (ACCOUNT_BOOLEAN_KEYS.includes(key)) return control.checked;
+        switch (key) {
+            case 'add_tags_maxnum': {
+                const num = control.valueAsNumber;
+                return (Number.isFinite(num) && num >= 0) ? Math.round(num) : undefined;
+            }
+            case 'add_tags_auto_uselist_list':
+                return normalizeStringList(control.value);
+            case 'add_tags_exclusions':
+                // The same normalization as the global list (lowercase, sorted, no duplicates).
+                return normalizeStringList(control.value, 2);
+            default:
+                return control.value.trim();
+        }
+    }
+
+    const isRowLocked = (key) => isLockedKey(key);
+    const isTextEnforced = () => isEnforcedPromptText('prompt_add_tags');
+    const isOverridden = (key) => !isRowLocked(key) && rows[accountRowOf(key)].override.checked;
+    // A row is locked when every key it edits is; while some is not, its toggle stays usable.
+    const isWholeRowLocked = (row_key) => rows[row_key].keys.every(key => isRowLocked(key));
+    const isRowOn = (row_key) => !isWholeRowLocked(row_key) && rows[row_key].override.checked;
+    const isPromptOverridden = () => !isTextEnforced() && prompt_override.checked;
+
+    // The stored values the page must keep as they are: those of the locked keys, and the
+    // prompt text when the policy enforces the Add Tags text.
+    function preservedEntry() {
+        const saved = entries[current_account_id] || {};
+        let entry = {};
+        for (const key of ADD_TAGS_ACCOUNT_KEYS) {
+            if (!Object.prototype.hasOwnProperty.call(saved, key)) continue;
+            if (key === 'prompt_text' ? isTextEnforced() : isRowLocked(key)) entry[key] = saved[key];
+        }
+        return entry;
+    }
+
+    // The entry the section shows, in ADD_TAGS_ACCOUNT_KEYS order (as the stored one is).
+    function buildEntry() {
+        const preserved = preservedEntry();
+        let entry = {};
+        for (const key of ADD_TAGS_ACCOUNT_KEYS) {
+            if (key === 'prompt_text') {
+                if (isTextEnforced()) {
+                    if (preserved.prompt_text !== undefined) entry.prompt_text = preserved.prompt_text;
+                } else if (prompt_override.checked && account_textarea.value.trim() !== '') {
+                    entry.prompt_text = account_textarea.value;
+                }
+                continue;
+            }
+            if (isRowLocked(key)) {
+                if (preserved[key] !== undefined) entry[key] = preserved[key];
+                continue;
+            }
+            if (!rows[accountRowOf(key)].override.checked) continue;
+            const value = readValue(key);
+            if (value !== undefined) entry[key] = value;
+        }
+        return entry;
+    }
+
+    // The value that applies to the selected account's messages for this key, as the run time
+    // resolves it (addTags_resolveAccountPrefs()): the global one when not overridden or locked.
+    function effectiveValue(key) {
+        if (!isOverridden(key)) return globalValue(key);
+        const value = readValue(key);
+        return value === undefined ? globalValue(key) : value;
+    }
+
+    function updatePreview() {
+        let values = {};
+        for (const key of ACCOUNT_ROW_KEYS) values[key] = effectiveValue(key);
+        const prompt_text = (isPromptOverridden() && account_textarea.value.trim() !== '')
+            ? account_textarea.value : global_textarea.value;
+        updateAdditionalPromptStatements(values, prompt_text, preview_el);
+    }
+
+    function updateButtons() {
+        const is_dirty = current_account_id !== '' && JSON.stringify(buildEntry()) !== baseline;
+        setDisabledRespectingManaged(save_btn, !is_dirty);
+        unsaved_el.classList.toggle('hidden', !is_dirty);
+        // Something to remove: a stored value the page may drop (not one the policy owns), or
+        // unsaved changes to discard.
+        const has_removable = JSON.stringify(entries[current_account_id] || {}) !== JSON.stringify(preservedEntry());
+        setDisabledRespectingManaged(remove_btn, current_account_id === '' || (!has_removable && !is_dirty));
+    }
+
+    function onFormChange() {
+        updateButtons();
+        updatePreview();
+    }
+
+    // A row with its toggle on shows its controls, each from the account's own value or else the
+    // global one (a locked key the policy value); off (or locked), only the summary of the global
+    // value. The controls are also disabled while hidden, through the managed-aware setter, so a
+    // locked key is never re-enabled.
+    function applyOverride(row_key) {
+        const row = rows[row_key];
+        const on = isRowOn(row_key);
+        for (const key of row.keys) {
+            if (on) showValue(key, isRowLocked(key) ? globalValue(key) : (own_values[key] ?? globalValue(key)));
+            for (const control of [controls[key].control, controls[key].control_no]) {
+                if (control) setDisabledRespectingManaged(control, !on);
+            }
+        }
+        if (row_key === 'add_tags_auto_uselist') applyUselistList();
+        row.value_el.hidden = !on;
+        row.global_el.textContent = globalText(row_key);
+        row.global_el.title = row.global_el.textContent;
+        row.global_el.hidden = on;
+    }
+
+    // The list of "Use only these tags" is disabled while "No" is chosen, as the global one.
+    function applyUselistList() {
+        const on = isRowOn('add_tags_auto_uselist') && controls.add_tags_auto_uselist.control.checked;
+        setDisabledRespectingManaged(uselist_list, !on);
+    }
+
+    // The same for the prompt, which shows nothing while off (the prompt above is in sight).
+    function applyPromptOverride() {
+        const on = isPromptOverridden();
+        prompt_value_el.hidden = !on;
+        if (on) setEditorText(own_values.prompt_text ?? global_textarea.value);
+    }
+
+    function refreshGlobal() {
+        for (const row_key of ACCOUNT_ROWS) {
+            rows[row_key].global_el.textContent = globalText(row_key);
+            rows[row_key].global_el.title = rows[row_key].global_el.textContent;
+        }
+        updatePreview();
+    }
+
+    function renderAccountOptions() {
+        account_select.replaceChildren(...accounts.map(account => {
+            let label = account.name;
+            if (Object.keys(entries[account.id] || {}).length > 0) {
+                label += ' ' + browser.i18n.getMessage('AddTags_account_settings_custom_suffix');
+            }
+            return new Option(label, account.id);
+        }));
+        if (current_account_id) {
+            account_select.value = current_account_id;
+        }
+    }
+
+    const account_textarea_hl = attachEditorHighlight(account_textarea);
+    if (account_textarea_hl) account_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
+    textareaAutocomplete(account_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
+
+    function setEditorText(text) {
+        account_textarea.value = text;
+        if (account_textarea_hl) account_textarea_hl.refresh();
+    }
+
+    function loadAccount(accountId) {
+        current_account_id = accountId;
+        const entry = entries[accountId] || {};
+        own_values = {};
+        for (const key of ADD_TAGS_ACCOUNT_KEYS) {
+            if (Object.prototype.hasOwnProperty.call(entry, key)) own_values[key] = entry[key];
+        }
+        for (const row_key of ACCOUNT_ROWS) {
+            rows[row_key].override.checked = rows[row_key].keys.some(key => !isRowLocked(key) && own_values[key] !== undefined);
+            applyOverride(row_key);
+        }
+        prompt_override.checked = !isTextEnforced() && typeof own_values.prompt_text === 'string';
+        applyPromptOverride();
+        baseline = JSON.stringify(buildEntry());
+        onFormChange();
+    }
+
+    // A key whose global key the policy locks: its controls disabled, marked and inert, the marker
+    // in the row's title; the toggle too when every key of the row is locked.
+    for (const key of ACCOUNT_ROW_KEYS) {
+        const row = rows[accountRowOf(key)];
+        const locked_toggle = row.keys.every(row_key => isLockedKey(row_key)) ? row.override : null;
+        await lockOverrideControls(key, [controls[key].control, controls[key].control_no, locked_toggle],
+            row.title_el, taLog.do_debug);
+    }
+
+    if (accounts.length === 0) {
+        account_select.disabled = true;
+        for (const row_key of ACCOUNT_ROWS) {
+            rows[row_key].override.checked = false;
+            rows[row_key].override.disabled = true;
+            applyOverride(row_key);
+        }
+        prompt_override.checked = false;
+        prompt_override.disabled = true;
+        applyPromptOverride();
+        account_textarea.disabled = true;
+        copy_btn.disabled = true;
+        return;
+    }
+
+    renderAccountOptions();
+    loadAccount(account_select.value);
+
+    for (const row_key of ACCOUNT_ROWS) {
+        const row = rows[row_key];
+        row.override.addEventListener('change', () => {
+            if (isWholeRowLocked(row_key)) {
+                row.override.checked = false;
+                return;
+            }
+            applyOverride(row_key);
+            onFormChange();
+        });
+    }
+    for (const key of ACCOUNT_ROW_KEYS) {
+        const onValueChange = () => {
+            const value = readValue(key);
+            if (value === undefined) delete own_values[key];
+            else own_values[key] = value;
+            if (key === 'add_tags_auto_uselist') applyUselistList();
+            onFormChange();
+        };
+        for (const control of [controls[key].control, controls[key].control_no]) {
+            if (!control) continue;
+            control.addEventListener('input', onValueChange);
+            control.addEventListener('change', onValueChange);
+        }
+    }
+    prompt_override.addEventListener('change', () => {
+        if (isTextEnforced()) {
+            prompt_override.checked = false;
+            return;
+        }
+        applyPromptOverride();
+        onFormChange();
+    });
+    account_textarea.addEventListener('input', () => {
+        if (!isTextEnforced()) own_values.prompt_text = account_textarea.value;
+        onFormChange();
+    });
+
+    // Keep the global values the rows show, and the preview, in step with the global settings above.
+    for (const id of ['add_tags_maxnum', 'add_tags_force_lang', 'add_tags_auto_force_existing',
+        'add_tags_auto_uselist', 'add_tags_auto_uselist_list', 'add_tags_exclusions_exact_match']) {
+        document.getElementById(id).addEventListener('change', refreshGlobal);
+    }
+    global_textarea.addEventListener('input', updatePreview);
+    // Registered after the global list's own Save handler, which leaves the saved list,
+    // normalized, in the textarea.
+    document.getElementById('btn_save_excl_list').addEventListener('click', () => {
+        if (isLockedKey('add_tags_exclusions')) return;
+        global_exclusions = normalizeStringList(excl_list_textarea.value, 2);
+        refreshGlobal();
+    });
+
+    account_select.addEventListener('change', () => {
+        if (!save_btn.disabled && !confirm(browser.i18n.getMessage('AddTags_account_settings_discard_confirm'))) {
+            account_select.value = current_account_id;
+            return;
+        }
+        loadAccount(account_select.value);
+    });
+
+    // When the policy enforces the Add Tags text the account prompt texts are ignored (they
+    // would bypass it), so the prompt toggle stays off and inert, the editor read-only and "Copy
+    // the global prompt" inert. Save and the removal stay available for the other settings, and
+    // keep the stored text as it is (see preservedEntry()). The handlers still check, see the
+    // note on lockEnforcedPromptText().
+    await lockEnforcedPromptText(account_textarea, ['prompt_add_tags'], [copy_btn, prompt_override], taLog.do_debug);
+
+    copy_btn.addEventListener('click', () => {
+        if (isTextEnforced()) return;
+        setEditorText(global_textarea.value);
+        own_values.prompt_text = account_textarea.value;
+        onFormChange();
+    });
+
+    save_btn.addEventListener('click', async () => {
+        if (current_account_id === '') return;
+        const entry = buildEntry();
+        await addTags_setAccountSettings(current_account_id, entry);
+        entries[current_account_id] = await addTags_getAccountEntry(current_account_id);
+        taLog.log("Saved the add_tags settings of account " + current_account_id + ": " + JSON.stringify(Object.keys(entries[current_account_id])) + ".");
+        renderAccountOptions();
+        loadAccount(current_account_id);
+    });
+
+    remove_btn.addEventListener('click', async () => {
+        if (current_account_id === '') return;
+        await addTags_setAccountSettings(current_account_id, preservedEntry());
+        entries[current_account_id] = await addTags_getAccountEntry(current_account_id);
+        taLog.log("Removed the add_tags settings of account " + current_account_id + ", using the global settings.");
+        renderAccountOptions();
+        loadAccount(current_account_id);
+    });
+}
+
+// The global settings' preview: the values as stored (the controls save on change).
+async function updateGlobalAdditionalStatements(){
     let prefs_ = await mztaPrefs.getPrefs([
       'add_tags_maxnum',
       'add_tags_force_lang',
@@ -285,30 +747,38 @@ async function updateAdditionalPromptStatements(){
       'add_tags_auto_uselist_list',
       'add_tags_auto_force_existing'
     ]);
+    await updateAdditionalPromptStatements(prefs_, document.getElementById('addtags_prompt_text').value,
+        document.getElementById('addtags_info_additional_statements'));
+}
+
+// Shows in target_el the statements finalizePrompt_add_tags() appends for these values (the
+// add_tags keys, in their stored form) and this prompt text, or hides it when there are none.
+// Shared by the global preview and the per-account one.
+async function updateAdditionalPromptStatements(values, prompt_text, target_el){
     // Mirrors taPromptUtils.finalizePrompt_add_tags() [#926]
-    let show_force_lang = !prefs_.add_tags_auto_force_existing && prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== '';
-    let uselist_active = prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== '';
+    let show_force_lang = !values.add_tags_auto_force_existing && values.add_tags_force_lang && values.default_chatgpt_lang !== '';
+    let uselist_active = values.add_tags_auto_uselist && String(values.add_tags_auto_uselist_list ?? '').trim() !== '';
     let force_existing_list = '';
-    if(prefs_.add_tags_auto_force_existing){
+    if(values.add_tags_auto_force_existing){
         let existing_tags_list = (await getTagsList())[0];
         if(uselist_active){
-            force_existing_list = intersectTagsLists(prefs_.add_tags_auto_uselist_list, existing_tags_list);
-        }else if(!document.getElementById('addtags_prompt_text').value.includes("{%tags_full_list%}")){
+            force_existing_list = intersectTagsLists(values.add_tags_auto_uselist_list, existing_tags_list);
+        }else if(!String(prompt_text ?? '').includes("{%tags_full_list%}")){
             force_existing_list = existing_tags_list;
         }
     }
-    let show_use_list = !prefs_.add_tags_auto_force_existing && uselist_active;
-    let el_tag_limit = document.getElementById('addtags_info_additional_statements');
-    if((prefs_.add_tags_maxnum > 0)||show_force_lang||show_use_list||(force_existing_list !== '')){
+    let show_use_list = !values.add_tags_auto_force_existing && uselist_active;
+    let el_tag_limit = target_el;
+    if((values.add_tags_maxnum > 0)||show_force_lang||show_use_list||(force_existing_list !== '')){
         el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_additional_statements") + " \""
-        if(prefs_.add_tags_maxnum > 0){
-          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_.add_tags_maxnum +". "
+        if(values.add_tags_maxnum > 0){
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + values.add_tags_maxnum +". "
         }
         if(show_force_lang){
-          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_.default_chatgpt_lang + ". "
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + values.default_chatgpt_lang + ". "
         }
         if(show_use_list){
-          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + prefs_.add_tags_auto_uselist_list + ".";
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + values.add_tags_auto_uselist_list + ".";
         }
         if(force_existing_list !== ''){
           el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_existing") + ": " + force_existing_list + ".";
@@ -320,8 +790,6 @@ async function updateAdditionalPromptStatements(){
         el_tag_limit.style.display = 'none';
     }
 }
-
-
 
 // Methods to manage options, derived from: /options/mzta-options.js
 

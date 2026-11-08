@@ -6,6 +6,9 @@
 //    options; ollama_think, whose options depend on the model: '', 'false', 'true' or any
 //    lowercase word;
 //  - text_format_schema and ollama extra_options: '' or a JSON object, like extra_body;
+//  - openai_comp extra_headers: '' or a JSON object whose every entry would be sent (spec 04
+//    "Extra headers"): an HTTP token name the browser lets an add-on set, a string value with no
+//    line break; the warning names the header, never its value;
 //  - ollama keep_alive: '', a whole number of seconds or a Go duration;
 //  - chatgpt max_output_tokens: 0 (not set) or at least 16.
 // And the one documented exception to "never coerced": a boolean ollama_think (its format
@@ -28,6 +31,7 @@ const ACCEPTED = {
     chatgpt_max_output_tokens: 16,
     ollama_extra_options: '{"top_k": 20}',
     ollama_keep_alive: '1h30m',
+    openai_comp_extra_headers: '{"x-opencode-session": "s1", "api-key": "k"}',
 };
 const REJECTED = {
     anthropic_top_p: '1.5',
@@ -41,6 +45,14 @@ const REJECTED = {
     ollama_keep_alive: 'forever',
     ollama_think: 'High',
 };
+// Each one fails a different rule of the extra headers.
+const REJECTED_HEADERS = [
+    ['[1, 2]', /must be a JSON object/],
+    ['{"x bad": "v"}', /must not hold "x bad", which is not a valid header name/],
+    ['{"Cookie": "a=b"}', /must not hold "Cookie", a header the browser does not let an add-on set/],
+    ['{"x-n": 1}', /must give the header "x-n" a string value/],
+    ['{"x-v": "SECRET\\r\\nInjected: 1"}', /must give the header "x-v" a value with no line break/],
+];
 
 let ctx;
 
@@ -74,6 +86,15 @@ test('a value that fails their content rule is not applied, and is warned about'
         assert.equal(r.result[key].managed, false, key + ' was applied');
         assert.ok(r.warnings.some(w => w.includes('"' + key + '"') && w.includes('ignored')),
             'no warning for ' + key);
+    }
+});
+
+test('openai_comp_extra_headers: every rule of the extra headers, warned about without the value', async () => {
+    for (const [value, reason] of REJECTED_HEADERS) {
+        const r = await restart({ policy: { openai_comp_extra_headers: value } }, 'managedKeys', ['openai_comp_extra_headers']);
+        assert.equal(r.result.openai_comp_extra_headers.managed, false, value + ' was applied');
+        assert.ok(r.warnings.some(w => w.includes('"openai_comp_extra_headers"') && reason.test(w)), 'no warning for ' + value);
+        assert.equal(r.warnings.some(w => w.includes('SECRET')), false, 'a header value was logged');
     }
 });
 
