@@ -41,6 +41,7 @@ The area is built group by group:
 | C | actions on an answer | done (`webchat-10` to `12`) |
 | D | the diff picker (spec 07) | done (`webchat-13` to `15`) |
 | E | links in the transcript and the page's CSP (issue #1001) | done (`webchat-20`) |
+| F | the Smart bar mode (spec 10 "Chat") | done (`webchat-24`) |
 
 ## Layout
 
@@ -99,6 +100,7 @@ one did (each file says so).
 | `dom/webchat/webchat-21-endpoint-redirect` | spec 04 "Redirects" (an Ollama API window: the `endpoint_redirect` message of the worker saved into `_endpoint_redirects` under its host, with the origin of the destination; the same outcome again writes nothing; a failed redirect saved as failed; a success with no redirect removing the entry; nothing shown in the transcript) |
 | `dom/webchat/webchat-22-processing` | spec 09 (ThunderAI Privacy active in the API chat: the prepared prompts, the busy-message notice, the answers buffered and restored; see "Companion processing" below) |
 | `dom/webchat/webchat-23-extra-headers-notice` | spec 01 "Component structure" (an OpenAI Comp API window: the extra headers in the startup notice as a section, the label alone then one indented `name: value` line per header sent; a dropped header not listed, no raw JSON; the value of a credential-like header hidden; a value holding markup shown as text) |
+| `dom/webchat/webchat-24-smartbar` | spec 10 "Chat" (the window in Smart bar mode, `openWebchat({ smartbar: { hid } })`: the session resumed from `smartbar_chat_init`, the earlier messages not loaded said so; a turn per record: the free answer through the one render path, the result lines with the bar's texts and buttons naming the record (Stop, Retry, Remove, Confirm, Cancel, ×, Details; never Open in chat), an older update ignored; a draft with its subject, body, Create email (the line once created, a failure said, the draft kept); a typed message sent with a `clientId` and drawn once, the input locked then back, the reasoning as a live row then the thinking block (collapsed with `hide_thinking`), the answer streamed and drawn once, the input's Stop naming the message; a rate-limited error counting down then retrying once by itself (never twice, never a resumed record, the message itself only as the newest turn); an unrecognized note beside operations; a turn from the bar drawn by the page, another session's record not; the prefill and the attached-context note, × dropping it; a message from a content script or for another chat ignored; a refused message as a localized text, never its code (Create email too); a message stopped from outside (`replaced`) reading "Stopped", the input back, also after a first update already ended; New conversation, disabled while a message is understood), spec 01 "Component structure" (Smart bar mode: no worker, the ready handshake, the header, no usage chip) |
 | `webchat/99-harness-known-issues` | the known-issue shape (level 1) |
 
 ## The fake Worker

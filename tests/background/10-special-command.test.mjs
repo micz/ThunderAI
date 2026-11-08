@@ -12,6 +12,9 @@
 // Spec 04 "Thinking in special commands": newThinkingToken never reaches the resolved value;
 // inline <think> blocks are stripped with stripThinkTags(text, true, true): a dangling
 // unterminated <think> is dropped, and the leading whitespace a removed block leaves is trimmed.
+// Spec 04 "Thinking in special commands", onToken: each answer token reaches the callback as it arrives
+// (the Smart bar chat streams its free answer), the resolved value unchanged; an exception in it
+// never breaks the command (with ThunderAI Privacy on it is never called: 12-processing-worker).
 // Spec 04 "Batch cancellation", #batch-stop-on-rate-limit: sendPrompt() copies the worker's
 // `rateLimited` flag and `retryAfterMs` onto the rejected Error; it records the status of each
 // newRetryAttempt, so a timeout firing while the last retried failure was a 429 is flagged too.
@@ -101,6 +104,18 @@ k.test('thinking-tokens-dropped', 'newThinkingToken never reaches the resolved v
     const { w, p } = await started();
     w.deliver(thinking('Let me think about '), thinking('the sender...'), token('{"spamValue": 3}'), done());
     assert.equal(await p, '{"spamValue": 3}');
+});
+
+k.test('on-token', 'onToken() gets each answer token as it arrives; the resolved value is the same; a throwing callback breaks nothing', async () => {
+    const seen = [];
+    const cmd = new mzta_specialCommand({ prompt: 'x', llm: 'chatgpt_api', config: {}, onToken: t => { seen.push(t); if (t === 'B') throw new Error('display'); } });
+    await cmd.initWorker();
+    const w = ctx.workers.last();
+    const p = cmd.sendPrompt();
+    await flush(3);
+    w.deliver(sent(), thinking('hmm'), token('A'), token('B'), token('C'), done());
+    assert.equal(await p, 'ABC');
+    assert.deepEqual(seen, ['A', 'B', 'C'], 'the tokens only, never the reasoning');
 });
 
 k.test('think-block-stripped', 'an inline <think> block is stripped before the answer is resolved', async () => {

@@ -1,4 +1,4 @@
-# Smart bar (issue #914, phases 1 and 2)
+# Smart bar (issue #914, phases 1 to 3)
 
 A text bar in the message display where the user types what they want done with the mail
 ("tag it urgent and reply confirming"). A first AI call, the **router**, reads the instruction
@@ -10,8 +10,10 @@ and sends.
 Phase 1 shipped the bar, the router, the operation registry with three operations (`tag`,
 `summarize`, `translate`), the per-instruction records and the settings page. Phase 2 adds the
 `compose` operation (a reply, a reply to all, a forward or a new email, see "Compose") and the
-`runLast` rule. The later phases are listed at the end; the data they need is already reserved
-where noted.
+`runLast` rule. Phase 3 adds the chat (see "Chat"): the API chat window opened in Smart bar mode,
+where every message goes through the router, a message no operation covers gets a free answer, and
+an email is written as a draft the user creates later (`deliver_draft`). The last phase is listed at
+the end.
 
 Files:
 
@@ -20,15 +22,19 @@ Files:
 | `js/mzta-smartbar-script.js` | The bar: a classic content script of the message display (shadow DOM) |
 | `js/mzta-smartbar-registry.js` | The operation registry, parameter checks, plan and run of an instruction |
 | `js/mzta-smartbar-router.js` | The router prompt and the checks of its answer; `askJsonObject()`, the correction attempt shared with execute |
-| `js/mzta-smartbar-execute.js` | The prompt of the compose operation and the checks of its answer |
+| `js/mzta-smartbar-execute.js` | The prompt of the compose operation and the checks of its answer; the email and data sections shared with the chat |
+| `js/mzta-smartbar-chat.js` | The chat: the conversation of a session as the prompts carry it, the prompt of the free answer |
+| `js/lib/mzta-smartbar-lines.js` | The texts of the result lines (a classic script, global `mztaSmartbarLines`), shared by the bar and the chat |
+| `api_webchat/smartbarChat.js` | The chat window in Smart bar mode: the channel to the background, the turns it draws |
 | `js/mzta-smartbar-store.js` | The per-instruction record and its states; thin calls over the `smartbar` store |
 | `js/mzta-storage.js` | The `smartbar` object store (not mirrored), its cleanup rules |
-| `mzta-background.js` | "The Smart bar" section: the flow, the jobs, the commands of the bar |
+| `mzta-background.js` | "The Smart bar" section: the flow, the jobs, the commands of the bar and of the chat |
 | `pages/smartbar/` | The settings page (one Options tab today) |
 
 Tests: the `smartbar` area (`tests/smartbar/`, the modules), `tests/background/44-smartbar` (the
 flow), `tests/dom/compose/compose-21-smartbar` (the bar), `tests/dom/compose/compose-22-quoted-split`
-(the quoted part of a received mail), `tests/dom/smartbar/` (the page). The reference instructions
+(the quoted part of a received mail), `tests/dom/smartbar/` (the page), `tests/background/45-smartbar-chat`
+(the chat flow), `tests/dom/webchat/webchat-24-smartbar` (the chat window in Smart bar mode). The reference instructions
 of the router are in [10-smartbar-router-tests.md](10-smartbar-router-tests.md).
 
 ## Feature toggle and settings
@@ -69,13 +75,13 @@ per-feature connection (`special_prompts_with_integration`, spec 02 / 05):
 |--------|-------------------|----------|
 | `prompt_smartbar_router` | `smartbar_router` | The router call |
 | `prompt_smartbar_execute` | `smartbar_execute` | The compose operation: the generative operations that have no prompt of their own (see "Compose") |
-| `prompt_smartbar_chat` | `smartbar_chat` | The chat destination and "Open in chat" |
+| `prompt_smartbar_chat` | `smartbar_chat` | The chat: the window it opens on, and the free answer of a message no operation covers (see "Chat") |
 
 The settings page shows the three connection panels, one section each, built by
 `initializeSpecificIntegrationUI({ root, anchorId })` scoped to its section (`pages/_lib/connection-ui.js`):
 the same panel as the other feature pages, three times on one page. The execute section ("Writing
 emails") explains what is sent and that recipients are never filled in, and holds the three compose
-settings; the chat panel carries a note that it is used by the chat only.
+settings; the chat panel carries a note on what the chat uses it for.
 
 ## Bar
 
@@ -137,13 +143,24 @@ Under the input, the last record of the message, one line per item:
 - "Nothing matched", with the operations available, when the router found no operation;
 - "Interrupted" for a record cut short by the end of the previous session.
 
+The texts of the lines (`opLabel()`, `opText()`, the state icons) are in `js/lib/mzta-smartbar-lines.js`, a
+classic script the message display loads before the bar and the chat window imports, so a line reads
+the same in both.
+
+A record of the chat (the newest record of the message) is drawn the same way, with two lines of
+its own: a draft (`drafted`) reads "Reply: draft ready in the chat", with "Open in chat"; a free
+answer is the line "Answered in the chat." (`hasAnswer`, the text stays in the chat), with "Open
+in chat". Stop (the routing line's and an operation's), Confirm and Cancel name the record
+(`recordId`), so they reach a message of the chat too.
+
 Done and cancelled lines, reports and the unrecognized line can be dismissed (×,
 `smartbar_dismiss`): stored on the record, so they stay gone on the next visit.
 
 Every update reaches the bar as `smartbar_update` with an increasing `seq` and its
 `headerMessageId`: an update older than the one drawn, or for another message, is ignored. The
 record sent to the bar never carries the raw answers (`hasRawResponse` instead), nor the text a
-compose line generated (its result keeps `type` and `recipient` only).
+compose line generated (its result keeps `type` and `recipient` only), nor the chat's `answer`
+(`hasAnswer` instead) and `draft`.
 
 ## Flow
 
@@ -170,9 +187,9 @@ failed operation: that line alone, run again in a new group; a compose line whos
 open is opened again with its stored text, see "Compose"), `smartbar_confirm` /
 `smartbar_cancel` (an operation waiting), `smartbar_dismiss`, `smartbar_open_chat`.
 
-**Chat destination** (and "Open in chat"): the API chat window opens with the text and the mail, as
-for a prompt run on the message (a regular prompt, so the user goes on in the chat), on the
-`smartbar_chat` connection. Nothing is stored.
+**Chat destination** (and "Open in chat"): the chat of the message opens in Smart bar mode, or comes
+to front, and the text becomes its next message (see "Chat"). "Open in chat" on a `json` error
+prefills the instruction instead, and attaches the unreadable answer to the next message.
 
 ## Operation registry
 
@@ -184,27 +201,31 @@ for a prompt run on the message (a regular prompt, so the user goes on in the ch
 | `id` | Stable lowercase identifier |
 | `description` | For the router (English): what it does and when to pick it |
 | `params` | `{ name: { type: 'string' \| 'string[]' \| 'boolean', enum?, required?, description } }`, optional unless `required` |
-| `requirements(env)` | Whether it can run now: feature on, connection usable, permissions granted |
-| `multiple` | Whether it may appear more than once in one instruction (`false` for all four) |
+| `requirements(env)` | Whether it can run now: feature on, connection usable, permissions granted; `env.source` (`'bar'` / `'chat'`) and `env.draft` (the chat session's current draft, or `null`) too |
+| `multiple` | Whether it may appear more than once in one instruction (`false` for all five) |
 | `risk` | `'direct'`, or `'confirm'` (waits for the user's Confirm) |
 | `runLast` | Optional: runs after every other operation of the instruction has ended (compose) |
-| `deliverInChat` | Optional, reserved for the deferred delivery of phase 3 (compose sets it; this version always delivers by opening the compose window) |
-| `dependsOn(ops, index)` | The earlier operations it waits for: a static rule, never the model's |
-| `run(ctx)` | Resolves `{ state, result, error, errorType, rawResponse, retryAt }` |
+| `deliverInChat` | Optional: in the chat the operation does not deliver when it ends, it ends `drafted` and the user delivers it later (compose) |
+| `dependsOn(ops, index)` | The other operations of the instruction it waits for: a static rule, never the model's; the plan moves it after them |
+| `run(ctx)` | Resolves `{ state, result, error, errorType, rawResponse, retryAt }`; `state` is `done`, `drafted`, `error` or `cancelled` |
 
 `ctx` holds the message, the params, the instruction's signal and group, the line's index, the tab,
 the executors, and for the generative operations the instruction, the router's context, the
 selected text and `previousResult` (the stored result of a compose line whose window could not
-open).
+open); in the chat also `source: 'chat'`, `deliverInChat`, the conversation so far, the attached
+unreadable answer (`rawContext`) and `currentDraft()`.
 
-The four operations of this version:
+The five operations of this version:
 
 | id | params | Runs | Requires |
 |----|--------|------|----------|
 | `tag` | `tags: string[]` | With `tags`: those tags assigned through the add-tags assignment (its exclusions, its rule on creating missing tags), no model call. Without: the Add Tags special command pipeline | `add_tags` on, its permissions, its connection usable |
 | `summarize` | none | The Summarize pipeline as the panel button runs it (prompt, connection, the summary store, the panel) | `summarize` on, its connection usable |
 | `translate` | `language: string` | The Translate pipeline, into `language` when given (a translation into another language than the stored one is a new call, not the cache) | `translate` on, its connection usable |
-| `compose` | `type: 'reply' \| 'reply_all' \| 'forward' \| 'new'`, required | Writes an email from this one and opens it in a compose window (see "Compose"); `runLast`, `deliverInChat` | the `smartbar_execute` connection usable (no feature switch of its own) |
+| `compose` | `type: 'reply' \| 'reply_all' \| 'forward' \| 'new'`, required | Writes an email from this one and opens it in a compose window (see "Compose"); in the chat, a draft (see "Chat"); `runLast`, `deliverInChat` | the `smartbar_execute` connection usable (no feature switch of its own) |
+| `deliver_draft` | none | Creates the email of the chat's current draft now: the delivery of Create email (see "Chat"). Waits for a `compose` of the same instruction (`dependsOn`) | the chat (`source: 'chat'`) and a current draft in its session |
+
+No operation uses `risk: 'confirm'` yet; the registry, the bar and the chat support it.
 
 **Availability**: only the operations whose requirements hold are offered to the router; one the
 router names anyway is not run and is reported `unavailable`.
@@ -215,15 +236,24 @@ one-item list, `"true"` / `"false"`); an empty value is the same as an absent on
 is checked; a `required` parameter must be there once the empty values are dropped. Invalid
 parameters keep the line in `error` (`errorType` `params`); the other lines still run.
 
-**Plan** (`planOperations()`): the user's order is the run order, but the `runLast` operations go
-after the others (their own order kept): the router gives "reply and summarize" in that order,
-the plan runs summarize then compose, and a line's `index` is its run order. An unknown id is
-reported `unknown`, a second instance of a single-instance operation `duplicate`; `dependsOn` only
-names earlier lines (no cycle can form). `runLast` is a property of the registry entry, never a
-special case by id.
+**Plan** (`planOperations()`): the user's order is the run order, with two static rules of the
+registry, never the model's and never a special case by id:
+
+- the `runLast` operations go after the others (their own order kept): the router gives "reply and
+  summarize" in that order, the plan runs summarize then compose;
+- a line goes after the lines it depends on (`dependsOn`, which may name any other line of the
+  instruction), even when the user named it first or when they are `runLast`: "make it shorter
+  and create it" runs `compose`, then `deliver_draft`, an exception to "compose runs last". It is a
+  stable topological sort: among the lines whose dependencies are placed, the first non-`runLast`
+  one in the user's order, else the first `runLast` one. A cycle keeps the user's order and drops
+  the dependencies that would point forward.
+
+A line's `index` is its run order and its `dependsOn` names earlier lines only. An unknown id is
+reported `unknown`, a second instance of a single-instance operation `duplicate`.
 
 **Run** (`runPlanned()`): at most `smartbar_parallel_limit` lines at once, first come first served;
-a line waits for its dependencies and is cancelled when one did not end `done`; a `runLast` line
+a line waits for its dependencies and is cancelled when one did not end successfully (`done`, or
+`drafted` in the chat: `SUCCESS_STATES`); a `runLast` line
 starts only once every other line before it has ended, in whatever state (a failed summary does
 not stop the reply), without holding a slot meanwhile, so the compose window opens at the end and
 steals no focus mid-way; a `confirm` line waits for the answer without holding a slot; once the
@@ -249,7 +279,8 @@ the operations or their parameters. The prompt is, in this order:
    router always sees the operations;
 2. the JSON section, **locked**: appended by the add-on, never part of the editable text;
 3. the instruction and the metadata: subject, sender **name**, participant **names** (never an
-   address), the tags of the account, whether text is selected.
+   address), the tags of the account, whether text is selected; in the chat also `draft_exists`
+   and, when it does, `draft_type` (a change asked for the draft is a `compose` of that type).
 
 The answer: `{"operations": [{"id", "params"}], "context": [], "unrecognized": ""}`.
 
@@ -265,6 +296,9 @@ The answer: `{"operations": [{"id", "params"}], "context": [], "unrecognized": "
 - The default text tells the router that the details the user gives about an operation (who to
   send it to, what to say, the tone) belong to that operation, not to `unrecognized`: "forward it
   to Marco" is a forward, with nothing unrecognized.
+- The default text also covers the chat: a question about the email ("who is the sender") is no
+  operation and nothing unrecognized (the chat answers it); with a draft, a change of it is a
+  `compose` of its type, approving it `deliver_draft`, "make it shorter and create it" both.
 - `operations` missing counts as none; an empty `unrecognized` is none.
 
 ## Placeholders
@@ -313,17 +347,21 @@ extends it. Its prompt (`buildExecutePrompt()`, `js/mzta-smartbar-execute.js`) i
    1. the email between `<<<EMAIL START>>>` and `<<<EMAIL END>>>`, declared as data (any
       instruction inside it is ignored): subject, from, to, cc, date, and the text. A delimiter
       written inside a value is defused, so it cannot close its section;
-   2. the instruction;
-   3. the operation and its type, with what the type asks for;
-   4. the context (only when there is one), delimited as data like the email: the placeholders of
+   2. the chat only: the conversation so far (`renderConversation()`: its previous drafts and
+      refinement requests, "write the new version of the latest draft"), then the unreadable model
+      answer the user brought in with "Open in chat", each delimited as data
+      (`<<<CONVERSATION START>>>` / `<<<CONVERSATION END>>>`);
+   3. the instruction;
+   4. the operation and its type, with what the type asks for;
+   5. the context (only when there is one), delimited as data like the email: the placeholders of
       `routerContext`, `selected_text` when text is selected, the placeholders the user typed. They
       are rendered by the placeholder machinery of the prompts (`getPlaceholdersValues()`, a custom
       placeholder expanded first, default values). A placeholder the user typed is replaced in the
       instruction by a reference (`[mail_folder_name, see the context]`): its value goes only to
       the context, never into the instruction, where an email body would read as the user's words;
-   5. the additional instructions (`smartbar_additional_instructions`) and the signature the add-on
+   6. the additional instructions (`smartbar_additional_instructions`) and the signature the add-on
       would add (see "Signature"), only when set;
-   6. the language rule: `default_chatgpt_lang`, else the language of the email, unless the
+   7. the language rule: `default_chatgpt_lang`, else the language of the email, unless the
       instruction explicitly asks for another language.
 
 **The email.** Only the current one. Its text is cut to `smartbar_max_body_length` (`0` = no
@@ -382,18 +420,143 @@ chat's reply (`chatgpt_replyMessage`): `_beginComposeWindow()` in `mzta-backgrou
 - The line is `done` once the window is open; its `result` keeps `{ type, subject, body, recipient,
   signature }` (texts capped like `rawResponse`). A window that could not open ends the line in
   `error`, `errorType` `compose_window`, with that result: Retry opens it again with the stored
-  text, without a new generation (`previousResult`). The record's `draft` stays reserved for
-  phase 3.
+  text, without a new generation (`previousResult`). In the chat no window opens: see "Chat".
 - **Abort**: a generation stopped (Stop of the line or of the instruction, a replacement) ends the
   line `cancelled` and never opens a window; the worker is disposed at once, so no late answer
   arrives.
+
+## Chat
+
+The chat of a message is the API chat window (`api_webchat/`, spec 01 "API WebChat") opened in
+**Smart bar mode**: `index.html?…&smartbar=1&hid=<headerMessageId>`, on the `smartbar_chat`
+connection (`llm`, `prompt_id=prompt_smartbar_chat`, so the header shows its provider and model as
+for any prompt), which must be an API connection (otherwise the bar's tab gets the
+`smartbar_error_no_connection` alert and no window opens). Without the flag nothing of this section
+is active in the window.
+
+### Opening it
+
+- The bar's chat destination (the default destination or the second button) and "Open in chat" on a
+  line (the unrecognized part, "Nothing matched", a draft, a free answer) send `smartbar_open_chat`;
+  the text, when there is one, becomes the chat's next message. "Open in chat" on a `json` error
+  (`fromError: { recordId, index }`) prefills the input with the instruction, **not sent**, and
+  attaches the unreadable answer (the record's or the line's `rawResponse`, capped at 8000) to the
+  next message as context: a note above the input says so, and its × drops it. The attachment
+  lives in memory only, with the open window; it goes to that one message's free answer or compose
+  call, never to the router.
+- **One chat per message**: the background keeps `headerMessageId → { chatId, windowId, tabId,
+  mailTabId, ready, sessionId, rawContext, prefill, queue }` (`_smartbarChats`). An open chat is
+  brought to front (`windows.update(focused)`) and the new message appended; a closed window is
+  forgotten (`windows.onRemoved`). Requests made before the window is ready wait in its queue.
+- The ready handshake is the window's usual one (`<llm>_ready_<call_id>`); the background answers
+  `smartbar_chat_init` with the session (below), then the prefill and the queued messages.
+
+### The window
+
+`controller.js` reads the flag and imports `api_webchat/smartbarChat.js`, whose channel stands where
+the provider worker would: `<message-input>` and `<messages-area>` post `chatMessage` and `stop`
+to it unchanged, and it forwards them to the background (`smartbar_chat_send` with a `clientId`,
+`smartbar_chat_stop`). The page makes no call and creates no worker; the startup notice, the
+endpoint check and the zoom are as for any chat; no usage chip. The background's messages to it
+(`smartbar_chat_init`, `smartbar_chat_update` with a `seq`, `smartbar_chat_stream`,
+`smartbar_chat_prefill`) carry its `chatId` and message; one sent by a content script is ignored.
+
+One turn per record: the user's message (drawn by the input for a message typed there, by the page
+for the others), then a model turn holding, in order, the reasoning (a live "Thinking…" row, then
+the window's thinking block, `hide_thinking` deciding whether it opens; never stored, so a resumed
+session shows none), the free answer (through `<messages-area>`'s one render path: `streamInto()`
+the turn, the tokens, `handleTokensDone()`), the drafts and the result lines. The lines read as in
+the bar (`js/lib/mzta-smartbar-lines.js`) with its buttons, through `smartbar_chat_*` commands that
+name the record: Stop, Confirm / Cancel, Retry, Remove, ×, and "Details" (the settings page); "Open
+in chat" is never shown inside the chat. A rate-limited error counts down and retries **once** by
+itself, as in the bar (`auto: true`; an operation keeps `autoRetried`), except on a resumed record
+(history: Retry only) and, for the message itself, unless it is the newest turn (its retry is a new
+message). While the router or the answer works, the line
+"Understanding the instruction…" and the input's Stop. The input comes back once the message is
+planned (its operations then run while the user types on), answered, failed or stopped from
+outside: a record replaced (the feature turned off stops every message of the chat; for a turn of
+the bar, its next instruction) reaches the chat too and reads "Stopped". A message the background
+refuses is an error turn with a localized text (`refusalText()`: the feature off, the email deleted
+or moved, the chat no longer known), never the bare code; Create email says the same. A new turn arriving
+while an answer streams waits for its end.
+
+### Every message goes through the router
+
+For each message (`_smartbarChatRun()`): a record with `source: 'chat'` in the current session, a
+group of jobs as for the bar (the router job keyed on its group, so several run at once), the router
+with the chat metadata (`draft_exists`, `draft_type`) and `deliver_draft` available when the
+session holds a draft. Then:
+
+1. operations recognized: they run through the same plan, limit, jobs and record as from the bar.
+   **No replacement**: a message never stops another; Stop is explicit (the input's Stop for the
+   message being understood or answered, a line's Stop for an operation). The bar still replaces
+   only its own previous instruction. An `unrecognized` part beside them is shown as a note, with
+   no free answer;
+2. nothing recognized (no planned line): the **free answer**, a special command on the
+   `smartbar_chat` connection with the text of `prompt_smartbar_chat` and **no JSON section**,
+   ThunderAI Privacy and the reasoning stripping as for every special command
+   (`buildChatPrompt()`, `js/mzta-smartbar-chat.js`): the editable text, then the email between its
+   delimiters as data (as the compose operation carries it: `smartbar_max_body_length`, the quoted
+   part cut first), the conversation so far as data, the attached unreadable answer as data, the
+   user's new message, the language rule (the language of the message). The answer is free text,
+   stored in `answer` (capped at 20000); an empty one is an error. Its tokens are streamed to the
+   window (at most every 100 ms) **only while ThunderAI Privacy is off**: with it on, the tokens
+   would show the protected values, restored only in the final answer, so the answer appears whole
+   at the end (`mzta_specialCommand`'s `onToken` is never called with a `ProcessingWorker`). The
+   reasoning of the router and of the answer reaches the window at most every 250 ms.
+
+A failure (router or answer) ends the record in `error` like a router failure of the bar, with
+Retry (the same message sent again in the chat) and Remove.
+
+**The conversation** (`conversationTurns()`, `renderConversation()`): for each record of the
+session before this one, the user's message, then the free answer, the drafts its compose wrote
+(type, subject, body, "email created" once delivered) and the state of its other operations. Cut to
+12000 characters, the oldest turns first (`[earlier messages left out]`).
+
+### Drafts
+
+In the chat, an operation with `deliverInChat` (`compose`) opens no window when it ends: the line
+ends `drafted` with its result, the record's `draft` is `{ type, subject, body, groupId }`, and the
+turn shows the draft (the subject of a new email, the body) with **Create email** and Copy in its
+actions toolbar. The session's **current draft** is the latest `drafted` operation of its records
+(`currentDraft()`, `js/mzta-smartbar-store.js`).
+
+- **Refinements** ("shorter", "more formal", "add that…") are `compose` operations the router
+  recognizes thanks to `draft_exists`; their prompt carries the conversation with the previous
+  drafts and requests, and writes the new version, which becomes the current draft. The previous
+  draft turn stays in the conversation.
+- **Create email** on any draft turn (`smartbar_chat_create`, `_smartbarDeliverDraft()`) runs the
+  delivery of "Compose" for that draft (the window of its type, the same quote, signature and
+  empty-To rules) and sets that operation `done`, its line reading as the bar's; the draft stays
+  shown. A draft already delivered can be created again: a second window opens, as expected.
+- **`deliver_draft`** (registry above) runs the same delivery for the current draft: the one a
+  `compose` of the same instruction just wrote (it waits for it: "make it shorter and create it"),
+  else the one the session held when the message was sent. Its line reads "Reply: compose window
+  opened". Without a draft it is not offered to the router, so "create the email" ends in
+  `unrecognized` or in the free answer.
+
+Operations without `deliverInChat` (tag, summarize, translate) deliver at once, as from the bar.
+
+### Sessions
+
+The chat shows the latest session of the message: the session of a New conversation started since
+Thunderbird started (`_smartbarSessionOverride`, in memory), else the latest record's. Its last 50
+records are loaded (`sessionRecords()`, the in-progress ones as they are in memory), with a notice
+when the session holds more. The bar uses the same rule, so the bar and the chat of a message share
+the session: a new instruction from the bar after the chat was used continues it, and shows in the
+open chat as a turn of its own. **New conversation** (a header button, disabled while a message is
+understood or answered) starts a new `sessionId` (`smartbar_chat_new_session`): the turns shown go
+(the startup notice stays), the attached context is dropped, the old records stay until they expire.
+After a restart a New conversation with no message yet is forgotten, and the previous session is
+resumed.
 
 ## Jobs
 
 One instruction is one group of jobs in `taJobRegistry` (spec 01 "In-flight jobs"), with a
 `groupId`: the router job (kind `smartbar`) and one job per operation in its own feature's kind
 (`add_tags`, `summary`, `translation`; `smartbar_compose` for compose, which no one else starts).
-Each entry has an `AbortController`;
+The router job of the bar is keyed on the message, the one of a
+message of the chat on its group (several run at once). Each entry has an `AbortController`;
 `taJobRegistry.abortGroup(groupId)` invalidates then aborts every entry of the group. So:
 
 - an operation that finds a job of its kind already running on the message (the automatic
@@ -405,7 +568,8 @@ Each entry has an `AbortController`;
 
 ## Replacement
 
-A new instruction on a message whose previous one still runs **replaces** it: the previous group
+A new instruction of the bar on a message whose previous instruction of the bar still runs
+**replaces** it (the messages of the chat are never replaced): the previous group
 is aborted, its waiting confirmations cancelled, its record marked `replaced` (its unfinished
 operations `cancelled`). A record that already ended is never changed. When the last record of the
 message still shows errors the user has not dismissed, the bar shows a notice
@@ -422,15 +586,16 @@ One record per instruction in the `smartbar` object store of the per-message dat
   store, a database found new is not rebuilt for it. The history is lost if Thunderbird evicts the
   database (the settings page says so).
 - A record holds `messageId`, `createdAt`, `subject` / `from` / `message_date`, `groupId`,
-  `sessionId`, `source` (`'bar'`), `instruction`, `state`, `unrecognized`, `routerContext`,
+  `sessionId`, `source` (`'bar'` or `'chat'`), `instruction`, `state`, `unrecognized`, `routerContext`,
   `reports`, `error`, `errorType`, `rawResponse`, `retryAt`, `operations`, `dismissed`, and
-  `answer` / `draft` (reserved for phase 3, `null`). `failed` and `size` are computed on write.
+  `answer` (the chat's free answer) / `draft` (`{ type, subject, body, groupId }`, the latest draft its
+  compose wrote in the chat), `null` otherwise. `failed` and `size` are computed on write.
 - An operation holds `index`, `id`, `params`, `state`, `result`, `error`, `errorType`,
   `rawResponse`, `retryAt`, `dependsOn`, `finishedAt`, and `dismissed` / `autoRetried` when set.
   A compose line's `result` is the generated text (see "Compose"), kept for a retry of its window.
 - `rawResponse` is capped at 8000 characters, `answer` at 20000.
 - Record states: `running`, `pending_confirmation`, `error`, `done`, `interrupted`, `replaced`.
-  Operation states: `running`, `pending_confirmation`, `drafted` (reserved), `done`, `error`,
+  Operation states: `running`, `pending_confirmation`, `drafted` (the chat: a draft not created yet), `done`, `error`,
   `cancelled`. A record's state is derived from its operations (`deriveState()`), but `replaced`
   and `interrupted`, which the background sets.
 - A record is written only at the meaningful points: created, an operation reaching
@@ -448,11 +613,10 @@ One record per instruction in the `smartbar` object store of the per-message dat
   Message-ID). `removeEntries()` answers only those three.
 - The suggestions are the distinct instructions of the store, most recent first
   (`recentInstructions(smartbar_history_size)`).
+- A session's records (`sessionRecords(sessionId)`, the `sessionId` index): oldest first by
+  `createdAt`, the last `CHAT_SESSION_LIMIT` (50) of them, with the session's count. The chat loads
+  no more than that and says how many earlier messages it does not show.
 
 ## Later phases
 
-- **Phase 2** (this version): the `compose` operation and `runLast`. No operation uses
-  `risk: 'confirm'` yet; the registry and the bar support it.
-- **Phase 3**: the chat mode with `deliver_draft` (`drafted` state, `answer` / `draft` fields,
-  `source: 'chat'`, the deferred delivery of the operations with `deliverInChat`).
 - **Phase 4**: the Activity tab of the settings page (the records, their raw answers).

@@ -351,19 +351,9 @@
   }
 
   // ── Drawing ─────────────────────────────────────────────────────────────────────────────────
-  const OP_LABEL_KEYS = { tag: 'smartbar_op_tag', summarize: 'smartbar_op_summarize', translate: 'smartbar_op_translate' };
-  // The compose operation is named by its message type ("Reply to all"), its params' only field.
-  const COMPOSE_LABEL_KEYS = {
-    reply: 'smartbar_op_compose_reply',
-    reply_all: 'smartbar_op_compose_reply_all',
-    forward: 'smartbar_op_compose_forward',
-    new: 'smartbar_op_compose_new',
-  };
-  const opLabel = (id, params = {}) => {
-    if (id === 'compose') return msg(COMPOSE_LABEL_KEYS[params?.type] || 'smartbar_op_compose');
-    return OP_LABEL_KEYS[id] ? msg(OP_LABEL_KEYS[id]) : id;
-  };
-  const STATE_ICON = { running: '⏳', pending_confirmation: '❓', done: '✔', error: '⚠', cancelled: '–', drafted: '✎' };
+  // The texts of the lines are shared with the chat window (js/lib/mzta-smartbar-lines.js,
+  // loaded before this script).
+  const { STATE_ICON, opLabel, opText } = globalThis.mztaSmartbarLines;
 
   // The state the icon's dot shows: running, pending confirmation, error (nothing otherwise).
   function dotState() {
@@ -374,34 +364,6 @@
     if (record.errorType && !record.dismissed?.error) return 'error';
     if ((record.operations || []).some(op => op.state === 'error' && !op.dismissed)) return 'error';
     return '';
-  }
-
-  function opText(op) {
-    const label = opLabel(op.id, op.params);
-    switch (op.state) {
-      case 'running': return msg('smartbar_line_running', [label]);
-      case 'pending_confirmation': return msg('smartbar_line_pending', [label]);
-      case 'cancelled': return msg('smartbar_line_cancelled', [label]);
-      case 'error': return msg('smartbar_line_error', [label, String(op.error || '')]);
-      case 'done':
-        if (op.id === 'tag') {
-          const tags = op.result?.tags || [];
-          let text = tags.length > 0 ? msg('smartbar_result_tags_added', [tags.join(', ')]) : msg('smartbar_result_tags_none');
-          if ((op.result?.skipped || []).length > 0) text += ' ' + msg('smartbar_result_tags_skipped', [op.result.skipped.join(', ')]);
-          return text;
-        }
-        if (op.id === 'summarize') return msg('smartbar_result_summary_ready');
-        if (op.id === 'translate') return msg('smartbar_result_translation_ready');
-        if (op.id === 'compose') {
-          // The add-on never fills the recipients: the one the instruction named is a reminder.
-          const recipient = String(op.result?.recipient || '').trim();
-          return recipient !== ''
-            ? msg('smartbar_result_compose_opened_recipient', [label, recipient])
-            : msg('smartbar_result_compose_opened', [label]);
-        }
-        return msg('smartbar_line_done', [label]);
-      default: return label;
-    }
   }
 
   function button(label, onClick, cls = '') {
@@ -441,7 +403,9 @@
     nodes.push(button(msg('smartbar_retry'), () => send('smartbar_retry', selectionInfo({ recordId: record.id, index: index })), 'retry'));
     nodes.push(button(msg('smartbar_remove'), () => send('smartbar_dismiss', { recordId: record.id, what: index ?? 'error' }), 'remove'));
     if (errorType === 'json') {
-      nodes.push(button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', { text: record.instruction, selection: lastSelection }), 'chat'));
+      // The chat opens with the instruction prefilled, not sent; the background attaches the
+      // unreadable answer (which the bar never receives) to the next message as context.
+      nodes.push(button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', { fromError: { recordId: record.id, index: index } }), 'chat'));
     }
     return nodes;
   }
@@ -473,7 +437,7 @@
     const routing = record.state === 'running' && ops.length === 0 && !record.errorType;
     if (routing) {
       box.appendChild(line('running', STATE_ICON.running, msg('smartbar_routing'),
-        [button(msg('smartbar_stop'), () => send('smartbar_stop'), 'stop')]));
+        [button(msg('smartbar_stop'), () => send('smartbar_stop', { recordId: record.id }), 'stop')]));
       const t = thinkingNode();
       if (t) { t.open = wasOpen; box.appendChild(t); }
       return;
@@ -485,13 +449,22 @@
     for (const op of ops) {
       if (op.dismissed) continue;
       const extra = [];
-      if (op.state === 'running') extra.push(button(msg('smartbar_stop'), () => send('smartbar_stop', { index: op.index }), 'stop'));
+      if (op.state === 'running') extra.push(button(msg('smartbar_stop'), () => send('smartbar_stop', { recordId: record.id, index: op.index }), 'stop'));
       else if (op.state === 'done' || op.state === 'cancelled') extra.push(button('×', () => send('smartbar_dismiss', { recordId: record.id, what: op.index }), 'dismiss'));
       else if (op.state === 'pending_confirmation') {
-        extra.push(button(msg('smartbar_confirm'), () => send('smartbar_confirm', { index: op.index }), 'confirm'));
-        extra.push(button(msg('smartbar_cancel'), () => send('smartbar_cancel', { index: op.index }), 'cancel'));
+        extra.push(button(msg('smartbar_confirm'), () => send('smartbar_confirm', { recordId: record.id, index: op.index }), 'confirm'));
+        extra.push(button(msg('smartbar_cancel'), () => send('smartbar_cancel', { recordId: record.id, index: op.index }), 'cancel'));
       } else if (op.state === 'error') extra.push(...errorButtons(record, op.index, op.errorType, op.retryAt));
+      // A draft of the chat: it is delivered from the chat (Create email).
+      else if (op.state === 'drafted') extra.push(button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', {}), 'chat'));
       box.appendChild(line(op.state, STATE_ICON[op.state] || '', opText(op), extra));
+    }
+    // A message of the chat answered in free text: the answer is shown in the chat only.
+    if (record.hasAnswer && !record.dismissed?.unrecognized) {
+      box.appendChild(line('answered', '💬', msg('smartbar_answered_in_chat'), [
+        button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', {}), 'chat'),
+        button('×', () => send('smartbar_dismiss', { recordId: record.id, what: 'unrecognized' }), 'dismiss'),
+      ]));
     }
     if (!record.dismissed?.reports) {
       for (const report of record.reports || []) {
@@ -505,7 +478,8 @@
         button('×', () => send('smartbar_dismiss', { recordId: record.id, what: 'unrecognized' }), 'dismiss'),
       ]));
     }
-    const nothing = !record.errorType && ops.length === 0 && !record.unrecognized && record.state !== 'running' && record.state !== 'interrupted';
+    const nothing = !record.errorType && ops.length === 0 && !record.unrecognized && !record.hasAnswer &&
+      record.state !== 'running' && record.state !== 'interrupted';
     if (nothing && !record.dismissed?.unrecognized) {
       const available = (state.available || []).map(id => opLabel(id));
       const text = msg('smartbar_nothing_matched') + ' ' + (available.length > 0

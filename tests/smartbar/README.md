@@ -7,8 +7,9 @@ mechanism are in the general [`tests/README.md`](../README.md). Paths below are 
 
 The modules under test:
 
-- `js/mzta-smartbar-registry.js`: the operations, their availability, the parameter checks, the plan
-  of an instruction and how its lines run (limit, dependencies, confirmation, abort);
+- `js/mzta-smartbar-registry.js`: the operations (`deliver_draft` among them), their availability, the
+  parameter checks, the plan of an instruction (runLast, the dependency sort) and how its lines run
+  (limit, dependencies, confirmation, abort, a drafted outcome);
 - `js/mzta-smartbar-router.js`: the router prompt (never the email body), the placeholder allow list,
   the context, the reading of the answer and the one correction attempt;
 - `js/mzta-smartbar-execute.js`: the prompt of the compose operation (the email delimited as data,
@@ -16,11 +17,15 @@ The modules under test:
   placeholders as references, the language rule, the reading of the answer with its correction
   attempt, the signature the add-on adds, the body as HTML;
 - `js/mzta-smartbar-store.js` with the `smartbar` store of `js/mzta-storage.js`: the record, its
-  derived state, the caps, the non-mirrored store, the startup interruption, the three retention rules.
+  derived state, the caps, the non-mirrored store, the startup interruption, the three retention rules,
+  a session's records and the current draft of the chat;
+- `js/mzta-smartbar-chat.js`: the conversation of a chat session and the prompt of the free answer.
 
 What the background does with them (routing through the special command, replacement of an
 instruction, the jobs it starts) is the background area's ([`background/README.md`](../background/README.md));
-the bar in the message pane is the compose area's ([`compose/README.md`](../compose/README.md)); the
+the chat's flow too (`background/45-smartbar-chat`); the bar in the message pane is the compose area's
+([`compose/README.md`](../compose/README.md)); the chat window in Smart bar mode is the webchat
+area's (`dom/webchat/webchat-24-smartbar`); the
 settings page (`pages/smartbar/`) is tested in `dom/smartbar/` (the no-policy, sweep and connection
 files the managed area generates, and the ui area's files).
 
@@ -47,6 +52,7 @@ tests/
     ├── 03-store.test.mjs               records, states, caps, the smartbar store and its cleanup
     ├── 04-router-test-set.test.mjs     claude-spec/10-smartbar-router-tests.md against the registry
     ├── 05-execute.test.mjs             the compose prompt, the email cut, the answer, the signature
+    ├── 06-chat.test.mjs                the conversation of a chat session, the free answer's prompt
     └── 99-harness-known-issues.test.mjs   the known-issue entries themselves
 ```
 

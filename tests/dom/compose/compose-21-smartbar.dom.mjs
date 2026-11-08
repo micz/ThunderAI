@@ -14,7 +14,11 @@
 // Remove on an error (Open in chat for a json error), the reports, the unrecognized part, "nothing
 // matched" with the available operations; an update with an older seq or for another message is
 // ignored. Spec 10 "Compose": the compose line named by its type, "compose window opened" with the
-// recipient to add as a reminder.
+// recipient to add as a reminder. The line texts come from js/lib/mzta-smartbar-lines.js, loaded
+// before the bar as the background registers it. A record of the chat (spec 10 "Chat"): a draft
+// and a free answer each a line with Open in chat; Stop names the record; Open in chat on a json
+// error names the record and the line (the chat prefills the instruction); the Stop of the routing
+// line names the record.
 
 import { after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -42,7 +46,7 @@ const ctx = await openMailDocument({
     url: DISPLAY_URL,
     displayedMessageId: ID,
     html: '<!DOCTYPE html><html><head></head><body><div class="moz-text-html">Hello, this is the mail.</div></body></html>',
-    scripts: [...CONTENT_SCRIPTS, 'js/mzta-smartbar-script.js'],
+    scripts: [...CONTENT_SCRIPTS, 'js/lib/mzta-smartbar-lines.js', 'js/mzta-smartbar-script.js'],
     commands: {
         smartbar_get_state: () => ({ config: { ...config }, seq: 0, headerMessageId: ID, state: null, suggestions: ['riassumi', 'traduci'] }),
         smartbar_run: ok,
@@ -187,7 +191,8 @@ k.test('routing', S_LINES, 'while the router works: one routing line with Stop',
     assert.deepEqual(lines(), [msg('smartbar_routing')]);
     assert.ok(!hidden($('button.stop')));
     await ctx.click(button(0, 'stop'));
-    assert.deepEqual(lastSent('smartbar_stop'), { command: 'smartbar_stop', headerMessageId: ID });
+    // It names the record: a message of the chat shown in the bar is stopped too.
+    assert.deepEqual(lastSent('smartbar_stop'), { command: 'smartbar_stop', headerMessageId: ID, recordId: 1 });
 });
 
 k.test('operation-lines', S_LINES, 'one line per operation; Stop on a running one names its index', async () => {
@@ -197,7 +202,7 @@ k.test('operation-lines', S_LINES, 'one line per operation; Stop on a running on
     ] }), { running: true });
     assert.deepEqual(lines(), [msg('smartbar_result_summary_ready'), msg('smartbar_line_running', [msg('smartbar_op_translate')])]);
     await ctx.click(button(1, 'stop'));
-    assert.deepEqual(lastSent('smartbar_stop'), { command: 'smartbar_stop', headerMessageId: ID, index: 1 });
+    assert.deepEqual(lastSent('smartbar_stop'), { command: 'smartbar_stop', headerMessageId: ID, recordId: 1, index: 1 });
 });
 
 k.test('error-line', S_LINES, 'an operation in error: Retry and Remove name the record and the index', async () => {
@@ -210,11 +215,11 @@ k.test('error-line', S_LINES, 'an operation in error: Retry and Remove name the 
     assert.deepEqual(lastSent('smartbar_dismiss'), { command: 'smartbar_dismiss', headerMessageId: ID, recordId: 2, what: 0 });
 });
 
-k.test('json-error', S_LINES, 'a router json error offers Open in chat with the instruction', async () => {
+k.test('json-error', S_LINES, 'a router json error offers Open in chat, naming the record: the chat prefills its instruction', async () => {
     await update(record({ id: 3, instruction: 'do the thing', state: 'error', errorType: 'json', error: 'not JSON' }));
     assert.deepEqual(lines(), [msg('smartbar_line_router_error', ['not JSON'])]);
     await ctx.click(button(0, 'chat'));
-    assert.deepEqual(lastSent('smartbar_open_chat'), { command: 'smartbar_open_chat', headerMessageId: ID, text: 'do the thing', selection: '' });
+    assert.deepEqual(lastSent('smartbar_open_chat'), { command: 'smartbar_open_chat', headerMessageId: ID, fromError: { recordId: 3, index: null } });
 });
 
 k.test('reports-unrecognized', S_LINES, 'the reports and the unrecognized part get their own lines', async () => {
@@ -255,14 +260,35 @@ k.test('compose-lines', S_LINES, 'compose: a line named by its type; done says t
     assert.equal(lines()[2], 'Forward: compose window opened — recipient to add: Marco');
 });
 
-k.test('compose-json-error', S_LINES, 'a compose line in json error: Retry, Remove and Open in chat with the instruction', async () => {
+k.test('compose-json-error', S_LINES, 'a compose line in json error: Retry, Remove and Open in chat naming the record and the line', async () => {
     await update(record({ id: 8, instruction: 'reply nicely', state: 'error', operations: [
         { index: 0, id: 'compose', params: { type: 'reply' }, state: 'error', error: 'not JSON', errorType: 'json' },
     ] }));
     assert.deepEqual(lines(), [msg('smartbar_line_error', [msg('smartbar_op_compose_reply'), 'not JSON'])]);
     assert.ok(button(0, 'retry'));
     await ctx.click(button(0, 'chat'));
-    assert.deepEqual(lastSent('smartbar_open_chat'), { command: 'smartbar_open_chat', headerMessageId: ID, text: 'reply nicely', selection: '' });
+    assert.deepEqual(lastSent('smartbar_open_chat'), { command: 'smartbar_open_chat', headerMessageId: ID, fromError: { recordId: 8, index: 0 } });
+});
+
+k.test('chat-records', S_LINES, 'a record of the chat: a draft reads "draft ready in the chat", a free answer "Answered in the chat.", both with Open in chat', async () => {
+    await update(record({ id: 9, source: 'chat', operations: [
+        { index: 0, id: 'compose', params: { type: 'reply' }, state: 'drafted', result: { type: 'reply', recipient: '' } },
+    ] }));
+    assert.deepEqual(lines(), [msg('smartbar_line_drafted', [msg('smartbar_op_compose_reply')])]);
+    assert.equal(lines()[0], 'Reply: draft ready in the chat');
+    await ctx.click(button(0, 'chat'));
+    assert.deepEqual(lastSent('smartbar_open_chat'), { command: 'smartbar_open_chat', headerMessageId: ID });
+    await update(record({ id: 10, source: 'chat', instruction: 'who is the sender?', hasAnswer: true }), { available: ['summarize'] });
+    // Not "Nothing matched": the message was answered in the chat.
+    assert.deepEqual(lines(), [msg('smartbar_answered_in_chat')]);
+    await ctx.click(button(0, 'chat'));
+    assert.deepEqual(lastSent('smartbar_open_chat'), { command: 'smartbar_open_chat', headerMessageId: ID });
+    await ctx.click(button(0, 'dismiss'));
+    assert.deepEqual(lastSent('smartbar_dismiss'), { command: 'smartbar_dismiss', headerMessageId: ID, recordId: 10, what: 'unrecognized' });
+    await update(record({ id: 11, source: 'chat', operations: [
+        { index: 0, id: 'deliver_draft', params: {}, state: 'done', result: { type: 'forward', recipient: 'Marco' } },
+    ] }));
+    assert.deepEqual(lines(), ['Forward: compose window opened — recipient to add: Marco']);
 });
 
 k.test('stale-updates', S_LINES, 'an update with an older seq, or for another message, is ignored', async () => {

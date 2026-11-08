@@ -23,8 +23,13 @@ Each case has:
 - `instruction`: what the user types;
 - `hasSelection`: whether text is selected in the message (default `false`). With a selection,
   `selected_text` is added by the add-on, never by the router, so it never appears in `context`;
-- `available`: the operations available (default: all four). An operation that is not available
-  must not appear in `operations`: what the user asked for goes to `unrecognized` instead;
+- `available`: the operations available (default: those whose requirements hold with every
+  feature, permission and connection on, in the case's `source` with its `draft`). An operation
+  that is not available must not appear in `operations`: what the user asked for goes to
+  `unrecognized` instead;
+- `source`: `"bar"` (default) or `"chat"`, where the message is typed;
+- `draft`: the chat only, the type of the session's current draft (`draft_exists` / `draft_type` of
+  the router's metadata); absent when there is none. `deliver_draft` is available only with one;
 - `expected`: the router's answer.
 
 Free-text values (a tag name, a language) are written as the user wrote them, in the language of
@@ -37,6 +42,14 @@ to the compose operation, so it is not `unrecognized` either (the compose step s
 reminder). The router gives the operations in the user's order, even when compose comes first:
 the add-on runs compose last (`runLast`, [10-smartbar.md](10-smartbar.md) "Operation registry"),
 which the test checks on every mixed case.
+
+**The chat** ([10-smartbar.md](10-smartbar.md) "Chat"). A question about the email ("chi è il
+mittente?") is no operation and nothing unrecognized: the chat answers it freely. With a draft, a
+change of it ("più breve", "make it more formal", "aggiungi che…") is a `compose` of the draft's
+type, an approval ("crea l'email", "ok vai", "that's fine, create the email") is `deliver_draft`,
+and "make it shorter and create it" is both: the add-on runs `deliver_draft` after the `compose`
+whatever their order (its `dependsOn`, also checked). Without a draft the approval is not covered:
+`unrecognized` from the bar, the free answer in the chat.
 
 ```json
 [
@@ -196,6 +209,80 @@ which the test checks on every mixed case.
       "operations": [{ "id": "translate", "params": { "language": "francese" } }, { "id": "summarize", "params": {} }],
       "context": [], "unrecognized": "in francese"
     }
+  },
+  {
+    "instruction": "più breve",
+    "source": "chat",
+    "draft": "reply",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "reply" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "make it more formal",
+    "source": "chat",
+    "draft": "forward",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "forward" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "aggiungi che arrivo alle 10",
+    "source": "chat",
+    "draft": "reply_all",
+    "expected": { "operations": [{ "id": "compose", "params": { "type": "reply_all" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "crea l'email",
+    "source": "chat",
+    "draft": "reply",
+    "expected": { "operations": [{ "id": "deliver_draft", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "ok vai",
+    "source": "chat",
+    "draft": "new",
+    "expected": { "operations": [{ "id": "deliver_draft", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "that's fine, create the email",
+    "source": "chat",
+    "draft": "reply",
+    "expected": { "operations": [{ "id": "deliver_draft", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "crea l'email",
+    "source": "chat",
+    "expected": { "operations": [], "context": [], "unrecognized": "crea l'email" }
+  },
+  {
+    "instruction": "ok go",
+    "expected": { "operations": [], "context": [], "unrecognized": "ok go" }
+  },
+  {
+    "instruction": "make it shorter and create it",
+    "source": "chat",
+    "draft": "reply",
+    "expected": {
+      "operations": [{ "id": "compose", "params": { "type": "reply" } }, { "id": "deliver_draft", "params": {} }],
+      "context": [], "unrecognized": ""
+    }
+  },
+  {
+    "instruction": "creala dopo averla resa più breve",
+    "source": "chat",
+    "draft": "reply",
+    "expected": {
+      "operations": [{ "id": "deliver_draft", "params": {} }, { "id": "compose", "params": { "type": "reply" } }],
+      "context": [], "unrecognized": ""
+    }
+  },
+  {
+    "instruction": "chi è il mittente?",
+    "source": "chat",
+    "expected": { "operations": [], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "what is he asking me?",
+    "source": "chat",
+    "draft": "reply",
+    "expected": { "operations": [], "context": [], "unrecognized": "" }
   }
 ]
 ```

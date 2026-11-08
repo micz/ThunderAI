@@ -391,7 +391,7 @@ prefixes (`smartbar_router`, `smartbar_execute`, `smartbar_chat`). Any other id 
 that `buildSummaryPrompt()` pastes into `prompt_summarize`, never run as prompts of their own, so
 they have no connection to resolve.
 
-### Smart bar prompts: router and execute
+### Smart bar prompts: router, execute and chat
 
 The Smart bar's prompts are run by the add-on as special commands, never from a menu, and their
 editable text is only the first part of what is sent ([10-smartbar.md](10-smartbar.md)):
@@ -409,8 +409,15 @@ editable text is only the first part of what is sent ([10-smartbar.md](10-smartb
   and its type, the context, the additional instructions and the signature, the language rule
   (10 "Compose", "Generation"). Placeholders reach the model through the context, never through
   this text.
-- **`prompt_smartbar_chat`**: the chat destination's prompt record (its connection); its text is
-  not used yet.
+- **`prompt_smartbar_chat`**: the prompt of the Smart bar's chat (10 "Chat"): its connection is the
+  one the chat window opens on (its header shows it), and its text is the system part of the
+  **free answer**, the call made for a message of the chat no operation covers. The default text
+  makes it a helpful assistant answering about the email, that never claims to have performed an
+  operation and keeps any text meant for the user apart from its comments. Like the execute
+  text, it holds **no variable** and **no JSON section**: the answer is free text. The add-on
+  appends the email between delimiters and the conversation so far (both as data), an attached
+  unreadable answer when there is one, the user's new message and the language rule
+  (`buildChatPrompt()`, `js/mzta-smartbar-chat.js`).
 
 None of them has a response format of its own in the prompt checks (`{}` in the table of
 `js/mzta-prompts.js`): the JSON sections are the add-on's.

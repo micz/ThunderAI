@@ -402,6 +402,11 @@ export function installApis(browser, m) {
             m.windows.push({ id, url: opts.url, type: opts.type });
             return { id, tabs: [{ id: id * 10 }] };
         },
+        // The Smart bar's chat brought to front (one chat per message): recorded, nothing else.
+        async update(id, props) {
+            rec('windows.update', [id, props]);
+            return { id, ...props };
+        },
     }, u);
 
     // Only the format of a compose window (isPlainTextCompose()) and the opening of a reply, a

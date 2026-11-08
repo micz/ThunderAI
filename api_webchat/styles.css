@@ -286,3 +286,51 @@ h1, h2, h3, h4, h5, h6 {
 p {
     margin: 0 0 10px 0;
 }
+
+/* Smart bar mode only (smartbarChat.js, ?smartbar=1): the New conversation button in the header
+   and the note above the input. Neither element exists otherwise. */
+#smartbarNewConversation {
+    margin-left: auto;
+    font: inherit;
+    font-size: .85em;
+    cursor: pointer;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: var(--r-pill);
+    padding: 3px 10px;
+}
+
+#smartbarNewConversation:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+#smartbarContextNote {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 16px;
+    padding: 4px 10px;
+    font-size: .85em;
+    background: var(--info-bg);
+    color: var(--info-ink);
+    border: 1px solid var(--info-border);
+    border-radius: var(--r-sm);
+}
+
+#smartbarContextNote[hidden] {
+    display: none;
+}
+
+#smartbarContextNote span {
+    flex: 1;
+}
+
+#smartbarContextNote button {
+    border: none;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+}

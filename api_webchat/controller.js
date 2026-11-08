@@ -57,6 +57,10 @@ const prompt_id = urlParams.get('prompt_id');
 // Already decoded by URLSearchParams: the background encodes it once
 // (encodeURIComponent). Decoding it a second time throws on a name holding a lone "%".
 const prompt_name = urlParams.get('prompt_name') ?? '';
+// Smart bar mode (claude-spec/10-smartbar.md "Chat"): the chat of one message started from the
+// Smart bar. Every message goes to the background (router, operations, free answer) through
+// smartbarChat.js instead of a provider worker. Without the flag nothing of it is loaded.
+const smartbarMode = urlParams.get('smartbar') === '1';
 
 // Data received from the user
 let promptData = null;
@@ -130,7 +134,17 @@ const worker_path_map = {
 
 const worker_path = Object.hasOwn(worker_path_map, integration) ? worker_path_map[integration] : null;
 
-if (worker_path) {
+if (smartbarMode && worker_path) {
+    // The page talks to the background, which makes every call: the channel stands where the
+    // worker would, so <message-input> and <messages-area> post to it unchanged.
+    const { createSmartbarChannel } = await import('./smartbarChat.js');
+    worker = createSmartbarChannel({
+        messagesArea: messagesArea,
+        messageInput: messageInput,
+        chatId: call_id,
+        headerMessageId: urlParams.get('hid') ?? '',
+    });
+} else if (worker_path) {
     let closed = false;
     window.addEventListener('pagehide', () => {
         closed = true;
@@ -236,7 +250,8 @@ if (worker) {
         // Only integrations that can report token counts get the usage UI at all:
         // the option row is hidden for the web-only setups, but a stale "on" value
         // from a previous provider must not resurrect an empty session counter here.
-        const show_usage = !!prefs_api.chat_show_usage_data && supportsUsageData(llm);
+        // Smart bar mode: the calls are the background's, so no usage reaches the window.
+        const show_usage = !!prefs_api.chat_show_usage_data && supportsUsageData(llm) && !smartbarMode;
         messagesArea.setShowUsageData(show_usage);
         if (show_usage) {
             contextWindowLookup = () => resolveContextWindow(integration, prefs_api);
@@ -535,6 +550,8 @@ if (worker) worker.onmessage = async function(event) {
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Without a worker nothing can be sent (and the background was never told the window is ready).
     if (!worker) { return; }
+    // Smart bar mode: the background's turns, and nothing else (no api_send).
+    if (smartbarMode) { return worker.handleBackground(message, sender); }
     switch (message.command) {
         case "api_send":
             promptData = message;

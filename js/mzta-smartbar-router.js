@@ -121,7 +121,8 @@ export function participantNames(addresses) {
  *   operations    the description of the available operations (describeOperations())
  *   placeholders  the description of the allow list (describePlaceholders())
  *   instruction   what the user typed
- *   metadata      { subject, author, participants: [names], tags: [names], hasSelection }
+ *   metadata      { subject, author, participants: [names], tags: [names], hasSelection,
+ *                 draftExists?, draftType? } (the last two from the chat only)
  */
 export function buildRouterPrompt({ text, operations, placeholders, instruction, metadata = {} }) {
     const values = {
@@ -146,6 +147,16 @@ export function buildRouterPrompt({ text, operations, placeholders, instruction,
     meta.push('Text selected in the email: ' + (metadata.hasSelection ? 'yes' : 'no'));
     if (metadata.hasSelection) {
         meta.push('The selected text is always given to the later steps (selected_text): do not list it in "context".');
+    }
+    // The chat only (draft_exists / draft_type): whether the conversation holds a draft email
+    // not created yet. A change asked for it is a compose operation of its type; approving it is
+    // deliver_draft (offered only then).
+    if (typeof metadata.draftExists === 'boolean') {
+        meta.push('Draft email in this conversation (draft_exists): ' + (metadata.draftExists ? 'yes' : 'no'));
+        if (metadata.draftExists) {
+            meta.push('Type of the draft (draft_type): ' + String(metadata.draftType || ''));
+            meta.push('A change asked for the draft is a "compose" operation with the type of the draft.');
+        }
     }
 
     return [

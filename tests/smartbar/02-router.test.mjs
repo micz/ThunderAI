@@ -10,6 +10,8 @@
 //    typed always honored when they exist;
 //  - the answer: one JSON object read tolerantly; operations missing count as none; an empty
 //    unrecognized is null;
+//  - the chat (spec 10 "Chat"): the metadata says whether a draft exists (draft_exists) and its
+//    type (draft_type); the bar's prompt says nothing of drafts;
 //  - askRouter(): one correction attempt with ROUTER_CORRECTION; a second answer that is not JSON
 //    rejects with errorType json and the raw answer, capped; errors of the call itself pass through.
 
@@ -79,6 +81,21 @@ k.test('selection-rule', 'with text selected the prompt says selected_text is al
     const p = prompt({ metadata: { hasSelection: true } });
     assert.ok(p.includes('Text selected in the email: yes'));
     assert.ok(p.includes('selected_text'));
+});
+
+k.test('chat-draft', 'the chat\'s metadata: draft_exists, and draft_type when a draft exists; nothing of it from the bar', () => {
+    const bar = prompt();
+    assert.ok(!bar.includes('draft_exists'));
+    const none = prompt({ metadata: { hasSelection: false, draftExists: false } });
+    assert.ok(none.includes('Draft email in this conversation (draft_exists): no'));
+    assert.ok(!none.includes('draft_type'));
+    const draft = prompt({ metadata: { hasSelection: false, draftExists: true, draftType: 'reply_all' } });
+    const meta = draft.split('Email information')[1];
+    assert.ok(meta.includes('Draft email in this conversation (draft_exists): yes'));
+    assert.ok(meta.includes('Type of the draft (draft_type): reply_all'));
+    assert.ok(meta.includes('a "compose" operation with the type of the draft'));
+    // The draft's text never reaches the router: only that it exists and its type.
+    assert.ok(!/Hello|body/i.test(meta.replace('the email body is not given to you', '')));
 });
 
 k.test('participant-names', 'participantNames(): names only, never an address, no duplicates', () => {

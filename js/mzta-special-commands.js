@@ -91,9 +91,15 @@ import { mztaPrefs } from './mzta-prefs.js';
             signal = null,
             // Called with the reasoning received so far, on each thinking token: the Smart bar
             // shows it while the router works. Never part of the resolved value.
-            onThinking = null
+            onThinking = null,
+            // Called with each answer token as it arrives: the Smart bar's chat streams its free
+            // answer through it. Never called while ThunderAI Privacy prepares the request (a
+            // ProcessingWorker): its tokens would show the protected values, restored only in
+            // the resolved answer. The resolved value is the same either way.
+            onToken = null
         } = args;
         this.onThinking = typeof onThinking === 'function' ? onThinking : null;
+        this.onToken = typeof onToken === 'function' ? onToken : null;
         this.jsonMode = jsonMode === true;
         this.signal = signal;
         this.prompt = prompt;
@@ -312,6 +318,9 @@ import { mztaPrefs } from './mzta-prefs.js';
                         break;
                     case 'newToken':
                         this.full_message += payload.token;
+                        if (this.onToken && !this.responsePrepared) {
+                            try { this.onToken(payload.token); } catch (e) { /* a display callback never breaks the command */ }
+                        }
                         break;
                     case 'newThinkingToken':
                         // A special command's response is parsed, not displayed, so the

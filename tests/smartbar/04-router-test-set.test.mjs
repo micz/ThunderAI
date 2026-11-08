@@ -9,13 +9,21 @@
 //    the add-on with a selection) nor an excluded id;
 //  - the set covers every operation of the registry and both languages it is written in;
 //  - compose: every type, a forward naming a recipient (never unrecognized), and in every mixed
-//    case the plan runs compose last, whatever the router's order (runLast).
+//    case the plan runs compose last, whatever the router's order (runLast), but for the lines that
+//    wait for it;
+//  - the chat (spec 10 "Chat"): a case's source and draft decide what is available (deliver_draft
+//    only in the chat with a draft); refinements are compose of the draft's type, approvals
+//    deliver_draft, a free question nothing at all; deliver_draft runs after a compose of the same
+//    instruction.
 // The model's actual answers are not tested here (no model at level 1): the file is also a manual
 // check of a router connection.
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { smartbarContext } from './context.mjs';
+import {
+    smartbarContext,
+    ALL_AVAILABLE
+} from './context.mjs';
 import { repoPath } from '../helpers/core/load.mjs';
 import { caseTests } from '../helpers/known-issues/smartbar.mjs';
 
@@ -38,6 +46,11 @@ k.test('one-block', 'the document holds one JSON block, an array of cases', () =
 
 const cases = blocks.length === 1 ? JSON.parse(blocks[0]) : [];
 
+/** The operations available in a case: its own list, else those of its source and draft. */
+const availableIn = c => c.available ?? reg.listAvailable({
+    ...ALL_AVAILABLE, source: c.source ?? 'bar', draft: c.draft ? { type: c.draft } : null,
+}).map(op => op.id);
+
 k.test('well-formed', 'each case has an instruction and the three fields of the locked format', () => {
     for (const c of cases) {
         assert.equal(typeof c.instruction, 'string', JSON.stringify(c));
@@ -48,13 +61,17 @@ k.test('well-formed', 'each case has an instruction and the three fields of the 
         assert.equal(typeof c.expected.unrecognized, 'string', c.instruction);
         if ('available' in c) assert.ok(c.available.every(id => ALL_IDS.includes(id)), c.instruction);
         if ('hasSelection' in c) assert.equal(typeof c.hasSelection, 'boolean', c.instruction);
+        if ('source' in c) assert.ok(['bar', 'chat'].includes(c.source), c.instruction);
+        if ('draft' in c) {
+            assert.equal(c.source, 'chat', c.instruction + ': a draft exists in the chat only');
+            assert.ok(['reply', 'reply_all', 'forward', 'new'].includes(c.draft), c.instruction);
+        }
     }
 });
 
 k.test('operations-valid', 'every expected operation is known, available, valid and at most once', () => {
     for (const c of cases) {
-        const available = c.available ?? ALL_IDS;
-        const { lines, reports } = R.planOperations(reg, available, c.expected.operations);
+        const { lines, reports } = R.planOperations(reg, availableIn(c), c.expected.operations);
         assert.deepEqual(reports, [], c.instruction);
         assert.deepEqual(lines.filter(l => l.state === 'error').map(l => l.error), [], c.instruction);
         assert.equal(lines.length, c.expected.operations.length, c.instruction);
@@ -83,7 +100,9 @@ k.test('unrecognized-words', 'an unrecognized part is taken word for word from t
         if (c.expected.unrecognized !== '') {
             assert.ok(c.instruction.includes(c.expected.unrecognized), c.instruction);
         }
-        if (c.expected.operations.length === 0) assert.notEqual(c.expected.unrecognized, '', c.instruction);
+        // From the bar, nothing recognized is something unrecognized; in the chat a question is
+        // neither (the free answer covers it).
+        if (c.expected.operations.length === 0 && c.source !== 'chat') assert.notEqual(c.expected.unrecognized, '', c.instruction);
     }
 });
 
@@ -95,6 +114,32 @@ k.test('coverage', 'the set covers every operation, a selection, an unavailable 
     assert.ok(cases.some(c => c.expected.context.length > 0));
     assert.ok(cases.some(c => /\b(riassumi|traduci|tagga)\b/.test(c.instruction)), 'Italian');
     assert.ok(cases.some(c => /\b(summarize|translate|tag)\b/.test(c.instruction)), 'English');
+    assert.ok(cases.some(c => c.source === 'chat' && !c.draft), 'the chat without a draft');
+    assert.ok(cases.some(c => c.source === 'chat' && c.draft), 'the chat with a draft');
+});
+
+k.test('chat-cases', 'the chat: refinements are compose of the draft\'s type, approvals deliver_draft, a question nothing', () => {
+    const chat = cases.filter(c => c.source === 'chat');
+    for (const c of chat.filter(c => c.draft)) {
+        for (const op of c.expected.operations.filter(op => op.id === 'compose')) assert.equal(op.params.type, c.draft, c.instruction);
+    }
+    const ids = instruction => cases.filter(c => c.instruction === instruction).map(c => c.expected.operations.map(op => op.id));
+    assert.deepEqual(ids('più breve'), [['compose']]);
+    assert.deepEqual(ids('ok vai'), [['deliver_draft']]);
+    // Without a draft the approval is not covered.
+    assert.deepEqual(ids('crea l\'email'), [['deliver_draft'], []]);
+    assert.deepEqual(ids('ok go'), [[]]);
+    for (const q of ['chi è il mittente?', 'what is he asking me?']) {
+        const c = cases.find(x => x.instruction === q);
+        assert.deepEqual([c.expected.operations, c.expected.unrecognized], [[], ''], q);
+    }
+    // "Make it shorter and create it", in either order: compose, then deliver_draft waiting for it.
+    const both = chat.filter(c => c.expected.operations.length === 2 && c.expected.operations.some(op => op.id === 'deliver_draft'));
+    assert.equal(both.length, 2);
+    for (const c of both) {
+        const { lines } = R.planOperations(reg, availableIn(c), c.expected.operations);
+        assert.deepEqual(lines.map(l => [l.id, l.dependsOn]), [['compose', []], ['deliver_draft', [0]]], c.instruction);
+    }
 });
 
 const composeOf = c => c.expected.operations.find(op => op.id === 'compose');
@@ -120,8 +165,11 @@ k.test('compose-last', 'in every mixed case the plan runs compose last, whatever
     assert.ok(mixed.length >= 2);
     assert.ok(mixed.some(c => c.expected.operations[0].id === 'compose'), 'one case where the user asks compose first');
     for (const c of mixed) {
-        const { lines } = R.planOperations(reg, c.available ?? ALL_IDS, c.expected.operations);
-        assert.equal(lines.at(-1).id, 'compose', c.instruction);
+        const { lines } = R.planOperations(reg, availableIn(c), c.expected.operations);
+        // Last, but for the lines that wait for it (deliver_draft).
+        const at = lines.findIndex(l => l.id === 'compose');
+        assert.ok(lines.slice(at + 1).every(l => l.dependsOn.includes(at)), c.instruction);
+        assert.ok(lines.slice(0, at).every(l => !l.runLast), c.instruction);
         assert.deepEqual(lines.map(l => l.index), lines.map((_, i) => i), c.instruction);
     }
 });

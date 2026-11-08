@@ -68,6 +68,21 @@ test('active companion transforms instructions and buffers/restores content/thin
     assert.ok(!JSON.stringify(provider.posted).includes('Alice'));
 });
 
+test('a special command streams no token while the companion is active (onToken never called), and resolves the restored answer', async () => {
+    const { mzta_specialCommand } = await import('../../js/mzta-special-commands.js');
+    await ctx.ctl.browser.storage.local.set({ chatgpt_api_key: 'sk-FAKE', chatgpt_model: 'gpt-test' });
+    const seen = [];
+    const cmd = new mzta_specialCommand({ prompt: 'Hello Alice', llm: 'chatgpt_api', config: {}, processingClient: ctx.processingClient, onToken: t => seen.push(t) });
+    await cmd.initWorker();
+    const provider = ctx.workers.last();
+    const p = cmd.sendPrompt();
+    await flush(5);
+    assert.equal(provider.prompt, 'Hello [PRIVATE]');
+    provider.deliver(token('Hi [PRIVATE]'), done());
+    assert.equal(await p, 'Hi Alice');
+    assert.deepEqual(seen, [], 'the protected values never reach the display');
+});
+
 test('active usage reaches the chat after the restored content and before tokensDone', async () => {
     const { worker, provider, output } = await adapter();
     worker.postMessage({ type: 'chatMessage', message: 'Alice' }); await flush(3);

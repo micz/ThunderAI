@@ -844,6 +844,27 @@ class MessagesArea extends HTMLElement {
         return this._currentTurnEl.querySelector('.turn-body');
     }
 
+    // Smart bar mode only (smartbarChat.js; never called otherwise): a model turn the page builds
+    // itself (result lines, drafts), appended but NOT made the current turn, so nothing streams
+    // into it by accident. Returns { turn, body }.
+    beginCustomBotTurn(labelText = this.llmName) {
+        const body = this._beginBotTurn(labelText);
+        const turn = this._currentTurnEl;
+        this._currentTurnEl = null;
+        this._resumeFollowing();
+        return { turn, body };
+    }
+
+    // Smart bar mode only: the next tokens stream into this turn (a free answer, through the one
+    // render path), until handleTokensDone() closes it.
+    streamInto(turn) {
+        this._streaming = null;
+        this.accumulatingMessageEl = null;
+        this.fullTextHTML = '';
+        this._removeThinkingIndicator();
+        this._currentTurnEl = turn;
+    }
+
     createNewAccumulatingMessage() {
         const body = this._ensureBotTurnBody();
         this.accumulatingMessageEl = document.createElement('div');

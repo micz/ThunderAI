@@ -124,12 +124,20 @@ import {
     trimEmailText
 } from './js/mzta-smartbar-execute.js';
 import {
+    buildChatPrompt,
+    conversationTurns,
+    renderConversation,
+    RAW_CONTEXT_CAP as SMARTBAR_RAW_CONTEXT_CAP
+} from './js/mzta-smartbar-chat.js';
+import {
     taSmartbarStore,
     newRecord as smartbarNewRecord,
     recordOperation as smartbarRecordOperation,
     markReplaced as smartbarMarkReplaced,
     hasErrors as smartbarHasErrors,
     newId as smartbarNewId,
+    currentDraft as smartbarCurrentDraft,
+    CHAT_SESSION_LIMIT as SMARTBAR_CHAT_SESSION_LIMIT,
     FINAL_OPERATION_STATES as SMARTBAR_FINAL_STATES
 } from './js/mzta-smartbar-store.js';
 import {
@@ -510,6 +518,8 @@ taSmartbarStore.markInterrupted().catch(e => console.error("[ThunderAI] Smart ba
 // The bars follow their preferences (enabled, mode, default destination): a content script
 // cannot read them, so the background tells every open message tab.
 setupSmartbarConfigListener();
+// The chat windows of the Smart bar, one per message: forgotten when closed.
+setupSmartbarChatListener();
 
 browser.composeScripts.register({
     // mzta-html-lines.js FIRST: it is a classic script defining the globals
@@ -519,9 +529,11 @@ browser.composeScripts.register({
 
 // Register the message display script for all newly opened message tabs.
 // The Smart bar (js/mzta-smartbar-script.js) only in the message display: it acts on the
-// displayed message. After the compose script, which keeps its own elements apart from it.
+// displayed message. After the compose script, which keeps its own elements apart from it, and
+// after js/lib/mzta-smartbar-lines.js, the texts of its lines (a classic script, shared with the
+// chat window in Smart bar mode).
 messenger.messageDisplayScripts.register({
-    js: [{ file: "js/lib/mzta-html-lines.js" }, { file: "js/mzta-compose-script.js" }, { file: "js/mzta-smartbar-script.js" }]
+    js: [{ file: "js/lib/mzta-html-lines.js" }, { file: "js/mzta-compose-script.js" }, { file: "js/lib/mzta-smartbar-lines.js" }, { file: "js/mzta-smartbar-script.js" }]
 });
 
 // Listen for shortcut command
@@ -1430,16 +1442,53 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         case 'smartbar_run':
                             return _smartbarRun({ headerMessageId: hid, tabId, instruction: message.instruction, hasSelection: message.hasSelection, selection: message.selection });
                         case 'smartbar_open_chat':
-                            return { ok: await _smartbarOpenChat(hid, tabId, message.text, message.selection) };
+                            return { ok: await _smartbarChatOpen(hid, tabId, { text: message.text, selection: message.selection, fromError: message.fromError ?? null }) };
                         case 'smartbar_stop':
-                            return { ok: await _smartbarStop(hid, message.index ?? null) };
+                            return { ok: await _smartbarStop(hid, message.index ?? null, message.recordId ?? null) };
                         case 'smartbar_retry':
                             return _smartbarRetry({ headerMessageId: hid, tabId, recordId: message.recordId, index: message.index ?? null, auto: message.auto === true, hasSelection: message.hasSelection, selection: message.selection });
                         case 'smartbar_confirm':
                         case 'smartbar_cancel':
-                            return { ok: _smartbarAnswerConfirm(hid, message.index, message.command === 'smartbar_confirm') };
+                            return { ok: _smartbarAnswerConfirm(hid, message.index, message.command === 'smartbar_confirm', message.recordId ?? null) };
                         case 'smartbar_dismiss':
                             return { ok: await _smartbarDismiss(hid, message.recordId, message.what) };
+                    }
+                    return { ok: false };
+                })().catch(e => { taLog.error("Error in " + message.command + ": " + e); return { ok: false, error: String(e?.message || e) }; });
+            // The chat window in Smart bar mode (api_webchat/smartbarChat.js, claude-spec/10-smartbar.md
+            // "Chat"): accepted only from the chat window open for that message.
+            case 'smartbar_chat_send':
+            case 'smartbar_chat_stop':
+            case 'smartbar_chat_retry':
+            case 'smartbar_chat_confirm':
+            case 'smartbar_chat_cancel':
+            case 'smartbar_chat_dismiss':
+            case 'smartbar_chat_create':
+            case 'smartbar_chat_new_session':
+            case 'smartbar_chat_drop_context':
+                return (async () => {
+                    const hid = message.headerMessageId;
+                    const chat = _smartbarChats.get(hid);
+                    if (!chat || !chat.tabId || sender.tab?.id !== chat.tabId || message.chatId !== chat.chatId) return { ok: false, error: 'not_chat' };
+                    switch (message.command) {
+                        case 'smartbar_chat_send':
+                            return _smartbarChatRun({ headerMessageId: hid, instruction: message.text, clientId: message.clientId ?? null });
+                        case 'smartbar_chat_stop':
+                            return { ok: await _smartbarStop(hid, message.index ?? null, message.recordId ?? _smartbarChatTurnInProgress(hid)?.record.id ?? null) };
+                        case 'smartbar_chat_retry':
+                            return _smartbarRetry({ headerMessageId: hid, tabId: chat.mailTabId, recordId: message.recordId, index: message.index ?? null, auto: message.auto === true });
+                        case 'smartbar_chat_confirm':
+                        case 'smartbar_chat_cancel':
+                            return { ok: _smartbarAnswerConfirm(hid, message.index, message.command === 'smartbar_chat_confirm', message.recordId) };
+                        case 'smartbar_chat_dismiss':
+                            return { ok: await _smartbarDismiss(hid, message.recordId, message.what) };
+                        case 'smartbar_chat_create':
+                            return _smartbarDeliverDraft(hid, message.recordId, message.index, chat.mailTabId);
+                        case 'smartbar_chat_new_session':
+                            return _smartbarChatNewSession(hid);
+                        case 'smartbar_chat_drop_context':
+                            chat.rawContext = null;
+                            return { ok: true };
                     }
                     return { ok: false };
                 })().catch(e => { taLog.error("Error in " + message.command + ": " + e); return { ok: false, error: String(e?.message || e) }; });
@@ -2278,18 +2327,39 @@ async function _insertComposeAnswer(tabId, html) {
 //
 // Replacement (bar only): a new instruction on a message stops the previous one's group
 // (taJobRegistry.abortGroup(): invalidated, then aborted) and marks its record 'replaced'.
+//
+// The chat (source 'chat'): the API chat window opened in Smart bar mode for one message
+// (api_webchat/smartbarChat.js). Every message of the chat goes through the router like an
+// instruction of the bar; its operations append (no replacement), a message no operation covers
+// gets a free answer (special prompt prompt_smartbar_chat), and compose ends as a draft the user
+// delivers later (Create email, or the deliver_draft operation).
 
 const smartbarRegistry = createSmartbarRegistry();
 
-// The instruction in progress on each message: headerMessageId -> { groupId, recordId, record,
-// controller, confirms: Map(index -> resolve), tabId }.
+// The instruction of the bar in progress on each message: headerMessageId -> { groupId, record,
+// controller, confirms: Map(index -> resolve), tabId, source: 'bar' }.
 const _smartbarActive = new Map();
+// The messages of the chat in progress: headerMessageId -> Map(recordId -> state), the same
+// state as the bar's with source 'chat'. Several at once: they never replace one another.
+const _smartbarChatGroups = new Map();
+// The chat window open for each message: headerMessageId -> { chatId, windowId, tabId (the chat
+// page), mailTabId (the tab that displayed the message), ready, sessionId, rawContext, prefill,
+// queue: [{ text, selection }] }.
+const _smartbarChats = new Map();
+// The session a message's next instruction joins when the user started a new conversation
+// (in memory: lost at restart, when the latest record's session is resumed instead).
+const _smartbarSessionOverride = new Map();
+// The id of the newest record of each message: the bar shows a chat record only when it is it.
+const _smartbarLatestId = new Map();
+// Tokens of a free answer are sent to the chat at most every 100 ms.
+const SMARTBAR_CHAT_TOKEN_THROTTLE_MS = 100;
 // Sequence of the updates sent to the bars: a bar ignores an update older than one it has drawn.
 let _smartbarSeq = 0;
 // The reasoning of the running router calls, sent at most every 250 ms: key -> { text, timer, last }.
 const _smartbarThinking = new Map();
 const SMARTBAR_THINKING_THROTTLE_MS = 250;
-// The job kind of each operation, for a Stop of one line.
+// The job kind of each operation, for a Stop of one line (deliver_draft runs no job: it only
+// opens a compose window).
 const SMARTBAR_OPERATION_JOB_KIND = { tag: 'add_tags', summarize: 'summary', translate: 'translation', compose: 'smartbar_compose' };
 // The compose window of each message type of the compose operation (_beginComposeWindow()).
 const SMARTBAR_COMPOSE_WINDOW = { reply: 'replyToSender', reply_all: 'replyToAll', forward: 'forward', new: 'new' };
@@ -2309,8 +2379,9 @@ async function _smartbarConfig() {
 
 // What the requirements of the operations read (js/mzta-smartbar-registry.js): the features on,
 // their connection usable, the Add Tags permissions granted. compose has no feature of its own:
-// the smartbar_execute connection usable is all it needs.
-async function _smartbarEnv() {
+// the smartbar_execute connection usable is all it needs. `chat`: { source, draft } for the
+// operations of the chat (deliver_draft needs the source 'chat' and a current draft).
+async function _smartbarEnv(chat = {}) {
     const prefs = await mztaPrefs.getPrefs([
         'add_tags', 'summarize', 'translate', 'connection_type',
         ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
@@ -2332,12 +2403,34 @@ async function _smartbarEnv() {
         features: { add_tags: prefs.add_tags === true, summarize: prefs.summarize === true, translate: prefs.translate === true },
         permissions: { add_tags: add_tags_permission },
         usable: usable,
+        source: chat.source === 'chat' ? 'chat' : 'bar',
+        draft: chat.draft ?? null,
     };
 }
 
 // The operations available now, as the bar lists them when nothing matched.
-async function _smartbarAvailableIds() {
-    return smartbarRegistry.listAvailable(await _smartbarEnv()).map(op => op.id);
+async function _smartbarAvailableIds(chat = {}) {
+    return smartbarRegistry.listAvailable(await _smartbarEnv(chat)).map(op => op.id);
+}
+
+// The state in progress that holds a record: the bar's instruction or a message of the chat.
+function _smartbarFindState(headerMessageId, recordId) {
+    if (recordId === null || recordId === undefined) return null;
+    const bar = _smartbarActive.get(headerMessageId);
+    if (bar?.record?.id === recordId) return bar;
+    return _smartbarChatGroups.get(headerMessageId)?.get(recordId) || null;
+}
+
+// The message of the chat still being understood or answered (no operation yet), the newest.
+function _smartbarChatTurnInProgress(headerMessageId) {
+    const states = [...(_smartbarChatGroups.get(headerMessageId)?.values() || [])];
+    return states.filter(s => (s.record.operations || []).length === 0 && !s.record.errorType).pop() || null;
+}
+
+// The session the next instruction on a message joins: the one a New conversation started, else
+// the latest record's (the bar and the chat share it), else a new one.
+function _smartbarSessionFor(headerMessageId, latest) {
+    return _smartbarSessionOverride.get(headerMessageId) || latest?.sessionId || smartbarNewId();
 }
 
 // Send a Smart bar update to every tab displaying the message, with the next sequence number.
@@ -2358,12 +2451,14 @@ async function _smartbarState(headerMessageId, record = null, extra = {}) {
     };
 }
 
-// A record as the content script receives it: what it draws, without the raw answers.
+// A record as the content script receives it: what it draws, without the raw answers. A message
+// of the chat shows its free answer and its drafts in the chat only (hasAnswer).
 function _smartbarRecordForBar(record) {
-    const { rawResponse: _raw, size: _size, failed: _failed, ...rest } = record;
+    const { rawResponse: _raw, size: _size, failed: _failed, answer: _answer, draft: _draft, ...rest } = record;
     return {
         ...rest,
         hasRawResponse: !!_raw,
+        hasAnswer: typeof _answer === 'string' && _answer !== '',
         operations: (record.operations || []).map(op => {
             const { rawResponse: _opRaw, ...opRest } = op;
             // The text a compose line generated stays in the background: the bar shows its type
@@ -2379,6 +2474,51 @@ function _smartbarRecordForBar(record) {
 
 async function _smartbarPushState(headerMessageId, record = null, extra = {}) {
     await _smartbarPush(headerMessageId, { command: 'smartbar_update', ...(await _smartbarState(headerMessageId, record, extra)) });
+}
+
+// A record as the chat window receives it: everything it draws (the answer, the drafts), without
+// the raw answers.
+function _smartbarRecordForChat(record) {
+    const { rawResponse: _raw, size: _size, failed: _failed, ...rest } = record;
+    return {
+        ...rest,
+        hasRawResponse: !!_raw,
+        operations: (record.operations || []).map(op => {
+            const { rawResponse: _opRaw, ...opRest } = op;
+            return opRest;
+        }),
+    };
+}
+
+// Send a command to the chat window of a message, when one is open and ready.
+function _smartbarChatPost(headerMessageId, payload) {
+    const chat = _smartbarChats.get(headerMessageId);
+    if (!chat?.ready || !chat.tabId) return Promise.resolve();
+    return browser.tabs.sendMessage(chat.tabId, { ...payload, headerMessageId: headerMessageId, chatId: chat.chatId })
+        .catch(e => taLog.log("Smart bar: the chat window did not take " + payload.command + ": " + (e?.message || e)));
+}
+
+// A record to the chat window of its message (with the next sequence number).
+function _smartbarChatPush(headerMessageId, record, extra = {}) {
+    if (!record || !_smartbarChats.get(headerMessageId)?.ready) return Promise.resolve();
+    _smartbarSeq++;
+    return _smartbarChatPost(headerMessageId, { command: 'smartbar_chat_update', seq: _smartbarSeq, record: _smartbarRecordForChat(record), ...extra });
+}
+
+// Every change of an instruction in progress reaches both views of the message: the bar (which
+// shows the newest record, but its own instruction while one runs) and the chat (every record of
+// its session).
+async function _smartbarPublish(state, extra = {}) {
+    const hid = state.headerMessageId;
+    if (state.source === 'chat') {
+        await _smartbarChatPush(hid, state.record, { clientId: state.clientId ?? null });
+        if (!_smartbarActive.has(hid) && _smartbarLatestId.get(hid) === state.record.id) {
+            await _smartbarPushState(hid, state.record, extra);
+        }
+    } else {
+        await _smartbarPushState(hid, state.record, extra);
+        await _smartbarChatPush(hid, state.record);
+    }
 }
 
 // Store a record at one of the meaningful points; a failure is logged, never fatal (the bar
@@ -2419,6 +2559,43 @@ function _smartbarThinkingDone(headerMessageId, recordId) {
     const entry = _smartbarThinking.get(key);
     if (entry?.timer) clearTimeout(entry.timer);
     _smartbarThinking.delete(key);
+}
+
+// What a message of the chat streams to its window while it is understood and answered: the
+// reasoning of the router and of the answer (cumulative, at most every 250 ms, never stored) and
+// the tokens of the free answer (at most every 100 ms; none while ThunderAI Privacy is on, see
+// mzta_specialCommand's onToken). flush() sends what is pending, before the record's update.
+function _smartbarChatStreamer(state) {
+    const thinking = {};
+    let tokens = '';
+    let thinkingTimer = null;
+    let tokenTimer = null;
+    const post = (payload) => _smartbarChatPost(state.headerMessageId, { command: 'smartbar_chat_stream', recordId: state.record.id, ...payload });
+    const sendThinking = () => {
+        thinkingTimer = null;
+        post({ thinking: Object.values(thinking).filter(t => t).join('\n\n') });
+    };
+    const sendTokens = () => {
+        tokenTimer = null;
+        if (tokens === '') return;
+        const text = tokens;
+        tokens = '';
+        post({ tokens: text });
+    };
+    return {
+        thinking(phase, text) {
+            thinking[phase] = String(text ?? '');
+            if (!thinkingTimer) thinkingTimer = setTimeout(sendThinking, SMARTBAR_THINKING_THROTTLE_MS);
+        },
+        token(token) {
+            tokens += String(token ?? '');
+            if (!tokenTimer) tokenTimer = setTimeout(sendTokens, SMARTBAR_CHAT_TOKEN_THROTTLE_MS);
+        },
+        flush() {
+            if (thinkingTimer) { clearTimeout(thinkingTimer); sendThinking(); }
+            if (tokenTimer) { clearTimeout(tokenTimer); sendTokens(); }
+        },
+    };
 }
 
 // The error type of a failed call, for the record and the bar's buttons.
@@ -2574,6 +2751,31 @@ async function _smartbarContextValues(keys, message, body_text, msg_text, select
     }));
 }
 
+// The email as the compose operation and the chat's free answer carry it: only the current one,
+// its quoted part told apart so smartbar_max_body_length cuts it first. Also the body as plain
+// text and the parts, for the placeholders of the context.
+async function _smartbarEmailForPrompt(message, prefs) {
+    const msg_text = await getMailInlineTextParts(message.id);
+    let split = msg_text.html ? splitQuotedHtml(msg_text.html) : null;
+    if (!split || (split.own === '' && split.quoted === '')) split = splitQuotedText(cleanupNewlines(msg_text.text || ''));
+    let body_text = htmlBodyToPlainText(msg_text.html || '');
+    if (body_text.length === 0) body_text = cleanupNewlines(msg_text.text || '');
+    const maxLength = Number.isInteger(prefs.smartbar_max_body_length) && prefs.smartbar_max_body_length > 0
+        ? prefs.smartbar_max_body_length : 0;
+    return {
+        email: {
+            subject: message.subject || '',
+            from: message.author || '',
+            to: message.recipients || [],
+            cc: message.ccList || [],
+            date: message.date instanceof Date ? message.date.toISOString() : String(message.date || ''),
+            text: trimEmailText(split, maxLength),
+        },
+        body_text: body_text,
+        msg_text: msg_text,
+    };
+}
+
 // The text of a compose operation: the special command prompt_smartbar_execute on the
 // smartbar_execute connection, the email cut to smartbar_max_body_length (quoted part first).
 // Resolves { answer, prefs } or rejects (RouterJsonError, a config error, an API error, an abort).
@@ -2595,31 +2797,20 @@ async function _smartbarGenerateCompose(ctx, signal) {
     let text = executePrompt.text;
     if (text === 'prompt_smartbar_execute_full_text') text = browser.i18n.getMessage('prompt_smartbar_execute_full_text');
 
-    // Only the current email. The quoted part is told apart so the length limit cuts it first.
-    const msg_text = await getMailInlineTextParts(message.id);
-    let split = msg_text.html ? splitQuotedHtml(msg_text.html) : null;
-    if (!split || (split.own === '' && split.quoted === '')) split = splitQuotedText(cleanupNewlines(msg_text.text || ''));
-    let body_text = htmlBodyToPlainText(msg_text.html || '');
-    if (body_text.length === 0) body_text = cleanupNewlines(msg_text.text || '');
-    const maxLength = Number.isInteger(prefs.smartbar_max_body_length) && prefs.smartbar_max_body_length > 0
-        ? prefs.smartbar_max_body_length : 0;
-
+    const { email, body_text, msg_text } = await _smartbarEmailForPrompt(message, prefs);
     const prompt = buildExecutePrompt({
         text: text,
         params: params,
         instruction: ctx.instruction,
-        email: {
-            subject: message.subject || '',
-            from: message.author || '',
-            to: message.recipients || [],
-            cc: message.ccList || [],
-            date: message.date instanceof Date ? message.date.toISOString() : String(message.date || ''),
-            text: trimEmailText(split, maxLength),
-        },
+        email: email,
         context: await _smartbarContextValues(ctx.routerContext, message, body_text, msg_text, ctx.selection),
         additionalInstructions: prefs.smartbar_additional_instructions || '',
         signature: resolveSignature('default', prefs.smartbar_signature, prefs.default_sign_name),
         languageRule: executeLanguageRule(prefs.default_chatgpt_lang),
+        // The chat only: the conversation so far (previous drafts and refinement requests) and an
+        // unreadable model answer the user brought into it.
+        conversation: ctx.conversation || '',
+        rawContext: ctx.rawContext || '',
     });
     const send = async (p) => {
         const cmd = new mzta_specialCommand({
@@ -2655,7 +2846,9 @@ function _smartbarComposeError(error) {
 // compose window of the asked type opened with it (_beginComposeWindow()). Done once the window
 // is open. The generated text is kept in the line's result, so a window that could not open is
 // opened again by Retry without a new generation (ctx.previousResult). A generation stopped
-// (Stop, a new instruction) never opens a window.
+// (Stop, a new instruction) never opens a window. In the chat (ctx.deliverInChat) no window
+// opens: the line ends 'drafted' with its text, which the user delivers later (Create email,
+// deliver_draft: _smartbarDeliverDraft()).
 async function _smartbarRunCompose(ctx) {
     const { message, params, groupId } = ctx;
     const type = params.type;
@@ -2674,22 +2867,9 @@ async function _smartbarRunCompose(ctx) {
             prefs = generated.prefs;
         }
         if (stopped()) return { status: 'ok', line: { state: 'cancelled' } };
-        prefs = prefs || await _smartbarComposePrefs();
-        const signature = resolveSignature(result.signature, prefs.smartbar_signature, prefs.default_sign_name);
-        const html = plainTextToHtml(bodyWithSignature(result.body, signature));
-        let tab;
-        try {
-            tab = await _beginComposeWindow(SMARTBAR_COMPOSE_WINDOW[type], message.id, { subject: result.subject });
-        } catch (e) {
-            taLog.error("Smart bar: the compose window could not be opened: " + (e?.message || e));
-            return { status: 'ok', line: { state: 'error', error: e?.message || String(e), errorType: 'compose_window', result: result } };
-        }
-        await new Promise(resolve => setTimeout(resolve, COMPOSE_SCRIPT_LOAD_DELAY_MS));
-        try {
-            if (!(await _insertComposeAnswer(tab.id, html))) taLog.error("Smart bar: the text could not be written into the compose window");
-        } catch (e) {
-            taLog.error("Smart bar: the text could not be written into the compose window: " + (e?.message || e));
-        }
+        if (ctx.deliverInChat === true) return { status: 'ok', line: { state: 'drafted', result: result } };
+        const opened = await _smartbarOpenCompose(message, result, prefs);
+        if (!opened.ok) return { status: 'ok', line: { state: 'error', error: opened.error, errorType: 'compose_window', result: result } };
         return { status: 'ok', line: { state: 'done', result: result } };
     }, { groupId: groupId });
     const outcome = await entry.promise;
@@ -2697,11 +2877,81 @@ async function _smartbarRunCompose(ctx) {
     return { state: 'error', error: outcome?.errorMessage || 'error', errorType: 'api' };
 }
 
+// The delivery of a compose text (claude-spec/10-smartbar.md "Delivery"): the compose window of
+// its type opened (_beginComposeWindow()), then the text written in with the signature the
+// instruction asked for. Resolves { ok: true } once the window is open, { ok: false, error } when
+// it could not open. Shared by the compose operation of the bar and the drafts of the chat.
+async function _smartbarOpenCompose(message, result, prefs = null) {
+    prefs = prefs || await _smartbarComposePrefs();
+    const signature = resolveSignature(result.signature, prefs.smartbar_signature, prefs.default_sign_name);
+    const html = plainTextToHtml(bodyWithSignature(result.body, signature));
+    let tab;
+    try {
+        tab = await _beginComposeWindow(SMARTBAR_COMPOSE_WINDOW[result.type] || 'replyToSender', message.id, { subject: result.subject });
+    } catch (e) {
+        taLog.error("Smart bar: the compose window could not be opened: " + (e?.message || e));
+        return { ok: false, error: e?.message || String(e) };
+    }
+    await new Promise(resolve => setTimeout(resolve, COMPOSE_SCRIPT_LOAD_DELAY_MS));
+    try {
+        if (!(await _insertComposeAnswer(tab.id, html))) taLog.error("Smart bar: the text could not be written into the compose window");
+    } catch (e) {
+        taLog.error("Smart bar: the text could not be written into the compose window: " + (e?.message || e));
+    }
+    return { ok: true };
+}
+
+// Deliver a draft of the chat (Create email on a draft turn, and the deliver_draft operation):
+// the compose operation `index` of the record, 'drafted' or already delivered ('done': a second
+// Create email opens a second window, as asked), opened as the bar's compose operation would
+// open it. The operation becomes 'done'; the draft stays in the conversation. Resolves
+// { ok: true, result: { type, recipient } } or { ok: false, error }.
+async function _smartbarDeliverDraft(headerMessageId, recordId, index, tabId = null) {
+    const holder = _smartbarFindState(headerMessageId, recordId);
+    const record = holder?.record || await taSmartbarStore.get(recordId);
+    if (!record || record.messageId !== headerMessageId) return { ok: false, error: 'not_found' };
+    const op = (record.operations || []).find(o => o.index === index);
+    if (!op || op.id !== 'compose' || !['drafted', 'done'].includes(op.state) || !op.result?.body) {
+        return { ok: false, error: browser.i18n.getMessage('smartbar_error_no_draft') };
+    }
+    const message = holder?.message || await _resolveMessage(headerMessageId, null, tabId);
+    if (!message) return { ok: false, error: 'not_found' };
+    const opened = await _smartbarOpenCompose(message, op.result);
+    if (!opened.ok) return { ok: false, error: opened.error };
+    // Read again: the record may have changed while the window opened.
+    const latest = holder ? holder.record : (await taSmartbarStore.get(recordId) || record);
+    const updated = {
+        ...latest,
+        operations: (latest.operations || []).map(o => o.index === index
+            ? { ...o, state: 'done', error: null, errorType: null, finishedAt: Date.now() }
+            : o),
+    };
+    const saved = await _smartbarSave(updated);
+    if (holder) holder.record = saved;
+    await _smartbarChatPush(headerMessageId, saved);
+    if (!_smartbarActive.has(headerMessageId) && _smartbarLatestId.get(headerMessageId) === recordId) {
+        await _smartbarPushState(headerMessageId, saved);
+    }
+    return { ok: true, result: { type: op.result.type, recipient: op.result.recipient || '' } };
+}
+
+// The deliver_draft operation: the current draft of the session delivered now. The draft of a
+// compose operation of the same instruction first (deliver_draft waits for it), else the one the
+// session held when the message was sent.
+async function _smartbarRunDeliverDraft(ctx) {
+    const ref = ctx.currentDraft ? ctx.currentDraft() : null;
+    if (!ref) return { state: 'error', error: browser.i18n.getMessage('smartbar_error_no_draft'), errorType: 'config' };
+    const delivered = await _smartbarDeliverDraft(ctx.message.headerMessageId, ref.recordId, ref.index, ctx.tabId);
+    if (!delivered.ok) return { state: 'error', error: delivered.error, errorType: 'compose_window' };
+    return { state: 'done', result: delivered.result };
+}
+
 const SMARTBAR_EXECUTORS = {
     tag: _smartbarRunTag,
     summarize: _smartbarRunSummarize,
     translate: _smartbarRunTranslate,
     compose: _smartbarRunCompose,
+    deliver_draft: _smartbarRunDeliverDraft,
 };
 
 // The metadata the router gets about the message: never its body.
@@ -2723,7 +2973,9 @@ async function _smartbarRouterMetadata(message, hasSelection) {
 }
 
 // The router call: resolves { parsed } or rejects (RouterJsonError, a config error, an API error).
-async function _smartbarRoute(headerMessageId, record, message, hasSelection, signal) {
+// `chat` (the chat only): { draft, onThinking }: the router is told whether the session holds a
+// draft (draft_exists, draft_type), and deliver_draft is offered only then.
+async function _smartbarRoute(headerMessageId, record, message, hasSelection, signal, chat = null) {
     const prefs = await mztaPrefs.getPrefs([
         'connection_type', 'do_debug',
         ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
@@ -2742,16 +2994,21 @@ async function _smartbarRoute(headerMessageId, record, message, hasSelection, si
     }
     let text = routerPrompt.text;
     if (text === 'prompt_smartbar_router_full_text') text = browser.i18n.getMessage('prompt_smartbar_router_full_text');
-    const available = smartbarRegistry.listAvailable(await _smartbarEnv());
+    const available = smartbarRegistry.listAvailable(await _smartbarEnv(chat ? { source: 'chat', draft: chat.draft } : {}));
     const placeholders = await getPlaceholders(true);
     const allowList = routerPlaceholderAllowList(placeholders.filter(ph => String(ph.is_default) === '1'),
         ph => i18nConditionalGet(ph.name));
+    const metadata = await _smartbarRouterMetadata(message, hasSelection);
+    if (chat) {
+        metadata.draftExists = !!chat.draft;
+        metadata.draftType = chat.draft?.type || '';
+    }
     const prompt = buildRouterPrompt({
         text: text,
         operations: describeOperations(available),
         placeholders: describePlaceholders(allowList),
         instruction: record.instruction,
-        metadata: await _smartbarRouterMetadata(message, hasSelection),
+        metadata: metadata,
     });
     const send = async (p) => {
         const cmd = new mzta_specialCommand({
@@ -2762,7 +3019,7 @@ async function _smartbarRoute(headerMessageId, record, message, hasSelection, si
             config: routerPrompt,
             jsonMode: true,
             signal: signal,
-            onThinking: (t) => _smartbarThinkingUpdate(headerMessageId, record.id, t),
+            onThinking: chat?.onThinking || ((t) => _smartbarThinkingUpdate(headerMessageId, record.id, t)),
         });
         await cmd.initWorker();
         return await cmd.sendPrompt();
@@ -2790,7 +3047,10 @@ async function _smartbarStartLine(state, line) {
             groupId: state.groupId,
             index: line.index,
             report: () => {},
-            source: 'bar',
+            source: state.source === 'chat' ? 'chat' : 'bar',
+            // In the chat an operation with deliverInChat (compose) ends 'drafted' instead of
+            // delivering.
+            deliverInChat: state.source === 'chat' && op.deliverInChat === true,
             tabId: state.tabId,
             executors: SMARTBAR_EXECUTORS,
             // What the generative operations add to the email (compose): the instruction, the
@@ -2800,6 +3060,14 @@ async function _smartbarStartLine(state, line) {
             routerContext: state.record.routerContext || [],
             selection: state.selection || '',
             previousResult: line.previousResult ?? null,
+            // The chat only: the conversation so far (refinements see the previous drafts), an
+            // unreadable model answer the user brought in, and the draft deliver_draft delivers.
+            conversation: state.source === 'chat' ? renderConversation(conversationTurns(state.sessionRecords || [])) : '',
+            rawContext: state.rawContext || '',
+            currentDraft: () => {
+                const own = smartbarCurrentDraft([state.record]);
+                return own ? { recordId: state.record.id, index: own.op.index } : (state.draftRef || null);
+            },
         });
     } catch (e) {
         taLog.error("Smart bar: operation " + line.id + " failed: " + (e?.message || e));
@@ -2828,35 +3096,46 @@ async function _smartbarRunLines(state, lines) {
         onChange: (line) => {
             if (state.replaced) return;
             _smartbarApplyLine(state.record, line);
+            // A draft of the chat: the record's draft is the latest one its compose wrote.
+            if (line.state === 'drafted' && line.result?.body) {
+                state.record.draft = { type: line.result.type, subject: line.result.subject || '', body: line.result.body, groupId: state.groupId };
+            }
             const meaningful = line.state === 'pending_confirmation' || SMARTBAR_FINAL_STATES.includes(line.state) || line.retryAt;
             const step = meaningful ? _smartbarSave(state.record).then(r => { state.record = r; }) : Promise.resolve();
-            step.then(() => _smartbarPushState(state.headerMessageId, state.record)).catch(() => {});
+            step.then(() => _smartbarPublish(state)).catch(() => {});
         },
     });
 }
 
-// The router and then the operations of one instruction: the body of the 'smartbar' job.
+// An instruction-level failure (the router, or the chat's free answer) on the record. Stopped by
+// the user: an 'aborted' error, so the line offers Retry.
+async function _smartbarRecordError(state, error) {
+    const type = _smartbarErrorType(error);
+    state.record.errorType = type;
+    state.record.error = type === 'aborted' ? browser.i18n.getMessage('smartbar_stopped') : (error?.message || String(error));
+    state.record.rawResponse = error?.rawResponse ?? null;
+    state.record.retryAt = type === 'rate_limit' ? _smartbarRetryAt(error?.retryAfterMs) : null;
+    state.record = await _smartbarSave(state.record);
+}
+
+// The router and then the operations of one instruction: the body of the 'smartbar' job. In the
+// chat, a message no operation covers gets the free answer instead.
 async function _smartbarProcess(state, job) {
     const { headerMessageId } = state;
+    const chat = state.source === 'chat';
     taWorkingStatus.startWorking();
     let routed = null;
     try {
-        routed = await _smartbarRoute(headerMessageId, state.record, state.message, state.hasSelection, job.abort.signal);
+        routed = await _smartbarRoute(headerMessageId, state.record, state.message, state.hasSelection, job.abort.signal,
+            chat ? { draft: state.draft, onThinking: (t) => state.stream?.thinking('router', t) } : null);
     } catch (error) {
-        // Replaced: the record is already marked. Stopped by the user: an 'aborted' error, so
-        // the line offers Retry.
-        if (!state.replaced) {
-            const type = _smartbarErrorType(error);
-            state.record.errorType = type;
-            state.record.error = type === 'aborted' ? browser.i18n.getMessage('smartbar_stopped') : (error?.message || String(error));
-            state.record.rawResponse = error?.rawResponse ?? null;
-            state.record.retryAt = type === 'rate_limit' ? _smartbarRetryAt(error?.retryAfterMs) : null;
-            state.record = await _smartbarSave(state.record);
-        }
+        // Replaced: the record is already marked.
+        if (!state.replaced) await _smartbarRecordError(state, error);
         return { status: 'error', errorMessage: error?.message || String(error) };
     } finally {
         taWorkingStatus.stopWorking();
         _smartbarThinkingDone(headerMessageId, state.record.id);
+        state.stream?.flush();
     }
     if (state.replaced) return { status: 'cancelled' };
 
@@ -2866,12 +3145,127 @@ async function _smartbarProcess(state, job) {
     state.record.reports = plan.reports;
     state.record.operations = plan.lines.map(smartbarRecordOperation);
     state.record = await _smartbarSave(state.record);
-    await _smartbarPushState(headerMessageId, state.record);
+    await _smartbarPublish(state);
+
+    if (chat && plan.lines.length === 0) {
+        // Free conversation: nothing recognized. (Some operations recognized and a part not:
+        // that part stays a note, no free answer.)
+        taWorkingStatus.startWorking();
+        try {
+            const answer = await _smartbarChatAnswer(state, job.abort.signal);
+            if (answer === '') throw new Error(browser.i18n.getMessage('smartbar_error_empty_answer'));
+            if (!state.replaced) state.record.answer = answer;
+        } catch (error) {
+            if (!state.replaced) await _smartbarRecordError(state, error);
+            return { status: 'error', errorMessage: error?.message || String(error) };
+        } finally {
+            taWorkingStatus.stopWorking();
+            state.stream?.flush();
+        }
+        if (state.replaced) return { status: 'cancelled' };
+        state.record = await _smartbarSave(state.record);
+        return { status: 'ok' };
+    }
 
     if (plan.lines.length > 0) await _smartbarRunLines(state, plan.lines);
     if (state.replaced) return { status: 'cancelled' };
     state.record = await _smartbarSave(state.record);
     return { status: 'ok' };
+}
+
+// The free answer of the chat (claude-spec/10-smartbar.md "Chat"): the special command
+// prompt_smartbar_chat on the smartbar_chat connection, with no JSON section; its prompt carries
+// the email and the conversation as data (buildChatPrompt()). The reasoning and the tokens are
+// streamed to the chat window (the tokens only while ThunderAI Privacy is off). Resolves the
+// answer, its reasoning stripped.
+async function _smartbarChatAnswer(state, signal) {
+    const prefs = await _smartbarComposePrefs();
+    const chatPrompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_chat');
+    if (!chatPrompt) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_chat_prompt'));
+        err.isConfigError = true;
+        throw err;
+    }
+    const connection = getConnectionType(prefs, chatPrompt, 'smartbar_chat');
+    if (!isApiUsableConnection(connection)) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_connection'));
+        err.isConfigError = true;
+        throw err;
+    }
+    let text = chatPrompt.text;
+    if (text === 'prompt_smartbar_chat_full_text') text = browser.i18n.getMessage('prompt_smartbar_chat_full_text');
+    const { email } = await _smartbarEmailForPrompt(state.message, prefs);
+    const prompt = buildChatPrompt({
+        text: text,
+        email: email,
+        conversation: renderConversation(conversationTurns(state.sessionRecords || [])),
+        rawContext: state.rawContext || '',
+        message: state.record.instruction,
+    });
+    const cmd = new mzta_specialCommand({
+        processingClient,
+        prompt: prompt,
+        llm: connection,
+        do_debug: prefs.do_debug,
+        config: chatPrompt,
+        signal: signal,
+        onThinking: (t) => state.stream?.thinking('answer', t),
+        onToken: (t) => state.stream?.token(t),
+    });
+    await cmd.initWorker();
+    return String((await cmd.sendPrompt()) ?? '').trim();
+}
+
+// Keep an instruction in progress where the commands find it: the bar's on its message, the
+// chat's among the messages of the chat.
+function _smartbarRegister(state) {
+    if (state.source === 'chat') {
+        if (!_smartbarChatGroups.has(state.headerMessageId)) _smartbarChatGroups.set(state.headerMessageId, new Map());
+        _smartbarChatGroups.get(state.headerMessageId).set(state.record.id, state);
+    } else {
+        _smartbarActive.set(state.headerMessageId, state);
+    }
+}
+
+function _smartbarUnregister(state) {
+    if (state.source === 'chat') {
+        const groups = _smartbarChatGroups.get(state.headerMessageId);
+        if (groups?.get(state.record.id) === state) groups.delete(state.record.id);
+        if (groups && groups.size === 0) _smartbarChatGroups.delete(state.headerMessageId);
+    } else if (_smartbarActive.get(state.headerMessageId) === state) {
+        _smartbarActive.delete(state.headerMessageId);
+    }
+}
+
+// The job of an instruction: the bar's keyed on its message (one at a time, it replaces), each
+// message of the chat on its own group (several at once).
+function _smartbarJobId(state) {
+    return state.source === 'chat' ? state.headerMessageId + '|chat|' + state.groupId : state.headerMessageId;
+}
+
+// Run the job of an instruction in progress, and publish its record when it ends.
+function _smartbarStartJob(state, body) {
+    const job = taJobRegistry.start('smartbar', _smartbarJobId(state), body, { groupId: state.groupId });
+    job.promise.then(() => {
+        _smartbarUnregister(state);
+        if (!state.replaced) return _smartbarPublish(state);
+    }).catch(e => taLog.error("Smart bar: " + e));
+    return job;
+}
+
+// The records of a session the chat's prompts see, oldest first: the stored ones, each replaced
+// by its version in memory while it is in progress. `before` (a record) keeps those before it.
+async function _smartbarSessionContext(headerMessageId, sessionId, before = null) {
+    const { records } = await taSmartbarStore.sessionRecords(sessionId);
+    return records
+        .filter(r => !before || (r.id !== before.id && r.createdAt <= before.createdAt))
+        .map(r => _smartbarFindState(headerMessageId, r.id)?.record || r);
+}
+
+// The current draft of a session as deliver_draft reaches it: { recordId, index } or null.
+function _smartbarDraftRef(records) {
+    const found = smartbarCurrentDraft(records);
+    return found ? { recordId: found.record.id, index: found.op.index, type: found.draft.type } : null;
 }
 
 // Start an instruction on a message (the bar's Enter, or its execute button).
@@ -2883,7 +3277,8 @@ async function _smartbarRun({ headerMessageId, tabId, instruction, hasSelection,
     const message = await _resolveMessage(headerMessageId, null, tabId);
     if (!message) return { ok: false, error: 'not_found' };
 
-    // Replacement: the previous instruction on this message stops, its record is 'replaced'.
+    // Replacement: the previous instruction of the bar on this message stops, its record is
+    // 'replaced'. The messages of the chat are never replaced.
     let notice = null;
     const previous = _smartbarActive.get(headerMessageId);
     if (previous) _smartbarReplace(previous);
@@ -2894,7 +3289,8 @@ async function _smartbarRun({ headerMessageId, tabId, instruction, hasSelection,
     let record = smartbarNewRecord({
         messageId: headerMessageId,
         metadata: buildMessageMetadata(message, null),
-        sessionId: last?.sessionId || smartbarNewId(),
+        // The bar and the chat of a message share the session.
+        sessionId: _smartbarSessionFor(headerMessageId, last),
         groupId: groupId,
         instruction: text,
         source: 'bar',
@@ -2905,21 +3301,71 @@ async function _smartbarRun({ headerMessageId, tabId, instruction, hasSelection,
         taLog.error("Smart bar: could not store the new record: " + e);
         record.id = 'unsaved-' + groupId;
     }
+    _smartbarLatestId.set(headerMessageId, record.id);
     // The selected text itself is given by the bar (it reads it when the instruction is sent):
     // only the generative operations use it, as the selected_text context.
     const state = {
         headerMessageId, tabId, message, groupId, hasSelection: !!hasSelection,
         selection: hasSelection && typeof selection === 'string' ? selection : '', record,
-        controller: new AbortController(), confirms: new Map(), replaced: false,
+        controller: new AbortController(), confirms: new Map(), replaced: false, source: 'bar',
     };
-    _smartbarActive.set(headerMessageId, state);
+    _smartbarRegister(state);
     await _smartbarPushState(headerMessageId, record, { notice: notice, suggestions: await taSmartbarStore.recentInstructions(config.historySize) });
+    await _smartbarChatPush(headerMessageId, record);
 
-    const job = taJobRegistry.start('smartbar', headerMessageId, (entry) => _smartbarProcess(state, entry), { groupId: groupId });
-    job.promise.then(() => {
-        if (_smartbarActive.get(headerMessageId) === state) _smartbarActive.delete(headerMessageId);
-        if (!state.replaced) return _smartbarPushState(headerMessageId, state.record);
-    }).catch(e => taLog.error("Smart bar: " + e));
+    _smartbarStartJob(state, (entry) => _smartbarProcess(state, entry));
+    return { ok: true, recordId: record.id };
+}
+
+// A message of the chat (claude-spec/10-smartbar.md "Chat"): through the router like an
+// instruction of the bar, with the session's draft in its metadata. It replaces nothing: its
+// operations append to those still running. clientId: the chat page's id of the message it has
+// already drawn.
+async function _smartbarChatRun({ headerMessageId, instruction, clientId = null, hasSelection = false, selection = '' }) {
+    const chat = _smartbarChats.get(headerMessageId);
+    if (!chat) return { ok: false, error: 'no_chat' };
+    const config = await _smartbarConfig();
+    if (!config.enabled) return { ok: false, error: 'disabled' };
+    const text = String(instruction ?? '').trim();
+    if (text === '') return { ok: false, error: 'empty' };
+    const message = await _resolveMessage(headerMessageId, null, chat.mailTabId);
+    if (!message) return { ok: false, error: 'not_found' };
+
+    const sessionId = _smartbarSessionFor(headerMessageId, await taSmartbarStore.latest(headerMessageId));
+    chat.sessionId = sessionId;
+    const sessionRecords = await _smartbarSessionContext(headerMessageId, sessionId);
+    const draftRef = _smartbarDraftRef(sessionRecords);
+    const groupId = smartbarNewId();
+    let record = smartbarNewRecord({
+        messageId: headerMessageId,
+        metadata: buildMessageMetadata(message, null),
+        sessionId: sessionId,
+        groupId: groupId,
+        instruction: text,
+        source: 'chat',
+    });
+    try {
+        record = await taSmartbarStore.create(record);
+    } catch (e) {
+        taLog.error("Smart bar: could not store the new record: " + e);
+        record.id = 'unsaved-' + groupId;
+    }
+    _smartbarLatestId.set(headerMessageId, record.id);
+    // An unreadable model answer brought in by "Open in chat": attached to this message only.
+    const rawContext = chat.rawContext || '';
+    chat.rawContext = null;
+    const state = {
+        headerMessageId, tabId: chat.mailTabId, message, groupId, hasSelection: !!hasSelection,
+        selection: hasSelection && typeof selection === 'string' ? selection : '', record,
+        controller: new AbortController(), confirms: new Map(), replaced: false, source: 'chat',
+        clientId: clientId, sessionRecords: sessionRecords, rawContext: rawContext,
+        draft: draftRef ? { type: draftRef.type } : null, draftRef: draftRef,
+    };
+    state.stream = _smartbarChatStreamer(state);
+    _smartbarRegister(state);
+    await _smartbarPublish(state);
+
+    _smartbarStartJob(state, (entry) => _smartbarProcess(state, entry));
     return { ok: true, recordId: record.id };
 }
 
@@ -2930,13 +3376,20 @@ function _smartbarReplace(state) {
     state.controller.abort();
     for (const resolve of state.confirms.values()) resolve(false);
     state.confirms.clear();
-    if (_smartbarActive.get(state.headerMessageId) === state) _smartbarActive.delete(state.headerMessageId);
-    _smartbarSave(smartbarMarkReplaced(state.record), { keepState: true }).catch(() => {});
+    _smartbarUnregister(state);
+    // The chat shows every record of its session: a replaced one (the feature turned off, or the
+    // bar's previous instruction) reaches it, so its turn is not left "in progress".
+    _smartbarSave(smartbarMarkReplaced(state.record), { keepState: true })
+        .then(saved => _smartbarChatPush(state.headerMessageId, saved))
+        .catch(() => {});
 }
 
-// The bar's Stop: the whole instruction (no index) or one of its operations.
-async function _smartbarStop(headerMessageId, index = null) {
-    const state = _smartbarActive.get(headerMessageId);
+// Stop: the whole instruction (no index) or one of its operations. recordId names the record
+// (the chat, or a chat record shown in the bar); without it, the bar's instruction in progress.
+async function _smartbarStop(headerMessageId, index = null, recordId = null) {
+    const state = recordId !== null && recordId !== undefined
+        ? _smartbarFindState(headerMessageId, recordId)
+        : _smartbarActive.get(headerMessageId);
     if (!state) return false;
     if (index === null || index === undefined) {
         taJobRegistry.abortGroup(state.groupId);
@@ -2947,8 +3400,10 @@ async function _smartbarStop(headerMessageId, index = null) {
     }
     const op = state.record.operations.find(o => o.index === index);
     const kind = SMARTBAR_OPERATION_JOB_KIND[op?.id];
-    const entry = kind ? taJobRegistry.get(kind, headerMessageId) : null;
-    if (entry && entry.groupId === state.groupId) {
+    // The job of that operation in this instruction's group only (another message of the chat
+    // may run a job of the same kind on the message).
+    const entry = kind ? taJobRegistry.getGroup(state.groupId).find(e => e.kind === kind) : null;
+    if (entry) {
         entry.invalidated = true;
         entry.abort.abort();
         return true;
@@ -2956,15 +3411,18 @@ async function _smartbarStop(headerMessageId, index = null) {
     return false;
 }
 
-// Retry: the router of an instruction-level error (a new instruction with the same text), or one
-// failed operation of the last record (a fresh run of that line alone).
+// Retry: the router of an instruction-level error (a new instruction with the same text, from the
+// bar or in the chat as the record came), or one failed operation of the record (a fresh run of
+// that line alone, in a new group).
 async function _smartbarRetry({ headerMessageId, tabId, recordId, index = null, auto = false, hasSelection = false, selection = '' }) {
     const record = await taSmartbarStore.get(recordId);
     if (!record || record.messageId !== headerMessageId) return { ok: false };
+    const chat = record.source === 'chat';
     if (index === null || index === undefined) {
+        if (chat && _smartbarChats.has(headerMessageId)) return _smartbarChatRun({ headerMessageId, instruction: record.instruction });
         return _smartbarRun({ headerMessageId, tabId, instruction: record.instruction, hasSelection, selection });
     }
-    if (_smartbarActive.has(headerMessageId)) return { ok: false, error: 'busy' };
+    if (chat ? !!_smartbarFindState(headerMessageId, recordId) : _smartbarActive.has(headerMessageId)) return { ok: false, error: 'busy' };
     const op = record.operations.find(o => o.index === index);
     if (!op || op.state !== 'error') return { ok: false };
     const message = await _resolveMessage(headerMessageId, null, tabId);
@@ -2975,32 +3433,37 @@ async function _smartbarRetry({ headerMessageId, tabId, recordId, index = null, 
         selection: hasSelection && typeof selection === 'string' ? selection : '',
         record: { ...record, groupId: groupId, state: 'running' },
         controller: new AbortController(), confirms: new Map(), replaced: false,
+        source: chat ? 'chat' : 'bar',
     };
+    if (chat) {
+        state.sessionRecords = await _smartbarSessionContext(headerMessageId, record.sessionId, record);
+        state.draftRef = _smartbarDraftRef(state.sessionRecords);
+        state.draft = state.draftRef ? { type: state.draftRef.type } : null;
+        state.rawContext = '';
+    }
     state.record.operations = record.operations.map(o => o.index === index
         ? { ...o, state: 'running', error: null, errorType: null, retryAt: null, autoRetried: o.autoRetried || auto }
         : o);
-    _smartbarActive.set(headerMessageId, state);
+    _smartbarRegister(state);
     const line = {
         index: op.index, id: op.id, params: op.params, state: 'queued', dependsOn: [], risk: smartbarRegistry.get(op.id)?.risk || 'direct',
         // A compose window that could not open: its text is kept, no new generation.
         previousResult: op.errorType === 'compose_window' ? (op.result ?? null) : null,
     };
-    await _smartbarPushState(headerMessageId, state.record);
-    const job = taJobRegistry.start('smartbar', headerMessageId, async () => {
+    await _smartbarPublish(state);
+    _smartbarStartJob(state, async () => {
         await _smartbarRunLines(state, [line]);
         state.record = await _smartbarSave(state.record);
         return { status: 'ok' };
-    }, { groupId: groupId });
-    job.promise.then(() => {
-        if (_smartbarActive.get(headerMessageId) === state) _smartbarActive.delete(headerMessageId);
-        if (!state.replaced) return _smartbarPushState(headerMessageId, state.record);
-    }).catch(e => taLog.error("Smart bar: " + e));
+    });
     return { ok: true };
 }
 
-// Confirm or cancel an operation waiting for the user ('confirm' risk).
-function _smartbarAnswerConfirm(headerMessageId, index, answer) {
-    const state = _smartbarActive.get(headerMessageId);
+// Confirm or cancel an operation waiting for the user ('confirm' risk). recordId as for Stop.
+function _smartbarAnswerConfirm(headerMessageId, index, answer, recordId = null) {
+    const state = recordId !== null && recordId !== undefined
+        ? _smartbarFindState(headerMessageId, recordId)
+        : _smartbarActive.get(headerMessageId);
     const resolve = state?.confirms.get(index);
     if (!resolve) return false;
     state.confirms.delete(index);
@@ -3008,11 +3471,12 @@ function _smartbarAnswerConfirm(headerMessageId, index, answer) {
     return true;
 }
 
-// Dismiss a line of the last record: an operation (index), the instruction-level error, the
-// unrecognized part or the replacement notice. Stored, so the line stays gone on the next visit.
+// Dismiss a line of a record: an operation (index), the instruction-level error, the
+// unrecognized part (the free answer's line in the bar too) or the reports. Stored, so the line
+// stays gone on the next visit, in the bar and in the chat.
 async function _smartbarDismiss(headerMessageId, recordId, what) {
-    const active = _smartbarActive.get(headerMessageId);
-    const record = active?.record?.id === recordId ? active.record : await taSmartbarStore.get(recordId);
+    const active = _smartbarFindState(headerMessageId, recordId);
+    const record = active ? active.record : await taSmartbarStore.get(recordId);
     if (!record || record.messageId !== headerMessageId) return false;
     if (Number.isInteger(what)) {
         record.operations = record.operations.map(op => op.index === what ? { ...op, dismissed: true } : op);
@@ -3022,49 +3486,157 @@ async function _smartbarDismiss(headerMessageId, recordId, what) {
         return false;
     }
     const saved = await _smartbarSave(record, { keepState: true });
-    if (active?.record?.id === recordId) active.record = saved;
-    await _smartbarPushState(headerMessageId, saved);
+    if (active) active.record = saved;
+    const bar = _smartbarActive.get(headerMessageId);
+    const latestId = _smartbarLatestId.get(headerMessageId);
+    const shownInBar = bar ? bar.record.id === recordId : (latestId === undefined || latestId === recordId);
+    await _smartbarPushState(headerMessageId, shownInBar ? saved : null);
+    await _smartbarChatPush(headerMessageId, saved);
     return true;
 }
 
-// The chat destination, and Open in chat: the API chat window with the text and the email, as
-// for a prompt run on the message (a regular prompt, not the special command: the user goes on
-// in the chat). The prompt carries the smartbar_chat feature's connection.
-async function _smartbarOpenChat(headerMessageId, tabId, text, selection = '') {
-    const message = await _resolveMessage(headerMessageId, null, tabId);
-    if (!message) return false;
-    const msg_text = await getMailInlineTextParts(message.id);
-    let body_text = htmlBodyToPlainText(msg_text.html);
-    if (body_text.length === 0) body_text = cleanupNewlines(msg_text.text);
-    const chatPrompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_chat') || {};
-    const curr_prompt = {
-        ...chatPrompt,
-        id: 'prompt_smartbar_chat',
-        name: browser.i18n.getMessage('smartbar_feature_name'),
-        text: String(text ?? ''),
-        action: '0',
-        need_selected: '0',
-        need_signature: '0',
-        need_custom_text: '0',
-        define_response_lang: '0',
-        use_diff_viewer: '0',
-    };
-    const fullPrompt = await taPromptUtils.preparePrompt({
-        curr_prompt: curr_prompt,
-        curr_message: message,
-        chatgpt_lang: '',
-        selection_text: selection || '',
-        body_text: body_text,
-        subject_text: message.subject,
-        msg_text: msg_text,
+// ---- The chat of the Smart bar -------------------------------------------------------------
+//
+// The API chat window (api_webchat/) opened in Smart bar mode (?smartbar=1&hid=<message>) on the
+// smartbar_chat connection: one per message. The page sends no request itself: every message it
+// sends comes here (smartbar_chat_send) and its turns come back as smartbar_chat_update /
+// smartbar_chat_stream. It shows the latest session of the message.
+
+// Open the chat of a message, or bring it to front: the bar's chat destination (the text becomes
+// the first message), "Open in chat" on a line (the text likewise), "Open in chat" on a json
+// error (fromError: { recordId, index }: the instruction prefilled, not sent, and the unreadable
+// answer attached to the next message as context, capped). Resolves true when the chat is open
+// or opening.
+async function _smartbarChatOpen(headerMessageId, mailTabId, { text = '', selection = '', fromError = null } = {}) {
+    const turn = String(text ?? '').trim() !== '' ? { text: String(text).trim(), selection: typeof selection === 'string' ? selection : '' } : null;
+    let chat = _smartbarChats.get(headerMessageId);
+    const isNew = !chat;
+    if (isNew) {
+        // In the map before any wait: a second request meanwhile finds it and waits its turn.
+        chat = {
+            chatId: '_smartbar_' + generateCallID(), windowId: null, tabId: null, mailTabId: mailTabId,
+            ready: false, sessionId: null, rawContext: null, prefill: '', queue: [],
+        };
+        _smartbarChats.set(headerMessageId, chat);
+    }
+    if (fromError) {
+        const record = await taSmartbarStore.get(fromError.recordId);
+        if (record && record.messageId === headerMessageId) {
+            const op = Number.isInteger(fromError.index) ? (record.operations || []).find(o => o.index === fromError.index) : null;
+            const raw = op ? op.rawResponse : record.rawResponse;
+            chat.rawContext = raw ? String(raw).slice(0, SMARTBAR_RAW_CONTEXT_CAP) : null;
+            chat.prefill = record.instruction || '';
+        }
+    }
+    if (turn) chat.queue.push(turn);
+    if (!isNew) {
+        browser.windows.update(chat.windowId, { focused: true }).catch(() => {});
+        if (chat.ready) await _smartbarChatFlush(headerMessageId, chat);
+        return true;
+    }
+
+    const config = await _smartbarConfig();
+    let prefs = await mztaPrefs.getAllPrefs();
+    prefs = checkScreenDimensions(prefs);
+    const chatPrompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_chat') || { id: 'prompt_smartbar_chat' };
+    const llm = getConnectionType(prefs, chatPrompt, 'smartbar_chat');
+    if (!config.enabled || !isApiUsableConnection(llm)) {
+        _smartbarChats.delete(headerMessageId);
+        if (config.enabled) {
+            const tabs = await browser.tabs.query({ active: true, currentWindow: true }).catch(() => []);
+            sendTabMessageSafe(mailTabId, { command: "sendAlert", curr_tab_type: tabs[0]?.type, message: browser.i18n.getMessage('smartbar_error_no_connection') });
+        }
+        return false;
+    }
+    const ready = addReadyListener(llm + '_ready_' + chat.chatId, (message, createdTab) => {
+        ready.cleanup();
+        return _smartbarChatReady(headerMessageId, chat, createdTab);
     });
-    await openChatGPT(fullPrompt, curr_prompt.action, tabId, curr_prompt.name, 0, curr_prompt);
+    const win_options = {
+        url: browser.runtime.getURL('api_webchat/index.html?llm=' + llm + '&call_id=' + chat.chatId +
+            '&ph_def_val=' + (prefs.placeholders_use_default_value ? '1' : '0') +
+            '&prompt_id=prompt_smartbar_chat&prompt_name=' + encodeURIComponent(browser.i18n.getMessage('smartbar_feature_name')) +
+            '&smartbar=1&hid=' + encodeURIComponent(headerMessageId)),
+        type: "popup",
+    };
+    applyWindowPositionAndSize(win_options, prefs);
+    try {
+        const win = await ready.openWindow(win_options);
+        if (chat.windowId === null) chat.windowId = win.id;
+    } catch (e) {
+        taLog.error("Smart bar: the chat window could not be opened: " + (e?.message || e));
+        if (_smartbarChats.get(headerMessageId) === chat) _smartbarChats.delete(headerMessageId);
+        return false;
+    }
     return true;
 }
 
-// The feature turned off: every instruction in progress stops, the bars are told.
+// The chat window announced itself: it gets the latest session of the message (its last
+// CHAT_SESSION_LIMIT records, the in-progress ones as they are now), then the queued messages run.
+async function _smartbarChatReady(headerMessageId, chat, createdTab) {
+    if (_smartbarChats.get(headerMessageId) !== chat) return;
+    chat.tabId = createdTab.id;
+    if (createdTab.windowId !== undefined) chat.windowId = createdTab.windowId;
+    chat.ready = true;
+    const latest = await taSmartbarStore.latest(headerMessageId);
+    chat.sessionId = _smartbarSessionOverride.get(headerMessageId) || latest?.sessionId || null;
+    const { records, total } = chat.sessionId
+        ? await taSmartbarStore.sessionRecords(chat.sessionId, SMARTBAR_CHAT_SESSION_LIMIT)
+        : { records: [], total: 0 };
+    _smartbarSeq++;
+    await _smartbarChatPost(headerMessageId, {
+        command: 'smartbar_chat_init',
+        seq: _smartbarSeq,
+        sessionId: chat.sessionId,
+        records: records.map(r => _smartbarRecordForChat(_smartbarFindState(headerMessageId, r.id)?.record || r)),
+        total: total,
+        limit: SMARTBAR_CHAT_SESSION_LIMIT,
+    });
+    await _smartbarChatFlush(headerMessageId, chat);
+}
+
+// What waits for an open chat: the prefilled instruction (with its attached context), then the
+// messages to send.
+async function _smartbarChatFlush(headerMessageId, chat) {
+    if (chat.prefill || chat.rawContext) {
+        await _smartbarChatPost(headerMessageId, { command: 'smartbar_chat_prefill', text: chat.prefill || '', hasRawContext: !!chat.rawContext });
+        chat.prefill = '';
+    }
+    for (const turn of chat.queue.splice(0)) {
+        await _smartbarChatRun({ headerMessageId, instruction: turn.text, hasSelection: turn.selection.trim() !== '', selection: turn.selection });
+    }
+}
+
+// New conversation: the next message of the message (from the chat or the bar) starts a new
+// session. The records of the old one stay until they expire. Refused while a message is being
+// understood or answered.
+async function _smartbarChatNewSession(headerMessageId) {
+    if (_smartbarChatTurnInProgress(headerMessageId)) return { ok: false, error: 'busy' };
+    const sessionId = smartbarNewId();
+    _smartbarSessionOverride.set(headerMessageId, sessionId);
+    const chat = _smartbarChats.get(headerMessageId);
+    if (chat) {
+        chat.sessionId = sessionId;
+        chat.rawContext = null;
+    }
+    return { ok: true, sessionId: sessionId };
+}
+
+function setupSmartbarChatListener() {
+    browser.windows.onRemoved.addListener((windowId) => {
+        for (const [hid, chat] of [..._smartbarChats]) {
+            if (chat.windowId === windowId) _smartbarChats.delete(hid);
+        }
+    });
+}
+
+// The feature turned off: every instruction in progress stops (the bar's and the chat's), the
+// bars are told.
 function _smartbarStopAll() {
     for (const state of [..._smartbarActive.values()]) _smartbarReplace(state);
+    for (const groups of [..._smartbarChatGroups.values()]) {
+        for (const state of [...groups.values()]) _smartbarReplace(state);
+    }
 }
 
 // Tell every open message tab the bar's settings (enabled, mode, default destination): the
@@ -5085,12 +5657,15 @@ for (let messageTab of messageTabs) {
         continue;
     }
     try {
-        // Same two files, same order, as the messageDisplayScripts.register above.
+        // Same files, same order, as the messageDisplayScripts.register above.
         await browser.tabs.executeScript(messageTab.id, {
             file: "js/lib/mzta-html-lines.js"
         })
         await browser.tabs.executeScript(messageTab.id, {
             file: "js/mzta-compose-script.js"
+        })
+        await browser.tabs.executeScript(messageTab.id, {
+            file: "js/lib/mzta-smartbar-lines.js"
         })
         await browser.tabs.executeScript(messageTab.id, {
             file: "js/mzta-smartbar-script.js"

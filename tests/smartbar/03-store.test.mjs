@@ -8,6 +8,9 @@
 //  - NOT mirrored: no write touches storage.local, the reconcile leaves it alone;
 //  - a record removed meanwhile is not put back by a later save;
 //  - the newest record of a message; the distinct recent instructions (history);
+//  - a session's records (spec 10 "Chat", "Sessions"): oldest first, the last CHAT_SESSION_LIMIT
+//    (50) with the session's count; a record's source is bar or chat; the current draft is the
+//    latest drafted operation of the session;
 //  - at startup every running record becomes interrupted, its unfinished operations cancelled;
 //  - the cleanup applies the three rules of the other types (smartbar_retention_error_days first,
 //    then smartbar_retention_days, then smartbar_retention_max_records) and never removes a
@@ -58,7 +61,7 @@ const record = (over = {}) => ({
 });
 const op = (state, over = {}) => ({ index: 0, id: 'summarize', params: {}, state, ...over });
 
-k.test('new-record', 'newRecord(): state running, the reserved phase-3 fields null', () => {
+k.test('new-record', 'newRecord(): state running, source bar by default, answer and draft null', () => {
     const r = S.newRecord({ messageId: 'm@x', sessionId: 's', groupId: 'g', instruction: 'tag it',
         metadata: { subject: ['S'], from: ['F'], message_date: new Date(0) }, now: 5 });
     assert.equal(r.state, 'running');
@@ -68,6 +71,31 @@ k.test('new-record', 'newRecord(): state running, the reserved phase-3 fields nu
     assert.deepEqual([r.answer, r.draft, r.unrecognized, r.errorType], [null, null, null, null]);
     assert.deepEqual(r.operations, []);
     assert.notEqual(S.newId(), S.newId());
+    assert.equal(S.newRecord({ messageId: 'm', source: 'chat' }).source, 'chat');
+    assert.equal(S.newRecord({ messageId: 'm', source: 'elsewhere' }).source, 'bar');
+    // A drafted operation counts as ended: the record is done.
+    assert.equal(S.deriveState({ operations: [{ state: 'drafted' }, { state: 'done' }] }), 'done');
+    assert.ok(S.FINAL_OPERATION_STATES.includes('drafted'));
+});
+
+k.test('current-draft', 'currentDraft(): the latest drafted operation of the session, with its record; none: null', () => {
+    const compose = (index, state, body, type = 'reply') => ({ index, id: 'compose', params: { type }, state, result: { type, subject: '', body } });
+    const records = [
+        { id: 1, groupId: 'g1', operations: [compose(0, 'drafted', 'first')] },
+        { id: 2, groupId: 'g2', operations: [op('done'), compose(1, 'drafted', 'second', 'new')] },
+        { id: 3, groupId: 'g3', operations: [op('done')], answer: 'free text' },
+    ];
+    const found = S.currentDraft(records);
+    assert.equal(found.record.id, 2);
+    assert.equal(found.op.index, 1);
+    assert.deepEqual(found.draft, { type: 'new', subject: '', body: 'second', groupId: 'g2' });
+    // Delivered (done), it is no longer the current draft: the previous one is.
+    records[1].operations[1].state = 'done';
+    assert.equal(S.currentDraft(records).draft.body, 'first');
+    records[0].operations[0].state = 'done';
+    assert.equal(S.currentDraft(records), null);
+    assert.equal(S.currentDraft([]), null);
+    assert.equal(S.currentDraft(null), null);
 });
 
 k.test('record-operation', 'recordOperation(): a queued line is stored running; rawResponse capped', () => {
@@ -157,6 +185,25 @@ k.test('latest-and-history', 'latest(messageId) is the newest record of the mess
     assert.deepEqual(await S.taSmartbarStore.recentInstructions(5), ['one', 'two']);
     assert.deepEqual(await S.taSmartbarStore.recentInstructions(1), ['one']);
     assert.deepEqual(await S.taSmartbarStore.recentInstructions(0), []);
+});
+
+k.test('session-records', 'sessionRecords(): the records of a session oldest first, the last 50, with the count', async () => {
+    await reset();
+    const now = Date.now();
+    for (let i = 0; i < 53; i++) {
+        await S.taSmartbarStore.create(record({ sessionId: 'sess-A', instruction: 'm' + i, source: i % 2 ? 'chat' : 'bar', createdAt: now - (60 - i) * 1000 }));
+    }
+    await S.taSmartbarStore.create(record({ sessionId: 'sess-B', instruction: 'other', createdAt: now }));
+    const { records, total } = await S.taSmartbarStore.sessionRecords('sess-A');
+    assert.equal(S.CHAT_SESSION_LIMIT, 50);
+    assert.equal(total, 53);
+    assert.equal(records.length, 50);
+    assert.deepEqual([records[0].instruction, records.at(-1).instruction], ['m3', 'm52']);
+    assert.deepEqual(records.map(r => r.createdAt), [...records.map(r => r.createdAt)].sort((a, b) => a - b));
+    assert.deepEqual(new Set(records.map(r => r.source)), new Set(['bar', 'chat']));
+    assert.deepEqual((await S.taSmartbarStore.sessionRecords('sess-A', 2)).records.map(r => r.instruction), ['m51', 'm52']);
+    assert.deepEqual(await S.taSmartbarStore.sessionRecords('none'), { records: [], total: 0 });
+    assert.deepEqual(await S.taSmartbarStore.sessionRecords(''), { records: [], total: 0 });
 });
 
 k.test('mark-interrupted', 'at startup the running records become interrupted, their unfinished operations cancelled', async () => {

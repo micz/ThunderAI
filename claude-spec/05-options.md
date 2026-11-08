@@ -267,7 +267,7 @@ ThunderAI Privacy owns model management and diagnostics. See
 | `smartbar_history_size` | `20` | Past instructions offered as suggestions; `0` = none. |
 | `smartbar_parallel_limit` | `3` | Operations of one instruction running at once. In `PREF_NUMBER_RANGES` (`min: 1`); the page never stores less than `1`. |
 | `smartbar_retention_days` / `smartbar_retention_max_records` / `smartbar_retention_error_days` | `30` / `500` / `7` | The three retention rules of the Smart bar records, the same as the other types' (maximum age, maximum count, maximum age of the records holding an error); `0` = no limit. On the Smart bar page and on the storage management page. |
-| `smartbar_max_body_length` / `smartbar_additional_instructions` / `smartbar_signature` | `0` / `''` / `''` | Reserved for the Smart bar's compose operation (phase 2), already on the Smart bar page (the two texts are stored as typed, multiline). |
+| `smartbar_max_body_length` / `smartbar_additional_instructions` / `smartbar_signature` | `0` / `''` / `''` | The Smart bar's compose operation ([10-smartbar.md](10-smartbar.md) "Compose"; `smartbar_max_body_length` also for the chat's free answer), on the Smart bar page (the two texts are stored as typed, multiline). |
 | `message_storage_batch_size` | `100` | **Policy-only**, no control in any page: the records a bulk removal of the per-message data handles per lot (it releases the storage lock between two lots, so the background's writes wait for one lot at most). An integer from 1 to 10000 (`PREF_NUMBER_RANGES`), anything else read as `100`. The startup rebuild always uses `100` (it runs before the policy is loaded). See [01-architecture.md](01-architecture.md#per-message-data-storage), "The cleanup lock and the lots". |
 | `message_storage_cleanup_auto` | `true` | Set on the storage management page. The scheduled cleanup of the per-message data: at startup if the last one is more than 24 hours old, else 2 hours after startup, then every 24 hours. `false` stops it (the background reacts to the change at once); "Apply rules now" still works. See [01-architecture.md](01-architecture.md#per-message-data-storage). |
 | `summarize` | `false` | Enable email summarization |
@@ -849,7 +849,8 @@ panel is built. Saved on `change` like the other feature pages.
   with the link to change it.
 - **Three connection panels**, one section each: router (`#smartbar_router_section`), execute
   (`#smartbar_execute_section`, with `smartbar_max_body_length`, `smartbar_additional_instructions`,
-  `smartbar_signature`, used from a later version) and chat (`#smartbar_chat_section`). Each is the
+  `smartbar_signature`) and chat (`#smartbar_chat_section`, the connection of the chat window and of
+  its free answers). Each is the
   same panel as on the other feature pages (`{prefix}_use_specific_integration`, the provider rows,
   the advanced options, the test strip, the tint), built by
   `initializeSpecificIntegrationUI({ prefix, promptId, root: section, anchorId: prefix + '_connection_ui_anchor' })`:

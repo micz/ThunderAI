@@ -12,18 +12,19 @@ import { startBackground } from '../helpers/core/load.mjs';
 
 const imp = rel => import(new URL('../../' + rel, import.meta.url).href);
 
-/** The core context plus { registry, router, execute, store, storage, placeholders } (the module namespaces). */
+/** The core context plus { registry, router, execute, chat, store, storage, placeholders } (the module namespaces). */
 export async function smartbarContext(mockOpts = {}) {
     const ctx = await startBackground({ ...mockOpts, local: { do_debug: false, ...(mockOpts.local || {}) } });
-    const [registry, router, execute, store, storage, placeholders] = await Promise.all([
+    const [registry, router, execute, chat, store, storage, placeholders] = await Promise.all([
         imp('js/mzta-smartbar-registry.js'),
         imp('js/mzta-smartbar-router.js'),
         imp('js/mzta-smartbar-execute.js'),
+        imp('js/mzta-smartbar-chat.js'),
         imp('js/mzta-smartbar-store.js'),
         imp('js/mzta-storage.js'),
         imp('js/mzta-placeholders.js'),
     ]);
-    return { ...ctx, registry, router, execute, store, storage, placeholders };
+    return { ...ctx, registry, router, execute, chat, store, storage, placeholders };
 }
 
 /** An availability env where every default operation can run. */

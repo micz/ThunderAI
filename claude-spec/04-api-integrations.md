@@ -864,6 +864,12 @@ it, so reasoning must never reach the resolved value:
 - A caller may pass `onThinking(text)`: it is called with the reasoning received so far on
   each thinking token, for display only (the Smart bar router shows it while it works). It is
   never part of the resolved value, and an exception in it never breaks the command.
+- A caller may pass `onToken(token)`: it is called with each answer token as it arrives, for
+  display only (the Smart bar chat streams its free answer, 10 "Chat"). It is **never called while
+  ThunderAI Privacy prepares the request** (the worker is a `ProcessingWorker`,
+  `responsePrepared`): those tokens would show the protected values, which only the resolved
+  answer has restored. The resolved value is the same with or without it, and an exception in it
+  never breaks the command.
 
 ## Font zoom in the webchat UI
 
@@ -1586,6 +1592,10 @@ Capture is logged through `taLog` (debug-gated), carrying the **provider, model 
 log request URLs or headers: some OpenAI-compatible endpoints carry the API key in the query string, and a header map carries it outright.
 
 ### Emitting to the chat window
+
+In Smart bar mode (`?smartbar=1`, [10-smartbar.md](10-smartbar.md) "Chat") the window has no worker
+and nothing below reaches it: its turns come from the background, which makes every call as a
+special command (the free answer's tokens through `onToken`, see "Thinking in special commands").
 
 `js/workers/usage-emitter.js` is the single place a worker hands its usage to the chat window. Each worker ends
 a response in two or three different places (end of stream, user stop, a provider-specific terminal event) and

@@ -926,6 +926,20 @@ into both components (`messagesArea.init()`, `messageInput.init()`,
 worker/runtime messages into component method calls. It owns the module-level `promptData`
 (set once by `api_send`) and the Ctrl+/Ctrl-/Ctrl+0 font-zoom.
 
+**Smart bar mode.** Opened with `&smartbar=1&hid=<headerMessageId>` (the chat of the Smart bar,
+[10-smartbar.md](10-smartbar.md) "Chat"), the controller creates **no worker**: it imports
+`smartbarChat.js` (only then) and injects its channel where the worker goes. `<message-input>` and
+`<messages-area>` post `chatMessage` / `stop` to it unchanged; it forwards them to the background,
+which routes every message, runs the operations or answers, and sends the turns back
+(`smartbar_chat_init` / `_update` / `_stream` / `_prefill`, ignored when a content script sends
+them); `api_send` is not used. The init message the controller posts is dropped, the usage UI is
+off, the endpoint check, the header, the startup notice and the zoom are unchanged. Two methods of
+`<messages-area>` serve this mode only: `beginCustomBotTurn()` (a model turn the page fills itself:
+result lines, drafts) and `streamInto(turn)` (the free answer streamed into that turn through the
+one render path). The page adds a New conversation button to `#appHeader` and a note above the
+input (adopted sheets, as everywhere in the window). **Without the flag none of this runs**: the
+webchat tests run unchanged.
+
 **URL parameters.** The background opens the window at `api_webchat/index.html?llm=<connection
 type>&call_id=<id>&ph_def_val=<0|1>&prompt_id=<id>&prompt_name=<name>`, each value through **one**
 `encodeURIComponent`. `URLSearchParams` already decodes them, so the controller uses
@@ -2225,7 +2239,10 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-smartbar-registry.js` | The Smart bar's operation registry: availability, parameter checks, plan and run of an instruction |
 | `js/mzta-smartbar-router.js` | The Smart bar router: its prompt (never the email body) and the checks of its answer |
 | `js/mzta-smartbar-execute.js` | The Smart bar's compose operation: its prompt (the email delimited as data, cut to the length limit), the checks of its answer, its signature and HTML |
-| `js/mzta-smartbar-store.js` | The Smart bar records (one per instruction) and their states, over the `smartbar` store of `taStorage` |
+| `js/mzta-smartbar-store.js` | The Smart bar records (one per instruction) and their states, over the `smartbar` store of `taStorage`; the current draft of a chat session |
+| `js/mzta-smartbar-chat.js` | The Smart bar chat: the conversation of a session as the prompts carry it, the prompt of the free answer |
+| `js/lib/mzta-smartbar-lines.js` | The texts of the Smart bar's result lines (classic script, global `mztaSmartbarLines`), shared by the bar and the chat window |
+| `api_webchat/smartbarChat.js` | The API chat window in Smart bar mode: the channel to the background and the turns it draws |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
 | `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |

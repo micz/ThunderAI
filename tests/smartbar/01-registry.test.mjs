@@ -1,6 +1,8 @@
 // claude-spec/10-smartbar.md "Operation registry" (js/mzta-smartbar-registry.js):
-//  - four operations in this version, tag / summarize / translate / compose, each a valid entry
-//    (id, description, params schema, requirements, multiple false, risk, dependsOn, run);
+//  - five operations in this version, tag / summarize / translate / compose / deliver_draft, each a
+//    valid entry (id, description, params schema, requirements, multiple false, risk, dependsOn, run);
+//  - deliver_draft ("Chat", "Drafts"): no params, available only in the chat with a current draft,
+//    waits for a compose of the same instruction and runs after it, wherever the user put it;
 //  - compose ("Compose"): a required type among reply / reply_all / forward / new, no recipient
 //    accepted, single instance, direct, runLast, deliverInChat, available with the
 //    smartbar_execute connection; in a mixed instruction its line is planned and run last;
@@ -9,9 +11,11 @@
 //  - validateParams(): unknown parameters refused, lossless coercions only, empty = absent, enum;
 //  - planOperations(): the user's order kept; unknown / unavailable / duplicate ids dropped and
 //    reported; invalid params keep the line in error (errorType params) while the others run;
-//    dependsOn only names earlier lines (a static rule, never the model's);
+//    a line goes after the lines it depends on (a stable topological sort over runLast and the
+//    user's order; a cycle keeps the user's order), its dependsOn then naming earlier lines only;
 //  - runPlanned(): at most `limit` at once, first come first served; a line waits for its
-//    dependencies and is cancelled when one did not end done; a confirm line waits for confirm()
+//    dependencies and is cancelled when one did not end successfully (done, or drafted in the
+//    chat); a drafted outcome is kept; a confirm line waits for confirm()
 //    without holding a slot; an aborted signal cancels the lines not started; a rejection of
 //    start() is an error.
 
@@ -40,8 +44,8 @@ function deferred() {
 const tick = () => new Promise(r => setImmediate(r));
 const plan = (ops, ids, routed = ids.map(id => ({ id }))) => R.planOperations(R.createSmartbarRegistry(ops), ids, routed);
 
-k.test('default-ops', 'the four operations of this version, valid, single-instance', () => {
-    assert.deepEqual(reg.all().map(op => op.id), ['tag', 'summarize', 'translate', 'compose']);
+k.test('default-ops', 'the five operations of this version, valid, single-instance', () => {
+    assert.deepEqual(reg.all().map(op => op.id), ['tag', 'summarize', 'translate', 'compose', 'deliver_draft']);
     for (const op of R.DEFAULT_OPERATIONS) {
         assert.deepEqual(R.operationProblems(op), [], op.id);
         assert.equal(op.multiple, false, op.id);
@@ -51,17 +55,18 @@ k.test('default-ops', 'the four operations of this version, valid, single-instan
     assert.equal(reg.get('tag').params.tags.type, 'string[]');
     assert.deepEqual(reg.get('summarize').params, {});
     assert.equal(reg.get('translate').params.language.type, 'string');
+    assert.deepEqual(reg.get('deliver_draft').params, {});
     assert.equal(reg.get('nope'), null);
 });
 
 k.test('run-executor', 'an operation runs through the executor of its id', async () => {
     const calls = [];
-    const executors = Object.fromEntries(['tag', 'summarize', 'translate', 'compose'].map(id => [id, async ctx => {
+    const executors = Object.fromEntries(['tag', 'summarize', 'translate', 'compose', 'deliver_draft'].map(id => [id, async ctx => {
         calls.push([id, ctx.params]);
         return { state: 'done' };
     }]));
     for (const op of reg.all()) await op.run({ params: { p: op.id }, executors });
-    assert.deepEqual(calls, [['tag', { p: 'tag' }], ['summarize', { p: 'summarize' }], ['translate', { p: 'translate' }], ['compose', { p: 'compose' }]]);
+    assert.deepEqual(calls, [['tag', { p: 'tag' }], ['summarize', { p: 'summarize' }], ['translate', { p: 'translate' }], ['compose', { p: 'compose' }], ['deliver_draft', { p: 'deliver_draft' }]]);
 });
 
 k.test('invalid-entry', 'an invalid entry or a duplicated id is refused at creation', () => {
@@ -248,13 +253,76 @@ k.test('plan-invalid-params', 'invalid params keep the line in error, the others
     assert.equal(lines[1].state, 'queued');
 });
 
-k.test('plan-depends-on', 'dependsOn names only earlier lines, whatever the rule returns', () => {
+k.test('plan-depends-on', 'a line goes after the lines it depends on; its dependsOn names earlier lines only, whatever the rule returns', () => {
+    // b waits for a and for c, which the user named after it; itself, -1 and 'x' are ignored.
     const { lines } = plan([
         fake('a'),
         fake('b', { dependsOn: () => [0, 1, 2, -1, 'x', 0] }),
         fake('c', { dependsOn: (ops, i) => ops.filter(o => o.id === 'a').map(o => o.index).concat([i]) }),
     ], ['a', 'b', 'c']);
-    assert.deepEqual(lines.map(l => l.dependsOn), [[], [0], [0]]);
+    assert.deepEqual(lines.map(l => [l.index, l.id, l.dependsOn]), [[0, 'a', []], [1, 'c', [0]], [2, 'b', [0, 1]]]);
+});
+
+k.test('plan-depends-on-run-last', 'a line depending on a runLast line goes after it; the others keep their order', () => {
+    const { lines } = plan([
+        fake('x'), fake('w', { runLast: true }), fake('d', { dependsOn: (ops) => ops.filter(o => o.id === 'w').map(o => o.index) }), fake('y'),
+    ], ['d', 'x', 'w', 'y'], [{ id: 'd' }, { id: 'x' }, { id: 'w' }, { id: 'y' }]);
+    assert.deepEqual(lines.map(l => [l.id, l.dependsOn]), [['x', []], ['y', []], ['w', []], ['d', [2]]]);
+});
+
+k.test('plan-cycle', 'a cycle of dependencies keeps the user\'s order and drops the dependency pointing forward', () => {
+    const { lines } = plan([
+        fake('a', { dependsOn: (ops) => ops.filter(o => o.id === 'b').map(o => o.index) }),
+        fake('b', { dependsOn: (ops) => ops.filter(o => o.id === 'a').map(o => o.index) }),
+    ], ['a', 'b']);
+    assert.deepEqual(lines.map(l => [l.id, l.dependsOn]), [['a', []], ['b', [0]]]);
+});
+
+k.test('deliver-draft-entry', 'deliver_draft: no params, single instance, direct, available only in the chat with a current draft', () => {
+    const op = reg.get('deliver_draft');
+    assert.deepEqual(R.operationProblems(op), []);
+    assert.deepEqual(op.params, {});
+    assert.equal(op.multiple, false);
+    assert.equal(op.risk, 'direct');
+    assert.notEqual(op.runLast, true);
+    assert.notEqual(op.deliverInChat, true);
+    const draft = { type: 'reply' };
+    assert.deepEqual(reg.listAvailable({ ...ALL_AVAILABLE, source: 'chat', draft }).map(o => o.id), ['tag', 'summarize', 'translate', 'compose', 'deliver_draft']);
+    assert.deepEqual(reg.listAvailable({ ...ALL_AVAILABLE, source: 'chat', draft: null }).map(o => o.id), ['tag', 'summarize', 'translate', 'compose']);
+    assert.deepEqual(reg.listAvailable({ ...ALL_AVAILABLE, source: 'bar', draft }).map(o => o.id), ['tag', 'summarize', 'translate', 'compose']);
+    // It needs no connection: the draft is written already.
+    assert.deepEqual(reg.listAvailable({ source: 'chat', draft }).map(o => o.id), ['deliver_draft']);
+    // Its description gives the router the approval phrases, and tells a change from an approval.
+    for (const phrase of ['create the email', 'ok go', 'crea l\'email', 'ok vai']) assert.ok(op.description.includes(phrase), phrase);
+    assert.match(op.description, /compose operation/);
+    // It waits for a compose of the same instruction, wherever the user put it.
+    assert.deepEqual(op.dependsOn([{ id: 'deliver_draft', index: 0 }, { id: 'compose', index: 1 }], 0), [1]);
+    assert.deepEqual(op.dependsOn([{ id: 'summarize', index: 0 }, { id: 'deliver_draft', index: 1 }], 1), []);
+});
+
+k.test('plan-deliver-after-compose', 'planOperations(): "make it shorter and create it" runs compose then deliver_draft, whatever the router\'s order', () => {
+    const ids = ['tag', 'summarize', 'translate', 'compose', 'deliver_draft'];
+    const both = [{ id: 'compose', params: { type: 'reply' } }, { id: 'deliver_draft' }];
+    for (const routed of [both, [...both].reverse()]) {
+        const { lines } = R.planOperations(reg, ids, [{ id: 'summarize' }, ...routed]);
+        assert.deepEqual(lines.map(l => [l.index, l.id, l.dependsOn]), [[0, 'summarize', []], [1, 'compose', []], [2, 'deliver_draft', [1]]]);
+    }
+    // Alone, deliver_draft waits for nothing and keeps its place.
+    const alone = R.planOperations(reg, ids, [{ id: 'deliver_draft' }, { id: 'tag' }]).lines;
+    assert.deepEqual(alone.map(l => [l.id, l.dependsOn]), [['deliver_draft', []], ['tag', []]]);
+});
+
+k.test('run-drafted', 'runPlanned(): a drafted outcome is kept, and a line depending on it runs', async () => {
+    const { lines } = plan([fake('c'), fake('d', { dependsOn: () => [0] })], ['c', 'd']);
+    const started = [];
+    await R.runPlanned({
+        lines, limit: 2,
+        start: async (line) => { started.push(line.id); return line.id === 'c' ? { state: 'drafted', result: { body: 'x' } } : { state: 'done' }; },
+    });
+    assert.deepEqual(started, ['c', 'd']);
+    assert.deepEqual(lines.map(l => l.state), ['drafted', 'done']);
+    assert.deepEqual(lines[0].result, { body: 'x' });
+    assert.deepEqual(R.SUCCESS_STATES, ['done', 'drafted']);
 });
 
 k.test('run-limit', 'runPlanned(): at most `limit` lines at once, in the user\'s order', async () => {

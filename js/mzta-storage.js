@@ -1263,6 +1263,29 @@ export class taStorage {
     }
 
     /**
+     * The smartbar records of a session (the sessionId index), oldest first by createdAt (then
+     * id): the last `limit` of them, and how many the session holds. The chat of the Smart bar
+     * loads a session through it. { records: [], total: 0 } when there is none or the database
+     * cannot be read.
+     * @returns {Promise<{ records: object[], total: number }>}
+     */
+    static async smartbarSessionRecords(sessionId, limit = 50) {
+        if (!sessionId) return { records: [], total: 0 };
+        try {
+            await rebuildDone();
+            const tx = await openTransaction(STORE_SMARTBAR, 'readonly');
+            const all = await tx.store.index(INDEX_SESSION_ID).getAll(IDBKeyRange.only(sessionId));
+            await tx.done;
+            all.sort((a, b) => (a.createdAt - b.createdAt) || (a.id - b.id));
+            const max = Number.isInteger(limit) && limit > 0 ? limit : all.length;
+            return { records: all.slice(Math.max(0, all.length - max)), total: all.length };
+        } catch (e) {
+            _log.error('smartbarSessionRecords error (answered as none): ' + e);
+            return { records: [], total: 0 };
+        }
+    }
+
+    /**
      * The distinct instructions of the smartbar store, most recent first, at most `limit` of
      * them (the history suggestions of the bar). Reads at most `limit * 20` records. [] when
      * `limit` is 0 or the database cannot be read.

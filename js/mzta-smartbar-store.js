@@ -30,14 +30,21 @@ import { taStorage } from './mzta-storage.js';
 
 /** The states of a record. replaced and interrupted are set by the background. */
 export const RECORD_STATES = Object.freeze(['running', 'pending_confirmation', 'error', 'done', 'interrupted', 'replaced']);
-/** The states of an operation. drafted is reserved for the deliver_draft operation (phase 3). */
+/**
+ * The states of an operation. drafted: an operation of the chat with deliverInChat (compose)
+ * whose text is ready and not delivered yet (the session's current draft is the latest one).
+ */
 export const OPERATION_STATES = Object.freeze(['running', 'pending_confirmation', 'drafted', 'done', 'error', 'cancelled']);
 /** The final states of an operation. */
 export const FINAL_OPERATION_STATES = Object.freeze(['drafted', 'done', 'error', 'cancelled']);
+/** The sources of a record: the bar in the message pane, or the chat started from it. */
+export const RECORD_SOURCES = Object.freeze(['bar', 'chat']);
 
 /** The longest rawResponse and answer kept (characters). */
 export const RAW_RESPONSE_CAP = 8000;
 export const ANSWER_CAP = 20000;
+/** The most records of a session the chat loads (the last ones). */
+export const CHAT_SESSION_LIMIT = 50;
 
 /** A text cut to `max` characters (null stays null). */
 function cap(text, max) {
@@ -60,7 +67,7 @@ export function newId() {
  *   sessionId    the bar's session on this message
  *   groupId      this instruction's id, carried by each of its jobs
  *   instruction  what the user typed
- *   source       'bar' ('chat' in phase 3)
+ *   source       'bar' or 'chat'
  */
 export function newRecord({ messageId, metadata = {}, sessionId, groupId, instruction, source = 'bar', now = Date.now() }) {
     return {
@@ -71,7 +78,7 @@ export function newRecord({ messageId, metadata = {}, sessionId, groupId, instru
         message_date: metadata.message_date instanceof Date ? metadata.message_date.toISOString() : (metadata.message_date ?? ''),
         groupId: groupId,
         sessionId: sessionId,
-        source: source,
+        source: RECORD_SOURCES.includes(source) ? source : 'bar',
         instruction: String(instruction ?? ''),
         state: 'running',
         unrecognized: null,
@@ -81,10 +88,39 @@ export function newRecord({ messageId, metadata = {}, sessionId, groupId, instru
         rawResponse: null,
         retryAt: null,
         operations: [],
-        // Reserved for phase 3 (chat mode, deliver_draft): always null now.
+        // The chat only: the free-text answer of a message no operation covers (capped), and the
+        // draft its compose operation wrote ({ type, subject, body, groupId }).
         answer: null,
         draft: null,
     };
+}
+
+/**
+ * The current draft of a session: the latest operation still 'drafted' among its records
+ * (oldest first, as smartbarSessionRecords() gives them), with its record. Null when none.
+ * @returns {{ record, op, draft: { type, subject, body, groupId } } | null}
+ */
+export function currentDraft(records) {
+    const list = Array.isArray(records) ? records : [];
+    for (let r = list.length - 1; r >= 0; r--) {
+        const ops = list[r]?.operations || [];
+        for (let i = ops.length - 1; i >= 0; i--) {
+            const op = ops[i];
+            if (op?.state === 'drafted' && op.result && typeof op.result === 'object') {
+                return {
+                    record: list[r],
+                    op: op,
+                    draft: {
+                        type: op.result.type,
+                        subject: op.result.subject || '',
+                        body: op.result.body || '',
+                        groupId: list[r].groupId,
+                    },
+                };
+            }
+        }
+    }
+    return null;
 }
 
 /** An operation as the record stores it, from a planned line (js/mzta-smartbar-registry.js). */
@@ -167,6 +203,10 @@ export const taSmartbarStore = {
     },
     async latest(messageId) {
         return taStorage.smartbarLatestForMessage(messageId);
+    },
+    /** The last CHAT_SESSION_LIMIT records of a session, oldest first, and the session's count. */
+    async sessionRecords(sessionId, limit = CHAT_SESSION_LIMIT) {
+        return taStorage.smartbarSessionRecords(sessionId, limit);
     },
     async recentInstructions(limit) {
         return taStorage.smartbarRecentInstructions(limit);

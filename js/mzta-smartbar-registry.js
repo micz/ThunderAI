@@ -20,23 +20,26 @@
  *  The Smart bar's operation registry (claude-spec/10-smartbar.md "Operation registry").
  *
  *  An operation is one entry:
- *    id            stable string ('tag', 'summarize', 'translate', 'compose'; later 'deliver_draft')
+ *    id            stable string ('tag', 'summarize', 'translate', 'compose', 'deliver_draft')
  *    description   for the router model: what it does and when to pick it (English)
  *    params        { name: { type: 'string' | 'string[]' | 'boolean', enum?, required?, description } }:
  *                  what the router may pass; a parameter is optional unless `required`
  *    requirements  (env) => boolean: whether it can run now (feature on, connection usable,
- *                  permissions granted); env is what availabilityEnv() in the background builds
+ *                  permissions granted); env is what _smartbarEnv() in the background builds,
+ *                  with `source` ('bar' | 'chat') and `draft` (the current draft of the chat's
+ *                  session, or null)
  *    multiple      whether more than one instance may appear in one instruction (false for all)
  *    risk          'direct' or 'confirm' ('confirm' waits for the user's Confirm)
  *    runLast       optional: the operation runs after every other operation of the instruction
  *                  has ended (compose: its window opens at the end and steals no focus mid-way)
  *    dependsOn     (ops, index) => indices of the operations of the same instruction this one
- *                  waits for: a static rule, never the model's decision
- *    deliverInChat optional, reserved for the deferred delivery of phase 3 (chat mode); compose
- *                  sets it, and in this version always delivers by opening its compose window
- *    run           (ctx) => Promise<{ state: 'done' | 'error', result, error, errorType,
- *                  rawResponse, retryAt }>: ctx = { message, params, signal, groupId, index,
- *                  report(partial), source, executors }
+ *                  waits for: a static rule, never the model's decision. It may name a line the
+ *                  user gave later: the plan moves a line after the lines it waits for
+ *    deliverInChat optional: in the chat (source 'chat') the operation does not deliver when it
+ *                  ends; it ends 'drafted' and the user delivers it later (compose: its draft)
+ *    run           (ctx) => Promise<{ state: 'done' | 'drafted' | 'error' | 'cancelled', result,
+ *                  error, errorType, rawResponse, retryAt }>: ctx = { message, params, signal,
+ *                  groupId, index, report(partial), source, executors }
  *
  *  Adding an operation means adding one entry here, plus its i18n strings (the result texts are
  *  built by the add-on, never by the model). The executors themselves live in the background,
@@ -104,7 +107,26 @@ export const DEFAULT_OPERATIONS = Object.freeze([
         dependsOn: () => [],
         run: (ctx) => ctx.executors.compose(ctx),
     },
+    {
+        id: 'deliver_draft',
+        description: 'Create the email from the current draft of this conversation now, in a compose window: the user ' +
+            'approves the draft ("create the email", "ok go", "that\'s fine", "crea l\'email", "ok vai"). It does not ' +
+            'change the draft: a request to change it ("shorter", "more formal", "add that...") is a compose operation, ' +
+            'and "make it shorter and create it" is a compose operation followed by this one.',
+        params: {},
+        // Only in the chat, and only while its session holds a draft not delivered yet.
+        requirements: (env) => env?.source === 'chat' && !!env?.draft,
+        multiple: false,
+        risk: 'direct',
+        // A compose operation of the same instruction writes the draft this one delivers: wait
+        // for it, wherever the user put it ("make it shorter and create it").
+        dependsOn: (ops, index) => ops.filter(o => o.id === 'compose' && o.index !== index).map(o => o.index),
+        run: (ctx) => ctx.executors.deliver_draft(ctx),
+    },
 ]);
+
+/** The states a line ends in successfully: those a line depending on it accepts. */
+export const SUCCESS_STATES = Object.freeze(['done', 'drafted']);
 
 const RISKS = ['direct', 'confirm'];
 
@@ -243,8 +265,15 @@ export function describeOperations(ops) {
 
 /**
  * The operations a validated router output asks for, ready to run: the registry's checks
- * applied, in the order the router gave them (the user's order), but the runLast operations,
- * which go after the others (their own order kept): a line's index is its run order.
+ * applied, in the order the router gave them (the user's order), with two static rules of the
+ * registry, never the model's:
+ *   - the runLast operations go after the others (their own order kept);
+ *   - a line goes after the lines it depends on (dependsOn), even when the user named it first
+ *     or when they are runLast: "make it shorter and create it" runs compose, then
+ *     deliver_draft. A stable topological sort: among the lines whose dependencies are placed,
+ *     the first non-runLast one in the user's order, else the first runLast one. A cycle keeps
+ *     the user's order and drops the dependencies that would point forward.
+ * A line's index is its run order, and its dependsOn names earlier lines only.
  *
  *   - an id the registry does not know: dropped, reported ('unknown');
  *   - an operation the user cannot run now (its requirements fail): dropped, reported
@@ -257,7 +286,7 @@ export function describeOperations(ops) {
  *   lines: [{ index, id, params, state, error, errorType, dependsOn, risk, runLast }]
  */
 export function planOperations(registry, availableIds, routed) {
-    const lines = [];
+    const given = [];
     const reports = [];
     const seen = new Set();
     for (const item of Array.isArray(routed) ? routed : []) {
@@ -277,8 +306,8 @@ export function planOperations(registry, availableIds, routed) {
         }
         seen.add(id);
         const checked = validateParams(op, item.params);
-        lines.push({
-            index: lines.length,
+        given.push({
+            index: given.length,
             id: id,
             params: checked.ok ? checked.params : (item.params ?? {}),
             state: checked.ok ? 'queued' : 'error',
@@ -289,17 +318,34 @@ export function planOperations(registry, availableIds, routed) {
             runLast: op.runLast === true,
         });
     }
-    // The runLast operations after the others: a static rule of the registry, never the model's.
-    lines.sort((a, b) => Number(a.runLast) - Number(b.runLast) || a.index - b.index);
-    lines.forEach((line, i) => { line.index = i; });
-    // Static rules, never the model's: each operation names the earlier ones it waits for.
-    for (const line of lines) {
-        const op = registry.get(line.id);
-        const deps = op.dependsOn(lines.map(l => ({ id: l.id, params: l.params, index: l.index })), line.index) || [];
-        // Only an earlier operation: the user's order is the run order, so a line can never
-        // wait for one that comes after it (and no cycle can form).
-        line.dependsOn = [...new Set(deps.filter(d => Number.isInteger(d) && d >= 0 && d < line.index))];
+    // The dependencies, in the user's order: any other line of the instruction.
+    const view = given.map(l => ({ id: l.id, params: l.params, index: l.index }));
+    const wants = given.map(line => {
+        const deps = registry.get(line.id).dependsOn(view, line.index) || [];
+        return new Set(deps.filter(d => Number.isInteger(d) && d >= 0 && d < given.length && d !== line.index));
+    });
+    // The run order: a stable topological sort over (runLast, the user's order).
+    const rank = l => Number(l.runLast) * given.length + l.index;
+    const placed = new Set();
+    const order = [];
+    while (order.length < given.length) {
+        const left = given.filter(l => !placed.has(l.index)).sort((a, b) => rank(a) - rank(b));
+        let next = left.find(l => [...wants[l.index]].every(d => placed.has(d)));
+        if (!next) {
+            // A cycle: the first remaining line in the user's order goes, without the
+            // dependencies it still waits for (they would point forward).
+            next = left.sort((a, b) => a.index - b.index)[0];
+            wants[next.index] = new Set([...wants[next.index]].filter(d => placed.has(d)));
+        }
+        placed.add(next.index);
+        order.push(next);
     }
+    const runIndex = new Map(order.map((l, i) => [l.index, i]));
+    const lines = order.map((l, i) => ({
+        ...l,
+        index: i,
+        dependsOn: [...wants[l.index]].map(d => runIndex.get(d)).sort((a, b) => a - b),
+    }));
     return { lines, reports };
 }
 
@@ -308,7 +354,7 @@ export function planOperations(registry, availableIds, routed) {
  *   - in the user's order, at most `limit` at once (the others wait their turn, first come
  *     first served);
  *   - a line waits for the lines it depends on, and is cancelled if one of them did not end
- *     'done';
+ *     successfully (SUCCESS_STATES: 'done', or 'drafted' in the chat);
  *   - a 'confirm' line goes to 'pending_confirmation' and waits for confirm(line), WITHOUT
  *     holding a slot: true runs it, false cancels it;
  *   - a runLast line starts only once every other line before it has ended, in whatever state
@@ -316,7 +362,8 @@ export function planOperations(registry, availableIds, routed) {
  *   - a line already in 'error' (invalid params) is left as it is;
  *   - once `signal` aborts, a line not started yet is cancelled.
  *
- * start(line) runs one line and resolves its outcome { state: 'done' | 'error', ... }; it must
+ * start(line) runs one line and resolves its outcome { state: 'done' | 'drafted' | 'error' |
+ * 'cancelled', ... }; it must
  * not reject (a rejection is taken as an error). onChange(line) is called on every state change.
  * Resolves the lines once every one is in a final state.
  */
@@ -353,7 +400,7 @@ export async function runPlanned({ lines, limit = 3, start, confirm = async () =
             if (line.state === 'error') return line;
             await Promise.all(before);
             const depLines = await Promise.all(deps);
-            if (depLines.some(d => d.state !== 'done') || aborted()) {
+            if (depLines.some(d => !SUCCESS_STATES.includes(d.state)) || aborted()) {
                 set(line, { state: 'cancelled', finishedAt: Date.now() });
                 return line;
             }
@@ -379,8 +426,7 @@ export async function runPlanned({ lines, limit = 3, start, confirm = async () =
                 } catch (e) {
                     outcome = { state: 'error', error: e?.message || String(e), errorType: e?.aborted ? 'aborted' : 'api' };
                 }
-                const state = outcome?.state === 'done' ? 'done'
-                    : (outcome?.state === 'cancelled' ? 'cancelled' : 'error');
+                const state = ['done', 'drafted', 'cancelled'].includes(outcome?.state) ? outcome.state : 'error';
                 set(line, {
                     state: state,
                     result: outcome?.result ?? null,
