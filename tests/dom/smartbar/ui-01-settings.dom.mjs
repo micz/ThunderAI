@@ -1,8 +1,8 @@
 // The Smart bar settings page (pages/smartbar/) with an API global connection, no per-feature
 // override, no policy.
 //
-// Spec 05 "Smart Bar Settings Page (`pages/smartbar/`)": the tab strip (one Options tab today, the
-// tab named in the URL hash shown), the stored settings shown in their sections, each change stored
+// Spec 05 "Smart Bar Settings Page (`pages/smartbar/`)": the tab strip (three tabs, Options shown
+// when the URL has no hash), the stored settings shown in their sections, each change stored
 // with its type (a select as its value, a number as a number and never below its minimum, an
 // emptied number as its default, a textarea as typed), the three connection panels, one per
 // special prompt, each with its own controls; the keyboard shortcut of the bar shown.
@@ -39,11 +39,12 @@ const $ = ctx.$;
 const S_PAGE = 'spec 05 "Smart Bar Settings Page (`pages/smartbar/`)"';
 const PANELS = ['smartbar_router', 'smartbar_execute', 'smartbar_chat'];
 
-k.test('tabs', S_PAGE, 'one Options tab, selected, its panel shown', () => {
+k.test('tabs', S_PAGE, 'three tabs, Options selected with no hash, its panel alone shown', () => {
     const tabs = [...ctx.document.querySelectorAll('#smartbar_tabs [role="tab"]')];
-    assert.deepEqual(tabs.map(t => t.dataset.tab), ['options']);
-    assert.equal(tabs[0].getAttribute('aria-selected'), 'true');
-    assert.equal(ctx.document.getElementById(tabs[0].getAttribute('aria-controls')).hidden, false);
+    assert.deepEqual(tabs.map(t => t.dataset.tab), ['options', 'prompts', 'activity']);
+    assert.deepEqual(tabs.map(t => t.getAttribute('aria-selected')), ['true', 'false', 'false']);
+    assert.deepEqual(tabs.map(t => ctx.document.getElementById(t.getAttribute('aria-controls')).hidden), [false, true, true]);
+    assert.equal(ctx.window.location.hash, '#options', 'the hash follows the tab shown');
 });
 
 k.test('restore', S_PAGE, 'the stored settings are shown', () => {

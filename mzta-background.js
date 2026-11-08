@@ -138,7 +138,8 @@ import {
     newId as smartbarNewId,
     currentDraft as smartbarCurrentDraft,
     CHAT_SESSION_LIMIT as SMARTBAR_CHAT_SESSION_LIMIT,
-    FINAL_OPERATION_STATES as SMARTBAR_FINAL_STATES
+    FINAL_OPERATION_STATES as SMARTBAR_FINAL_STATES,
+    badgeCounts as smartbarBadgeCounts
 } from './js/mzta-smartbar-store.js';
 import {
     getPlaceholders,
@@ -514,7 +515,10 @@ function setupCleanupScheduleListener() {
 setupCleanupScheduleListener();
 // The Smart bar instructions still 'running' were cut short by the end of the previous session:
 // they become 'interrupted' (claude-spec/10-smartbar.md "Storage"). After the storage startup above.
-taSmartbarStore.markInterrupted().catch(e => console.error("[ThunderAI] Smart bar: could not mark the interrupted instructions: " + e));
+taSmartbarStore.markInterrupted()
+    .catch(e => console.error("[ThunderAI] Smart bar: could not mark the interrupted instructions: " + e))
+    // The badge counts the errors stored by the previous sessions.
+    .finally(() => _smartbarActivityChanged());
 // The bars follow their preferences (enabled, mode, default destination): a content script
 // cannot read them, so the background tells every open message tab.
 setupSmartbarConfigListener();
@@ -1500,9 +1504,23 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     .then(list => list.map(mapPlaceholderToSuggestion).filter(s => s.id !== 'additional_text'))
                     .catch(() => []);
             case 'smartbar_open_page':
-                // The bar's Details link: the feature page (its Activity tab comes later).
-                return browser.tabs.create({ url: browser.runtime.getURL('pages/smartbar/mzta-smartbar.html') })
-                    .then(() => ({ ok: true }), () => ({ ok: false }));
+                // The feature page, opened once: the bar's and the chat's Details link (tab
+                // 'activity'), the options page's Manage settings (no tab: the page as it is).
+                return _smartbarOpenPage(message.tab ?? null)
+                    .catch(e => { taLog.error("Smart bar: the page could not be opened: " + e); return { ok: false }; });
+            // The Activity tab of the feature page (claude-spec/10-smartbar.md "Activity"):
+            // accepted only from that page.
+            case 'smartbar_activity_list':
+            case 'smartbar_activity_open':
+            case 'smartbar_activity_open_chat':
+            case 'smartbar_activity_stop':
+            case 'smartbar_activity_stop_all':
+            case 'smartbar_activity_retry':
+            case 'smartbar_activity_remove':
+            case 'smartbar_activity_remove_errors':
+                if (!_smartbarFromPage(sender)) return Promise.resolve({ ok: false, error: 'not_page' });
+                return _smartbarActivityCommand(message)
+                    .catch(e => { taLog.error("Error in " + message.command + ": " + e); return { ok: false, error: String(e?.message || e) }; });
             case 'batch_status':
                 return Promise.resolve(taBatchController.getStatus());
             case 'cancel_batch':
@@ -2474,6 +2492,7 @@ function _smartbarRecordForBar(record) {
 
 async function _smartbarPushState(headerMessageId, record = null, extra = {}) {
     await _smartbarPush(headerMessageId, { command: 'smartbar_update', ...(await _smartbarState(headerMessageId, record, extra)) });
+    _smartbarActivityChanged();
 }
 
 // A record as the chat window receives it: everything it draws (the answer, the drafts), without
@@ -2500,6 +2519,7 @@ function _smartbarChatPost(headerMessageId, payload) {
 
 // A record to the chat window of its message (with the next sequence number).
 function _smartbarChatPush(headerMessageId, record, extra = {}) {
+    _smartbarActivityChanged();
     if (!record || !_smartbarChats.get(headerMessageId)?.ready) return Promise.resolve();
     _smartbarSeq++;
     return _smartbarChatPost(headerMessageId, { command: 'smartbar_chat_update', seq: _smartbarSeq, record: _smartbarRecordForChat(record), ...extra });
@@ -3644,6 +3664,8 @@ function _smartbarStopAll() {
 async function _smartbarBroadcastConfig() {
     const config = await _smartbarConfig();
     if (!config.enabled) _smartbarStopAll();
+    // The badge follows the switch: cleared when the feature is off, counted again when on.
+    _smartbarActivityChanged();
     let tabs = [];
     try {
         tabs = (await browser.tabs.query({})).filter(tab => tab.type === 'mail' || tab.type === 'messageDisplay');
@@ -3660,6 +3682,241 @@ function setupSmartbarConfigListener() {
             _smartbarBroadcastConfig().catch(e => taLog.error("Smart bar: " + e));
         }
     });
+}
+
+// ---- The feature page, its Activity tab and the badge --------------------------------------
+//
+// claude-spec/10-smartbar.md "Feature page", "Activity", "Badge". The background is the one
+// source of truth: every change of a record (_smartbarPushState(), _smartbarChatPush()) calls
+// _smartbarActivityChanged(), which counts the badge again and tells the page to read its list
+// again (smartbar_activity_changed); an action of the page goes through the same functions as
+// the bar's, so the bar, the chat, the page and the badge always agree.
+
+const SMARTBAR_PAGE_PATH = 'pages/smartbar/mzta-smartbar.html';
+const SMARTBAR_PAGE_TABS = ['options', 'prompts', 'activity'];
+// The records of the Activity tab, per filter: the states shown (Running: those in memory only).
+const SMARTBAR_ACTIVITY_FILTERS = { running: ['running', 'pending_confirmation'], errors: ['error'], all: null };
+// One page of the Activity list; "Show more" asks for the next one.
+const SMARTBAR_ACTIVITY_PAGE = 200;
+// The badge's background: red with at least one error, else neutral.
+const SMARTBAR_BADGE_ERROR_COLOR = '#d70022';
+const SMARTBAR_BADGE_COLOR = '#0060df';
+
+// Open the feature page, or bring the open one to front: one page at most. `tab` (one of
+// SMARTBAR_PAGE_TABS) selects that tab through the URL hash (a hash change does not reload the
+// page, its hashchange listener selects the tab); none leaves the page as it is.
+async function _smartbarOpenPage(tab = null) {
+    const name = SMARTBAR_PAGE_TABS.includes(tab) ? tab : null;
+    const base = browser.runtime.getURL(SMARTBAR_PAGE_PATH);
+    const url = name ? base + '#' + name : base;
+    let open = null;
+    try {
+        open = (await browser.tabs.query({})).find(t => typeof t.url === 'string' && (t.url === base || t.url.startsWith(base + '#')));
+    } catch (e) {
+        taLog.log("Smart bar: could not look for the open page: " + e);
+    }
+    if (open) {
+        await browser.tabs.update(open.id, name ? { active: true, url: url } : { active: true });
+        if (open.windowId !== undefined) browser.windows.update(open.windowId, { focused: true }).catch(() => {});
+        return { ok: true, tabId: open.id };
+    }
+    const created = await browser.tabs.create({ url: url });
+    return { ok: true, tabId: created?.id ?? null };
+}
+
+// Whether a message comes from the feature page (its commands are accepted from it only).
+function _smartbarFromPage(sender) {
+    return typeof sender?.url === 'string' && sender.url.startsWith(browser.runtime.getURL(SMARTBAR_PAGE_PATH));
+}
+
+// Every instruction in progress, the bar's and the chat's.
+function _smartbarLiveStates() {
+    const out = [..._smartbarActive.values()];
+    for (const groups of _smartbarChatGroups.values()) out.push(...groups.values());
+    return out.filter(state => state.record && state.record.id !== undefined && state.record.id !== null);
+}
+
+// The state in progress that holds a record, whatever its message.
+function _smartbarLiveById(recordId) {
+    return _smartbarLiveStates().find(state => state.record.id === recordId) || null;
+}
+
+// What the badge counts (claude-spec/10-smartbar.md "Badge"): the running operations and the
+// operations in error, from the instructions in progress (as in memory) and the records stored
+// in error (but those in progress: a retry). Nothing while the feature is off.
+async function _smartbarBadgeCounts() {
+    const counts = { running: 0, errors: 0 };
+    const enabled = (await mztaPrefs.getPrefs(['smartbar_enabled'])).smartbar_enabled === true;
+    if (!enabled) return counts;
+    const live = new Set();
+    for (const state of _smartbarLiveStates()) {
+        live.add(state.record.id);
+        const c = smartbarBadgeCounts({ ...state.record, state: 'running' });
+        counts.running += c.running;
+        counts.errors += c.errors;
+    }
+    for (const record of await taSmartbarStore.byState('error')) {
+        if (live.has(record.id)) continue;
+        counts.errors += smartbarBadgeCounts(record).errors;
+    }
+    return counts;
+}
+
+// The badge of the two actions (ThunderAI has no browser_action), set only when it changes.
+let _smartbarBadgeShown = null;
+async function _smartbarUpdateBadge() {
+    const counts = await _smartbarBadgeCounts();
+    const total = counts.running + counts.errors;
+    const text = total > 0 ? String(total) : '';
+    const color = counts.errors > 0 ? SMARTBAR_BADGE_ERROR_COLOR : SMARTBAR_BADGE_COLOR;
+    const shown = text + '|' + (text === '' ? '' : color);
+    if (shown === _smartbarBadgeShown) return;
+    _smartbarBadgeShown = shown;
+    for (const action of [browser.messageDisplayAction, browser.composeAction]) {
+        try {
+            if (text !== '') await action.setBadgeBackgroundColor({ color: color });
+            await action.setBadgeText({ text: text });
+        } catch (e) {
+            taLog.log("Smart bar: could not set the badge: " + (e?.message || e));
+        }
+    }
+}
+
+// A record changed: the badge is counted again and the page told. Calls made while a refresh
+// runs are coalesced into one more refresh after it.
+let _smartbarActivityRun = null;
+let _smartbarActivityDirty = false;
+function _smartbarActivityChanged() {
+    if (_smartbarActivityRun) {
+        _smartbarActivityDirty = true;
+        return _smartbarActivityRun;
+    }
+    _smartbarActivityRun = (async () => {
+        do {
+            _smartbarActivityDirty = false;
+            await _smartbarUpdateBadge();
+            // To the extension pages: the feature page reads its list again. No page open is
+            // the usual case, not an error.
+            Promise.resolve(browser.runtime.sendMessage({ command: 'smartbar_activity_changed' })).catch(() => {});
+        } while (_smartbarActivityDirty);
+    })().catch(e => taLog.error("Smart bar: the activity could not be refreshed: " + e))
+        .finally(() => { _smartbarActivityRun = null; });
+    return _smartbarActivityRun;
+}
+
+// A record as the Activity tab draws it: the bar's view (no raw answer, no generated text), its
+// finish time (the latest of its operations), and whether it is in progress.
+function _smartbarRecordForActivity(record, live = false) {
+    const finishedAt = (record.operations || []).reduce((max, op) => Math.max(max, Number(op.finishedAt) || 0), 0);
+    return { ..._smartbarRecordForBar(record), live: live, finishedAt: finishedAt || null };
+}
+
+// The Activity list: a page of records of a filter, newest first, the ones in progress as they
+// are in memory (a record retried is stored in error and running in memory); the counts of the
+// running and the error records decide the page's default filter.
+async function _smartbarActivityList(filter, beforeId = null) {
+    const states = Object.hasOwn(SMARTBAR_ACTIVITY_FILTERS, filter) ? SMARTBAR_ACTIVITY_FILTERS[filter] : null;
+    const live = new Map(_smartbarLiveStates().map(state => [state.record.id, state.record]));
+    // Running: the instructions in progress, which are in memory; a stored record in a running
+    // state that is not (the end of the previous session) is not running any more.
+    const stored = filter === 'running'
+        ? { records: [], more: false }
+        : await taSmartbarStore.list({ states, limit: SMARTBAR_ACTIVITY_PAGE, beforeId: Number.isInteger(beforeId) ? beforeId : null });
+    const seen = new Set();
+    let list = stored.records.map(record => {
+        seen.add(record.id);
+        return live.has(record.id) ? { ...live.get(record.id), state: 'running', live: true } : record;
+    });
+    if (!Number.isInteger(beforeId)) {
+        for (const [id, record] of live) {
+            if (!seen.has(id) && Number.isInteger(id)) list.push({ ...record, state: 'running', live: true });
+        }
+    }
+    list = list.filter(record => !states || states.includes(record.state));
+    list.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+    const errors = (await taSmartbarStore.byState('error')).filter(record => !live.has(record.id)).length;
+    return {
+        ok: true,
+        records: list.map(record => _smartbarRecordForActivity(record, record.live === true)),
+        more: stored.more,
+        counts: { running: live.size, errors: errors },
+    };
+}
+
+// Open a message in Thunderbird's default place for it (the Activity tab's Open). Resolves the
+// tab that shows it, or null.
+async function _smartbarOpenMessage(headerMessageId) {
+    const message = await _resolveMessage(headerMessageId);
+    if (!message) return null;
+    return browser.messageDisplay.open({ messageId: message.id, location: 'default' });
+}
+
+// After records were removed: the bar of each of their messages shows the latest record left.
+async function _smartbarAfterRemoval(removed) {
+    for (const { id, messageId } of removed) {
+        if (_smartbarLatestId.get(messageId) === id) _smartbarLatestId.delete(messageId);
+    }
+    for (const messageId of new Set(removed.map(r => r.messageId))) {
+        await _smartbarPushState(messageId);
+    }
+    _smartbarActivityChanged();
+}
+
+// The commands of the Activity tab. Every one acts through the same functions as the bar.
+async function _smartbarActivityCommand(message) {
+    const recordId = message.recordId;
+    const index = Number.isInteger(message.index) ? message.index : null;
+    switch (message.command) {
+        case 'smartbar_activity_list':
+            return _smartbarActivityList(message.filter, message.beforeId ?? null);
+        case 'smartbar_activity_stop': {
+            const state = _smartbarLiveById(recordId);
+            if (!state) return { ok: false };
+            return { ok: await _smartbarStop(state.headerMessageId, index, recordId) };
+        }
+        case 'smartbar_activity_stop_all': {
+            const states = _smartbarLiveStates();
+            for (const state of states) await _smartbarStop(state.headerMessageId, null, state.record.id);
+            return { ok: true, stopped: states.length };
+        }
+        case 'smartbar_activity_retry': {
+            const record = await taSmartbarStore.get(recordId);
+            if (!record) return { ok: false };
+            // No tab: the message is resolved from the store, and the results reach the tabs
+            // that display it, as for any retry.
+            return _smartbarRetry({ headerMessageId: record.messageId, tabId: null, recordId, index });
+        }
+        case 'smartbar_activity_remove': {
+            if (_smartbarLiveById(recordId)) return { ok: false, error: 'running' };
+            const removed = await taSmartbarStore.remove(recordId);
+            if (!removed) return { ok: false };
+            await _smartbarAfterRemoval([{ id: removed.id, messageId: removed.messageId }]);
+            return { ok: true };
+        }
+        case 'smartbar_activity_remove_errors': {
+            const removed = await taSmartbarStore.removeErrors(_smartbarLiveStates().map(state => state.record.id));
+            await _smartbarAfterRemoval(removed);
+            return { ok: true, removed: removed.length };
+        }
+        case 'smartbar_activity_open': {
+            const record = _smartbarLiveById(recordId)?.record || await taSmartbarStore.get(recordId);
+            if (!record) return { ok: false };
+            const tab = await _smartbarOpenMessage(record.messageId);
+            return tab ? { ok: true } : { ok: false, error: 'not_found' };
+        }
+        case 'smartbar_activity_open_chat': {
+            // A json error only: the instruction prefilled and the unreadable answer attached,
+            // as the bar's "Open in chat" does, on the message opened first.
+            const record = await taSmartbarStore.get(recordId);
+            if (!record) return { ok: false };
+            const op = index !== null ? (record.operations || []).find(o => o.index === index) : null;
+            if ((op ? op.errorType : record.errorType) !== 'json') return { ok: false };
+            const tab = await _smartbarOpenMessage(record.messageId);
+            if (!tab) return { ok: false, error: 'not_found' };
+            return { ok: await _smartbarChatOpen(record.messageId, tab.id, { fromError: { recordId, index } }) };
+        }
+    }
+    return { ok: false };
 }
 
 // Tail of the junk-move queue: every move to the junk folder chains on it, so only one is

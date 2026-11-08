@@ -17,7 +17,16 @@ Implemented in `api_webchat/diffPicker.js`. Introduced by
 
 ## Scope
 
-- **api_webchat only.** The ChatGPT Web path has its own independent read-only diff in
+- **One more caller outside the chat**: the comparison of a customized special prompt with a
+  newer default text ([02-prompts.md](02-prompts.md) "Default text updates",
+  `pages/_lib/prompt-update.js`). It imports the element unchanged, on a settings page that loads
+  `js/lib/diff.js` and `js/lib/mzta-html-lines.js` first, and feeds it plain text as block HTML (a
+  `<p>` per line, an empty line as `<p><br></p>`, so the gap before a block keeps the blank lines);
+  its "use" action (`setUseAnswerHandler()`) reads `composeResultHTML()` back into plain text, a
+  line per block, the gaps as empty lines. Nothing of the compose invariant is involved: the text
+  goes into a textarea, never into a mail. The toolbar keeps its label ("Use this answer"), which
+  the box's help names.
+- **Otherwise api_webchat only.** The ChatGPT Web path has its own independent read-only diff in
   `js/mzta-chatgpt.js` (fed by `mztaUseDiffViewer` / `mztaOriginalText`, baked into the injected
   pre-script in `mzta-background.js`). It is untouched and still uses `Diff.diffWords()`.
 - Works in the compose-window case too (`promptData.mailMessageId == -1`, where `action` is forced

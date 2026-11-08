@@ -422,6 +422,50 @@ editable text is only the first part of what is sent ([10-smartbar.md](10-smartb
 None of them has a response format of its own in the prompt checks (`{}` in the table of
 `js/mzta-prompts.js`): the JSON sections are the add-on's.
 
+**Editing** (the Prompts tab of the Smart bar page, [10-smartbar.md](10-smartbar.md) "Feature
+page"): the three texts are edited like the other special prompts (`bindSpecialPromptEditor()`:
+Save, Restore default, the policy lock), with these rules:
+
+- the **JSON section** of the router and of execute (`ROUTER_JSON_SECTION`,
+  `EXECUTE_JSON_SECTION`) is shown read-only under the text: appended by the add-on at call time,
+  never in the textarea, never saved. The chat has none;
+- **variables**: the router's text must hold `{OPERATIONS}`, `{PLACEHOLDERS}` and
+  `{LANGUAGE_RULE}` (`ROUTER_VARIABLES`, written exactly). A Save of a text without one is
+  refused (nothing written, the text stays an unsaved change) with
+  `smartbar_prompt_missing_variables` naming the missing ones, which follows the text until it is
+  complete. Execute and chat have no variable. The check is the page's only: a text enforced by
+  the policy is not checked (at call time a variable the text lacks has its content appended);
+- the **update notice** of a changed default (below, "Default text updates").
+
+### Default text updates
+
+A user who customized a special prompt keeps their text when a release changes its default; the
+page tells them, and lets them compare and adopt. Opt-in per editor (`updateNotice` of
+`bindSpecialPromptEditor()`, `pages/_lib/feature-page.js`): the Smart bar's three prompts today;
+the other feature pages adopt it later.
+
+- **Fingerprint**: Save stores with the text `default_hash`, `promptDefaultHash()` of the default
+  text it was written against (FNV-1a over the UTF-16 code units, 8 hex digits,
+  `js/mzta-prompts.js`); `saveSpecialPromptTexts(texts, defaultHashes)` and
+  `saveSpecialPromptDefaultHashes()` write it. It is an ordinary stored field of the special prompt:
+  a policy text overlay never touches it.
+- **Notice** (`prompt_default_update_notice`): shown when the stored text is not the current
+  default, has a fingerprint, and the fingerprint is not the current default's. A text with no
+  fingerprint (customized before fingerprints existed, or never saved) gets none: the default it
+  was written against is unknown. A text enforced by the policy gets none.
+- **Compare** opens the change picker of the API chat ([07-diff-picker.md](07-diff-picker.md),
+  `pages/_lib/prompt-update.js`) in a box: the user's current text (as typed, unsaved edits
+  included) is the original side, the new default the proposed one, one block per line, an empty
+  line kept as the gap before the next block. Its "use" action gives the composed text back,
+  which goes into the textarea **unsaved** and settles the notice; the next Save stores the
+  current fingerprint. Every change rejected gives the saved text back: nothing to save, so the
+  new default is acknowledged at once, as with "Keep my text". Close (or Escape) changes nothing.
+- **Keep my text** (`prompt_default_update_dismiss`) stores the current fingerprint alone and keeps
+  the text.
+- **Restore default** settles the notice too (the default has no update to show).
+- A **Save while the notice is pending** keeps the old fingerprint: the text was not compared
+  with the new default, so the notice stays.
+
 ### Calendar event / task: link to the original email
 
 With `calendar_append_email_link` (events) or `task_append_email_link` (tasks) on, `js/mzta-menus.js` appends a link to the source email to the `description` of the parsed object (`calendar_event_data_obj` / `task_data_obj`), after date normalization and the timezone block, just before `JSON.stringify` and the hand-off to Sparks. It is done **by code, after the response**: the link is never sent to the AI, the prompt texts (`prompt_get_calendar_event_full_text`, `prompt_get_task_full_text`) do not mention it, and the AI JSON contract is unchanged.

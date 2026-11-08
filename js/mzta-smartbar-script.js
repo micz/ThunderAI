@@ -189,7 +189,7 @@
 
     const results = el('div', { class: 'results', 'aria-live': 'polite' });
     const details = el('a', { class: 'details', text: msg('smartbar_details'), href: '#' });
-    details.addEventListener('click', (e) => { e.preventDefault(); browser.runtime.sendMessage({ command: 'smartbar_open_page' }).catch(() => {}); });
+    details.addEventListener('click', (e) => { e.preventDefault(); browser.runtime.sendMessage({ command: 'smartbar_open_page', tab: 'activity' }).catch(() => {}); });
     const footer = el('div', { class: 'footer' }, [details]);
     const panel = el('div', { class: 'panel' }, [inputRow, results, footer]);
 

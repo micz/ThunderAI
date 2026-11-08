@@ -13,7 +13,9 @@
  *                        (the text/plain part only: the HTML path of the body reading needs a
  *                        DOM, and belongs to the compose area)
  *    tabs                {id, type, windowId, active, displayed: message id | null, reachable,
- *                        isPlainText: the format of a messageCompose tab}
+ *                        isPlainText: the format of a messageCompose tab, url: an extension
+ *                        page's (tabs.create())}
+ *    badges              the badge of each action ({text, color}), with every call in badgeCalls
  *    menus               the items created, by id
  *
  *  Every namespace added is STRICT: reading a property it does not model throws ("unmodelled
@@ -125,6 +127,10 @@ export function mailModel(o = {}) {
         /** (tabId, message) => what tabs.sendMessage() answers, after recording it (null: true). */
         tabAnswer: null,
         icons: [],
+        /** The badge of each action, as last set: { messageDisplayAction: {text, color}, composeAction: ... }. */
+        badges: { messageDisplayAction: { text: '', color: null }, composeAction: { text: '', color: null } },
+        /** Every badge call, in order: {which, text} or {which, color}. */
+        badgeCalls: [],
         unmodelled: [],
         permissions: new Set(o.permissions ?? DEFAULT_PERMISSIONS),
         contacts: clone(o.contacts ?? []),
@@ -234,7 +240,7 @@ export function installApis(browser, m) {
         if (!m.permissions.has(permission)) throw new TypeError('browser.' + api + ' is not a function');
     };
 
-    const tabInfo = t => ({ id: t.id, type: t.type, windowId: t.windowId, active: t.active });
+    const tabInfo = t => ({ id: t.id, type: t.type, windowId: t.windowId, active: t.active, ...(t.url ? { url: t.url } : {}) });
 
     browser.messages = strict('browser.messages', {
         onNewMailReceived: makeEvent(),
@@ -316,6 +322,14 @@ export function installApis(browser, m) {
             if (!t) throw new Error('Invalid tab ID: ' + tabId);
             return t.displayed == null ? null : m.header(t.displayed);
         },
+        // A message opened where Thunderbird opens it by default: a new message tab showing it.
+        async open(props = {}) {
+            rec('messageDisplay.open', [props]);
+            const h = m.header(props.messageId);
+            if (!h) throw new Error('Message not found: ' + props.messageId);
+            const tabId = m.addTab({ type: 'messageDisplay', displayed: h.id });
+            return tabInfo(m.tab(tabId));
+        },
     }, u);
 
     browser.mailTabs = strict('browser.mailTabs', {
@@ -343,6 +357,21 @@ export function installApis(browser, m) {
             m.tabSends.push({ tabId, message: clone(message) });
             return m.tabAnswer ? m.tabAnswer(tabId, message) : true;
         },
+        // An extension page opened in a tab (the Smart bar page): a content tab with its url.
+        async create(props = {}) {
+            rec('tabs.create', [props]);
+            const tabId = m.addTab({ type: 'content', active: props.active !== false });
+            m.tab(tabId).url = props.url;
+            return tabInfo(m.tab(tabId));
+        },
+        async update(tabId, props = {}) {
+            rec('tabs.update', [tabId, props]);
+            const t = m.tab(tabId);
+            if (!t) throw new Error('Invalid tab ID: ' + tabId);
+            if ('url' in props) t.url = props.url;
+            if ('active' in props) t.active = props.active;
+            return tabInfo(t);
+        },
         // The ChatGPT Web window's script injection: recorded in `calls`, never run.
         async executeScript(tabId, details) {
             rec('tabs.executeScript', [tabId, { ...details, code: '(' + String(details?.code ?? '').length + ' chars)' }]);
@@ -354,6 +383,17 @@ export function installApis(browser, m) {
     const icon = which => ({
         setIcon(details) { m.icons.push({ which, path: details.path }); return Promise.resolve(); },
         openPopup() { rec(which + '.openPopup', []); return Promise.resolve(); },
+        // The Smart bar's badge (no tabId: the same badge everywhere).
+        setBadgeText(details) {
+            m.badgeCalls.push({ which, text: details.text });
+            m.badges[which].text = details.text;
+            return Promise.resolve();
+        },
+        setBadgeBackgroundColor(details) {
+            m.badgeCalls.push({ which, color: details.color });
+            m.badges[which].color = details.color;
+            return Promise.resolve();
+        },
     });
     browser.messageDisplayAction = strict('browser.messageDisplayAction', icon('messageDisplayAction'), u);
     browser.composeAction = strict('browser.composeAction', icon('composeAction'), u);

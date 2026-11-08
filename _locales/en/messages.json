@@ -5470,6 +5470,150 @@
     "message": "Keep instructions with errors for (days)",
     "description": "Smart bar settings page: maximum age of the kept instructions that ended with an error."
   },
+  "smartbar_tab_prompts": {
+    "message": "Prompts",
+    "description": "Smart bar settings page: the tab with the texts of the Smart bar's prompts."
+  },
+  "smartbar_tab_activity": {
+    "message": "Activity",
+    "description": "Smart bar settings page: the tab listing the instructions typed in the Smart bar, running and past."
+  },
+  "smartbar_prompts_info": {
+    "message": "The instructions ThunderAI gives the AI for the Smart bar. The format of the answers is added by ThunderAI after your text and cannot be changed.",
+    "description": "Smart bar settings page, Prompts tab: introduction."
+  },
+  "smartbar_prompt_router_title": {
+    "message": "Understanding the instruction",
+    "description": "Smart bar settings page, Prompts tab: title of the router prompt (the AI call that decides which actions an instruction asks for)."
+  },
+  "smartbar_prompt_router_info": {
+    "message": "Decides which actions an instruction asks for. Keep {OPERATIONS}, {PLACEHOLDERS} and {LANGUAGE_RULE} in the text: ThunderAI replaces them with the available actions, the information the actions can use and the language rule. The email itself is never sent with this prompt.",
+    "description": "Smart bar settings page, Prompts tab: help of the router prompt. Do not translate the words inside the braces."
+  },
+  "smartbar_prompt_execute_title": {
+    "message": "Writing emails",
+    "description": "Smart bar settings page, Prompts tab: title of the prompt used to write replies, forwards and new emails."
+  },
+  "smartbar_prompt_execute_info": {
+    "message": "Writes the replies, forwards and new emails. ThunderAI adds after your text the email, the instruction, the kind of email to write and your writing settings.",
+    "description": "Smart bar settings page, Prompts tab: help of the execute prompt."
+  },
+  "smartbar_prompt_chat_title": {
+    "message": "Answers in the chat",
+    "description": "Smart bar settings page, Prompts tab: title of the prompt of the chat's free answers."
+  },
+  "smartbar_prompt_chat_info": {
+    "message": "Answers the messages of the chat that no action covers. ThunderAI adds after your text the email, the conversation so far and the new message.",
+    "description": "Smart bar settings page, Prompts tab: help of the chat prompt."
+  },
+  "smartbar_prompt_locked_section": {
+    "message": "Added by ThunderAI after your text (cannot be changed):",
+    "description": "Smart bar settings page, Prompts tab: label above the read-only answer format appended to the prompt."
+  },
+  "smartbar_prompt_missing_variables": {
+    "message": "Not saved: the text must contain $VARIABLES$.",
+    "description": "Smart bar settings page, Prompts tab: error when a prompt text lacks a required variable. $VARIABLES$ is a comma-separated list such as {OPERATIONS}, {LANGUAGE_RULE}.",
+    "placeholders": {
+      "variables": {
+        "content": "$1",
+        "example": "{OPERATIONS}, {LANGUAGE_RULE}"
+      }
+    }
+  },
+  "prompt_default_update_notice": {
+    "message": "A new version of ThunderAI changed the default text of this prompt. Your own text is still in use.",
+    "description": "Prompt editor: notice shown when the default text of a prompt changed after the user customized it."
+  },
+  "prompt_default_update_compare": {
+    "message": "Compare",
+    "description": "Prompt editor: button of the default text update notice, opening the comparison of the user's text with the new default."
+  },
+  "prompt_default_update_dismiss": {
+    "message": "Keep my text",
+    "description": "Prompt editor: button of the default text update notice, hiding it and keeping the user's text."
+  },
+  "prompt_default_compare_title": {
+    "message": "Your text and the new default text",
+    "description": "Prompt editor: title of the comparison box (the user's text in red, the new default in green)."
+  },
+  "prompt_default_compare_info": {
+    "message": "Click the version you want to keep of each change, then \"Use this answer\": the text goes into the editor, and is used once you save it.",
+    "description": "Prompt editor: help of the comparison box. \"Use this answer\" is the label of the button of the comparison tool (apiwebchat_use_this_answer)."
+  },
+  "prompt_default_compare_close": {
+    "message": "Close",
+    "description": "Prompt editor: button closing the comparison box without changing the text."
+  },
+  "smartbar_activity_filter_running": {
+    "message": "Running",
+    "description": "Smart bar settings page, Activity tab: filter showing the instructions in progress."
+  },
+  "smartbar_activity_filter_errors": {
+    "message": "Errors",
+    "description": "Smart bar settings page, Activity tab: filter showing the instructions that failed."
+  },
+  "smartbar_activity_filter_all": {
+    "message": "All",
+    "description": "Smart bar settings page, Activity tab: filter showing every instruction."
+  },
+  "smartbar_activity_stop_all": {
+    "message": "Stop all",
+    "description": "Smart bar settings page, Activity tab: button stopping every instruction in progress."
+  },
+  "smartbar_activity_remove_errors": {
+    "message": "Remove all errors",
+    "description": "Smart bar settings page, Activity tab: button removing every failed instruction from the history."
+  },
+  "smartbar_activity_col_message": {
+    "message": "Message",
+    "description": "Smart bar settings page, Activity tab: column header (subject and sender of the email)."
+  },
+  "smartbar_activity_col_instruction": {
+    "message": "Instruction",
+    "description": "Smart bar settings page, Activity tab: column header (what the user typed)."
+  },
+  "smartbar_activity_col_operations": {
+    "message": "Actions",
+    "description": "Smart bar settings page, Activity tab: column header (the actions of the instruction and their state)."
+  },
+  "smartbar_activity_col_time": {
+    "message": "Time",
+    "description": "Smart bar settings page, Activity tab: column header (running time, or when it ended)."
+  },
+  "smartbar_activity_source_bar": {
+    "message": "bar",
+    "description": "Smart bar settings page, Activity tab: small label of an instruction typed in the bar."
+  },
+  "smartbar_activity_source_chat": {
+    "message": "chat",
+    "description": "Smart bar settings page, Activity tab: small label of a message sent in the chat."
+  },
+  "smartbar_activity_open": {
+    "message": "Open",
+    "description": "Smart bar settings page, Activity tab: button opening the email of the instruction."
+  },
+  "smartbar_activity_elapsed": {
+    "message": "running for $TIME$",
+    "description": "Smart bar settings page, Activity tab: elapsed time of an instruction in progress. $TIME$ is like 42 s or 1:05.",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "1:05"
+      }
+    }
+  },
+  "smartbar_activity_empty": {
+    "message": "Nothing to show.",
+    "description": "Smart bar settings page, Activity tab: shown when the selected filter has no instruction."
+  },
+  "smartbar_activity_more": {
+    "message": "Show more",
+    "description": "Smart bar settings page, Activity tab: button loading older instructions."
+  },
+  "smartbar_activity_note": {
+    "message": "This history has no backup: Thunderbird may delete it when the disk is almost full.",
+    "description": "Smart bar settings page, Activity tab: note under the list, followed by a link to the storage management page."
+  },
   "storage_type_smartbar": {
     "message": "Smart bar instructions",
     "description": "Storage management page: the saved Smart bar instructions (overview row, rule group, counts)."

@@ -10,13 +10,12 @@
  *    page       the dom-page.mjs PAGES key
  *    promptId   the special prompt the page's connection panel edits (the promptId it passes to
  *               initializeSpecificIntegrationUI())
- *    textarea   the id of the textarea that edits that text (saved with #btn_save_prompt)
+ *    textarea   the id of the textarea that edits that text
+ *    save       the id of its Save button, when it is not #btn_save_prompt (a page with several
+ *               editors: the Smart bar page)
  *    text       a stored text for that prompt that satisfies its response contract
  *    root       the id of the element holding the feature's panel, when the page hosts several
  *               (the Smart bar page: one section per special prompt); absent: the whole page
- *
- *  A page hosting several features (the Smart bar page) has textarea null: its prompt texts get
- *  their editor in a later version, so the text Save scenario (15-*) does not apply to it.
  */
 
 export const FEATURE_PAGES = {
@@ -45,15 +44,18 @@ export const FEATURE_PAGES = {
         text: 'Translate {%mail_html_body%} to {%thunderai_translate_lang%}, return {"subject", "body", "status"}',
     },
     smartbar_router: {
-        page: 'smartbar', promptId: 'prompt_smartbar_router', textarea: null, root: 'smartbar_router_section',
+        page: 'smartbar', promptId: 'prompt_smartbar_router', root: 'smartbar_router_section',
+        textarea: 'smartbar_prompt_router_text', save: 'btn_save_smartbar_router',
         text: 'Route the instruction. {OPERATIONS} {PLACEHOLDERS} {LANGUAGE_RULE}',
     },
     smartbar_execute: {
-        page: 'smartbar', promptId: 'prompt_smartbar_execute', textarea: null, root: 'smartbar_execute_section',
+        page: 'smartbar', promptId: 'prompt_smartbar_execute', root: 'smartbar_execute_section',
+        textarea: 'smartbar_prompt_execute_text', save: 'btn_save_smartbar_execute',
         text: 'Execute.',
     },
     smartbar_chat: {
-        page: 'smartbar', promptId: 'prompt_smartbar_chat', textarea: null, root: 'smartbar_chat_section',
+        page: 'smartbar', promptId: 'prompt_smartbar_chat', root: 'smartbar_chat_section',
+        textarea: 'smartbar_prompt_chat_text', save: 'btn_save_smartbar_chat',
         text: 'Chat.',
     },
 };

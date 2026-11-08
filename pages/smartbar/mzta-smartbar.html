@@ -20,10 +20,11 @@
             <p class="mzta_page_subtitle mzta_help">__MSG_smartbar_page_info__</p>
         </div>
 
-        <!-- TABS: Options now; the Prompt and Activity tabs come in a later version, as more
-             buttons here and more panels below (selectTab() handles any number). -->
+        <!-- TABS: the hash of the URL names the tab shown (#options, #prompts, #activity). -->
         <div id="smartbar_tabs" class="smartbar_tabs" role="tablist">
             <button type="button" role="tab" class="smartbar_tab" id="tab_btn_options" data-tab="options" aria-controls="tab_options" aria-selected="true">__MSG_smartbar_tab_options__</button>
+            <button type="button" role="tab" class="smartbar_tab" id="tab_btn_prompts" data-tab="prompts" aria-controls="tab_prompts" aria-selected="false">__MSG_smartbar_tab_prompts__</button>
+            <button type="button" role="tab" class="smartbar_tab" id="tab_btn_activity" data-tab="activity" aria-controls="tab_activity" aria-selected="false">__MSG_smartbar_tab_activity__</button>
         </div>
 
         <!-- BODY -->
@@ -149,7 +150,7 @@
             <!-- CHAT: used from a later version (the chat mode) -->
             <div class="mzta_section smartbar_conn_section" id="smartbar_chat_section">
                 <div class="mzta_prompt_title">__MSG_smartbar_chat_title__</div>
-                <p class="mzta_help smartbar_later_note">__MSG_smartbar_chat_info__</p>
+                <p class="mzta_help">__MSG_smartbar_chat_info__</p>
                 <div class="feature_row">
                     <div class="feature_info">
                         <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
@@ -207,8 +208,122 @@
             </div>
 
           </div>
+
+          <!-- PROMPTS: the texts of the three special prompts of the feature. The JSON format
+               sections are the add-on's: shown read-only, appended at call time, never saved. -->
+          <div id="tab_prompts" class="smartbar_tabpanel" role="tabpanel" aria-labelledby="tab_btn_prompts" hidden>
+            <p class="mzta_help smartbar_tab_intro">__MSG_smartbar_prompts_info__</p>
+
+            <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_router_section">
+                <div class="mzta_prompt_title">__MSG_smartbar_prompt_router_title__<span id="smartbar_prompt_router_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">__MSG_smartbar_prompt_router_info__</p>
+                <div class="smartbar_update_notice" id="smartbar_prompt_router_update" hidden>
+                    <span>__MSG_prompt_default_update_notice__</span>
+                    <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
+                    <button type="button" class="btn_secondary btn_small" data-action="dismiss">__MSG_prompt_default_update_dismiss__</button>
+                </div>
+                <div class="mzta_field">
+                    <div class="smartbar_editor_wrap">
+                        <textarea id="smartbar_prompt_router_text" rows="18" class="smartbar_prompt_text"></textarea>
+                    </div>
+                    <div class="smartbar_prompt_error" id="smartbar_prompt_router_error" role="alert" hidden></div>
+                    <div class="smartbar_locked_section">
+                        <span class="mzta_help">__MSG_smartbar_prompt_locked_section__</span>
+                        <pre id="smartbar_prompt_router_locked"></pre>
+                    </div>
+                    <div class="btn_div">
+                        <button id="btn_reset_smartbar_router" class="btn_secondary" disabled>__MSG_reset_default__</button>
+                        <button id="btn_save_smartbar_router" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_execute_section">
+                <div class="mzta_prompt_title">__MSG_smartbar_prompt_execute_title__<span id="smartbar_prompt_execute_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">__MSG_smartbar_prompt_execute_info__</p>
+                <div class="smartbar_update_notice" id="smartbar_prompt_execute_update" hidden>
+                    <span>__MSG_prompt_default_update_notice__</span>
+                    <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
+                    <button type="button" class="btn_secondary btn_small" data-action="dismiss">__MSG_prompt_default_update_dismiss__</button>
+                </div>
+                <div class="mzta_field">
+                    <div class="smartbar_editor_wrap">
+                        <textarea id="smartbar_prompt_execute_text" rows="14" class="smartbar_prompt_text"></textarea>
+                    </div>
+                    <div class="smartbar_prompt_error" id="smartbar_prompt_execute_error" role="alert" hidden></div>
+                    <div class="smartbar_locked_section">
+                        <span class="mzta_help">__MSG_smartbar_prompt_locked_section__</span>
+                        <pre id="smartbar_prompt_execute_locked"></pre>
+                    </div>
+                    <div class="btn_div">
+                        <button id="btn_reset_smartbar_execute" class="btn_secondary" disabled>__MSG_reset_default__</button>
+                        <button id="btn_save_smartbar_execute" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_chat_section">
+                <div class="mzta_prompt_title">__MSG_smartbar_prompt_chat_title__<span id="smartbar_prompt_chat_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">__MSG_smartbar_prompt_chat_info__</p>
+                <div class="smartbar_update_notice" id="smartbar_prompt_chat_update" hidden>
+                    <span>__MSG_prompt_default_update_notice__</span>
+                    <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
+                    <button type="button" class="btn_secondary btn_small" data-action="dismiss">__MSG_prompt_default_update_dismiss__</button>
+                </div>
+                <div class="mzta_field">
+                    <div class="smartbar_editor_wrap">
+                        <textarea id="smartbar_prompt_chat_text" rows="10" class="smartbar_prompt_text"></textarea>
+                    </div>
+                    <div class="smartbar_prompt_error" id="smartbar_prompt_chat_error" role="alert" hidden></div>
+                    <div class="btn_div">
+                        <button id="btn_reset_smartbar_chat" class="btn_secondary" disabled>__MSG_reset_default__</button>
+                        <button id="btn_save_smartbar_chat" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <!-- ACTIVITY: the records of the smartbar store and the instructions in progress, kept
+               up to date by the background (smartbar_activity_changed). -->
+          <div id="tab_activity" class="smartbar_tabpanel" role="tabpanel" aria-labelledby="tab_btn_activity" hidden>
+            <div class="mzta_section" id="smartbar_activity">
+                <div class="smartbar_activity_bar">
+                    <div class="smartbar_filters" role="radiogroup">
+                        <button type="button" class="smartbar_filter" data-filter="running" role="radio" aria-checked="false">__MSG_smartbar_activity_filter_running__ <span class="smartbar_count" data-count="running"></span></button>
+                        <button type="button" class="smartbar_filter" data-filter="errors" role="radio" aria-checked="false">__MSG_smartbar_activity_filter_errors__ <span class="smartbar_count" data-count="errors"></span></button>
+                        <button type="button" class="smartbar_filter" data-filter="all" role="radio" aria-checked="false">__MSG_smartbar_activity_filter_all__</button>
+                    </div>
+                    <div class="smartbar_bulk">
+                        <button type="button" id="smartbar_stop_all" class="btn_secondary btn_small">__MSG_smartbar_activity_stop_all__</button>
+                        <button type="button" id="smartbar_remove_errors" class="btn_secondary btn_small">__MSG_smartbar_activity_remove_errors__</button>
+                    </div>
+                </div>
+                <table id="smartbar_activity_table" class="smartbar_activity_table">
+                    <thead>
+                        <tr>
+                            <th>__MSG_smartbar_activity_col_message__</th>
+                            <th>__MSG_smartbar_activity_col_instruction__</th>
+                            <th>__MSG_smartbar_activity_col_operations__</th>
+                            <th>__MSG_smartbar_activity_col_time__</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="smartbar_activity_rows"></tbody>
+                </table>
+                <p id="smartbar_activity_empty" class="mzta_help" hidden>__MSG_smartbar_activity_empty__</p>
+                <div class="btn_div smartbar_more_div">
+                    <button type="button" id="smartbar_activity_more" class="btn_secondary btn_small" hidden>__MSG_smartbar_activity_more__</button>
+                </div>
+                <p class="mzta_help smartbar_activity_note">__MSG_smartbar_activity_note__ <button type="button" id="smartbar_open_storage" class="btn_no_border btn_small">__MSG_prefs_storage_manage_button__</button></p>
+            </div>
+          </div>
         </div>
     </div>
+    <!-- Classic scripts first: the result lines' texts (mztaSmartbarLines), and what the change
+         picker of a default text update needs (the Diff global, the rich-text projection). -->
+    <script src="../../js/lib/mzta-smartbar-lines.js"></script>
+    <script src="../../js/lib/diff.js"></script>
+    <script src="../../js/lib/mzta-html-lines.js"></script>
     <script src="mzta-smartbar.js" type="module"></script>
     <script src="../../js/mzta-i18n.js"></script>
 </body>

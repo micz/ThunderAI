@@ -836,13 +836,17 @@ Entry point from the options page via the "Menu Order" button (next to "Manage y
 
 ### Smart Bar Settings Page (`pages/smartbar/`)
 
-`pages/smartbar/mzta-smartbar.html` / `.js` / `.css`, opened by the options page's
-`#btnManageSmartbarInfo` and by the bar's "Details" link. The feature-page shell
-(`body.mzta_feature_page`, `mzta-design.css`), the managed banner and `applyManagedUI()` once every
-panel is built. Saved on `change` like the other feature pages.
+`pages/smartbar/mzta-smartbar.html` / `.js` / `.css`, with `mzta-smartbar-prompts.js` (the Prompts
+tab) and `mzta-smartbar-activity.js` (the Activity tab). Opened, **once**, through the background
+(`smartbar_open_page`, spec 10 "Feature page") by the options page's `#btnManageSmartbarInfo` (no
+tab named: the page as it is) and by the bar's and the chat's "Details" link (the Activity tab); a
+second request focuses the open page and selects the tab asked for. Not reachable from the popup.
+The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the managed banner and
+`applyManagedUI()` once every panel is built. Saved on `change` like the other feature pages.
 
-- **Tabs**: a tab strip (`#smartbar_tabs`, `role="tablist"`) with one tab today, Options; the tab
-  named in the URL hash is selected at load, else Options. The Activity tab comes in a later phase.
+- **Tabs**: a tab strip (`#smartbar_tabs`, `role="tablist"`): Options, Prompts, Activity. The tab
+  named in the URL hash is selected at load (none or unknown: Options) and on `hashchange`; a tab
+  clicked puts its name in the hash (`history.replaceState`).
 - **Settings** (`#smartbar_settings`): `smartbar_mode`, `smartbar_default_destination` (selects),
   `smartbar_history_size`, `smartbar_parallel_limit` (numbers), and the bar's keyboard shortcut
   (`commands.getAll()`, `_thunderai__smartbar`, shown as keys, `smartbar_shortcut_none` when unset)
@@ -861,6 +865,18 @@ panel is built. Saved on `change` like the other feature pages.
   (`persistPromptConnectionToPrefs()`, `resolveFeatureConnectionPrefs()`).
 - **History** (`#smartbar_retention`): the three retention rules, `smartbar_retention_info` (no
   backup: the history may be lost when Thunderbird deletes the add-on's IndexedDB).
+- **Prompts tab** (`#tab_prompts`): one section per special prompt (`#smartbar_prompt_{router,
+  execute,chat}_section`): the textarea `#smartbar_prompt_<key>_text`, `#btn_save_smartbar_<key>` /
+  `#btn_reset_smartbar_<key>` (the `btn_save` prefix is what the unsaved-changes guard reads), the
+  unsaved marker, the read-only JSON section `#smartbar_prompt_<key>_locked` (router, execute), the
+  refusal message `#smartbar_prompt_<key>_error` (router variables), the update notice
+  `#smartbar_prompt_<key>_update` (Compare / Keep my text). Wired by `bindSpecialPromptEditor()`
+  with `beforeSave` (the variable check) and `updateNotice` (spec 02 "Default text updates"),
+  after `applyManagedUI()`. Spec 02 "Smart bar prompts" and spec 10 "Feature page" have the rules.
+- **Activity tab** (`#tab_activity`): the filters, the rows and their actions, Stop all, Remove all
+  errors, Show more, the note with its link to the storage management page (`openTab()`): spec 10
+  "Activity". The elapsed times and the rate-limit countdowns tick every second only while the
+  tab is shown and has something to count.
 - **Saving**: a select as its value, a checkbox as a boolean, a number rounded and never below its
   minimum (`NUMBER_MIN`: `1` for `smartbar_parallel_limit`, else `0`), an emptied number as its
   default (never `null`), a textarea as typed.
@@ -1866,6 +1882,10 @@ settings page. When the feature's checkbox is unchecked, the button is fully **h
 both `style.display` and the `disabled` attribute together, and replaces all prior
 inline `btn.disabled = ...` toggling for these six buttons (on checkbox `click`, on
 `disable_*()` re-evaluation, and in the `onChange` of `bindPermissionToggle()`, which also covers a refused permission).
+
+The Smart bar row has the same button (`btnManageSmartbarInfo`, same visibility rule), but its
+click asks the background for the page (`smartbar_open_page`, no tab named) instead of calling
+`openTab()`: that page is opened once whatever tab its hash names (spec 10 "Feature page").
 
 ### Unsaved-Changes Guard (`pages/_lib/unsaved-guard.js`)
 

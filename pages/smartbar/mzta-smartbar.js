@@ -17,8 +17,10 @@
  */
 
 /*
- *  The Smart bar page (claude-spec/10-smartbar.md "Feature page"): the Options tab today, built
- *  so the Prompt and Activity tabs can be added (selectTab()).
+ *  The Smart bar page (claude-spec/10-smartbar.md "Feature page"): three tabs, Options (this
+ *  file), Prompts (mzta-smartbar-prompts.js) and Activity (mzta-smartbar-activity.js). The hash
+ *  of the URL names the tab shown: the background opens the page once and selects a tab by
+ *  changing it (smartbar_open_page), the bar's Details link asks for #activity.
  *
  *  Three connection panels, one per special prompt of the feature (router, execute, chat), each
  *  in its own section: initializeSpecificIntegrationUI() and bindConnPanelTint() get the section
@@ -33,7 +35,8 @@ import { getSpecialPrompts } from '../../js/mzta-prompts.js';
 import {
     isAPIKeyValue,
     setTomSelectBorder,
-    getMiczItUrl
+    getMiczItUrl,
+    openTab
 } from '../../js/mzta-utils.js';
 import {
     initializeSpecificIntegrationUI,
@@ -47,6 +50,11 @@ import {
     resolveFeatureConnectionPrefs,
     bindConnPanelTint
 } from '../_lib/feature-page.js';
+import { initPromptsTab } from './mzta-smartbar-prompts.js';
+import {
+    initActivityTab,
+    activityShown
+} from './mzta-smartbar-activity.js';
 
 const taLog = new taLogger('mzta-smartbar-page', true);
 
@@ -96,6 +104,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // After every panel is built: their provider rows are covered too.
     await applyManagedUI(document, taLog.do_debug);
 
+    // The Prompts tab: after applyManagedUI(), like the editors of the other feature pages
+    // (bindSpecialPromptEditor() locks a text the policy enforces itself).
+    await initPromptsTab(await getSpecialPrompts(), taLog.do_debug);
+
     document.querySelectorAll('.option-input').forEach(element => {
         element.addEventListener('change', saveOptions);
     });
@@ -106,26 +118,46 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('smartbar_shortcut_help').href = getMiczItUrl('thunderbird-addon-keyboard-shortcut/');
     showShortcut();
+
+    await initActivityTab({
+        isShown: () => currentTab === 'activity',
+        openStorage: () => openTab('/pages/storage/mzta-storage-manager.html'),
+    });
 });
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────────────────────
-// One tab today; selectTab() shows the panel of any tab button of the strip, by its data-tab.
+// selectTab() shows the panel of a tab button of the strip, by its data-tab. The hash follows
+// the tab shown (replaceState: no history entry), so a request for another tab (a new hash from
+// the background) is always a change the page sees (hashchange).
+let currentTab = 'options';
+
+function tabNames() {
+    return [...document.querySelectorAll('#smartbar_tabs [role="tab"]')].map(b => b.dataset.tab);
+}
+
 function selectTab(name) {
+    currentTab = name;
     document.querySelectorAll('#smartbar_tabs [role="tab"]').forEach(btn => {
         const on = btn.dataset.tab === name;
         btn.setAttribute('aria-selected', on ? 'true' : 'false');
         const panel = document.getElementById(btn.getAttribute('aria-controls'));
         if (panel) panel.hidden = !on;
     });
+    if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+    activityShown();
+}
+
+function tabFromHash() {
+    const wanted = (location.hash || '').slice(1);
+    return tabNames().includes(wanted) ? wanted : 'options';
 }
 
 function bindTabs() {
     document.querySelectorAll('#smartbar_tabs [role="tab"]').forEach(btn => {
         btn.addEventListener('click', () => selectTab(btn.dataset.tab));
     });
-    const wanted = (location.hash || '').slice(1);
-    const known = [...document.querySelectorAll('#smartbar_tabs [role="tab"]')].map(b => b.dataset.tab);
-    selectTab(known.includes(wanted) ? wanted : 'options');
+    window.addEventListener('hashchange', () => selectTab(tabFromHash()));
+    selectTab(tabFromHash());
 }
 
 // ── The keyboard shortcut of the bar ─────────────────────────────────────────────────────────

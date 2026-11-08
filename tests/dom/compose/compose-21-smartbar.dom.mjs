@@ -5,7 +5,8 @@
 //
 // Spec 10 "Bar": a shadow-DOM host after ThunderAI's panels (#mzta-container), nothing when the
 // feature is off or the mode is disabled; compact mode is an icon that opens the bar, expanded mode
-// the bar at once; the state of the message comes from smartbar_get_state at load.
+// the bar at once; the state of the message comes from smartbar_get_state at load; "Details" opens
+// the Activity tab of the feature page.
 // Spec 10 "Keyboard": Enter sends, Shift+Enter is a new line, a key during an IME composition does
 // nothing, no key typed in the bar reaches the page (Thunderbird's single-key shortcuts), ArrowUp in
 // an empty bar recalls the last instruction, Escape closes the compact bar; an instruction carries
@@ -312,6 +313,12 @@ k.test('selection-sent', S_KEYS, 'with text selected in the mail, the instructio
     assert.deepEqual(lastSent('smartbar_run'), { command: 'smartbar_run', headerMessageId: ID, instruction: 'reply about this', hasSelection: true, selection: 'this' });
     sel.removeAllRanges();
     ctx.document.dispatchEvent(new ctx.window.Event('selectionchange'));
+});
+
+k.test('details', S_BAR, '"Details" opens the Activity tab of the feature page', async () => {
+    const before = sentCommands(ctx, 'smartbar_open_page').length;
+    await ctx.click($('a.details'));
+    assert.deepEqual(sentCommands(ctx, 'smartbar_open_page').slice(before), [{ command: 'smartbar_open_page', tab: 'activity' }]);
 });
 
 k.test('disabled', S_BAR, 'the feature turned off removes the bar', async () => {

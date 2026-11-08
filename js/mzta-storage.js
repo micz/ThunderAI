@@ -1317,6 +1317,102 @@ export class taStorage {
     }
 
     /**
+     * The smartbar records of the Activity tab of the Smart bar page, newest first (the highest
+     * id first): those whose state is one of `states` (every record when `states` is null), at
+     * most `limit` of them, older than the record `beforeId` when given (the next page).
+     * { records: [], more: false } when the database cannot be read.
+     * @returns {Promise<{ records: object[], more: boolean }>}
+     */
+    static async smartbarList({ states = null, limit = 200, beforeId = null } = {}) {
+        try {
+            await rebuildDone();
+            const max = Number.isInteger(limit) && limit > 0 ? limit : 200;
+            const wanted = Array.isArray(states) ? new Set(states) : null;
+            const range = Number.isInteger(beforeId) ? IDBKeyRange.upperBound(beforeId, true) : null;
+            const tx = await openTransaction(STORE_SMARTBAR, 'readonly');
+            const records = [];
+            let more = false;
+            let cursor = await tx.store.openCursor(range, 'prev');
+            while (cursor) {
+                if (!wanted || wanted.has(cursor.value.state)) {
+                    if (records.length === max) {
+                        more = true;
+                        break;
+                    }
+                    records.push(cursor.value);
+                }
+                cursor = await cursor.continue();
+            }
+            await tx.done;
+            return { records, more };
+        } catch (e) {
+            _log.error('smartbarList error (answered as none): ' + e);
+            return { records: [], more: false };
+        }
+    }
+
+    /**
+     * The smartbar records in one state (the state index), in no particular order. [] when the
+     * database cannot be read.
+     */
+    static async smartbarByState(state) {
+        try {
+            await rebuildDone();
+            const tx = await openTransaction(STORE_SMARTBAR, 'readonly');
+            const records = await tx.store.index(INDEX_STATE).getAll(IDBKeyRange.only(state));
+            await tx.done;
+            return records;
+        } catch (e) {
+            _log.error('smartbarByState error (answered as none): ' + e);
+            return [];
+        }
+    }
+
+    /**
+     * Remove one smartbar record (the Activity tab's Remove). A record still running is kept,
+     * like by every bulk removal. Resolves the removed record, or null when there was none to
+     * remove (absent or running).
+     */
+    static smartbarDelete(id) {
+        return withCleanupLock(async () => {
+            const tx = await openTransaction(STORE_SMARTBAR, 'readwrite');
+            const existing = await tx.store.get(id);
+            if (!existing || isKeptRecord(STORE_SMARTBAR, existing)) {
+                await tx.done;
+                return null;
+            }
+            await tx.store.delete(id);
+            await tx.done;
+            return existing;
+        });
+    }
+
+    /**
+     * Remove every smartbar record in state 'error' (the Activity tab's Remove all errors), in
+     * one transaction, but the ids of `exceptIds` (the records the background is retrying: still
+     * stored in error, running in memory). Resolves the removed records' { id, messageId }.
+     */
+    static smartbarDeleteErrors(exceptIds = []) {
+        const kept = new Set(exceptIds);
+        return withCleanupLock(async () => {
+            const tx = await openTransaction(STORE_SMARTBAR, 'readwrite');
+            const removed = [];
+            let cursor = await tx.store.index(INDEX_STATE).openCursor(IDBKeyRange.only('error'));
+            while (cursor) {
+                if (kept.has(cursor.primaryKey)) {
+                    cursor = await cursor.continue();
+                    continue;
+                }
+                removed.push({ id: cursor.primaryKey, messageId: cursor.value.messageId });
+                await cursor.delete();
+                cursor = await cursor.continue();
+            }
+            await tx.done;
+            return removed;
+        });
+    }
+
+    /**
      * At startup: every smartbar record still 'running' was cut short by the end of the previous
      * session. It becomes 'interrupted', and its running operations 'cancelled'; it then expires
      * like any other. Resolves the number of records changed.

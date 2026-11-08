@@ -29,6 +29,8 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import { isApiUsableConnection } from '../../js/mzta-utils.js';
 import {
     saveSpecialPromptTexts,
+    saveSpecialPromptDefaultHashes,
+    promptDefaultHash,
     specialPromptNeedsJson,
     checkPromptTextJson
 } from '../../js/mzta-prompts.js';
@@ -196,16 +198,71 @@ function bindPromptJsonCheck(textarea, promptIds) {
  *
  * A prompt whose feature parses a JSON answer gets its text checked (bindPromptJsonCheck()) on
  * load, on every input and on Reset, which dispatches an input.
+ *
+ * `updateNotice` (opt-in, the Smart bar page today; claude-spec/02-prompts.md "Default text
+ * updates"): { el, onCompare(currentText, newDefault) }. Save stores with the text the
+ * fingerprint of the default it was written against (`default_hash`, promptDefaultHash()); when
+ * the shipped default no longer matches it and the text is the user's own, `el` is shown. Its
+ * [data-action="compare"] button calls onCompare(), which resolves the text to adopt (it goes
+ * into the textarea, unsaved; the saved text itself, every change rejected, settles the notice as
+ * a dismiss does) or null; [data-action="dismiss"] stores the new fingerprint and keeps the text. While the notice is pending, a Save keeps the old fingerprint: only adopting,
+ * dismissing or restoring the default settles it. A text enforced by the policy gets no notice.
  */
 export async function bindSpecialPromptEditor({
     textarea, saveBtn, resetBtn, unsavedEl = null, specialPrompts, promptIds, defaultMsgKey,
-    beforeSave = null, afterSave = null, do_debug = false,
+    beforeSave = null, afterSave = null, do_debug = false, updateNotice = null,
 }) {
     const prompt = specialPrompts.find(p => p.id === promptIds[0]);
     const defaultText = () => browser.i18n.getMessage(defaultMsgKey);
     const enforced = () => promptIds.some(id => isEnforcedPromptText(id));
     const showUnsaved = unsaved => { if (unsavedEl) unsavedEl.classList.toggle('hidden', !unsaved); };
     const checkJson = bindPromptJsonCheck(textarea, promptIds);
+
+    // A newer default not yet compared and adopted, dismissed or restored.
+    let pendingUpdate = false;
+    const currentHash = () => promptDefaultHash(defaultText());
+    const showNotice = () => {
+        if (!updateNotice) return;
+        pendingUpdate = !enforced() && prompt.text !== defaultText()
+            && typeof prompt.default_hash === 'string' && prompt.default_hash !== currentHash();
+        updateNotice.el.hidden = !pendingUpdate;
+    };
+    const settleNotice = () => {
+        pendingUpdate = false;
+        if (updateNotice) updateNotice.el.hidden = true;
+    };
+    // The newer default acknowledged without a text to save: its fingerprint stored alone.
+    const storeCurrentHash = async () => {
+        const hashes = {};
+        for (const id of promptIds) {
+            hashes[id] = currentHash();
+            const p = specialPrompts.find(sp => sp.id === id);
+            if (p) p.default_hash = hashes[id];
+        }
+        await saveSpecialPromptDefaultHashes(hashes);
+        settleNotice();
+    };
+    if (updateNotice) {
+        updateNotice.el.querySelector('[data-action="compare"]')?.addEventListener('click', async () => {
+            if (enforced()) return;
+            const adopted = await updateNotice.onCompare(textarea.value, defaultText());
+            if (typeof adopted !== 'string') return;
+            // Every change rejected gives the saved text back: nothing to save, so the new
+            // default is acknowledged at once, as "Keep my text" does.
+            if (adopted === prompt.text) {
+                textarea.value = adopted;
+                await storeCurrentHash();
+            } else {
+                textarea.value = adopted;
+                settleNotice();
+            }
+            textarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+        });
+        updateNotice.el.querySelector('[data-action="dismiss"]')?.addEventListener('click', async () => {
+            if (enforced()) return;
+            await storeCurrentHash();
+        });
+    }
 
     textarea.addEventListener('input', (event) => {
         setDisabledRespectingManaged(resetBtn, event.target.value === defaultText());
@@ -218,6 +275,7 @@ export async function bindSpecialPromptEditor({
     resetBtn.addEventListener('click', () => {
         if (enforced()) return;
         textarea.value = defaultText();
+        settleNotice();
         setDisabledRespectingManaged(resetBtn, true);
         textarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
     });
@@ -227,12 +285,19 @@ export async function bindSpecialPromptEditor({
         const text = textarea.value;
         if (beforeSave && (await beforeSave(text)) === false) return;
         const texts = {};
+        // The default this text was written against; kept as it was while a newer default is
+        // still pending (the text was not compared with it).
+        const hashes = {};
         for (const id of promptIds) {
             texts[id] = text;
             const p = specialPrompts.find(sp => sp.id === id);
             if (p) p.text = text;
+            if (updateNotice && !pendingUpdate) {
+                hashes[id] = currentHash();
+                if (p) p.default_hash = hashes[id];
+            }
         }
-        await saveSpecialPromptTexts(texts);
+        await saveSpecialPromptTexts(texts, hashes);
         if (afterSave) afterSave();
         setDisabledRespectingManaged(saveBtn, true);
         showUnsaved(false);
@@ -247,4 +312,5 @@ export async function bindSpecialPromptEditor({
     await lockEnforcedPromptText(textarea, promptIds, [saveBtn, resetBtn], do_debug);
     // Assigning .value fires no input: flag a text saved broken by an earlier session now.
     checkJson();
+    showNotice();
 }

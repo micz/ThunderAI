@@ -53,7 +53,7 @@ export async function textSaveScenario(page, prefix = prefixOfPage(page)) {
         const edited = feature.text + ' (edited)';
         textarea.value = edited;
         await ctx.fire(textarea, 'input');
-        const save = ctx.$('#btn_save_prompt');
+        const save = ctx.$('#' + (feature.save || 'btn_save_prompt'));
         assert.equal(save.disabled, false, 'Save not enabled by the edit');
         await ctx.click(save);
         const p = stored(feature.promptId);

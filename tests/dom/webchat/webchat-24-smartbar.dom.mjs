@@ -152,7 +152,7 @@ k.test('lines-buttons', S_CHAT, 'the result lines read as in the bar, with its b
     await ctx.click(button(turn, 'cancel'));
     assert.equal(sentCommands(ctx, 'smartbar_chat_cancel').at(-1).index, 3);
     await ctx.click(button(turn, 'details'));
-    assert.equal(sentCommands(ctx, 'smartbar_open_page').length, 1);
+    assert.deepEqual(sentCommands(ctx, 'smartbar_open_page'), [{ command: 'smartbar_open_page', tab: 'activity' }], 'Details opens the Activity tab of the page');
     // An older update of the same record is ignored.
     await bg('smartbar_chat_update', { seq: 1, record: rec({ id: 3, operations: [] }) });
     assert.equal(lineTexts(turn).length, 4);

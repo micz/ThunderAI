@@ -19,7 +19,11 @@ The modules under test:
 - `js/mzta-smartbar-store.js` with the `smartbar` store of `js/mzta-storage.js`: the record, its
   derived state, the caps, the non-mirrored store, the startup interruption, the three retention rules,
   a session's records and the current draft of the chat;
-- `js/mzta-smartbar-chat.js`: the conversation of a chat session and the prompt of the free answer.
+- `js/mzta-smartbar-chat.js`: the conversation of a chat session and the prompt of the free answer;
+- what the Activity tab and the badge read: the store's `list()`, `byState()`, `remove()`,
+  `removeErrors()`, `badgeCounts()`, and the Activity tab's `defaultFilter()`
+  (`pages/smartbar/mzta-smartbar-activity.js`, importable at level 1: it touches the DOM only in
+  its functions).
 
 What the background does with them (routing through the special command, replacement of an
 instruction, the jobs it starts) is the background area's ([`background/README.md`](../background/README.md));
@@ -36,8 +40,9 @@ node --test "tests/smartbar/*.test.mjs"     # this area only, from the repositor
 ```
 
 Level 1 only, no network, no real waiting. The area's plugin
-([`helpers/plugins/smartbar.mjs`](../helpers/plugins/smartbar.mjs)) only declares the settings page for
-the DOM harness.
+([`helpers/plugins/smartbar.mjs`](../helpers/plugins/smartbar.mjs)) declares the feature page for the DOM
+harness and answers, by default, the commands it sends with no test asking (an empty Activity list,
+`smartbar_open_page`).
 
 ## Layout
 
@@ -53,6 +58,7 @@ tests/
     ├── 04-router-test-set.test.mjs     claude-spec/10-smartbar-router-tests.md against the registry
     ├── 05-execute.test.mjs             the compose prompt, the email cut, the answer, the signature
     ├── 06-chat.test.mjs                the conversation of a chat session, the free answer's prompt
+    ├── 07-activity.test.mjs            the Activity tab's store queries, the badge counts, the default filter
     └── 99-harness-known-issues.test.mjs   the known-issue entries themselves
 ```
 

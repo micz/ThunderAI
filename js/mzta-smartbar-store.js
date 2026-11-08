@@ -214,4 +214,42 @@ export const taSmartbarStore = {
     async markInterrupted() {
         return taStorage.smartbarMarkInterrupted();
     },
+    /** The Activity tab's page of records, newest first: { records, more }. */
+    async list(options = {}) {
+        return taStorage.smartbarList(options);
+    },
+    /** The records in one state. */
+    async byState(state) {
+        return taStorage.smartbarByState(state);
+    },
+    /** Remove one record (never a running one); the removed record, or null. */
+    async remove(id) {
+        return taStorage.smartbarDelete(id);
+    },
+    /** Remove every record in state 'error' but `exceptIds`; their { id, messageId }. */
+    async removeErrors(exceptIds = []) {
+        return taStorage.smartbarDeleteErrors(exceptIds);
+    },
 };
+
+/**
+ * The operations a record counts on the badge (claude-spec/10-smartbar.md "Badge"):
+ *   running  the operations running, and the router (or the chat's free answer) still at work
+ *            (a record with no operation yet and no error) as one;
+ *   errors   the operations in error and the instruction-level error, not dismissed, and not
+ *            stopped by the user (errorType 'aborted': a Stop is no failure to act on).
+ * A pending confirmation counts in neither. Only the records running or in error count: a
+ * replaced or interrupted record is history.
+ */
+export function badgeCounts(record) {
+    const out = { running: 0, errors: 0 };
+    if (!record || !['running', 'error'].includes(record.state)) return out;
+    const ops = Array.isArray(record.operations) ? record.operations : [];
+    if (record.state === 'running' && ops.length === 0 && !record.errorType) out.running++;
+    if (record.errorType && record.errorType !== 'aborted' && !record.dismissed?.error) out.errors++;
+    for (const op of ops) {
+        if (op?.state === 'running') out.running++;
+        else if (op?.state === 'error' && op.errorType !== 'aborted' && !op.dismissed) out.errors++;
+    }
+    return out;
+}

@@ -55,6 +55,7 @@ const STORED = {
     chatgpt_win_save_position: true,
     summarize: true,
     translate: true,
+    smartbar_enabled: true,
     // in progress: the flag on, no provider picked yet -> no pill
     add_tags_use_specific_integration: true,
     add_tags_connection_type: '',
@@ -127,6 +128,17 @@ k.test('restore-flags', S_MANAGE, 'stored-on features show checked with their Ma
         assert.notEqual($('#' + btn).style.display, 'none', btn);
         assert.equal($('#' + btn).disabled, false, btn);
     }
+});
+
+k.test('manage-smartbar', S_MANAGE, 'the Smart bar\'s Manage button asks the background for its page (opened once), with no tab named, and opens no tab itself', async () => {
+    const btn = $('#btnManageSmartbarInfo');
+    assert.equal($('#smartbar_enabled').checked, true);
+    assert.notEqual(btn.style.display, 'none');
+    const created = ctx.apiCalls('browser.tabs.create').length;
+    const sent = ctx.ctl.sent.length;
+    await ctx.click(btn);
+    assert.deepEqual(ctx.ctl.sent.slice(sent).filter(m => m?.command === 'smartbar_open_page'), [{ command: 'smartbar_open_page' }]);
+    assert.equal(ctx.apiCalls('browser.tabs.create').length, created, 'the options page opened a tab itself');
 });
 
 k.test('nothing-written-at-load', S_FETCH, 'opening the page with an empty credential writes nothing', () => {

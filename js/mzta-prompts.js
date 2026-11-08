@@ -1817,12 +1817,45 @@ export async function setSpecialPrompts(prompts) {
  * would carry any stale read-time overlay along. Every other property is saved as storage has it
  * now; the storage gates of setSpecialPrompts() apply as for any other write.
  */
-export async function saveSpecialPromptTexts(texts) {
+export async function saveSpecialPromptTexts(texts, defaultHashes = {}) {
     const prompts = await getSpecialPrompts();
     for (const [id, text] of Object.entries(texts)) {
         const prompt = prompts.find(p => p.id === id);
         if (prompt) prompt.text = text;
     }
+    applyDefaultHashes(prompts, defaultHashes);
+    await setSpecialPrompts(prompts);
+}
+
+/**
+ * The fingerprint of a shipped default text (claude-spec/02-prompts.md "Default text updates"):
+ * FNV-1a over its UTF-16 code units, 8 hex digits. Stored with a user's text as `default_hash`,
+ * the default it was written against, so a later release that changes the default is noticed.
+ */
+export function promptDefaultHash(text) {
+    let hash = 0x811c9dc5;
+    const s = String(text ?? '');
+    for (let i = 0; i < s.length; i++) {
+        hash ^= s.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash.toString(16).padStart(8, '0');
+}
+
+function applyDefaultHashes(prompts, defaultHashes) {
+    for (const [id, hash] of Object.entries(defaultHashes || {})) {
+        const prompt = prompts.find(p => p.id === id);
+        if (prompt && typeof hash === 'string') prompt.default_hash = hash;
+    }
+}
+
+/**
+ * Save only the `default_hash` of special prompts, {id: hash}: the update notice dismissed
+ * without changing the text. A fresh read, like saveSpecialPromptTexts().
+ */
+export async function saveSpecialPromptDefaultHashes(defaultHashes) {
+    const prompts = await getSpecialPrompts();
+    applyDefaultHashes(prompts, defaultHashes);
     await setSpecialPrompts(prompts);
 }
 

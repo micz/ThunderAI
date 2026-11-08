@@ -1,4 +1,4 @@
-# Smart bar (issue #914, phases 1 to 3)
+# Smart bar (issue #914)
 
 A text bar in the message display where the user types what they want done with the mail
 ("tag it urgent and reply confirming"). A first AI call, the **router**, reads the instruction
@@ -7,13 +7,13 @@ pipeline of its feature. Nothing is ever sent automatically: every operation act
 itself (tags, the summary panel, the translation panel) or opens a compose window the user reviews
 and sends.
 
-Phase 1 shipped the bar, the router, the operation registry with three operations (`tag`,
-`summarize`, `translate`), the per-instruction records and the settings page. Phase 2 adds the
-`compose` operation (a reply, a reply to all, a forward or a new email, see "Compose") and the
-`runLast` rule. Phase 3 adds the chat (see "Chat"): the API chat window opened in Smart bar mode,
-where every message goes through the router, a message no operation covers gets a free answer, and
-an email is written as a draft the user creates later (`deliver_draft`). The last phase is listed at
-the end.
+The feature has the bar, the router, the operation registry with five operations (`tag`,
+`summarize`, `translate`, `compose`: a reply, a reply to all, a forward or a new email, see
+"Compose"; `deliver_draft`), the per-instruction records, the chat (see "Chat": the API chat window
+opened in Smart bar mode, where every message goes through the router, a message no operation
+covers gets a free answer, and an email is written as a draft the user creates later), the feature
+page with its Options, Prompts and Activity tabs (see "Feature page") and the badge (see "Badge").
+What is left out on purpose is listed at the end ("Deferred").
 
 Files:
 
@@ -29,18 +29,22 @@ Files:
 | `js/mzta-smartbar-store.js` | The per-instruction record and its states; thin calls over the `smartbar` store |
 | `js/mzta-storage.js` | The `smartbar` object store (not mirrored), its cleanup rules |
 | `mzta-background.js` | "The Smart bar" section: the flow, the jobs, the commands of the bar and of the chat |
-| `pages/smartbar/` | The settings page (one Options tab today) |
+| `pages/smartbar/` | The feature page: Options (`mzta-smartbar.js`), Prompts (`mzta-smartbar-prompts.js`), Activity (`mzta-smartbar-activity.js`) |
+| `pages/_lib/prompt-update.js` | The comparison of a prompt text with a newer default (the change picker in a box) |
 
 Tests: the `smartbar` area (`tests/smartbar/`, the modules), `tests/background/44-smartbar` (the
 flow), `tests/dom/compose/compose-21-smartbar` (the bar), `tests/dom/compose/compose-22-quoted-split`
 (the quoted part of a received mail), `tests/dom/smartbar/` (the page), `tests/background/45-smartbar-chat`
-(the chat flow), `tests/dom/webchat/webchat-24-smartbar` (the chat window in Smart bar mode). The reference instructions
+(the chat flow), `tests/dom/webchat/webchat-24-smartbar` (the chat window in Smart bar mode),
+`tests/smartbar/07-activity` (the store's queries, the badge counts, the default filter),
+`tests/background/46-smartbar-activity` (the page's commands, the badge, the page opened once),
+`tests/dom/smartbar/ui-02` to `ui-06` (the Prompts and Activity tabs, the tab of the hash). The reference instructions
 of the router are in [10-smartbar-router-tests.md](10-smartbar-router-tests.md).
 
 ## Feature toggle and settings
 
 `smartbar_enabled` (default `false`) is the row "Smart bar" of the options page, with a "Manage
-settings" button opening `pages/smartbar/mzta-smartbar.html`. It is an ordinary feature flag: it
+settings" button opening the feature page (`smartbar_open_page`, see "Feature page"). It is an ordinary feature flag: it
 needs no permission and is **not** reconciled by `_reconcileFeatureFlags()` (the operations check
 their own feature, connection and permissions each time, see "Operation registry").
 
@@ -77,7 +81,7 @@ per-feature connection (`special_prompts_with_integration`, spec 02 / 05):
 | `prompt_smartbar_execute` | `smartbar_execute` | The compose operation: the generative operations that have no prompt of their own (see "Compose") |
 | `prompt_smartbar_chat` | `smartbar_chat` | The chat: the window it opens on, and the free answer of a message no operation covers (see "Chat") |
 
-The settings page shows the three connection panels, one section each, built by
+The Options tab of the feature page shows the three connection panels, one section each, built by
 `initializeSpecificIntegrationUI({ root, anchorId })` scoped to its section (`pages/_lib/connection-ui.js`):
 the same panel as the other feature pages, three times on one page. The execute section ("Writing
 emails") explains what is sent and that recipients are never filled in, and holds the three compose
@@ -106,7 +110,7 @@ classic script (an IIFE): it reads no preference itself.
   destination (➤ execute or 💬 chat) and the other one; Stop while an instruction runs.
 - A `smartbar_config` message (any change of the four config preferences, sent to every message
   display tab) redraws the bar, or removes it.
-- "Details" opens the settings page (`smartbar_open_page`).
+- "Details" opens the Activity tab of the feature page (`smartbar_open_page` with `tab: 'activity'`).
 - `{%…%}` placeholders: the bar loads the prompt editors' autocomplete
   (`js/mzta-placeholders-autocomplete.js`) with a dynamic `import()` when the engine allows it in a
   content script, with the list from `smartbar_placeholders`; without it the bar works the same.
@@ -467,7 +471,7 @@ the window's thinking block, `hide_thinking` deciding whether it opens; never st
 session shows none), the free answer (through `<messages-area>`'s one render path: `streamInto()`
 the turn, the tokens, `handleTokensDone()`), the drafts and the result lines. The lines read as in
 the bar (`js/lib/mzta-smartbar-lines.js`) with its buttons, through `smartbar_chat_*` commands that
-name the record: Stop, Confirm / Cancel, Retry, Remove, ×, and "Details" (the settings page); "Open
+name the record: Stop, Confirm / Cancel, Retry, Remove, ×, and "Details" (the Activity tab of the feature page); "Open
 in chat" is never shown inside the chat. A rate-limited error counts down and retries **once** by
 itself, as in the bar (`auto: true`; an operation keeps `autoRetried`), except on a resumed record
 (history: Retry only) and, for the message itself, unless it is the newest turn (its retry is a new
@@ -575,6 +579,107 @@ operations `cancelled`). A record that already ended is never changed. When the 
 message still shows errors the user has not dismissed, the bar shows a notice
 (`replaced_with_errors`). The new record keeps the bar's `sessionId` of that message.
 
+## Feature page
+
+`pages/smartbar/mzta-smartbar.html`: three tabs, **Options**, **Prompts**, **Activity**
+(`#smartbar_tabs`). The hash of the URL names the tab shown (`#options`, `#prompts`, `#activity`;
+none or an unknown one: Options); a tab clicked puts its name in the hash (`replaceState`), and a
+`hashchange` selects the tab it names. It is not reachable from the popup.
+
+**Opened once** (`smartbar_open_page { tab }`, `_smartbarOpenPage()`): the background looks for a
+tab whose URL is the page's (any hash). Found: it is activated, its window focused, and when a tab
+is asked for, its URL set to the page with that hash (a same-document navigation: the page follows
+it through `hashchange`, nothing reloads). Not found: a new tab on the page with that hash. The
+bar's and the chat's "Details" ask for `activity`; the options page's "Manage settings" sends the
+message with no tab (the page as it is), so the page opened from one place is focused from the
+other (`openTab()`'s exact URL match would miss a page whose hash changed).
+
+- **Options**: the settings of "Feature toggle and settings", the three connection panels, the
+  keyboard shortcut, the retention rules (spec 05 "Smart Bar Settings Page").
+- **Prompts**: the texts of `prompt_smartbar_router`, `prompt_smartbar_execute` and
+  `prompt_smartbar_chat`, each with the feature pages' editor (`bindSpecialPromptEditor()`: Save,
+  Restore default, the unsaved-changes guard, the policy lock of an enforced text). Under the
+  router's and execute's text, their JSON section (`ROUTER_JSON_SECTION`, `EXECUTE_JSON_SECTION`)
+  shown read-only: the add-on appends it at call time, it is never in the textarea nor saved. On
+  Save the router's text must hold `{OPERATIONS}`, `{PLACEHOLDERS}` and `{LANGUAGE_RULE}`
+  (`ROUTER_VARIABLES`): a text without one is not saved, and the message under the editor names
+  the missing ones (it follows the text until it is complete). Execute and chat have no
+  variable. A policy text is not checked against them (at call time a missing variable has its
+  content appended, see "Router"). A release that changes a default text a user customized shows
+  the update notice with the change picker (spec 02 "Default text updates").
+- **Activity**: see "Activity".
+
+The special prompts of the other features keep their own pages.
+
+## Activity
+
+The Activity tab is a live view of the `smartbar` store and of the instructions in progress. The
+page holds no state: it asks the background (`smartbar_activity_list`), acts through commands
+(below), and reads its list again whenever the background says so (`smartbar_activity_changed`,
+sent on every change of a record, see "Badge"). The background is the one source of truth: the
+page's actions go through the same functions as the bar's, so the page, the bar of the message,
+the chat and the badge always agree. Every Activity command is accepted from the feature page only
+(`sender.url`); any other sender gets `not_page`.
+
+**List** (`_smartbarActivityList(filter, beforeId)`): newest first (highest id), a page of 200
+records (`more` when there are others; "Show more" asks for the next page, `beforeId` the last id
+shown). An instruction in progress is given as it is in memory, with `live: true` and state
+`running` (a record retried is stored in error and runs in memory). Records go to the page as the
+bar gets them (no raw answer, no generated text) plus `finishedAt` (the latest of its operations).
+The answer carries the counts `{ running, errors }`: the instructions in memory and the records
+stored in error.
+
+**Filters**: Running (the instructions in progress: those in memory only), Errors (the records
+in state `error`), All. At load: Running when something runs, else Errors when there is one,
+else All (`defaultFilter()`); the counts are shown next to the first two.
+
+**Rows**: subject, sender and the source (bar / chat); the instruction, truncated at 80 characters
+with the whole text as its tooltip; each operation with its state icon and its line text (the bar's,
+`js/lib/mzta-smartbar-lines.js`), the router's line while it works, an instruction-level error as a
+line; the elapsed time of a running row (every second while the tab is shown), the finish time of
+the others.
+
+- running: Open, Stop (`smartbar_activity_stop`, the whole instruction), and Stop on each running
+  operation (`index`); **Stop all** (`smartbar_activity_stop_all`) stops every instruction in
+  progress, of every message;
+- error: Retry (`smartbar_activity_retry`: the router of an instruction-level error, a new
+  instruction with the same text; else the first failed operation, `index`; no tab: the message is
+  resolved from the store, and its results reach the tabs that display it), Remove, Open, and
+  Open in chat for a `json` error only (`smartbar_activity_open_chat`: the message opened, then its
+  chat as the bar's "Open in chat" on that error opens it); a rate-limited row counts down the
+  seconds before its retry (display only: the page never retries by itself); **Remove all errors**
+  (`smartbar_activity_remove_errors`) removes every record in error but those being retried;
+- the others: Open, Remove.
+
+Open (`smartbar_activity_open`) resolves the message (`_resolveMessage()`) and opens it with
+`messageDisplay.open({ messageId, location: 'default' })`. Remove (`smartbar_activity_remove`)
+deletes the record from the store (it is not a dismiss): a record in progress is refused
+(`running`). After a removal the bar of each message concerned is pushed its state again (the
+newest record left).
+
+Under the list, a note that the store has no backup and can be lost if Thunderbird evicts the
+database, with a link to the storage management page.
+
+## Badge
+
+The badge of `message_display_action` and `compose_action` (ThunderAI has no `browser_action`),
+the same everywhere (no tab id): the number of running operations plus the number of operations in
+error (`badgeCounts()`, `js/mzta-smartbar-store.js`, over the instructions in memory and the records
+stored in error but those in memory):
+
+- running: each operation running; the router (or the chat's free answer) at work, before any
+  operation, counts as one;
+- errors: each operation in error and the instruction-level error, unless dismissed (×) or
+  stopped by the user (`errorType` `aborted`: a Stop is no failure to act on);
+- a pending confirmation is not counted, nor is a record done, replaced or interrupted.
+
+Empty at 0; red background (`#d70022`) with at least one error, else blue (`#0060df`). It is
+counted again on every change of a record (`_smartbarActivityChanged()`, called by
+`_smartbarPushState()` and `_smartbarChatPush()`; calls made during a count are coalesced into
+one more), at startup once the interrupted records are marked, and when `smartbar_enabled`
+changes: with the feature off the badge is empty. It is set only when it changes. No system
+notification is ever shown by this feature.
+
 ## Storage
 
 One record per instruction in the `smartbar` object store of the per-message database (spec 01
@@ -584,7 +689,7 @@ One record per instruction in the `smartbar` object store of the per-message dat
 
 - **Not mirrored**: nothing is written to `storage.local`, the reconcile with the mirror ignores the
   store, a database found new is not rebuilt for it. The history is lost if Thunderbird evicts the
-  database (the settings page says so).
+  database (the Options and Activity tabs say so).
 - A record holds `messageId`, `createdAt`, `subject` / `from` / `message_date`, `groupId`,
   `sessionId`, `source` (`'bar'` or `'chat'`), `instruction`, `state`, `unrecognized`, `routerContext`,
   `reports`, `error`, `errorType`, `rawResponse`, `retryAt`, `operations`, `dismissed`, and
@@ -617,6 +722,21 @@ One record per instruction in the `smartbar` object store of the per-message dat
   `createdAt`, the last `CHAT_SESSION_LIMIT` (50) of them, with the session's count. The chat loads
   no more than that and says how many earlier messages it does not show.
 
-## Later phases
+## Deferred
 
-- **Phase 4**: the Activity tab of the settings page (the records, their raw answers).
+Left out of this version on purpose:
+
+- **Recipients**: no address book nor header lookup to resolve a recipient the instruction names
+  (it stays a reminder in the result line), no mailing lists, no CC, no `replyToList` reply type.
+- **Operations**: no operation more than once in one instruction (`multiple` is `false` for all);
+  the output of one operation is never the input of another (`dependsOn` orders, it passes
+  nothing); custom prompts are not exposed as operations.
+- **Router**: no clarification question back to the user: an unclear instruction ends in
+  `unrecognized` or "Nothing matched".
+- **Compose results**: no "Change type" menu to turn a reply into a forward (or the other way)
+  after the text was written.
+- **Activity**: the raw answers of the model are not shown (they stay in the record for "Open in
+  chat"). A Retry of an instruction-level error starts a new record and leaves the failed one in
+  error until it is removed, dismissed or expires.
+- **`pending_confirmation`**: no operation uses `risk: 'confirm'` yet; a record left in that state
+  at the end of a session is not marked interrupted at startup (only `running` ones are).

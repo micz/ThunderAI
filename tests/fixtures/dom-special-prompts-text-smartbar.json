@@ -1,0 +1,8 @@
+{
+  "_org_name": "ACME",
+  "_special_prompts_text": {
+    "prompt_smartbar_router": "ACME router. Operations: {OPERATIONS} Context: {PLACEHOLDERS} {LANGUAGE_RULE}",
+    "prompt_smartbar_execute": "ACME: write the email the instruction asks for.",
+    "prompt_smartbar_chat": "ACME: answer the question about the email."
+  }
+}

@@ -439,7 +439,7 @@ class SmartbarChannel {
         if (record.state === 'replaced') box.appendChild(this._line('cancelled', L.STATE_ICON.cancelled, msg('smartbar_chat_replaced')));
         if (lines > 0) {
             box.appendChild(el('div', { class: 'sb-line details' }, [
-                this._button(msg('smartbar_details'), () => browser.runtime.sendMessage({ command: 'smartbar_open_page' }).catch(() => {}), 'details'),
+                this._button(msg('smartbar_details'), () => browser.runtime.sendMessage({ command: 'smartbar_open_page', tab: 'activity' }).catch(() => {}), 'details'),
             ]));
         }
     }

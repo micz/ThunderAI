@@ -28,7 +28,7 @@
     display: block !important;
 }
 
-/* The tab strip: one tab today; the Prompt and Activity tabs come later. */
+/* The tab strip: Options, Prompts, Activity. */
 .smartbar_tabs {
     display: flex;
     gap: 4px;
@@ -57,9 +57,6 @@
     display: none;
 }
 
-.smartbar_later_note {
-    font-style: italic;
-}
 
 #smartbar_shortcut_keys kbd {
     border: 1px solid var(--line);
@@ -72,4 +69,160 @@
 #smartbar_additional_instructions,
 #smartbar_signature {
     width: 100%;
+}
+
+/* ── Prompts tab ─────────────────────────────────────────────────────────── */
+.smartbar_tab_intro {
+    max-width: 760px;
+    margin: 0 auto 8px;
+    padding: 0 24px;
+}
+.smartbar_editor_wrap .smartbar_prompt_text {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: var(--font-mono, monospace);
+    font-size: 13px;
+    background: var(--field);
+    color: var(--text);
+    border: 1px solid var(--fieldLine, var(--line));
+    border-radius: 8px;
+    padding: 9px 11px;
+    resize: vertical;
+}
+.smartbar_prompt_text[readonly] {
+    opacity: .8;
+}
+.smartbar_prompt_error {
+    color: var(--jsonError, #b3261e);
+    margin-top: 4px;
+}
+/* The JSON format the add-on appends at call time: read-only, never part of the text. */
+.smartbar_locked_section pre {
+    margin: 4px 0 0;
+    padding: 9px 11px;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    background: var(--desk);
+    color: var(--dim);
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+/* A release changed the default text of a prompt the user customized. */
+.smartbar_update_notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    padding: 8px 10px;
+    border-left: 3px solid var(--warning);
+    background: var(--field);
+    border-radius: 4px;
+}
+.smartbar_update_notice[hidden] {
+    display: none;
+}
+/* The comparison with the new default (pages/_lib/prompt-update.js). */
+.mzta_compare_overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, .4);
+}
+.mzta_compare_box {
+    width: min(900px, 94vw);
+    max-height: 90vh;
+    overflow: auto;
+    padding: 16px 20px;
+    border-radius: 10px;
+    background: var(--panel);
+    color: var(--text);
+}
+
+/* ── Activity tab ────────────────────────────────────────────────────────── */
+.smartbar_activity_bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.smartbar_filters,
+.smartbar_bulk {
+    display: flex;
+    gap: 4px;
+}
+.smartbar_filter {
+    border: 1px solid var(--line);
+    background: none;
+    color: var(--dim);
+    padding: 3px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    font: inherit;
+}
+.smartbar_filter[aria-checked="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+.smartbar_activity_table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.smartbar_activity_table[hidden] {
+    display: none;
+}
+.smartbar_activity_table th {
+    text-align: left;
+    color: var(--dim);
+    font-weight: normal;
+    border-bottom: 1px solid var(--line);
+    padding: 4px 6px;
+}
+.smartbar_activity_table td {
+    vertical-align: top;
+    border-bottom: 1px solid var(--line);
+    padding: 6px;
+}
+.smartbar_subject {
+    font-weight: 600;
+}
+.smartbar_source {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0 6px;
+    font-size: 11px;
+}
+.smartbar_op_error {
+    color: var(--jsonError, #b3261e);
+}
+.smartbar_op .btn_small {
+    margin-left: 4px;
+}
+.smartbar_time {
+    white-space: nowrap;
+    color: var(--dim);
+}
+.smartbar_actions {
+    white-space: nowrap;
+    text-align: right;
+}
+.smartbar_actions button {
+    margin: 0 0 4px 4px;
+}
+.smartbar_countdown {
+    display: block;
+}
+.smartbar_more_div {
+    justify-content: center;
+}
+.smartbar_activity_note {
+    margin-top: 12px;
 }

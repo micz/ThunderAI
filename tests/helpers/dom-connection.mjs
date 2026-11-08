@@ -262,13 +262,13 @@ export async function connectionScenario(page, mode, prefix = prefixOfPage(page)
     // The page's text Save rewrites the whole array from a fresh read (saveSpecialPromptTexts()),
     // overlay included - in 'unlocked' mode after the user edited the connection, so the read
     // holds the policy defaults (the marker) next to values the user has stored.
-    // Only on a page with the prompt's text editor (the Smart bar page has none yet).
+    // Only on a page with the prompt's text editor (every feature page has one today).
     if (feature.textarea) test('a text Save writes the array back without storing a policy value over the user\'s', async () => {
         const textarea = ctx.$('#' + feature.textarea);
         const expected = overrideOf(storedPrompt() || USER_OVERRIDE);
         textarea.value = feature.text + ' (edited)';
         await ctx.fire(textarea, 'input');
-        const save = ctx.$('#btn_save_prompt');
+        const save = ctx.$('#' + (feature.save || 'btn_save_prompt'));
         save.disabled = false;
         await ctx.click(save);
         const p = storedPrompt();

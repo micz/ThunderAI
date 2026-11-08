@@ -857,8 +857,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     openTab('/pages/translate/mzta-translate.html');
   });
 
+  // Through the background: the Smart bar page is opened once, whatever tab it shows (its URL
+  // carries the tab in its hash, which openTab()'s exact match would miss).
   document.getElementById('btnManageSmartbarInfo').addEventListener('click', () => {
-    openTab('/pages/smartbar/mzta-smartbar.html');
+    browser.runtime.sendMessage({ command: 'smartbar_open_page' }).catch(() => {});
   });
 
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {

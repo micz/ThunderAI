@@ -275,7 +275,7 @@ The chosen approach is **validate and reject**, not "move the format into code":
 | `prompt_translate_this` | `subject`, `body`, `status` | `mail_html_body` or `mail_text_body`, **and** `thunderai_translate_lang` |
 | `prompt_summarize_email_template` | — | any body placeholder¹, or none at all² |
 | `prompt_summarize`, `prompt_summarize_email_separator` | — | — (free text) |
-| `prompt_smartbar_router`, `prompt_smartbar_execute`, `prompt_smartbar_chat` | — | — (free text: the router's JSON format is a locked section the add-on appends, never part of the text, see [10-smartbar.md](10-smartbar.md) "Router") |
+| `prompt_smartbar_router`, `prompt_smartbar_execute`, `prompt_smartbar_chat` | — | — (free text: the router's and execute's JSON formats are locked sections the add-on appends, never part of the text, see [10-smartbar.md](10-smartbar.md) "Router", "Compose"; the router's variables are required by the Prompts tab on the user's own Save only, a policy text lacking one is enforced and the add-on appends its content at call time) |
 
 ¹ `mail_text_body`, `mail_html_body`, `mail_text_body_or_selected`, `mail_html_body_or_selected`.
 ² `preparePrompt()` appends the message itself to a text with no placeholder at all.
@@ -322,7 +322,9 @@ stored value that is still the raw i18n key.
 in [`pages/_lib/feature-page.js`](../pages/_lib/feature-page.js) — the one wiring of a special
 prompt editor (textarea, Save, Reset, "unsaved" note) the six feature pages share — after it
 has filled the textarea and set its buttons' initial state (summarize binds three editors, one
-per textarea; calendar one, with both calendar ids). It follows [Controls with their
+per textarea; calendar one, with both calendar ids; the Smart bar page three, in its Prompts
+tab: plain textareas with no highlight wrapper, whose update notice of a changed default never
+shows on an enforced text, see [02-prompts.md](02-prompts.md) "Default text updates"). It follows [Controls with their
 own load/save logic](08c-managed-ui.md#controls-with-their-own-loadsave-logic-data-mzta-pref), without a
 preference key:
 
