@@ -1,12 +1,10 @@
 <!--
-One entry per vendored file, separated by a blank line:
-  file:      the file path in the repository
-  source:    the exact version URL it is downloaded from
-  name:      (optional) the library's display name, used in the titles of the automatic update PRs
-  changelog: (optional) the library's change log, linked in the automatic update PRs
-The npm sources (".../npm/<package>@<version>/...") are checked daily for new versions by
-.github/workflows/libs-release-check.yml; for a library with more files, name and changelog are
-read from its first entry that has them.
+Besides the file and its source, each entry can carry an optional "name" (the library's display
+name, in the titles of the automatic update PRs) and an optional "changelog" (linked in those PRs),
+read by .github/workflows/libs-release-check.yml. For a library with more files, the first of its
+entries that has them is used.
+Keep this comment free of lines starting with "file:", "source:" or a URL: the Thunderbird
+webext-linter would read them as a declaration and reject the whole file.
 -->
 
 file: pages\_lib\list.js

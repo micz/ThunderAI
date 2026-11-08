@@ -14,7 +14,7 @@ jobs:
   # The libraries to check are the npm packages of the VENDORS.md sources (".../npm/<package>@<version>/...")
   # on dev: adding one to VENDORS.md adds it here, nothing else to edit. Sources not served from npm
   # (like list.js, from GitHub) are not checked. The optional name and changelog fields of the entries
-  # give the PR title and the change log link.
+  # give the PR title (the package name without one) and the change log link (none without one).
   libs:
     runs-on: ubuntu-latest
     outputs:
@@ -94,7 +94,7 @@ jobs:
           LIB_NAME=$(vendor_field name)
           LIB_CHANGELOG=$(vendor_field changelog)
           echo "Name: ${LIB_NAME:-(none, the package name is used)}"
-          echo "Change log: ${LIB_CHANGELOG:-(none, it will be looked up)}"
+          echo "Change log: ${LIB_CHANGELOG:-(none, the PR will not link one)}"
 
           echo "name=${LIB_NAME:-$PACKAGE_TARGET}" >> $GITHUB_OUTPUT
           echo "changelog=${LIB_CHANGELOG}" >> $GITHUB_OUTPUT
@@ -145,31 +145,16 @@ jobs:
           LIB_NAME="${{ steps.lib.outputs.name }}"
           LIB_CHANGELOG="${{ steps.lib.outputs.changelog }}"
 
-          # Without a changelog field in VENDORS.md, look the change log up from the package's GitHub
-          # repository (its npm "repository" field): the usual change log files, then the releases page,
-          # then the repository itself; without a GitHub repository, the versions page on npm
-          if [ -z "$LIB_CHANGELOG" ]; then
-            LIB_CHANGELOG="https://www.npmjs.com/package/${PACKAGE_TARGET}?activeTab=versions"
-            REPO_URL=$(curl -s "https://registry.npmjs.org/${PACKAGE_TARGET}/latest" | jq -r '.repository | if type == "object" then .url else . end // empty')
-            GH_REPO=$(echo "$REPO_URL" | sed -nE 's#^(.*github\.com[/:]|github:)([^/]+)/([^/\#]+).*#\2/\3#p' | sed -E 's#\.git$##')
-            if [ -n "$GH_REPO" ]; then
-              LIB_CHANGELOG="https://github.com/${GH_REPO}"
-              if [ "$(gh api "repos/${GH_REPO}/releases?per_page=1" --jq 'length' 2>/dev/null)" == "1" ]; then
-                LIB_CHANGELOG="https://github.com/${GH_REPO}/releases"
-              fi
-              for FILE in CHANGELOG.md CHANGELOG HISTORY.md CHANGES.md release-notes.md RELEASE_NOTES.md; do
-                if gh api "repos/${GH_REPO}/contents/${FILE}" --silent 2>/dev/null; then
-                  LIB_CHANGELOG="https://github.com/${GH_REPO}/blob/HEAD/${FILE}"
-                  break
-                fi
-              done
-            fi
-          fi
-
           # The sources the library files were downloaded from, as they now stand in VENDORS.md
           SOURCES=$(grep -E "^source:.*/npm/${PACKAGE_TARGET}@" VENDORS.md | sed -E 's/^source:[[:space:]]*//' | tr -d '\r' | sed -e 's/$/\n/')
 
-          PR_BODY=$(printf 'Update %s to version **%s**.\n\nChange log: %s\n\nVENDORS.md and the library files were updated automatically from:\n\n%s\n\nPlease review the downloaded files before merging.' "$LIB_NAME" "$LATEST_VERSION" "$LIB_CHANGELOG" "$SOURCES")
+          # The change log line only when the VENDORS.md entry gives one
+          INTRO=$(printf 'Update %s to version **%s**.' "$LIB_NAME" "$LATEST_VERSION")
+          if [ -n "$LIB_CHANGELOG" ]; then
+            INTRO=$(printf '%s\n\nChange log: %s' "$INTRO" "$LIB_CHANGELOG")
+          fi
+
+          PR_BODY=$(printf '%s\n\nVENDORS.md and the library files were updated automatically from:\n\n%s\n\nPlease review the downloaded files before merging.' "$INTRO" "$SOURCES")
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
