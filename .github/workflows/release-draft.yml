@@ -28,6 +28,10 @@ jobs:
       - name: Build the notes and create the draft
         env:
           GH_TOKEN: ${{ github.token }}
+          # Owner's fine-grained PAT (Contents: read and write on this repository only):
+          # the release author is whoever creates it, so with this token the draft is the
+          # owner's and not github-actions[bot]'s. Without the secret the bot creates it.
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
           OWNER: ${{ github.repository_owner }}
           # Owner's commit emails, excluded from the translators even if not linked to the account
@@ -42,11 +46,14 @@ jobs:
           fi
 
           # 1. The <ul> of this version from CHANGELOG.md, as it is in the tag
-          git show "$TAG:CHANGELOG.md" | awk -v v="$VER" '
+          # Written to a file first: awk exits early, and piping git show into it
+          # kills git show with SIGPIPE (exit 141), which pipefail turns into a failure
+          git show "$TAG:CHANGELOG.md" > changelog_at_tag.md
+          awk -v v="$VER" '
             index($0, "<h2>Version " v " ") { f = 1; next }
             f && /<ul>/   { p = 1 }
             p             { print }
-            p && /<\/ul>/ { exit }' > changes.html
+            p && /<\/ul>/ { exit }' changelog_at_tag.md > changes.html
           if [ ! -s changes.html ]; then
             echo "::error::No '<h2>Version $VER - ...' section in CHANGELOG.md at $TAG"; exit 1
           fi
@@ -121,7 +128,7 @@ jobs:
 
           # 5. Release body
           {
-            echo "## What's new"
+            echo " "
             echo
             cat changes.html
             echo
@@ -158,6 +165,11 @@ jobs:
           cat notes.md
 
           # 6. Create the draft, or update it if a release for this tag already exists
+          if [ -n "$RELEASE_TOKEN" ]; then
+            export GH_TOKEN="$RELEASE_TOKEN"
+          else
+            echo "::warning::No RELEASE_TOKEN secret: the draft is created by github-actions[bot]."
+          fi
           if gh release view "$TAG" --json isDraft >/dev/null 2>&1; then
             if [ "$(gh release view "$TAG" --json isDraft -q .isDraft)" = "true" ]; then
               gh release edit "$TAG" --notes-file notes.md

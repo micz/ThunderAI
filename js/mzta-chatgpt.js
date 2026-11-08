@@ -1034,7 +1034,19 @@ function getTurnButtonsContainer(el) {
 function logCompletionDiagnostics(last, length, stableMs, waitingMs, state) {
     try {
         const turn = last ? getMessageTurn(last.el) : null;
-        const composer = current_composer_el && current_composer_el.isConnected ? current_composer_el : queryPromptInput([document])?.el;
+        // the page can hide the composer used for the send and show another one (issue #1011):
+        // the diagnostics then describe the visible composer, never the stale one
+        let composer = current_composer_el && current_composer_el.isConnected ? current_composer_el : null;
+        let composerSource = composer ? 'current' : 'none';
+        if (!composer || !isElementVisible(composer)) {
+            const visibleComposer = queryPromptInput([document])?.el;
+            if (visibleComposer) {
+                composerSource = composer ? 'reacquired-current-hidden' : 'reacquired';
+                composer = visibleComposer;
+            } else if (composer) {
+                composerSource = 'current-hidden';
+            }
+        }
         const diag = {
             waitingMs: waitingMs,
             kind: last ? last.kind : '',
@@ -1046,6 +1058,7 @@ function logCompletionDiagnostics(last, length, stableMs, waitingMs, state) {
             stableMs: stableMs,
             signals: diagSection(() => getGenerationSignals(turn)),
             turnButtons: diagSection(() => last ? describeButtons(getTurnButtonsContainer(last.el), 12, true) : []),
+            composerSource: composerSource,
             composerButtons: diagSection(() => describeButtons(getComposerContainer(composer), 12, true)),
             generationObserved: state ? state.generationObserved : null,
             isGeneratingNow: state ? state.isGeneratingNow : null,
@@ -1070,6 +1083,15 @@ function logCompletionDiagnostics(last, length, stableMs, waitingMs, state) {
                 const counts = {};
                 for (const name of Object.keys(NEW_UI_BUTTON_PATHS)) {
                     counts[name] = getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS[name])).length;
+                }
+                return counts;
+            }),
+            // the same, visible buttons only: a prefix with matches in pathButtons and none here
+            // is a hidden stale copy, and a 0 in both for voice or stop hints at a changed icon
+            pathButtonsVisible: diagSection(() => {
+                const counts = {};
+                for (const name of Object.keys(NEW_UI_BUTTON_PATHS)) {
+                    counts[name] = getVisibleButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS[name])).length;
                 }
                 return counts;
             }),
@@ -1288,6 +1310,11 @@ function getButtonsWithPath(pathSelector) {
     return Array.from(buttons);
 }
 
+// The same, visible ones only: a hidden stale composer can keep its Stop button after the answer (issue #1011)
+function getVisibleButtonsWithPath(pathSelector) {
+    return getButtonsWithPath(pathSelector).filter(b => isElementVisible(b));
+}
+
 // Regenerate and copy buttons in the whole page, whatever turn they belong to
 function chatgpt_countActionButtons() {
     return getButtonsWithPath(NEW_UI_ACTION_PATHS).length;
@@ -1300,9 +1327,9 @@ function chatgpt_countRegenerateButtons() {
 
 // Stop button of the newer UI (issue #920), matched by icon only, never by label.
 // The composer primary button is not enough: in the idle state it is the voice chat button.
+// Visible buttons only: a hidden Stop button is stale and never means "generating" (issue #1011).
 function chatgpt_hasNewUiStopPath() {
-    const stopPath = document.querySelector('button path[d^="M4.5 5.75C4.5 5.05964"]');
-    return !!stopPath && !isOwnUiElement(stopPath);
+    return getVisibleButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.stop)).length > 0;
 }
 
 // Stop button of the old UI: data-testid="stop-button", with a sprite icon instead of an inline path
@@ -1315,11 +1342,12 @@ function chatgpt_isGenerating() {
     return chatgpt_hasNewUiStopPath() || chatgpt_hasOldUiStopButton();
 }
 
-// The composer primary button is in the send or voice chat state, and no Stop button exists
+// The composer primary button is in the send or voice chat state, and no Stop button is visible.
+// Visible buttons only, so the buttons of a hidden stale composer never decide either way.
 function chatgpt_composerIsIdle() {
-    if (getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.stop)).length > 0) return false;
-    const sendButton = Array.from(document.querySelectorAll('button.size-token-button-composer[type="submit"]')).some(b => !isOwnUiElement(b));
-    return sendButton || getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.voice)).length > 0;
+    if (chatgpt_hasNewUiStopPath()) return false;
+    const sendButton = Array.from(document.querySelectorAll('button.size-token-button-composer[type="submit"]')).some(b => !isOwnUiElement(b) && isElementVisible(b));
+    return sendButton || getVisibleButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.voice)).length > 0;
 }
 
 // Ancestor chain for diagnostics, up to main or maxLevels: structure only, data-* names without values

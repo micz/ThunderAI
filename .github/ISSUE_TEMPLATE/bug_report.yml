@@ -6,9 +6,15 @@ body:
       value: |
         This issue form is for reporting bugs only!
 
+        > [!IMPORTANT]
+        > **The error log is required.** Activate the ThunderAI debug log in the advanced option panel, reproduce the problem, then copy the log from the Thunderbird error console.
+        >
+        > 🎬 **[Watch the video: how to save the error log][vd]**
+
         If you have a feature or enhancement request, please use the [feature request][fr] form.
 
         [fr]: https://github.com/micz/ThunderAI/issues/new?assignees=&labels=&projects=&template=feature_request.yml&title=
+        [vd]: https://micz.it/thunderbird-error-console/
   - type: textarea
     validations:
       required: true
@@ -19,6 +25,17 @@ body:
         Describe the issue you are experiencing here. Tell us what you were trying to do and what happened.
 
         Provide a clear and concise description of what the problem is.
+  - type: textarea
+    id: logs
+    validations:
+      required: true
+    attributes:
+      label: Thunderbird console logs
+      description: >-
+        Paste the error messages or stack traces from the Thunderbird error console (CTRL+SHIFT+J), with the ThunderAI debug log activated in the add-on preferences.
+
+        🎬 **[Watch the video: how to save the error log](https://micz.it/thunderbird-error-console/)**
+      render: txt
   - type: markdown
     attributes:
       value: |
@@ -36,7 +53,7 @@ body:
     attributes:
       label: Which version of Thunderbird are you using?
       description: >
-        Thunderbird version like 140.0 or 147.0.1.
+        Thunderbird version like 153.0 or 159.0.1.
   - type: input
     id: version
     validations:
@@ -44,7 +61,7 @@ body:
     attributes:
       label: Which version of ThunderAI has the issue?
       description: >
-        ThunderAI version like 2.1.0.
+        ThunderAI version like 5.1.0.
   - type: dropdown
     validations:
       required: true
@@ -63,12 +80,6 @@ body:
     attributes:
       value: |
         # Details
-  - type: textarea
-    id: logs
-    attributes:
-      label: Anything in the Thunderbird console logs that might be useful?
-      description: For example, error message, or stack traces. Be sure to have activated the debug in the add-on preferences. Open the console using the keyboard shortcut CTRL+SHIFT+J, see here more info https://micz.it/thunderbird-error-console/ 
-      render: txt
   - type: textarea
     id: additional
     attributes:

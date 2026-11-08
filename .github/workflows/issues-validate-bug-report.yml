@@ -1,0 +1,123 @@
+name: Issues Validate Bug Report
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  check-bug-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate required fields (only for bug report form)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const bodyText = issue.body || "";
+
+            // ---- Guard: only act if this looks like a Bug Report form ----
+            if (!bodyText.includes("### The problem")) {
+              core.info("Skipped: This issue does not contain '### The problem', so it is not a Bug Report.");
+              return;
+            }
+            core.info("Detected a Bug Report issue. Proceeding with validation...");
+
+            // Text under a "### " header up to the next one, or null if the header is missing
+            const getField = (header) => {
+              const startIdx = bodyText.indexOf(header);
+              if (startIdx === -1) return null;
+              const afterHeader = bodyText.slice(startIdx + header.length).replace(/^\r?\n+/, "");
+              const nextHeaderIdx = afterHeader.search(/\n### /);
+              return (nextHeaderIdx === -1 ? afterHeader : afterHeader.slice(0, nextHeaderIdx)).trim();
+            };
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = issue.number;
+
+            const marker = "<!-- thunderai:bug-report-check -->";
+            // Reminder posted by the old integration-only workflow, before the marker
+            const oldIntegrationText = "please specify which integration you are using";
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            const oldIntegrationReminder = comments.some(c => c.body && c.body.includes(oldIntegrationText));
+
+            const missing = [];
+
+            // ---- Check: integration ----
+            const integration = getField("### Which integration are you using?") || "";
+            core.info(`Integration field extracted: "${integration}"`);
+            if (!integration || integration.startsWith("-- Select an option")) {
+              core.info("Integration field is invalid or not selected.");
+              if (oldIntegrationReminder && !existing) {
+                core.info("The old integration reminder already asks for it. Not repeating it.");
+              } else {
+                missing.push([
+                  "#### Which integration are you using?",
+                  "The field is set to `-- Select an option --`: choose the integration you are using from the dropdown.",
+                ].join("\n"));
+              }
+            } else {
+              core.info("Integration field is valid.");
+            }
+
+            // ---- Check: console log (only on reports made with the form that has the log field) ----
+            const rawLog = getField("### Thunderbird console logs");
+            if (rawLog === null) {
+              core.info("Skipped log check: this issue predates the log field.");
+            } else {
+              const log = rawLog.replace(/^\s*```[a-z]*\s*$/gim, "").trim();
+              core.info(`Log field extracted (${log.length} characters).`);
+              // Empty, "_No response_", or a placeholder answer like "n/a" or "none"
+              const placeholder = /^(_no response_|n\.?\/?a\.?|none|no|nothing|nope|-+|\.+|nessuno|niente)$/i;
+              if (log.length < 20 || placeholder.test(log)) {
+                core.info("Log field is missing or too short to be a console log.");
+                missing.push([
+                  "#### Thunderbird console logs",
+                  "The field is empty or doesn't contain a log.",
+                  "1. Activate the ThunderAI debug log in the advanced option panel of the add-on preferences.",
+                  "2. Reproduce the problem.",
+                  "3. Open the error console with CTRL+SHIFT+J and copy the messages.",
+                  "",
+                  "🎬 **[Watch the video: how to save the error log](https://micz.it/thunderbird-error-console/)**",
+                ].join("\n"));
+              } else {
+                core.info("Log field is valid.");
+              }
+            }
+
+            if (missing.length === 0) {
+              core.info("Nothing missing.");
+              if (existing && !existing.body.includes("bug report is now complete")) {
+                core.info("Marking the existing reminder as resolved...");
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: existing.id,
+                  body: [marker, "✅ Thanks, the bug report is now complete."].join("\n"),
+                });
+              }
+              return;
+            }
+
+            const body = [
+              marker,
+              `👋 Hello @${issue.user.login}!`,
+              "To complete your bug report, please fill in the following:",
+              "",
+              missing.join("\n\n"),
+              "",
+              "Click **Edit** at the top right of the issue, complete the fields, and save.",
+            ].join("\n");
+
+            // One reminder per issue, kept up to date with what is still missing
+            if (!existing) {
+              core.info("No existing reminder found. Posting a new comment...");
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            } else if (existing.body !== body) {
+              core.info("Updating the existing reminder with what is still missing...");
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              core.info("Reminder comment is already up to date.");
+            }
