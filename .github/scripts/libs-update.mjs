@@ -32,8 +32,10 @@ while ((match = entryRegex.exec(content)) !== null) {
 }
 
 // --- Filter the entries of the libraries updated automatically ---
+// Each name is matched as a substring of the entry's file path (list.js and diff.js by their file name,
+// as "list" and "diff" alone are too generic).
 // An optional argument limits the update to one of them (e.g. `node libs-update.mjs tom-select`)
-const LIBS = process.argv[2] ? [process.argv[2]] : ['tom-select', 'markdown-it', 'idb'];
+const LIBS = process.argv[2] ? [process.argv[2]] : ['tom-select', 'markdown-it', 'idb', 'list.js', 'diff.js'];
 const filteredEntries = entries.filter(e => LIBS.some(lib => e.file.toLowerCase().includes(lib)));
 
 if (filteredEntries.length === 0) {
