@@ -15,19 +15,20 @@
         <li>Add Tags: each account can now have its own settings, in the new <i>Settings for single accounts</i> section [<a href="https://github.com/micz/ThunderAI/pull/970">#970</a>, <a href="https://github.com/micz/ThunderAI/issues/864">#864</a>].</li>
         <li>Placeholders: <i>{%mail_text_body%}</i> and <i>{%mail_text_body_or_selected%}</i> accept an optional character limit, for example <i>{%mail_text_body:2000%}</i> [<a href="https://github.com/micz/ThunderAI/pull/969">#969</a>].</li>
         <li><i>[OpenAI Comp API]</i> New <i>Extra headers</i> advanced option, for services that require custom HTTP headers [<a href="https://github.com/micz/ThunderAI/issues/977">#977</a>].</li>
-        <li>API connections: an answer that stops arriving now ends with an error after the new <i>API stream idle timeout</i> (120 seconds by default). <i>Stop</i> now works at once [<a href="https://github.com/micz/ThunderAI/issues/999">#999</a>].</li>
         <li><i>[Ollama API, OpenAI Comp API]</i> Safer server addresses: credentials in the address are refused, remote <i>http://</i> servers need your permission, and redirects are shown [<a href="https://github.com/micz/ThunderAI/issues/1000">#1000</a>].</li>
-        <li>API chat: only plain <i>http</i> and <i>https</i> links are opened, in the default browser. The chat window also has a stricter Content Security Policy [<a href="https://github.com/micz/ThunderAI/issues/1001">#1001</a>].</li>
-        <li>Spam Filter, Add Tags, Calendar Event, Task and Translate: the settings page warns when the prompt no longer contains a valid JSON response format.</li>
+        <li><i>[All APIs]</i> An answer that stops arriving now ends with an error after the new <i>API stream idle timeout</i> (120 seconds by default). <i>Stop</i> now works at once [<a href="https://github.com/micz/ThunderAI/issues/999">#999</a>].</li>
+        <li><i>[All APIs]</i> API chat: only plain <i>http</i> and <i>https</i> links are opened, in the default browser. The chat window also has a stricter Content Security Policy [<a href="https://github.com/micz/ThunderAI/issues/1001">#1001</a>].</li>
+        <li><i>[All APIs]</i> Spam Filter, Add Tags, Calendar Event, Task and Translate: the settings page warns when the prompt no longer contains a valid JSON response format.</li>
         <li>Saved spam reports, summaries and translations are now kept in a dedicated database with a backup copy, so they are no longer lost. Existing data is moved automatically [<a href="https://github.com/micz/ThunderAI/issues/955">#955</a>].</li>
         <li>New <i>Saved data</i> page, opened with the <i>Manage saved data...</i> button, to view, limit and clean up the saved data, with an optional automatic cleanup. Spam reports are no longer capped at 100, and the limits can also be set by policy [<a href="https://github.com/micz/ThunderAI/issues/956">#956</a>].</li>
         <li>Fix: with <i>{%mail_typed_text%}</i>, the answer now replaces only the selected text [<a href="https://github.com/micz/ThunderAI/issues/978">#978</a>].</li>
         <li>Fix: a custom prompt can no longer use the ID of a built-in prompt; existing ones are renamed [<a href="https://github.com/micz/ThunderAI/issues/979">#979</a>].</li>
         <li>Fix: the Menu Order settings of organization prompts are now kept after a restart [<a href="https://github.com/micz/ThunderAI/issues/990">#990</a>].</li>
         <li>Fix: Translate: <i>{%mail_text_body%}</i> and <i>{%mail_text_body_or_selected%}</i> in a custom translation prompt are no longer empty.</li>
+        <li>Turkish (tr) translation added, thanks to <a href="https://hosted.weblate.org/user/babico/">Müslüm Barış Korkmazer</a> and <a href="https://github.com/cahitcengizhan">Cahit Cengizhan</a>.</li>
+        <li>Libraries updated.</li>
         <li>Some improvements.</li>
         <li>Some minor bugs fixed.</li>
-        <li>...</li>
       </ul>
       <h2>Version 5.1.0 - 18/10/2026</h2>
       <ul>
