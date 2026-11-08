@@ -2,7 +2,7 @@ name: Delete Vendor Library Update Branches
 
 # Deletes the branch of a vendor library update PR once it is merged.
 # Only the branches the library workflows create are touched:
-#   - <package>-update-<version>, from the daily release checks
+#   - <package>-update-<version>, from the daily release checks (packages listed in .github/vendor-libs.json)
 #   - libs-update-<base branch>, from libs-update.yml
 # and only when the PR was opened by those workflows (github-actions[bot]).
 
@@ -21,14 +21,32 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          sparse-checkout: .github/vendor-libs.json
+          sparse-checkout-cone-mode: false
+
       - name: Delete the merged branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
           REPO: ${{ github.repository }}
         run: |
-          # Keep the package list in sync with the matrix of the release check workflow
-          if ! [[ "$BRANCH" =~ ^((tom-select|markdown-it|idb|diff)-update-[0-9]|libs-update-) ]]; then
+          # <package>-update-<version>, with the packages of the release check, or libs-update-<branch>
+          IS_LIB_BRANCH=false
+          if [[ "$BRANCH" == libs-update-* ]]; then
+            IS_LIB_BRANCH=true
+          else
+            while IFS= read -r PACKAGE; do
+              if [[ "$BRANCH" == "${PACKAGE}-update-"[0-9]* ]]; then
+                IS_LIB_BRANCH=true
+                break
+              fi
+            done < <(jq -r '.[].package' .github/vendor-libs.json)
+          fi
+
+          if [ "$IS_LIB_BRANCH" != "true" ]; then
             echo "Branch '${BRANCH}' is not a vendor library update branch. No action taken."
             exit 0
           fi

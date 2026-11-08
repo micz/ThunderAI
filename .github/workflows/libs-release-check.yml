@@ -11,21 +11,35 @@ permissions:
   issues: write
 
 jobs:
+  # Read the libraries to check from .github/vendor-libs.json, shared with libs-branch-cleanup.yml.
+  # Each entry:
+  #   package:   the npm package name, as it appears in the VENDORS.md sources (".../npm/<package>@<version>/...")
+  #              and in the file paths libs-update.mjs filters on
+  #   name:      the display name used in the PR title (kept stable: the duplicate check searches PRs by title)
+  #   changelog: the library's change log, linked in the PR body
+  libs:
+    runs-on: ubuntu-latest
+    outputs:
+      libs: ${{ steps.read.outputs.libs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          sparse-checkout: .github/vendor-libs.json
+          sparse-checkout-cone-mode: false
+
+      - name: Read the library list
+        id: read
+        run: echo "libs=$(jq -c . .github/vendor-libs.json)" >> $GITHUB_OUTPUT
+
   check-and-update:
+    needs: libs
     runs-on: ubuntu-latest
     strategy:
       # One library failing must not stop the others
       fail-fast: false
       matrix:
-        # package: the npm package name, as it appears in the VENDORS.md sources (".../npm/<package>@<version>/...")
-        #          and in the file paths libs-update.mjs filters on
-        # name:      the display name used in the PR title (kept stable: the duplicate check searches PRs by title)
-        # changelog: the library's change log, linked in the PR body
-        lib:
-          - { package: 'tom-select', name: 'Tom Select', changelog: 'https://github.com/orchidjs/tom-select/releases' }
-          - { package: 'markdown-it', name: 'markdown-it', changelog: 'https://github.com/markdown-it/markdown-it/blob/master/CHANGELOG.md' }
-          - { package: 'idb', name: 'idb', changelog: 'https://github.com/jakearchibald/idb/blob/main/CHANGELOG.md' }
-          - { package: 'diff', name: 'jsdiff', changelog: 'https://github.com/kpdecker/jsdiff/blob/master/release-notes.md' }
+        lib: ${{ fromJSON(needs.libs.outputs.libs) }}
     steps:
       - name: Get latest release from npm registry
         id: get_release
