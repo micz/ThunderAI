@@ -1,4 +1,4 @@
-name: Check Tom-Select Latest Release
+name: Check Vendor Libraries Latest Releases
 
 on:
   schedule:
@@ -13,12 +13,25 @@ permissions:
 jobs:
   check-and-update:
     runs-on: ubuntu-latest
+    strategy:
+      # One library failing must not stop the others
+      fail-fast: false
+      matrix:
+        # package: the npm package name, as it appears in the VENDORS.md sources (".../npm/<package>@<version>/...")
+        #          and in the file paths libs-update.mjs filters on
+        # name:      the display name used in the PR title (kept stable: the duplicate check searches PRs by title)
+        # changelog: the library's change log, linked in the PR body
+        lib:
+          - { package: 'tom-select', name: 'Tom Select', changelog: 'https://github.com/orchidjs/tom-select/releases' }
+          - { package: 'markdown-it', name: 'markdown-it', changelog: 'https://github.com/markdown-it/markdown-it/blob/master/CHANGELOG.md' }
+          - { package: 'idb', name: 'idb', changelog: 'https://github.com/jakearchibald/idb/blob/main/CHANGELOG.md' }
     steps:
       - name: Get latest release from npm registry
         id: get_release
         run: |
           # Read npm (what the CDN serves), not GitHub releases, which can be published before npm
-          PACKAGE_TARGET="tom-select"
+          # (and some libraries, like markdown-it, publish no GitHub releases at all)
+          PACKAGE_TARGET="${{ matrix.lib.package }}"
           LATEST_VERSION=$(curl -s https://registry.npmjs.org/$PACKAGE_TARGET/latest | jq -r .version)
 
           if [ "$LATEST_VERSION" == "null" ] || [ -z "$LATEST_VERSION" ]; then
@@ -45,11 +58,17 @@ jobs:
         run: |
           LATEST_VERSION="${{ steps.get_release.outputs.version }}"
           PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
-          PR_TITLE="Update Tom Select to version ${LATEST_VERSION}"
+          LIB_NAME="${{ matrix.lib.name }}"
+          PR_TITLE="Update ${LIB_NAME} to version ${LATEST_VERSION}"
+
+          if ! grep -Eq "/npm/${PACKAGE_TARGET}@" VENDORS.md; then
+            echo "Error: no VENDORS.md source points to the npm package ${PACKAGE_TARGET}."
+            exit 1
+          fi
 
           # Skip if VENDORS.md on dev already points to the latest version (with or without the "v" prefix)
-          if grep -Eq "${PACKAGE_TARGET}@v?${LATEST_VERSION//./\\.}/" VENDORS.md; then
-            echo "Tom Select is already at version ${LATEST_VERSION} on dev. No action taken."
+          if grep -Eq "/npm/${PACKAGE_TARGET}@v?${LATEST_VERSION//./\\.}/" VENDORS.md; then
+            echo "${LIB_NAME} is already at version ${LATEST_VERSION} on dev. No action taken."
             echo "has_changes=false" >> $GITHUB_OUTPUT
             exit 0
           fi
@@ -62,8 +81,8 @@ jobs:
             exit 0
           fi
 
-          # Point every Tom Select source in VENDORS.md to the latest version
-          sed -E -i "s#${PACKAGE_TARGET}@v?[0-9][^/]*/#${PACKAGE_TARGET}@${LATEST_VERSION}/#g" VENDORS.md
+          # Point every source of the library in VENDORS.md to the latest version
+          sed -E -i "s#/npm/${PACKAGE_TARGET}@v?[0-9][^/]*/#/npm/${PACKAGE_TARGET}@${LATEST_VERSION}/#g" VENDORS.md
 
           node .github/scripts/libs-update.mjs "$PACKAGE_TARGET"
 
@@ -77,8 +96,15 @@ jobs:
         run: |
           LATEST_VERSION="${{ steps.get_release.outputs.version }}"
           PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
+          LIB_NAME="${{ matrix.lib.name }}"
+          LIB_CHANGELOG="${{ matrix.lib.changelog }}"
           PR_TITLE="${{ steps.update.outputs.pr_title }}"
           PR_BRANCH="${PACKAGE_TARGET}-update-${LATEST_VERSION}"
+
+          # The sources the library files were downloaded from, as they now stand in VENDORS.md
+          SOURCES=$(grep -E "^source:.*/npm/${PACKAGE_TARGET}@" VENDORS.md | sed -E 's/^source:[[:space:]]*//' | tr -d '\r' | sed -e 's/$/\n/')
+
+          PR_BODY=$(printf 'Update %s to version **%s**.\n\nChange log: %s\n\nVENDORS.md and the library files were updated automatically from:\n\n%s\n\nPlease review the downloaded files before merging.' "$LIB_NAME" "$LATEST_VERSION" "$LIB_CHANGELOG" "$SOURCES")
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -93,12 +119,4 @@ jobs:
             --head "$PR_BRANCH" \
             --title "$PR_TITLE" \
             --label enhancement \
-            --body "Update Tom Select to version **${LATEST_VERSION}**.
-
-          VENDORS.md and the library files were updated automatically from:
-
-          https://cdn.jsdelivr.net/npm/${PACKAGE_TARGET}@${LATEST_VERSION}/dist/js/tom-select.base.js
-
-          https://cdn.jsdelivr.net/npm/${PACKAGE_TARGET}@${LATEST_VERSION}/dist/css/tom-select.default.min.css
-
-          Please review the downloaded files before merging."
+            --body "$PR_BODY"

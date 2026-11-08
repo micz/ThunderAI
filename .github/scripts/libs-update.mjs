@@ -33,7 +33,7 @@ while ((match = entryRegex.exec(content)) !== null) {
 
 // --- Filter the entries of the libraries updated automatically ---
 // An optional argument limits the update to one of them (e.g. `node libs-update.mjs tom-select`)
-const LIBS = process.argv[2] ? [process.argv[2]] : ['tom-select', 'markdown-it'];
+const LIBS = process.argv[2] ? [process.argv[2]] : ['tom-select', 'markdown-it', 'idb'];
 const filteredEntries = entries.filter(e => LIBS.some(lib => e.file.toLowerCase().includes(lib)));
 
 if (filteredEntries.length === 0) {
