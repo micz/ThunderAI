@@ -1,6 +1,10 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
+<h2>Version 5.3.0 - ??/??/2026</h2>
+<ul>
+  <li>...</li>
+</ul>
 <h2>Version 5.2.0 - 08/11/2026</h2>
 <ul>
   <li>Added support for the separate ThunderAI Privacy add-on, which masks personal data locally before it is sent to the AI provider. Enable it with the new <i>Use ThunderAI Privacy</i> advanced option. It works with API connections only and requires Thunderbird 153 or later, 64-bit.</li>
