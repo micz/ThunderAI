@@ -2,7 +2,7 @@
 
 *Use ChatGPT, Google Gemini, Claude or Ollama to enhance your emails!*
 
-[![Latest release](https://img.shields.io/github/v/release/micz/ThunderAI?label=release&color=blue)](https://github.com/micz/ThunderAI/releases/latest)
+[![Latest release](https://micz.it/badges/thunderai/release.svg)](https://github.com/micz/ThunderAI/releases/latest)
 [![Latest pre-release](https://micz.it/badges/thunderai/prerelease.svg)](https://github.com/micz/ThunderAI/releases)
 [![Thunderbird Add-ons](https://img.shields.io/badge/Thunderbird%20Add--ons-install-blue?logo=thunderbird)](https://addons.thunderbird.net/thunderbird/addon/thunderai/)
 [![Thunderbird 140.0+](https://img.shields.io/badge/Thunderbird-140.0%2B-informational?logo=thunderbird)](https://www.thunderbird.net/)
