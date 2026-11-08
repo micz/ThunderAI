@@ -174,7 +174,10 @@ jobs:
             echo
             cat changes.html
             echo
-            if [ -s old.txt ] || [ -s others_old.tsv ] || [ -s new.txt ] || [ -s others_new.tsv ]; then
+            # Empty sections are left out: "Contributors" only with returning contributors,
+            # "New contributors" only with new ones (a ## section of its own when alone)
+            new_level="###"
+            if [ -s old.txt ] || [ -s others_old.tsv ]; then
               echo "<br>"
               echo
               echo "## Contributors"
@@ -188,19 +191,25 @@ jobs:
                 echo "* $name$(prs_of "email:$email")"
               done < others_old.tsv
               echo
-              if [ -s new.txt ] || [ -s others_new.tsv ]; then
-                echo "<br>"
-                echo
-                echo "### New contributors"
-                echo
-                while read -r u; do
-                  echo "* @$u made their first contribution$(prs_of "$u")"
-                done < new.txt
-                while IFS=$'\t' read -r name email; do
-                  echo "* $name made their first contribution$(prs_of "email:$email")"
-                done < others_new.tsv
+            else
+              new_level="##"
+            fi
+            if [ -s new.txt ] || [ -s others_new.tsv ]; then
+              echo "<br>"
+              echo
+              echo "$new_level New contributors"
+              echo
+              if [ "$new_level" = "##" ]; then
+                echo "Thanks to everyone who contributed to this release:"
                 echo
               fi
+              while read -r u; do
+                echo "* @$u made their first contribution$(prs_of "$u")"
+              done < new.txt
+              while IFS=$'\t' read -r name email; do
+                echo "* $name made their first contribution$(prs_of "email:$email")"
+              done < others_new.tsv
+              echo
             fi
             if [ -s translators.md ]; then
               echo "<br>"
