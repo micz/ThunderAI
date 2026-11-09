@@ -876,7 +876,9 @@ The prompt asks for them, as it does for attendees; there is no option. `calenda
 reads the saved template. An edited prompt asks for a field by naming it: `"categories"` or
 `{%calendar_categories%}`, `"links"` or `{%mail_links%}`. The shipped text, compared with
 `prompt_get_calendar_event_full_text` in the current language, asks for both; so does the saved copy
-of it that any save of a special prompt writes.
+of that same text that any save of a special prompt writes. A copy saved before that translation last
+changed no longer matches: like any saved prompt it is never rewritten, so it counts as an edited
+prompt naming neither field until the user resets it.
 
 For each field asked, `appendCalendarMetadataStatement()` appends its rule
 (`prompt_calendar_categories_format`, `prompt_calendar_links_format`) and, unless the template holds

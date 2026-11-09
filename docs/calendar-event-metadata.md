@@ -68,6 +68,9 @@ decides, as it does for `attendees`.
 - A prompt you edited asks for what it names: `{%calendar_categories%}` or a
   `"categories"` field, `{%mail_links%}` or a `"links"` field. Leave one out and the
   event does not get it, and its data is not sent.
+- A saved prompt is never rewritten. If yours was saved by an earlier version whose
+  shipped text has changed since, it counts as edited and gets neither: use **Reset
+  to default** once.
 
 When a field is asked, ThunderAI tells the AI that it must fill it: at least one
 existing category, the closest one even if the fit is approximate, and every
