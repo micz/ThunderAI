@@ -648,5 +648,8 @@
     },
     "AddTags_excl_list_infoline": {
         "message": "Dit is een lijst met tags die niet aan e-mails mogen worden toegevoegd."
+    },
+    "prompt_spamfilter": {
+        "message": "Analyseer voor spam"
     }
 }
