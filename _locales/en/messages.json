@@ -379,17 +379,453 @@
   },
   "prefs_storage_clear_button": {
     "message": "Clear Storage",
-    "description": "Button to clear all stored message data"
+    "description": "Storage management page: button deleting all the saved data (summaries, spam reports, translations)."
   },
   "prefs_storage_clear_confirm": {
     "message": "Are you sure you want to clear all stored data (summaries, spam reports, translations)? This action cannot be undone.",
-    "description": "Confirmation dialog for clearing storage"
+    "description": "Storage management page: confirmation of the button deleting all the saved data."
   },
   "prefs_storage_clear_done": {
     "message": "$COUNT$ records removed.",
-    "description": "Message shown after storage is cleared",
+    "description": "Storage management page: result of the deletion of all the saved data.",
     "placeholders": {
       "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "storage_migration_in_progress": {
+    "message": "ThunderAI is moving the saved spam reports, summaries and translations to a new storage. Reopen this page in a few moments to see them.",
+    "description": "Options page, spam filter page and storage management page: notice shown while the saved data is being moved to the new storage after an update."
+  },
+  "storage_migration_failed": {
+    "message": "The spam reports, summaries and translations saved by the previous version could not be moved to the new storage. ThunderAI will try again at the next start.",
+    "description": "Options page, spam filter page and storage management page: notice shown when moving the saved data to the new storage after an update failed; it is retried at the next start of Thunderbird."
+  },
+  "prefs_storage_manage_button": {
+    "message": "Manage saved data…",
+    "description": "Options page, advanced section: button next to the storage size that opens the storage management page in a new tab."
+  },
+  "storage_page_title": {
+    "message": "Saved data",
+    "description": "Storage management page: page title (also the browser tab title, after 'ThunderAI - ')."
+  },
+  "storage_page_info": {
+    "message": "The spam reports, summaries and translations ThunderAI saved for your messages, the rules that clean them up automatically, and the tools to delete them.",
+    "description": "Storage management page: subtitle under the page title."
+  },
+  "storage_overview_title": {
+    "message": "Overview",
+    "description": "Storage management page: title of the section with the counts and sizes of the saved data."
+  },
+  "storage_refresh": {
+    "message": "Refresh",
+    "description": "Storage management page: button that reads the overview and the list again."
+  },
+  "storage_col_type": {
+    "message": "Type",
+    "description": "Storage management page: table column, the type of saved data (summaries, translations, spam reports)."
+  },
+  "storage_col_entries": {
+    "message": "Entries",
+    "description": "Storage management page, overview table: column with the number of saved entries."
+  },
+  "storage_col_errors": {
+    "message": "With an error",
+    "description": "Storage management page, overview table: column with the number of saved entries that hold an error instead of a result."
+  },
+  "storage_col_size": {
+    "message": "Estimated size",
+    "description": "Storage management page, overview table: column with the estimated space taken by the saved entries."
+  },
+  "storage_col_oldest": {
+    "message": "Oldest entry",
+    "description": "Storage management page, overview table: column with the date of the oldest saved entry."
+  },
+  "storage_col_newest": {
+    "message": "Newest entry",
+    "description": "Storage management page, overview table: column with the date of the newest saved entry."
+  },
+  "storage_col_saved": {
+    "message": "Saved on",
+    "description": "Storage management page, entry list: column with the date the entry was saved."
+  },
+  "storage_col_status": {
+    "message": "Status",
+    "description": "Storage management page, entry list: column saying whether the entry holds a result or an error."
+  },
+  "storage_col_language": {
+    "message": "Language",
+    "description": "Storage management page, entry list of the translations: column with the target language."
+  },
+  "storage_col_actions": {
+    "message": "Actions",
+    "description": "Storage management page, entry list: column with the Open and Delete buttons of each entry."
+  },
+  "storage_total": {
+    "message": "Total",
+    "description": "Storage management page, overview table: label of the total row."
+  },
+  "storage_type_summary": {
+    "message": "Summaries",
+    "description": "Storage management page: the saved summaries (overview row, rule group, list type, counts)."
+  },
+  "storage_type_translation": {
+    "message": "Translations",
+    "description": "Storage management page: the saved translations (overview row, rule group, list type, counts)."
+  },
+  "storage_type_spam": {
+    "message": "Spam reports",
+    "description": "Storage management page: the saved spam reports (overview row, rule group, list type, counts)."
+  },
+  "storage_count_item": {
+    "message": "$TYPE$: $COUNT$",
+    "description": "Storage management page: one item of a list of counts per type, e.g. 'Summaries: 3'. The items are joined with commas.",
+    "placeholders": {
+      "type": {
+        "content": "$1"
+      },
+      "count": {
+        "content": "$2"
+      }
+    }
+  },
+  "storage_disk_note": {
+    "message": "The disk space actually used is about twice the estimated size: every entry is also kept in a durable copy, from which the data is rebuilt if Thunderbird deletes the database.",
+    "description": "Storage management page: note under the overview table."
+  },
+  "storage_last_cleanup": {
+    "message": "Last automatic cleanup: $DATE$, entries removed: $REMOVED$.",
+    "description": "Storage management page: date of the last automatic cleanup and what it removed. $REMOVED$ is a list such as 'Summaries: 3, Translations: 0, Spam reports: 5'.",
+    "placeholders": {
+      "date": {
+        "content": "$1"
+      },
+      "removed": {
+        "content": "$2"
+      }
+    }
+  },
+  "storage_last_cleanup_never": {
+    "message": "Last automatic cleanup: never.",
+    "description": "Storage management page: shown when the automatic cleanup has never run."
+  },
+  "storage_rules_title": {
+    "message": "Retention rules",
+    "description": "Storage management page: title of the section with the limits of the saved data."
+  },
+  "storage_rules_info": {
+    "message": "The cleanup deletes, for each type, first the entries with an error older than their maximum age, then the entries older than the maximum age, then the oldest entries beyond the maximum number.",
+    "description": "Storage management page: explanation of the retention rules and of their order."
+  },
+  "storage_rule_max_age": {
+    "message": "Maximum age (days)",
+    "description": "Storage management page, retention rules: field label, entries older than this are deleted by the cleanup."
+  },
+  "storage_rule_max_entries": {
+    "message": "Maximum number of entries",
+    "description": "Storage management page, retention rules: field label, the oldest entries beyond this number are deleted by the cleanup."
+  },
+  "storage_rule_error_max_age": {
+    "message": "Maximum age of the entries with an error (days)",
+    "description": "Storage management page, retention rules: field label, the entries holding an error older than this are deleted by the cleanup."
+  },
+  "storage_rule_zero_hint": {
+    "message": "0 = no limit",
+    "description": "Storage management page, retention rules: hint under the fields."
+  },
+  "storage_cleanup_auto": {
+    "message": "Automatic cleanup",
+    "description": "Storage management page, retention rules: switch that turns the automatic cleanup on and off."
+  },
+  "storage_cleanup_auto_info": {
+    "message": "Applies the rules automatically: at startup if the last cleanup is more than 24 hours old, otherwise 2 hours after startup, then every 24 hours.",
+    "description": "Storage management page, retention rules: description of the automatic cleanup switch."
+  },
+  "storage_rules_invalid": {
+    "message": "Every limit must be a whole number, 0 or more.",
+    "description": "Storage management page, retention rules: error shown when a field holds an invalid value; nothing is saved."
+  },
+  "storage_rules_saved": {
+    "message": "Rules saved.",
+    "description": "Storage management page, retention rules: shown after saving the rules."
+  },
+  "storage_rules_save_confirm": {
+    "message": "With these rules the next automatic cleanup will delete $COUNT$ saved entries ($DETAIL$). Save them anyway?",
+    "description": "Storage management page, retention rules: confirmation asked on Save when the new rules would delete saved entries. $DETAIL$ is a list such as 'Summaries: 3, Translations: 0, Spam reports: 5'.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "detail": {
+        "content": "$2"
+      }
+    }
+  },
+  "storage_restore_defaults": {
+    "message": "Restore defaults",
+    "description": "Storage management page, retention rules: button that puts the default values in the fields (saved with Save)."
+  },
+  "storage_preview": {
+    "message": "Preview",
+    "description": "Storage management page, retention rules: button that counts what the rules in the fields would delete now, without deleting anything."
+  },
+  "storage_preview_result": {
+    "message": "These rules would delete now: $DETAIL$.",
+    "description": "Storage management page: result of the Preview button. $DETAIL$ is a list such as 'Summaries: 3, Translations: 0, Spam reports: 5'.",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "storage_apply_now": {
+    "message": "Apply rules now",
+    "description": "Storage management page, retention rules: button that runs the cleanup at once with the saved rules."
+  },
+  "storage_apply_confirm": {
+    "message": "Apply the saved rules now? The entries they cover are deleted. This action cannot be undone.",
+    "description": "Storage management page: confirmation of the 'Apply rules now' button."
+  },
+  "storage_actions_title": {
+    "message": "Delete saved data",
+    "description": "Storage management page: title of the section with the manual deletions."
+  },
+  "storage_delete_summary": {
+    "message": "Delete all the summaries",
+    "description": "Storage management page: button deleting every saved summary."
+  },
+  "storage_delete_translation": {
+    "message": "Delete all the translations",
+    "description": "Storage management page: button deleting every saved translation."
+  },
+  "storage_delete_spam": {
+    "message": "Delete all the spam reports",
+    "description": "Storage management page: button deleting every saved spam report."
+  },
+  "storage_delete_summary_confirm": {
+    "message": "Delete all the saved summaries? This action cannot be undone.",
+    "description": "Storage management page: confirmation of the 'Delete all the summaries' button."
+  },
+  "storage_delete_translation_confirm": {
+    "message": "Delete all the saved translations? This action cannot be undone.",
+    "description": "Storage management page: confirmation of the 'Delete all the translations' button."
+  },
+  "storage_delete_spam_confirm": {
+    "message": "Delete all the saved spam reports? This action cannot be undone.",
+    "description": "Storage management page: confirmation of the 'Delete all the spam reports' button."
+  },
+  "storage_delete_errors": {
+    "message": "Delete the entries with an error",
+    "description": "Storage management page: button deleting every saved entry that holds an error, of every type."
+  },
+  "storage_delete_errors_confirm": {
+    "message": "Delete every saved entry that holds an error? This action cannot be undone.",
+    "description": "Storage management page: confirmation of the 'Delete the entries with an error' button."
+  },
+  "storage_delete_older_label": {
+    "message": "Entries older than (days):",
+    "description": "Storage management page: label of the number of days used by the 'Delete' button next to it."
+  },
+  "storage_delete_older": {
+    "message": "Delete",
+    "description": "Storage management page: button deleting every saved entry older than the number of days next to it."
+  },
+  "storage_delete_older_confirm": {
+    "message": "Delete every saved entry older than $DAYS$ days? This action cannot be undone.",
+    "description": "Storage management page: confirmation of the deletion of the entries older than a number of days.",
+    "placeholders": {
+      "days": {
+        "content": "$1"
+      }
+    }
+  },
+  "storage_days_invalid": {
+    "message": "Enter a whole number of days, 1 or more.",
+    "description": "Storage management page: error shown when the number of days of the deletion is invalid."
+  },
+  "storage_removed_result": {
+    "message": "Entries deleted: $DETAIL$.",
+    "description": "Storage management page: result of a deletion. $DETAIL$ is a list such as 'Summaries: 3, Translations: 0, Spam reports: 5'.",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "storage_action_error": {
+    "message": "The operation failed: $ERROR$",
+    "description": "Storage management page: shown when an action fails. $ERROR$ is the technical error message.",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "storage_action_error_partial": {
+    "message": "The operation stopped with an error after deleting $DETAIL$: $ERROR$",
+    "description": "Storage management page: shown when a deletion fails after having already deleted some entries (it works in small groups). $DETAIL$ is a list such as 'Summaries: 3, Translations: 0, Spam reports: 5'; $ERROR$ is the technical error message.",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      },
+      "error": {
+        "content": "$2"
+      }
+    }
+  },
+  "storage_realign": {
+    "message": "Realign with the durable copy",
+    "description": "Storage management page: button that realigns the database with the durable copy of the saved data."
+  },
+  "storage_realign_info": {
+    "message": "Restores the entries missing from the database and removes the ones deleted from the durable copy. Useful if the overview does not match what you expect.",
+    "description": "Storage management page: explanation next to the 'Realign with the durable copy' button."
+  },
+  "storage_realign_confirm": {
+    "message": "Realign the database with the durable copy of the saved data?",
+    "description": "Storage management page: confirmation of the realignment."
+  },
+  "storage_realign_done": {
+    "message": "Realigned: $DETAIL$.",
+    "description": "Storage management page: result of the realignment. $DETAIL$ is a list of 'storage_realign_item' joined with commas.",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "storage_realign_item": {
+    "message": "$TYPE$ $RESTORED$ restored, $REMOVED$ removed",
+    "description": "Storage management page: one item of the result of the realignment, e.g. 'Summaries 2 restored, 0 removed'.",
+    "placeholders": {
+      "type": {
+        "content": "$1"
+      },
+      "restored": {
+        "content": "$2"
+      },
+      "removed": {
+        "content": "$3"
+      }
+    }
+  },
+  "storage_no_answer": {
+    "message": "no answer from ThunderAI",
+    "description": "Storage management page: error detail when the background did not answer the realignment request."
+  },
+  "storage_entries_title": {
+    "message": "Saved entries",
+    "description": "Storage management page: title of the list of the saved entries."
+  },
+  "storage_no_entries": {
+    "message": "No saved entries.",
+    "description": "Storage management page, entry list: shown when the selected type has no entry."
+  },
+  "storage_status_ok": {
+    "message": "OK",
+    "description": "Storage management page, entry list: status of an entry holding a result."
+  },
+  "storage_status_error": {
+    "message": "Error",
+    "description": "Storage management page, entry list: status of an entry holding an error."
+  },
+  "storage_open_message": {
+    "message": "Open",
+    "description": "Storage management page, entry list: button opening the original message."
+  },
+  "storage_delete_entry": {
+    "message": "Delete",
+    "description": "Storage management page, entry list: button deleting one entry."
+  },
+  "storage_delete_entry_confirm": {
+    "message": "Delete this saved entry? This action cannot be undone.",
+    "description": "Storage management page: confirmation of the deletion of one entry."
+  },
+  "storage_entry_deleted": {
+    "message": "Entry deleted.",
+    "description": "Storage management page: shown after deleting one entry."
+  },
+  "storage_message_not_found": {
+    "message": "The original message was not found: it may have been deleted, or be in a folder that is not synchronized or indexed.",
+    "description": "Storage management page: shown when the message of an entry cannot be opened because it was not found."
+  },
+  "storage_orphans_title": {
+    "message": "Entries without a message",
+    "description": "Storage management page: title of the section that finds the entries whose message no longer exists."
+  },
+  "storage_orphans_info": {
+    "message": "Looks up the message of every saved entry, to find the entries whose message no longer exists and to complete the subject, sender and date of the entries that miss them. With many entries this can take a long time; you can stop it at any moment.",
+    "description": "Storage management page: explanation of the search for entries without a message."
+  },
+  "storage_orphans_confirm": {
+    "message": "The search looks up every message, one at a time: with many saved entries it can take a long time. Start it?",
+    "description": "Storage management page: warning shown before starting the search for entries without a message."
+  },
+  "storage_orphans_start": {
+    "message": "Start the search",
+    "description": "Storage management page: button starting the search for entries without a message."
+  },
+  "storage_orphans_stop": {
+    "message": "Stop",
+    "description": "Storage management page: button stopping the search for entries without a message."
+  },
+  "storage_orphans_progress": {
+    "message": "$DONE$ of $TOTAL$ messages checked",
+    "description": "Storage management page: progress of the search for entries without a message.",
+    "placeholders": {
+      "done": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "storage_orphans_stopped": {
+    "message": "Search stopped.",
+    "description": "Storage management page: shown when the search was stopped before the end."
+  },
+  "storage_orphans_found": {
+    "message": "$COUNT$ entries whose message was not found.",
+    "description": "Storage management page: result of the search for entries without a message.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "storage_orphans_filled": {
+    "message": "$COUNT$ entries completed with the subject, sender and date of their message.",
+    "description": "Storage management page: how many entries got their missing message details during the search.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "storage_orphans_note": {
+    "message": "This list is indicative: the messages of folders that are not synchronized or not indexed may wrongly appear as missing.",
+    "description": "Storage management page: note above the list of entries whose message was not found."
+  },
+  "storage_orphans_delete": {
+    "message": "Delete these entries",
+    "description": "Storage management page: button deleting every entry whose message was not found."
+  },
+  "storage_orphans_delete_confirm": {
+    "message": "Delete the $COUNT$ entries whose message was not found? This action cannot be undone.",
+    "description": "Storage management page: confirmation of the deletion of the entries without a message.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "storage_save_failed": {
+    "message": "This result could not be saved: $ERROR$",
+    "description": "Message display: red notice at the top of a summary, translation or spam report panel when the result is shown but saving it failed. $ERROR$ is the technical error message.",
+    "placeholders": {
+      "error": {
         "content": "$1"
       }
     }
@@ -425,6 +861,10 @@
   "prefs_shortcut_label": {
     "message": "Open the ThunderAI menu with",
     "description": "Label preceding the keyboard shortcut keys, at the bottom of the options page."
+  },
+  "prefs_shortcut_change_link": {
+    "message": "Learn how to change the shortcut",
+    "description": "Link below the keyboard shortcut strip, at the bottom of the options page, to a web page explaining how to change Thunderbird add-on keyboard shortcuts."
   },
   "prefs_disclaimer_short": {
     "message": "LLM models can generate incorrect information, and your data may be used by the provider to train new models.",
@@ -1912,8 +2352,39 @@
     "message": "The spam threshold is zero! You will mark all mails as spam!",
     "description": "Spam filter page: warning shown next to the spam threshold field when the value is set to 0."
   },
+  "spamfilter_report_previous": {
+    "message": "Previous",
+    "description": "Storage management page, entry list: button showing the previous (newer) page of entries."
+  },
+  "spamfilter_report_next": {
+    "message": "Next",
+    "description": "Storage management page, entry list: button showing the next (older) page of entries."
+  },
+  "spamfilter_report_page_label": {
+    "message": "$FROM$–$TO$ of $TOTAL$",
+    "description": "Storage management page, entry list: which entries the table shows, e.g. '1–50 of 1234'.",
+    "placeholders": {
+      "from": {
+        "content": "$1"
+      },
+      "to": {
+        "content": "$2"
+      },
+      "total": {
+        "content": "$3"
+      }
+    }
+  },
+  "spamfilter_report_newest_info": {
+    "message": "The 20 most recent reports.",
+    "description": "Spam filter page: text under the spam log, which shows only the 20 most recent reports."
+  },
+  "spamfilter_report_manage_link": {
+    "message": "See all the saved reports",
+    "description": "Spam filter page: link under the spam log opening the storage management page on the list of the spam reports, in a new tab."
+  },
   "spamfilter_no_reports": {
-    "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports.",
+    "message": "No message has been screened for spam yet. Here you'll find the list of the spam reports.",
     "description": "Spam filter page: text shown in the empty spam reports table before any message has been checked."
   },
   "SpamFilter_skip_addresses_title": {

@@ -56,8 +56,9 @@ by their Save buttons),
 `spamfilter_skip_addressbook` (a checkbox whose change handler requests the `addressBooks`
 permission). They opt in explicitly with `data-mzta-pref="<preference key>"`.
 The other permission-gated switches (`add_tags`, `spamfilter`,
-`get_calendar_event_from_clipboard`) stay `.option-input` for `restoreOptions()`, and their
-page's `saveOptions()` skips them instead (`isPermissionGatedPref()`); all four are saved by
+`get_calendar_event_from_clipboard`) stay `.option-input` for
+`restoreOptions()`, and their page's `saveOptions()` skips them instead
+(`isPermissionGatedPref()`); all four are saved by
 `bindPermissionToggle()` (`pages/_lib/permission-toggle.js`), which also puts back a locked
 switch's change with no prompt and no write. When the policy locks one of them **on** while
 Thunderbird has not granted its permissions, `showLockedPermissionWarning()` appends an amber

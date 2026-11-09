@@ -156,7 +156,7 @@ k.test('shortcut-special', 'the popup running a special prompt (shortcut_do_prom
     ctx.m.tab(7).displayed = h.id;
     await ctx.ctl.dispatchMessage({ command: 'shortcut_do_prompt', tabId: 7, promptId: 'prompt_summarize' }, SENDERS.popup);
     for (let i = 0; i < 60; i++) await new Promise(r => setImmediate(r));
-    assert.ok(record(ctx, 'sc1@x')?.summary, 'summarized');
+    assert.ok((await record(ctx, 'sc1@x'))?.summary, 'summarized');
     assert.ok(ctx.m.sentTo(7, 'showSummary').length > 0, 'inline, in that tab');
 });
 

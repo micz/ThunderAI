@@ -11,10 +11,18 @@
  *  It models the WebExtension APIs as such. storage.managed is one of them: its content is the
  *  `policy` option below, the one place the core knows that area exists (an area that needs
  *  more APIs adds them from its plugin, see ./plugins.mjs).
+ *
+ *  Beside the browser.* APIs, a context gets the web platform storage an extension page has:
+ *  IndexedDB (indexedDB and the IDB* classes on globalThis, fake-indexeddb, one fresh set of
+ *  databases per process, see ./indexeddb.mjs) and navigator.locks (Node's own, or a stand-in).
  */
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import {
+    installIndexedDB,
+    installLocks
+} from './indexeddb.mjs';
 
 export const EXT_ORIGIN = 'moz-extension://00000000-test-uuid/';
 export const BACKGROUND_URL = EXT_ORIGIN + '_generated_background_page.html';
@@ -235,6 +243,8 @@ export function installBrowserMock(opts = {}) {
 
     globalThis.browser = browser;
     globalThis.messenger = browser;
+    installIndexedDB(globalThis);
+    installLocks(globalThis.navigator);
 
     return {
         browser,

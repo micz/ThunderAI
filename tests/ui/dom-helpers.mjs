@@ -5,6 +5,36 @@
  *  No jsdom import here: the page's globals are already installed by openPage().
  */
 
+import { seedIndexedDB } from '../helpers/core/indexeddb.mjs';
+
+/**
+ * Fill the per-message data storage before openPage(), as the background would have: the database
+ * of spec 01 "Per-Message Data Storage" (thunderai-message-data, version 1, the stores spam /
+ * summary / translation keyed on messageId, the createdAt, size and failed_createdAt indexes)
+ * with the given records, {spam: [...], summary: [...], translation: [...]}. A record is the stored
+ * shape ({messageId, createdAt, subject, from, message_date, ...its fields}); its failed is computed
+ * when missing (1 for a summary or translation with error, a spam report with spamValue -999),
+ * then its size (the bytes of its JSON without size). The page opens the database at version 1 and
+ * finds them. Call it once per file, before openPage(): the databases live in the process.
+ */
+export async function seedMessageData(records = {}) {
+    const index = (name, keyPath = name) => ({ name, keyPath, unique: false, multiEntry: false });
+    const isError = (store, r) => (store === 'spam' ? Number(r.spamValue) === -999 : !!r.error);
+    const withFailed = (store, r) => ('failed' in r ? r : { ...r, failed: isError(store, r) ? 1 : 0 });
+    const withSize = r => ('size' in r ? r : { ...r, size: new TextEncoder().encode(JSON.stringify(r)).byteLength });
+    await seedIndexedDB([{
+        name: 'thunderai-message-data',
+        version: 1,
+        stores: ['spam', 'summary', 'translation'].map(name => ({
+            name,
+            keyPath: 'messageId',
+            autoIncrement: false,
+            indexes: [index('createdAt'), index('size'), index('failed_createdAt', ['failed', 'createdAt'])],
+            records: (records[name] || []).map(r => ({ key: r.messageId, value: withSize(withFailed(name, r)) })),
+        })),
+    }]);
+}
+
 /**
  * Script the network for ONE DOM file. The harness's fetch stub records every call and rejects;
  * the provider clients look `fetch` up on the global object at call time (fetchWithRetry() in

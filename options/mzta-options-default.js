@@ -295,6 +295,19 @@ export const prefs_default = {
     spamfilter_skip_addressbook: false,
     spamfilter_show_msg_panel: true,
     spamfilter_only_inbox: false,   // If true, auto spam filter runs only on inbox folders
+    // Per-message data storage (js/mzta-storage.js), one set per type, set on the storage
+    // management page (pages/storage/). Every result is saved; the cleanup removes:
+    //   *_storage_max_entries / *_storage_max_age_days: the oldest records beyond this count /
+    //     older than this age; 0 = no limit
+    //   *_storage_error_max_age_days: the records holding an error older than this age; 0 = no limit
+    spamfilter_storage_max_entries: 0,
+    spamfilter_storage_max_age_days: 0,
+    spamfilter_storage_error_max_age_days: 90,
+    message_storage_cleanup_auto: true,   // the scheduled cleanup of the per-message data (every 24 hours)
+    // Policy-only, no control in any page: the records a bulk removal of the per-message data
+    // handles per lot (it releases the storage lock between two lots, so the writes of the
+    // background are not held up for the whole operation). 1 to 10000.
+    message_storage_batch_size: 100,
     summarize: false,
     summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     summarize_display_mode: 'inline',    // 'inline' or 'webchat'
@@ -305,10 +318,16 @@ export const prefs_default = {
     summarize_lang: '',                  // summary language when summarize_force_lang is on, fallback on default_chatgpt_lang
     summarize_auto_senders: false,       // auto-summarize emails coming from the addresses in the list below
     summarize_auto_senders_list: [],     // sender addresses or domain patterns ("@domain.com", "*@domain.com")
+    summarize_storage_max_entries: 0,    // see spamfilter_storage_max_entries
+    summarize_storage_max_age_days: 0,
+    summarize_storage_error_max_age_days: 90,
     translate: true,
     translate_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     translate_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     translate_lang: '',                  // target language, fallback on default_chatgpt_lang
     translate_exclude_lang: '',          // languages to do not translate
+    translate_storage_max_entries: 0,    // see spamfilter_storage_max_entries
+    translate_storage_max_age_days: 0,
+    translate_storage_error_max_age_days: 90,
     ...generated_prefs
 }

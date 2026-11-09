@@ -33,7 +33,7 @@ const MESSAGES = {
 };
 
 const ctx = await openBackgroundDocument({
-    modules: ['js/mzta-utils.js', 'js/mzta-utils-prompt.js'],
+    modules: ['js/mzta-utils.js', 'js/mzta-utils-prompt.js', 'js/mzta-prompts.js'],
     apis(browser) {
         browser.messages.listInlineTextParts = async (messageId) => {
             if (!Object.hasOwn(MESSAGES, messageId)) throw new Error('message ' + messageId + ' not found');
@@ -49,6 +49,7 @@ const {
     stripHtmlKeepLines,
 } = ctx.imports['js/mzta-utils.js'];
 const { taPromptUtils } = ctx.imports['js/mzta-utils-prompt.js'];
+const { saveSpecialPromptTexts } = ctx.imports['js/mzta-prompts.js'];
 const k = composeTests('09');
 
 const S_INJECT = 'spec 01 "`htmlBodyToPlainText()` injects the line structure before reading it"';
@@ -58,6 +59,7 @@ const S_PARTS = 'spec 01 "Where the body comes from — `listInlineTextParts()`,
 const S_TEXT_HTML = 'spec 01 "The text/HTML rule: stripped from the TEXT, never from the HTML"';
 const S_BODY = 'spec 03 "Newline contract of the body placeholders"';
 const S_PLAIN = 'spec 03 "`mail_text_body` vs `mail_plain_text_part`"';
+const S_TRANSLATE = 'spec 02 "Translate: Inline-Only Prompt System", spec 03 "Who supplies the values"';
 const S_WRITE = 'spec 01 "Writing into a plain text compose window"';
 const S_PICKER = 'spec 07 "Into a plain text compose window"';
 
@@ -195,6 +197,28 @@ k.test('placeholder-no-plain-fallback', S_PLAIN, 'an html-only mail has no plain
     const m = await getMailInlineTextParts(4);
     assert.equal(m.text, '');
     assert.equal(htmlBodyToPlainText(m.html), 'Only html');
+});
+
+// --- the body placeholders in the translation prompt --------------------------------------
+
+/** buildTranslationPrompt() on message `messageId` with `text` as the user's translation prompt. */
+async function translationPrompt(messageId, text) {
+    await saveSpecialPromptTexts({ prompt_translate_this: text });
+    const { promptText } = await taPromptUtils.buildTranslationPrompt({ headers: { subject: ['Subj'] } }, messageId);
+    return promptText;
+}
+
+k.test('translate-text-body', S_TRANSLATE, '{%mail_text_body%} in the translation prompt is the body as text, as in the other paths', async () => {
+    assert.equal(await translationPrompt(1, 'S<{%mail_subject%}>B<{%mail_text_body%}>'), 'S<Subj>B<Item Qty\nBook 2>');
+    assert.equal(await translationPrompt(2, 'B<{%mail_text_body%}>'), 'B<first line\nsecond line\nthird>');
+});
+
+k.test('translate-text-body-limit', S_TRANSLATE, '{%mail_text_body:N%} is cut to N characters in the translation prompt too', async () => {
+    assert.equal(await translationPrompt(2, 'B<{%mail_text_body:5%}>F<{%mail_text_body%}>'), 'B<first [...]>F<first line\nsecond line\nthird>');
+});
+
+k.test('translate-or-selected', S_TRANSLATE, '{%mail_text_body_or_selected%} has no selection in a translation: it is the body, its limit applies', async () => {
+    assert.equal(await translationPrompt(4, 'B<{%mail_text_body_or_selected%}>L<{%mail_text_body_or_selected:4%}>'), 'B<Only html>L<Only [...]>');
 });
 
 // --- stripHtmlKeepLines(): the insertion side ---------------------------------------------

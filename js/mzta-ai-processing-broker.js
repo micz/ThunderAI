@@ -338,8 +338,10 @@ export function createAIProcessingBroker() {
         if (sender.id !== AI_PROCESSOR_ID) {
             return Promise.resolve({ ok: false });
         }
+        // The protocol of this build goes back, so a companion built for another one
+        // can tell which side is the old one.
         if (message.protocol !== AI_PROCESSING_PROTOCOL) {
-            return Promise.resolve({ ok: false });
+            return Promise.resolve({ ok: false, protocol: AI_PROCESSING_PROTOCOL });
         }
         if (message.action === 'aiProcessing.getSetting') {
             return ready.then(settingState).then(state => ({ ok: true, protocol: AI_PROCESSING_PROTOCOL, ...state }));

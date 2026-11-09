@@ -23,7 +23,7 @@ Paths below are relative to `tests/`.
 node --test "tests/static/*.test.mjs"     # this area only, from the repository root
 ```
 
-Level 1 only: nothing to install, no jsdom, no network, and nothing is written anywhere. The
+Level 1 only (after `npm ci`, see [`../README.md`](../README.md)): no jsdom, no network, and nothing is written anywhere. The
 area imports only `helpers/core/` (never the managed layer in `helpers/*.mjs`) and has no
 plugin, so it runs the same on a branch without the managed area. The whole area takes about a
 second: each file is read once per process and its token stream is shared by every check of

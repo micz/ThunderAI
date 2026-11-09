@@ -60,8 +60,8 @@ k.test('selection-from-tab', 'the messages come from the clicked tab\'s selectio
     reset();
     await click('prompt_summarize', 8, { tabSel: [H.m2], infoSel: [H.m1], displayed: H.m2 });
     assert.deepEqual(summarized(), ['m2@x']);
-    assert.ok(record(ctx, 'm2@x').summary);
-    assert.equal(record(ctx, 'm1@x'), null, 'the message of the other selection is not touched');
+    assert.ok((await record(ctx, 'm2@x')).summary);
+    assert.equal((await record(ctx, 'm1@x')), null, 'the message of the other selection is not touched');
 });
 
 k.test('ui-tab-is-clicked-tab', 'the panels go to the clicked tab, not to the active tab of another window', () => {
@@ -80,7 +80,7 @@ k.test('selection-fallback', 'when the tab selection cannot be read (a message w
 k.test('inline-other-displayed', 'the tab displays another message: no panel is drawn, the summary goes to the cache', async () => {
     reset();
     await click('prompt_summarize', 7, { tabSel: [H.m4], displayed: H.m1 });
-    assert.ok(record(ctx, 'm4@x').summary);
+    assert.ok((await record(ctx, 'm4@x')).summary);
     assert.deepEqual(ctx.m.sentTo(7).filter(c => c.headerMessageId === 'm4@x' || c.data?.headerMessageId === 'm4@x'), []);
     assert.equal(ctx.m.windows.length, 0, 'no chat window');
 });
@@ -116,7 +116,7 @@ k.test('several-cap', 'more messages than summarize_max_messages: the run is blo
 k.test('translate-ui-tab', 'Translate on two messages: both are translated; the clicked tab is told only about the message it displays', async () => {
     reset();
     await click('prompt_translate_this', 7, { tabSel: [H.m1, H.m2], displayed: H.m1 });
-    assert.ok(record(ctx, 'm1@x').translation && record(ctx, 'm2@x').translation);
+    assert.ok((await record(ctx, 'm1@x')).translation && (await record(ctx, 'm2@x')).translation);
     const shown = ctx.m.sentTo(7, 'showTranslation').map(c => c.data.headerMessageId);
     assert.ok(shown.includes('m1@x'));
     assert.equal(shown.includes('m2@x'), false);

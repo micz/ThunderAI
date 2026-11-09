@@ -70,7 +70,7 @@ const inFolder = hid => ctx.m.byHeaderId(hid)?.folder.id;
 /** Receive one message from `author`, return its stored spam report. */
 async function screen(hid, author) {
     await receive(ctx, [mail(hid, author)]);
-    return record(ctx, hid)?.spam ?? null;
+    return (await record(ctx, hid))?.spam ?? null;
 }
 
 const ALLOW = i18n('spamfilter_skip_addresses_explanation');
@@ -94,8 +94,8 @@ k.test('allow-never-moved', 'an allow-list report is never moved, even with a th
     assert.equal(inFolder('al2@x'), 'f-inbox');
 });
 
-k.test('allow-continues', 'an allowed message goes on through its pipeline (summarized)', () => {
-    assert.ok(record(ctx, 'al1@x').summary);
+k.test('allow-continues', 'an allowed message goes on through its pipeline (summarized)', async () => {
+    assert.ok((await record(ctx, 'al1@x')).summary);
 });
 
 k.test('block-domain', 'a block-list domain: report 100 with the block explanation, no AI call, moved to junk', async () => {
@@ -107,8 +107,8 @@ k.test('block-domain', 'a block-list domain: report 100 with the block explanati
     assert.equal(inFolder('bl1@x'), 'f-junk');
 });
 
-k.test('block-stops-pipeline', 'a blocked message moved to junk gets no summary', () => {
-    assert.equal(record(ctx, 'bl1@x').summary, undefined);
+k.test('block-stops-pipeline', 'a blocked message moved to junk gets no summary', async () => {
+    assert.equal((await record(ctx, 'bl1@x')).summary, undefined);
 });
 
 k.test('block-exact-beats-allow-domain', 'an exact block entry beats an allow-list domain', async () => {
@@ -155,13 +155,13 @@ k.test('neither-ai', 'neither list nor the address book: the AI decides', async 
     assert.equal(r.explanation, 'Looks fine');
 });
 
-k.test('threshold-zero', 'a threshold of 0 flags everything: the AI verdict (10) is moved to junk', () => {
-    assert.equal(record(ctx, 'ai1@x').spam.moved, true);
+k.test('threshold-zero', 'a threshold of 0 flags everything: the AI verdict (10) is moved to junk', async () => {
+    assert.equal((await record(ctx, 'ai1@x')).spam.moved, true);
     assert.equal(inFolder('ai1@x'), 'f-junk');
 });
 
-k.test('report-metadata', 'a rule report stores the subject and sender as arrays, and the message date', () => {
-    const r = record(ctx, 'bl1@x').spam;
+k.test('report-metadata', 'a rule report stores the subject and sender as arrays, and the message date', async () => {
+    const r = (await record(ctx, 'bl1@x')).spam;
     assert.ok(Array.isArray(r.subject) && Array.isArray(r.from));
     assert.deepEqual(r.from, ['Bad <bad@evil.test>']);
     assert.equal(typeof r.message_date, 'string');
@@ -172,7 +172,7 @@ k.test('manual-block-not-moved', 'a manual check (panel Refresh) of a blocked se
     ctx.m.tab(7).displayed = h.id;
     ctx.m.tabSends.length = 0;
     await fromTab(ctx, 7, { command: 'refreshSpamReport', headerMessageId: 'man1@x' });
-    const r = record(ctx, 'man1@x').spam;
+    const r = (await record(ctx, 'man1@x')).spam;
     assert.equal(r.spamValue, 100);
     assert.equal(r.moved, false);
     assert.equal(inFolder('man1@x'), 'f-inbox');

@@ -2,6 +2,9 @@
 
 *Use ChatGPT, Google Gemini, Claude or Ollama to enhance your emails!*
 
+[![Latest release](https://micz.it/badges/thunderai/release.svg)](https://github.com/micz/ThunderAI/releases/latest)
+[![Latest pre-release](https://micz.it/badges/thunderai/prerelease.svg)](https://github.com/micz/ThunderAI/releases)
+[![Development version](https://micz.it/badges/thunderai/dev.svg)](https://github.com/micz/ThunderAI/tree/dev)
 [![Thunderbird Add-ons](https://img.shields.io/badge/Thunderbird%20Add--ons-install-blue?logo=thunderbird)](https://addons.thunderbird.net/thunderbird/addon/thunderai/)
 [![Thunderbird 140.0+](https://img.shields.io/badge/Thunderbird-140.0%2B-informational?logo=thunderbird)](https://www.thunderbird.net/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-green.svg)](LICENSE)
@@ -46,10 +49,10 @@ Using an API integration, ThunderAI can work on incoming mail on its own:
 
 | | Feature | Description |
 |---|---|---|
-| ![](images/context_menu/autotags.png) | **Auto-tagging** | Tag incoming emails automatically, with an exclusion list and an option for sent mail |
-| ![](images/context_menu/spamfilter.png) | **Spam filter** | Move spam to the junk folder, with a per-message report and a consultable log. A skip list and a block list, of addresses or whole domains (`@domain.com`), decide some senders without asking the AI |
-| ![](images/context_menu/summarize.png) | **Auto-summarize** | Summarize on open, on receive or on demand, with caching and an optional list of senders/domains always summarized |
-| ![](images/context_menu/translate.png) | **Auto-translate** | Translate incoming emails inline, with caching |
+| ![](images/context_menu/autotags.png) | **Auto-tagging** | Tag incoming emails automatically, with an exclusion list, an option for sent mail and separate settings for each account |
+| ![](images/context_menu/spamfilter.png) | **Spam filter** | Move spam to the junk folder, with a per-message report and a consultable log, kept without a limit by default. A skip list and a block list, of addresses or whole domains (`@domain.com`), decide some senders without asking the AI |
+| ![](images/context_menu/summarize.png) | **Auto-summarize** | Summarize on open, on receive or on demand, with the summary saved for each email and an optional list of senders/domains always summarized |
+| ![](images/context_menu/translate.png) | **Auto-translate** | Translate incoming emails inline, with the translation saved for each email |
 
 Drafts, templates, outbox and sent messages are skipped, so a draft is never processed while you are writing it. Several emails can be processed in parallel, and the same feature never runs twice on the same email. When the AI server is temporarily unavailable a request is repeated automatically, and the automatic processing stops by itself when the provider's rate limit or quota is exceeded.
 
@@ -81,7 +84,7 @@ ThunderAI supports the **Thunderbird Enterprise Policies**: with `policies.json`
 | **Google Gemini** | required | Model, temperature, Top P, Top K, max output tokens, *System Instructions*, extra body data and *thinking budget* — leave the budget empty to let the model decide |
 | **Claude API** | required | Model, system prompt, max tokens, temperature, Top P, Top K, stop sequences, extended thinking budget and *effort*. The request adapts to the selected model, so the options that a model rejects are disabled instead of failing. Requires the permission *"Access your data for sites in the https://anthropic.com domain"* |
 | **Ollama** | optional | Runs fully locally: model, context size, temperature, reasoning level, system prompt, keep model loaded, extra options and forced JSON output, adapting to the selected model. The API key is needed only for the hosted API at ollama.com or for a server behind an authenticating proxy. The server must accept requests from the add-on, adding `OLLAMA_ORIGINS = moz-extension://*` to its environment variables — [more info about CORS](https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/) |
-| **OpenAI Compatible** | optional | Any OpenAI-compatible server, local or remote, such as LM Studio. Ready-made configurations for **DeepSeek**, **Grok**, **Mistral**, **OpenRouter** and **Perplexity**, or set the host by hand. The *"v1"* compatibility segment can be turned off, the model name typed manually when the server exposes no models list, and extra JSON parameters sent with every request |
+| **OpenAI Compatible** | optional | Any OpenAI-compatible server, local or remote, such as LM Studio. Ready-made configurations for **DeepSeek**, **Grok**, **Mistral**, **OpenRouter** and **Perplexity**, or set the host by hand. The *"v1"* compatibility segment can be turned off, the model name typed manually when the server exposes no models list, and extra JSON parameters and custom HTTP headers sent with every request |
 
 ## Documentation
 
@@ -104,16 +107,17 @@ Before opening an issue or a pull request, please read the [contributing guideli
 The add-on itself has no build step and no dependencies: it is plain JavaScript loaded as it is by Thunderbird. ThunderAI has an automated test suite in [`tests/`](tests/), covering one area at a time — the enterprise managed configuration, the prompts and placeholders, the API integrations, the settings pages, the AI chat window, what the add-on reads from and writes into a mail, the background, ChatGPT Web and more — in two levels, both run from the repository root with Node's built-in test runner:
 
 ```sh
-# Level 1 - the modules. Node 22 or later, nothing to install
+# Once: the development tooling (jsdom, fake-indexeddb). Node 22.22+ or 24.15+
+npm ci
+
+# Level 1 - the modules
 node --test "tests/**/*.test.mjs"
 
-# Everything, including the DOM tests (the pages loaded in jsdom).
-# Node 22.22+ or 24.15+
-npm ci
+# Everything, including the DOM tests (the pages loaded in jsdom)
 npm test
 ```
 
-`npm` is used for development tooling only: [jsdom](https://github.com/jsdom/jsdom) is the one development dependency, and nothing in `package.json` or `node_modules` is part of the add-on or ends up in the XPI. The tests run in CI on demand only — manually from the Actions tab, or by adding the `run-tests` label to a pull request — not on every commit. How they work, and how to add a scenario or a page, is explained in [`tests/README.md`](tests/README.md).
+`npm` is used for development tooling only: the two development dependencies are [jsdom](https://github.com/jsdom/jsdom) and [fake-indexeddb](https://github.com/dumbmatter/fakeIndexedDB), and nothing in `package.json` or `node_modules` is part of the add-on or ends up in the XPI. The tests run in CI on demand only — manually from the Actions tab, or by adding the `run-tests` label to a pull request — not on every commit. How they work, and how to add a scenario or a page, is explained in [`tests/README.md`](tests/README.md).
 
 Some behaviours are still checked by hand in Thunderbird. For the API answers that stop arriving in the middle (the stream idle timeout and the Stop button during a stall), use the stall server in [`tests/_stall_server/`](tests/_stall_server/): a small local OpenAI-compatible and Ollama server, with no dependency, that sends a few tokens and then goes silent. How to start it, point ThunderAI at it and what to check is explained in [`tests/_stall_server/README.md`](tests/_stall_server/README.md).
 
@@ -135,8 +139,8 @@ ThunderAI is released under the **GNU General Public License v3.0**. See [LICENS
 ### Translations
 <!-- translations:start -->
 - Brazilian Portuguese - Português Brasileiro (pt-br): [Bruno Scatolin](https://github.com/Brusca), Bruno Pereira de Souza, Generated automatically <img src="https://micz.it/weblate/thunderai/pt-br.svg">
-- Chinese (Simplified) - Jiǎntǐ Zhōngwén (简体中文) (zh_Hans): [jeklau](https://github.com/jeklau), [Min9X1n](https://github.com/Min9X1n), [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
-- Chinese (Traditional) - Fántǐ Zhōngwén (繁體中文) (zh_Hant): [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
+- Chinese (Simplified) - Jiǎntǐ Zhōngwén (简体中文) (zh_Hans): [tszlznl](https://hosted.weblate.org/user/tszlznl/), [jeklau](https://github.com/jeklau), [Min9X1n](https://github.com/Min9X1n), [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
+- Chinese (Traditional) - Fántǐ Zhōngwén (繁體中文) (zh_Hant): [tszlznl](https://hosted.weblate.org/user/tszlznl/), [Evereasy](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
 - Croatian - Hrvatski (hr): [Maurizio Domba Cerin](https://github.com/mdomba), Petar Jedvaj <img src="https://micz.it/weblate/thunderai/hr.svg">
 - Czech - Čeština (cs): [Jaroslav Staněk](https://hosted.weblate.org/user/jaroush/), [Fjuro](https://hosted.weblate.org/user/Fjuro/) <img src="https://micz.it/weblate/thunderai/cs.svg">
 - French - Français (fr): [Noam](https://github.com/noam-sc), Generated automatically <img src="https://micz.it/weblate/thunderai/fr.svg">
@@ -151,6 +155,7 @@ ThunderAI is released under the **GNU General Public License v3.0**. See [LICENS
 - Russian - Russkiy (русский) (ru): [Maksim_220 Кабанов](https://hosted.weblate.org/user/law820314/), [G S (TAra)](https://hosted.weblate.org/user/gebekovasmobile/), [Konstantin Spirin](https://hosted.weblate.org/user/PouncePanda/) <img src="https://micz.it/weblate/thunderai/ru.svg">
 - Spanish - Español (es): [Gerardo Sobarzo](https://github.com/gerald-CL), [Andrés Rendón Hernández](https://github.com/arendon1), [Erick Limon](https://github.com/ErickLimonG) <img src="https://micz.it/weblate/thunderai/es.svg">
 - Swedish - Svenska (sv): [Andreas Pettersson](https://github.com/andy-moz), [Luna Jernberg](https://github.com/bittin) <img src="https://micz.it/weblate/thunderai/sv.svg">
+- Turkish - Türkçe (tr): [Cahit Cengizhan](https://github.com/cahitcengizhan), [Müslüm Barış Korkmazer](https://github.com/babico) <img src="https://micz.it/weblate/thunderai/tr.svg">
 <!-- translations:end -->
 <br>
 

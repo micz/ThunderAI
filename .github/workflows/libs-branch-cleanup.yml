@@ -1,0 +1,61 @@
+name: Delete Vendor Library Update Branches
+
+# Deletes the branch of a vendor library update PR once it is merged.
+# Only the branches the library workflows create are touched:
+#   - <package>-update-<version>, from the daily release checks (the npm packages of VENDORS.md)
+#   - libs-update-<base branch>, from libs-update.yml
+# and only when the PR was opened by those workflows (github-actions[bot]).
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  delete-branch:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.login == 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          sparse-checkout: VENDORS.md
+          sparse-checkout-cone-mode: false
+
+      - name: Delete the merged branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          # <package>-update-<version>, with the npm packages of the VENDORS.md sources, or libs-update-<branch>
+          IS_LIB_BRANCH=false
+          if [[ "$BRANCH" == libs-update-* ]]; then
+            IS_LIB_BRANCH=true
+          else
+            while IFS= read -r PACKAGE; do
+              if [[ "$BRANCH" == "${PACKAGE}-update-"[0-9]* ]]; then
+                IS_LIB_BRANCH=true
+                break
+              fi
+            done < <(grep -oE '^source:.*/npm/[^/@]+@' VENDORS.md | sed -E 's#.*/npm/##; s#@$##' | sort -u)
+          fi
+
+          if [ "$IS_LIB_BRANCH" != "true" ]; then
+            echo "Branch '${BRANCH}' is not a vendor library update branch. No action taken."
+            exit 0
+          fi
+
+          # The branch may already be gone (deleted by hand, or by the repository setting)
+          if ! gh api "repos/${REPO}/git/ref/heads/${BRANCH}" --silent 2>/dev/null; then
+            echo "Branch '${BRANCH}' no longer exists. No action taken."
+            exit 0
+          fi
+
+          gh api -X DELETE "repos/${REPO}/git/refs/heads/${BRANCH}"
+          echo "Branch '${BRANCH}' deleted."
