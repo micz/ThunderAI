@@ -13,6 +13,8 @@
  *      r.value   what the run returned (a function's result, or the sequence's declared names)
  *      r.error   the message of an exception that escaped the run, or null
  *      r.local, r.sync   the storage content the run left (before the reads)
+ *      r.idb     the IndexedDB databases the run left (dumpIndexedDB() of the core), to hand to the
+ *                next start as `idb`, the way they survive a restart
  *      r.calls   every storage call of the run, in order: {area, op, keys | items}
  *      r.sent    every runtime.sendMessage of the run
  *      r.read    what the reads asked for in `read` returned, after the run
@@ -36,6 +38,7 @@ export const FUNCTIONS = {
     migrateCustomPromptsStorage: 'js/mzta-utils.js',
     migrateDefaultPromptsPropStorage: 'js/mzta-utils.js',
     migrateCalendarNoSelection: 'js/mzta-prompts.js',
+    migrateMessageDataToIndexedDB: 'js/mzta-storage-migration.js',
 };
 
 const WRITE_OPS = new Set(['set', 'remove', 'clear']);
@@ -48,6 +51,9 @@ const WORKER_TIMEOUT_MS = 60000;
  *
  * @param {object} o
  *   sync, local   the storage content at start
+ *   idb           the IndexedDB databases at start (a previous start's r.idb; none by default)
+ *   idbFault      'open': every indexedDB.open() fails; 'write': every IDBObjectStore put() throws -
+ *                 for the whole run, like a storage fault
  *   run           'sequence' (the cut block of mzta-background.js), a name of FUNCTIONS, or null
  *   faults        [{area, op, nth = 1, count = 1}]: the nth call of storage.<area>.<op> and the
  *                 count-1 matching calls after it reject, with no effect (count: Infinity = all)
@@ -117,6 +123,17 @@ async function main(o) {
     const imp = rel => import(new URL(rel, REPO).href);
 
     const ctl = installBrowserMock({ policy: null, local: o.local || {}, sync: o.sync || {} });
+    const { dumpIndexedDB, seedIndexedDB, installLocks } = await import('../helpers/core/indexeddb.mjs');
+    // The storage cleanup lock (taStorage.reconcileWithMirror() takes it): one Thunderbird, one
+    // lock manager. Node 24's navigator.locks is shared by every worker of the process, so the
+    // starts of a file, run in parallel, would wait on each other's locks.
+    installLocks(globalThis.navigator, { replace: true });
+    if (o.idb) await seedIndexedDB(o.idb);
+    if (o.idbFault === 'open') {
+        globalThis.indexedDB.open = () => { throw new DOMException('injected: IndexedDB unavailable', 'InvalidStateError'); };
+    } else if (o.idbFault === 'write') {
+        globalThis.IDBObjectStore.prototype.put = () => { throw new DOMException('injected: IndexedDB write failed', 'QuotaExceededError'); };
+    }
     const state = { armed: false, crashed: false };
     const counter = decorate(ctl, o, state);
     const con = captureConsole();
@@ -152,6 +169,7 @@ async function main(o) {
     // Storage as the run left it, before any read below (getSpecialPrompts() may write back).
     const local = raw(ctl.browser.storage.local);
     const sync = raw(ctl.browser.storage.sync);
+    const idb = o.idbFault === 'open' ? [] : await dumpIndexedDB();
     const read = {};
     if (o.read) {
         const { mztaManaged } = await imp('js/mzta-managed.js');
@@ -167,6 +185,7 @@ async function main(o) {
         writes: counter.writes(),
         local,
         sync,
+        idb,
         calls,
         sent,
         read,

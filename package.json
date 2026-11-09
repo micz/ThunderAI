@@ -13,6 +13,7 @@
     "changelog": "node .github/scripts/changelog-sync.mjs"
   },
   "devDependencies": {
+    "fake-indexeddb": "6.2.7",
     "jsdom": "30.1.1"
   }
 }

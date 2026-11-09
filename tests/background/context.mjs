@@ -175,6 +175,13 @@ export async function bgContext(o = {}) {
     const workers = installFakeWorker();
     const con = captureConsole();
     const mods = await loadModules();
+    // The startup migration block of mzta-background.js moves the msg: records of storage.local
+    // into IndexedDB before any listener is registered: a context seeded with such records starts
+    // the same way, with the real migration (js/mzta-storage-migration.js).
+    if (Object.keys(o.local || {}).some(key => key.startsWith('msg:'))) {
+        const { migrateMessageDataToIndexedDB } = await import('../../js/mzta-storage-migration.js');
+        await migrateMessageDataToIndexedDB();
+    }
     if (o.setup) await o.setup(m);
     const rec = { sanitizeBlockHtml: [], htmlBodyToPlainText: [], buildSummaryPrompt: [] };
     const given = { ...(await standIns(rec)), ...(o.overrides || {}) };
@@ -206,6 +213,11 @@ export async function moduleContext(o = {}) {
     const mods = await loadModules();
     const { mztaManaged } = await import('../../js/mzta-managed.js');
     await mztaManaged.loadManaged();
+    // As in bgContext(): seeded msg: records are moved to IndexedDB, as the background's start does.
+    if (Object.keys(o.local || {}).some(key => key.startsWith('msg:'))) {
+        const { migrateMessageDataToIndexedDB } = await import('../../js/mzta-storage-migration.js');
+        await migrateMessageDataToIndexedDB();
+    }
     const { createAIProcessingBroker } = await import('../../js/mzta-ai-processing-broker.js');
     const { createAIProcessingClient } = await import('../../js/mzta-ai-processing-client.js');
     const processingBroker = createAIProcessingBroker();

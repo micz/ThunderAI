@@ -80,6 +80,15 @@
 .report_hdr > .mzta_prompt_title {
     margin-bottom: 0;
 }
+/* Same accent-bar heading as the other cards' titles: the shared rule in
+   mzta-design.css only matches a title that is a direct child of the
+   section, and this one sits inside the flex row. */
+body.mzta_feature_page .report_hdr > .mzta_prompt_title {
+    border-left: 3px solid var(--accent);
+    padding-left: 9px;
+    font-size: 15px;
+    font-weight: 600;
+}
 
 /* Icon-only button. No label, so no new string to translate: the arrows say
    expand / restore, and aria-pressed carries the state for screen readers. */
@@ -160,6 +169,12 @@ body.mzta_feature_page .mzta_section.report_fullscreen_on .report_scroll {
     flex: 1 1 auto;
     max-height: none;
     margin-bottom: 0;
+}
+
+/* Under the report table: "the 20 newest" and the link to the storage page. */
+.report_more {
+    margin-top: 8px;
+    text-align: right;
 }
 
 /* table-layout: fixed is what makes the column widths below authoritative:
@@ -249,7 +264,7 @@ body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thea
 body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(8) { width: 11%; }
 
 /* Message id: one truncated line. The value is opaque and rarely read in
-   full, and the cell's title attribute carries it (set in populateTable). */
+   full, and the cell's title attribute carries it (set in renderSpamReportRows()). */
 table#report_data tbody td:nth-child(1) {
     white-space: nowrap;
     overflow: hidden;
@@ -268,7 +283,8 @@ table#report_data tbody td:nth-child(8) {
    scrolls on its own, so a long error message stays fully readable without
    stretching the row to match it. The scroll must happen on an inner block:
    a td is a table-cell, whose height is driven by the row, so overflow set
-   on the cell itself is ignored. .expl_box is added in populateTable().
+   on the cell itself is ignored. .expl_box is added by renderSpamReportRows()
+   (../_lib/spam-log.js).
    The full text also stays in the title attribute as a quick tooltip. */
 table#report_data tbody td:nth-child(7) {
     padding: 0;

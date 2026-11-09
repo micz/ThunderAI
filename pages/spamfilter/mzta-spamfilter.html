@@ -186,6 +186,8 @@
                         </svg>
                     </button>
                 </div>
+                <!-- Shown when moving the reports of the previous version failed (loadSpamReport()). -->
+                <p class="mzta_help" id="report_migration_failed" style="display:none;">__MSG_storage_migration_failed__</p>
                 <div class="report_scroll">
                     <table id="report_data">
                         <thead>
@@ -205,6 +207,9 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- The 20 newest reports only (loadSpamReport()): every saved report is listed on the
+                     storage management page, opened on its spam list in a new tab. -->
+                <p class="report_more mzta_help">__MSG_spamfilter_report_newest_info__ <a href="#" id="report_manage_link">__MSG_spamfilter_report_manage_link__</a></p>
             </div>
 
         </div>

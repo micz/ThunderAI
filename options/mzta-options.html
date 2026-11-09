@@ -431,11 +431,13 @@
               </div>
             </div>
 
-            <!-- Storage -->
+            <!-- Storage: the per-message data in IndexedDB (js/mzta-storage.js), managed on its own page (pages/storage/) -->
             <div class="mzta_storage_row">
-              <span>ThunderAI __MSG_prefs_storage_title__ · __MSG_prefs_storage_size__: <span id="cache_storage_size"></span></span>
-              <button id="btnClearCache" class="btn_small">__MSG_prefs_storage_clear_button__</button>
+              <span>ThunderAI __MSG_prefs_storage_title__ · __MSG_prefs_storage_size__: <span id="message_storage_size"></span></span>
+              <button id="btnManageMessageStorage" class="btn_small">__MSG_prefs_storage_manage_button__</button>
             </div>
+            <span id="message_storage_migrating" class="mzta_help" style="display:none;">__MSG_storage_migration_in_progress__</span>
+            <span id="message_storage_migration_failed" class="mzta_help" style="display:none;">__MSG_storage_migration_failed__</span>
             <span class="mzta_help">__MSG_prefs_storage_info__</span>
           </div>
         </div>
@@ -457,6 +459,9 @@
               <span class="mzta_shortcut_label">__MSG_prefs_shortcut_label__</span>
               <span id="mzta_shortcut_keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>A</kbd></span>
             </div>
+
+            <!-- How to change the shortcut — href localized at init via getMiczItUrl(); the English URL is the fallback -->
+            <a id="mzta_shortcut_help" href="https://micz.it/thunderbird-addon-keyboard-shortcut/">__MSG_prefs_shortcut_change_link__</a>
 
           </div>
 

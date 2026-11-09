@@ -21,10 +21,6 @@ import { taLogger } from './mzta-logger.js';
 
 export class taTranslationStore {
 
-    // In-flight state lives in taJobRegistry (js/mzta-job-registry.js). The prefix is kept
-    // only so clear*() still sweeps keys written to storage.session by older versions.
-    _processing_prefix = 'mzta-translation-processing-';
-    _max_translations = 100;
     _storage = null;
     taLog = null;
 
@@ -33,17 +29,21 @@ export class taTranslationStore {
         this.taLog = new taLogger('mzta-translationstore', do_debug);
     }
 
-    async saveTranslation(data, data_id) {
+    /**
+     * Store a translation. metadata: as for taSummaryStore.saveSummary().
+     * Rejects when the write fails (see js/mzta-storage.js).
+     */
+    async saveTranslation(data, data_id, metadata = {}) {
         this.taLog.log("[saveTranslation] data_id: " + data_id);
         try {
-            await this._storage.writeTranslation(data_id, data, true);
+            await this._storage.writeTranslation(data_id, { ...data, ...metadata }, true);
         } catch (e) {
             this.taLog.error("[saveTranslation] error: " + e);
             throw e;
         }
     }
 
-    async saveError(data_id, error_message) {
+    async saveError(data_id, error_message, metadata = {}) {
         this.taLog.log("[saveError] data_id: " + data_id + ", error_message: " + error_message);
         let data = {
             translated_text: '',
@@ -52,7 +52,7 @@ export class taTranslationStore {
             message: error_message,
             headerMessageId: data_id
         };
-        await this.saveTranslation(data, data_id);
+        await this.saveTranslation(data, data_id, metadata);
         return data;
     }
 
@@ -72,66 +72,12 @@ export class taTranslationStore {
             lang: translation.lang || '',
             error: translation.error || false,
             message: translation.message || '',
-            translation_date: new Date(translation.ts),
+            translation_date: new Date(translation.createdAt),
         };
     }
 
     async removeTranslation(data_id) {
         this.taLog.log("[removeTranslation] data_id: " + data_id);
         await this._storage.deleteTranslationField(data_id);
-    }
-
-    async getAllTranslations() {
-        this.taLog.log("[getAllTranslations] loading all translations");
-        return await this._storage.getAllTranslationRecords();
-    }
-
-    async clearTranslations() {
-        this.taLog.log("[clearTranslations] clearing all translation data");
-        let allTranslations = await this._storage.getAllTranslationRecords();
-        let translationKeys = Object.keys(allTranslations);
-        this.taLog.log("[clearTranslations] deleting " + translationKeys.length + " translation records");
-        for (let messageId of translationKeys) {
-            await this._storage.deleteTranslationField(messageId);
-        }
-        let allSession = await browser.storage.session.get(null);
-        let keysToDelete = Object.keys(allSession).filter(k => k.startsWith(this._processing_prefix));
-        this.taLog.log("[clearTranslations] deleting " + keysToDelete.length + " session keys");
-        for (let key of keysToDelete) {
-            await browser.storage.session.remove(key);
-        }
-    }
-
-    async truncTranslations() {
-        this.taLog.log("[truncTranslations] checking translation count");
-        let data = await this._storage.getAllTranslationRecords();
-        let sortedData = this.sortTranslationsByDate(data);
-        let keys = Object.keys(sortedData);
-        this.taLog.log("[truncTranslations] total translations: " + keys.length + ", max: " + this._max_translations);
-
-        if (keys.length > this._max_translations) {
-            let toDelete = keys.length - this._max_translations;
-            this.taLog.log("[truncTranslations] truncating " + toDelete + " oldest translations");
-            for (let i = this._max_translations; i < keys.length; i++) {
-                await this._storage.deleteTranslationField(keys[i]);
-            }
-        }
-    }
-
-    sortTranslationsByDate(data) {
-        if (!data) return {};
-        const translationKeys = Object.keys(data);
-        translationKeys.sort((a, b) => {
-            const dateA = new Date(data[a].translation_date);
-            const dateB = new Date(data[b].translation_date);
-            return dateB - dateA;
-        });
-
-        let sortedTranslations = {};
-        translationKeys.forEach((key) => {
-            sortedTranslations[key] = data[key];
-        });
-
-        return sortedTranslations;
     }
 }

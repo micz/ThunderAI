@@ -24,7 +24,7 @@ branch, only its unmanaged branch is tested here.
 node --test "tests/prompts/*.test.mjs"     # this area only, from the repository root
 ```
 
-Level 1 only: nothing to install, no jsdom. The area imports only `helpers/core/` and its own
+Level 1 only (after `npm ci`, see [`../README.md`](../README.md)): no jsdom. The area imports only `helpers/core/` and its own
 `helpers/known-issues/prompts.mjs`, and has **no plugin**.
 
 ## Layout

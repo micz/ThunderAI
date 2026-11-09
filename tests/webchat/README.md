@@ -21,8 +21,8 @@ the general [`tests/README.md`](../README.md). Paths below are relative to `test
 node --test --test-timeout=120000 "tests/webchat/*.test.mjs" "tests/dom/webchat/*.dom.mjs"
 ```
 
-from the repository root, after `npm ci` (jsdom). `tests/webchat/*.test.mjs` is level 1 and needs
-nothing installed; `node --test "tests/**/*.test.mjs"` runs it with the rest of level 1.
+from the repository root, after `npm ci` (jsdom). `tests/webchat/*.test.mjs` is level 1 (no
+jsdom); `node --test "tests/**/*.test.mjs"` runs it with the rest of level 1.
 
 The area adds about **3-15 s per DOM file** (each file opens the window once, in its own process;
 `webchat-06`, which streams 34 answers, and `webchat-15`, which builds about a hundred pickers, are

@@ -1,7 +1,8 @@
 name: Draft release from CHANGELOG
 
 # On every stable tag (v5.1.0, not v5.1.0pre1) creates a DRAFT release whose body is
-# the <ul> of that version taken from CHANGELOG.md, followed by the contributors.
+# the <ul> of that version taken from CHANGELOG.md, followed by the contributors (each one
+# listed once, among the returning or the new ones, with every merged PR they opened; Claude excluded).
 # Being a draft, it can be reviewed and edited before publishing; the XPI can be attached then.
 on:
   push:
@@ -28,6 +29,10 @@ jobs:
       - name: Build the notes and create the draft
         env:
           GH_TOKEN: ${{ github.token }}
+          # Owner's fine-grained PAT (Contents: read and write on this repository only):
+          # the release author is whoever creates it, so with this token the draft is the
+          # owner's and not github-actions[bot]'s. Without the secret the bot creates it.
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
           OWNER: ${{ github.repository_owner }}
           # Owner's commit emails, excluded from the translators even if not linked to the account
@@ -42,11 +47,14 @@ jobs:
           fi
 
           # 1. The <ul> of this version from CHANGELOG.md, as it is in the tag
-          git show "$TAG:CHANGELOG.md" | awk -v v="$VER" '
+          # Written to a file first: awk exits early, and piping git show into it
+          # kills git show with SIGPIPE (exit 141), which pipefail turns into a failure
+          git show "$TAG:CHANGELOG.md" > changelog_at_tag.md
+          awk -v v="$VER" '
             index($0, "<h2>Version " v " ") { f = 1; next }
             f && /<ul>/   { p = 1 }
             p             { print }
-            p && /<\/ul>/ { exit }' > changes.html
+            p && /<\/ul>/ { exit }' changelog_at_tag.md > changes.html
           if [ ! -s changes.html ]; then
             echo "::error::No '<h2>Version $VER - ...' section in CHANGELOG.md at $TAG"; exit 1
           fi
@@ -60,7 +68,9 @@ jobs:
           #    Weblate translations are listed apart (Translations): Weblate is always the
           #    committer of its commits, whoever the translator (author) is.
           : > logins.txt
-          : > others.txt
+          : > others_new.tsv
+          : > others_old.tsv
+          : > prs.tsv
           : > translators.md
           if [ -n "$PREV" ]; then
             gh api --paginate "repos/$REPO/compare/$PREV...$TAG?per_page=100" \
@@ -84,22 +94,51 @@ jobs:
               | map("* \(.[0].name) (\(map(.lang) | unique | join(", ")))")
               | sort_by(ascii_downcase) | .[]' all.json > translators.md
 
+            # Claude (Claude Code) is never listed as a contributor
             jq -r 'select(.author.login != null) | .author.login' commits.json \
-              | grep -viE "\[bot\]$|^${OWNER}$" | sort -u > logins.txt || true
+              | grep -viE "\[bot\]$|^${OWNER}$|^claude$" | sort -u > logins.txt || true
 
-            # Authors without a linked GitHub account: by name,
-            # only if they never committed before the previous tag
-            jq -r 'select(.author == null) | "\(.commit.author.name)\t\(.commit.author.email)"' commits.json \
+            # Authors without a linked GitHub account: by name. Split into new (they never
+            # committed before the previous tag) and returning ones.
+            jq -r --arg owner_emails "$OWNER_EMAILS" '
+              ($owner_emails | ascii_downcase | split(" ")) as $oe |
+              select(.author == null)
+              | (.commit.author.email | ascii_downcase) as $e
+              | select(($oe | index($e) | not) and $e != "noreply@anthropic.com"
+                       and (.commit.author.name | ascii_downcase) != "claude")
+              | "\(.commit.author.name)\t\($e)"' commits.json \
               | grep -viE "\[bot\]" | sort -u > nologin.tsv || true
             while IFS=$'\t' read -r name email; do
               [ -z "$name" ] && continue
               # Weblate translations do not count as a previous contribution
               if [ "$(git log --format=%cE --author="<$email>" "$PREV" \
                       | grep -vx 'hosted@weblate.org' | wc -l)" = "0" ]; then
-                echo "$name" >> others.txt
+                printf '%s\t%s\n' "$name" "$email" >> others_new.tsv
+              else
+                printf '%s\t%s\n' "$name" "$email" >> others_old.tsv
               fi
             done < nologin.tsv
-            sort -u -o others.txt others.txt
+
+            # Merged pull requests created by each contributor, found from their commits
+            # (key<TAB>#number). For an author with a login only the PRs they opened count;
+            # for one without, any PR not opened by the owner, a bot or Claude.
+            jq -r --arg owner "$OWNER" '
+              select(((.author.login // "") | ascii_downcase) as $l
+                     | $l != ($owner | ascii_downcase) and $l != "claude" and ($l | endswith("[bot]") | not))
+              | "\(.sha)\t\(.author.login // "")\t\(.commit.author.email | ascii_downcase)"' commits.json \
+              > contrib_commits.tsv
+            while IFS=$'\t' read -r sha login email; do
+              if [ -n "$login" ]; then key="$login"; else key="email:$email"; fi
+              { gh api "repos/$REPO/commits/$sha/pulls" || echo '[]'; } \
+                | jq -r --arg login "$login" --arg owner "$OWNER" '
+                    .[] | select(.merged_at != null)
+                    | (.user.login | ascii_downcase) as $u
+                    | select(if $login != "" then $u == ($login | ascii_downcase)
+                             else $u != ($owner | ascii_downcase) and $u != "claude"
+                                  and .user.type != "Bot" end)
+                    | .number' \
+                | sed "s|^|$key\t#|" >> prs.tsv
+            done < contrib_commits.tsv
           fi
 
           # 4. New contributors: no commit reachable from the previous tag, Weblate
@@ -118,30 +157,63 @@ jobs:
             done
             if [ "$found" = "0" ]; then echo "$u" >> new.txt; fi
           done < logins.txt
+          # Returning contributors: everyone else (each one is listed once, new or returning)
+          comm -23 logins.txt new.txt > old.txt
+
+          # " in #12, #15": every merged PR of a contributor (key = login or email:<address>)
+          prs_of() {
+            local list
+            list=$(awk -F'\t' -v k="$1" 'tolower($1) == tolower(k) { print $2 }' prs.tsv \
+                   | sort -t'#' -k2,2n -u | paste -sd, - | sed 's/,/, /g')
+            if [ -n "$list" ]; then printf ' in %s' "$list"; fi
+          }
 
           # 5. Release body
           {
-            echo "## What's new"
+            echo " "
             echo
             cat changes.html
             echo
-            if [ -s logins.txt ] || [ -s others.txt ]; then
+            # Empty sections are left out: "Contributors" only with returning contributors,
+            # "New contributors" only with new ones (a ## section of its own when alone)
+            new_level="###"
+            if [ -s old.txt ] || [ -s others_old.tsv ]; then
+              echo "<br>"
+              echo
               echo "## Contributors"
               echo
               echo "Thanks to everyone who contributed to this release:"
               echo
-              sed 's/^/* @/' logins.txt
-              cat others.txt | sed 's/^/* /'
+              while read -r u; do
+                echo "* @$u$(prs_of "$u")"
+              done < old.txt
+              while IFS=$'\t' read -r name email; do
+                echo "* $name$(prs_of "email:$email")"
+              done < others_old.tsv
               echo
+            else
+              new_level="##"
             fi
-            if [ -s new.txt ] || [ -s others.txt ]; then
-              echo "### New contributors"
+            if [ -s new.txt ] || [ -s others_new.tsv ]; then
+              echo "<br>"
               echo
-              sed 's/^\(.*\)$/* @\1 made their first contribution/' new.txt
-              sed 's/^\(.*\)$/* \1 made their first contribution/' others.txt
+              echo "$new_level New contributors"
+              echo
+              if [ "$new_level" = "##" ]; then
+                echo "Thanks to everyone who contributed to this release:"
+                echo
+              fi
+              while read -r u; do
+                echo "* @$u made their first contribution$(prs_of "$u")"
+              done < new.txt
+              while IFS=$'\t' read -r name email; do
+                echo "* $name made their first contribution$(prs_of "email:$email")"
+              done < others_new.tsv
               echo
             fi
             if [ -s translators.md ]; then
+              echo "<br>"
+              echo
               echo "## Translations"
               echo
               echo "Thanks to the translators on Weblate:"
@@ -153,11 +225,18 @@ jobs:
               echo "**Full Changelog**: https://github.com/$REPO/compare/$PREV...$TAG"
               echo
             fi
+            echo "<br>"
+            echo
             echo "**To use this release download and install the \`thunderai-$TAG.xpi\` file.**"
           } > notes.md
           cat notes.md
 
           # 6. Create the draft, or update it if a release for this tag already exists
+          if [ -n "$RELEASE_TOKEN" ]; then
+            export GH_TOKEN="$RELEASE_TOKEN"
+          else
+            echo "::warning::No RELEASE_TOKEN secret: the draft is created by github-actions[bot]."
+          fi
           if gh release view "$TAG" --json isDraft >/dev/null 2>&1; then
             if [ "$(gh release view "$TAG" --json isDraft -q .isDraft)" = "true" ]; then
               gh release edit "$TAG" --notes-file notes.md

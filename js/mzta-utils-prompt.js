@@ -375,8 +375,22 @@ export const taPromptUtils = {
         const bodyHtml = await getMailInlineTextParts(messageId);
         const mailSubject = fullMessage.headers?.subject?.[0] || '';
 
+        // The text body, read the same way as buildSummaryPrompt() does, so that
+        // {%mail_text_body%} and {%mail_text_body_or_selected%} (and their :N limit) are
+        // not empty in a user's translation prompt. Only when one of them is in the
+        // prompt: the shipped text uses {%mail_html_body%} and needs no conversion.
+        let bodyText = '';
+        if (placeholdersUtils.hasPlaceholder(promptText, 'mail_text_body')
+            || placeholdersUtils.hasPlaceholder(promptText, 'mail_text_body_or_selected')) {
+            bodyText = htmlBodyToPlainText(bodyHtml.html);
+            if (bodyText.length === 0) {
+                bodyText = cleanupNewlines(bodyHtml.text || '');
+            }
+        }
+
         const finalSubs = await placeholdersUtils.getPlaceholdersValues({
             prompt_text: promptText,
+            body_text: bodyText,
             msg_text: { html: bodyHtml.html, text: bodyHtml.text },
             mail_subject: mailSubject,
         });

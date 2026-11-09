@@ -586,7 +586,7 @@ Guarded callers, each reporting through the mechanism its feature already has:
 - Auto add-tags (`mzta-background.js`): logs an error and sets `skipAddTags = true`, leaving the rest of the message pipeline running.
 - Spam filter (`mzta-background.js`): logs an error, then `spamReport.saveError()` + `updateSpamPanel(…, "showSpamReport", …)` and returns `{ success: false }`. `saveError()` goes through `saveReportData()`, which clears the session `processing` flag — without this the message would stay stuck showing "check in progress". The text passed to `saveError()` becomes the report's `explanation` and is rendered in the spam panel, so it must be localized (`spamfilter_prompt_missing_explanation`), like the other skip-reason explanations; only the `taLog.error()` line stays English.
 
-`spamReport.saveError(data_id, error_message, metadata = {})` takes an optional third argument that is spread over the stored record. `_generateSpamReportForMessage()` captures a `message_metadata` snapshot via `_buildReportMetadata()` (subject / from / message_date) and passes it to every `saveError()` call except the "Message not found" one, so error rows in the spam log keep their subject, sender and date columns instead of rendering `undefined`. The snapshot prefers the `getFull()` MIME headers and falls back to the `MessageHeader` fields (`message.subject` / `message.author` / `message.date`), which stay readable when a user filter deletes or moves the message mid-analysis. `subject` and `from` are therefore arrays (MIME header shape) — the log table in `pages/spamfilter/mzta-spamfilter.js` joins them with `Array.isArray(...) ? .join(", ") : ...`, so any fallback value must be array-wrapped too. The renderer tolerates records written before this change: a missing `message_date`, `from` or `subject` renders as an empty cell rather than "Invalid Date" / "undefined". `getAllReportData()` resolves to `{}` (never `undefined`) when nothing has been screened, so the `spamfilter_no_reports` placeholder is appended as a `colSpan=8` row inside `#report_data_body` — `#report_data` is the `<table>` itself, so writing to it would remove the header row and the tbody.
+`spamReport.saveError(data_id, error_message, metadata = {})` takes an optional third argument that is spread over the stored record. `_runSpamJob()` (`mzta-background.js`) captures a `message_metadata` snapshot via `_buildReportMetadata()` (subject / from / message_date) and passes it, through `_saveSpamError()`, to every error report except the "Message not found" one, so error rows in the spam log keep their subject, sender and date columns instead of rendering `undefined`. The snapshot prefers the `getFull()` MIME headers and falls back to the `MessageHeader` fields (`message.subject` / `message.author` / `message.date`), which stay readable when a user filter deletes or moves the message mid-analysis. `subject` and `from` are therefore arrays (MIME header shape) — the log table in `pages/spamfilter/mzta-spamfilter.js` joins them with `Array.isArray(...) ? .join(", ") : ...`, so any fallback value must be array-wrapped too. The renderer tolerates records written before this change: a missing `message_date`, `from` or `subject` renders as an empty cell rather than "Invalid Date" / "undefined". With no report (`getReportPage()` returns `[]`), the `spamfilter_no_reports` placeholder is appended as a `colSpan=8` row inside `#report_data_body` — `#report_data` is the `<table>` itself, so writing to it would remove the header row and the tbody.
 
 ## Menu System
 
@@ -784,7 +784,7 @@ The summarize feature uses two distinct prompt pathways:
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner at the top of the message body via `mzta-compose-script.js`
 - Banner includes a refresh button (↻) to regenerate the summary
-- Cached per-message via `taSummaryStore` / `taStorage`. Not truncated at the moment: the store has a 100-entry truncation that nothing calls (see [01-architecture.md](01-architecture.md#per-message-data-storage))
+- Saved per message via `taSummaryStore` / `taStorage` (IndexedDB, with its durable `storage.local` mirror), with the message's subject, sender and date; kept until the scheduled cleanup removes it under the `summarize_storage_*` limits, none by default (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 
 **Unified Prompt Building** — `taPromptUtils.buildSummaryPrompt(messageDataArray)`:
 - All summary paths (inline, webchat single, webchat multi) use this single method
@@ -812,7 +812,7 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
 - Banner includes refresh (↻) and delete (×) buttons
-- Cached per-message via `taTranslationStore` / `taStorage`. Not truncated at the moment: the store has a 100-entry truncation that nothing calls (see [01-architecture.md](01-architecture.md#per-message-data-storage))
+- Saved per message via `taTranslationStore` / `taStorage` (IndexedDB, with its durable `storage.local` mirror), one per message whatever the language, with the message's subject, sender and date; kept until the scheduled cleanup removes it under the `translate_storage_*` limits, none by default (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 - The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
 
 **Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, messageId)`:
@@ -821,6 +821,12 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
   alongside `fullMessage` on **both** of its branches, and its `options.messageData` now requires
   `message` as well as `fullMessage`.
 - Retrieves the `prompt_translate_this` special prompt text
+- When the text holds `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` (with or without
+  the `:N` limit), reads the text body as `buildSummaryPrompt()` does (`htmlBodyToPlainText()` of
+  the html, `cleanupNewlines()` of the text part when that is empty) and passes it as `body_text`.
+  The shipped text uses `{%mail_html_body%}`, but the prompt is editable on the Translate page and
+  the autocomplete offers both: without this they were sent empty, and the translation of the
+  subject alone was cached as a good result
 - Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`,
   **always with the default values** (`use_default_value: true`), whatever
   `placeholders_use_default_value` says: an empty value becomes `""`, never the literal token. The

@@ -1,0 +1,172 @@
+name: Check Vendor Libraries Latest Releases
+
+on:
+  schedule:
+    - cron: '0 19 * * *' # Check every day at 19:00
+  workflow_dispatch: # Allows manual triggering for testing purposes
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  # The libraries to check are the npm packages of the VENDORS.md sources (".../npm/<package>@<version>/...")
+  # on dev: adding one to VENDORS.md adds it here, nothing else to edit. Sources not served from npm
+  # (like list.js, from GitHub) are not checked. The optional name and changelog fields of the entries
+  # give the PR title (the package name without one) and the change log link (none without one).
+  libs:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.read.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          sparse-checkout: VENDORS.md
+          sparse-checkout-cone-mode: false
+
+      - name: Read the npm packages from VENDORS.md
+        id: read
+        run: |
+          PACKAGES=$(grep -oE '^source:.*/npm/[^/@]+@' VENDORS.md | sed -E 's#.*/npm/##; s#@$##' | sort -u | jq -R . | jq -sc .)
+          echo "Packages: ${PACKAGES}"
+          if [ "$PACKAGES" == "[]" ]; then
+            echo "Error: no npm source found in VENDORS.md."
+            exit 1
+          fi
+          echo "packages=${PACKAGES}" >> $GITHUB_OUTPUT
+
+  check-and-update:
+    needs: libs
+    runs-on: ubuntu-latest
+    strategy:
+      # One library failing must not stop the others
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.libs.outputs.packages) }}
+    steps:
+      - name: Get latest release from npm registry
+        id: get_release
+        run: |
+          # Read npm (what the CDN serves), not GitHub releases, which can be published before npm
+          # (and some libraries, like markdown-it, publish no GitHub releases at all)
+          PACKAGE_TARGET="${{ matrix.package }}"
+          LATEST_VERSION=$(curl -s https://registry.npmjs.org/$PACKAGE_TARGET/latest | jq -r .version)
+
+          if [ "$LATEST_VERSION" == "null" ] || [ -z "$LATEST_VERSION" ]; then
+            echo "Error: unable to fetch version or no release found."
+            exit 1
+          fi
+
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "target=$PACKAGE_TARGET" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Read the library name and change log from VENDORS.md
+        id: lib
+        run: |
+          PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
+
+          # The first value of a field among the VENDORS.md entries served from the package (entries are
+          # separated by a blank line); the fields are optional
+          vendor_field() {
+            tr -d '\r' < VENDORS.md | awk -v src="/npm/${PACKAGE_TARGET}@" -v key="$1" '
+              BEGIN { RS = ""; FS = "\n" }
+              {
+                is_lib = 0; value = ""
+                for (i = 1; i <= NF; i++) {
+                  if ($i ~ /^source:/ && index($i, src)) is_lib = 1
+                  if (index($i, key ":") == 1 && value == "") { value = substr($i, length(key) + 2); gsub(/^[ \t]+|[ \t]+$/, "", value) }
+                }
+                if (is_lib && value != "") { print value; exit }
+              }'
+          }
+
+          LIB_NAME=$(vendor_field name)
+          LIB_CHANGELOG=$(vendor_field changelog)
+          echo "Name: ${LIB_NAME:-(none, the package name is used)}"
+          echo "Change log: ${LIB_CHANGELOG:-(none, the PR will not link one)}"
+
+          echo "name=${LIB_NAME:-$PACKAGE_TARGET}" >> $GITHUB_OUTPUT
+          echo "changelog=${LIB_CHANGELOG}" >> $GITHUB_OUTPUT
+
+      - name: Update VENDORS.md and library files
+        id: update
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_VERSION="${{ steps.get_release.outputs.version }}"
+          PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
+          LIB_NAME="${{ steps.lib.outputs.name }}"
+          PR_TITLE="Update ${LIB_NAME} to version ${LATEST_VERSION}"
+
+          # Skip if VENDORS.md on dev already points to the latest version (with or without the "v" prefix)
+          if grep -Eq "/npm/${PACKAGE_TARGET}@v?${LATEST_VERSION//./\\.}/" VENDORS.md; then
+            echo "${LIB_NAME} is already at version ${LATEST_VERSION} on dev. No action taken."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Search through pull requests (both open and closed for safety)
+          EXISTING=$(gh pr list --state all --search "\"${PR_TITLE}\" in:title" --json number --jq 'length')
+          if [ "$EXISTING" != "0" ]; then
+            echo "The pull request for version ${LATEST_VERSION} already exists. No action taken."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Point every source of the library in VENDORS.md to the latest version
+          sed -E -i "s#/npm/${PACKAGE_TARGET}@v?[0-9][^/]*/#/npm/${PACKAGE_TARGET}@${LATEST_VERSION}/#g" VENDORS.md
+
+          node .github/scripts/libs-update.mjs "$PACKAGE_TARGET"
+
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+
+      - name: Commit, push and create the Pull Request
+        if: steps.update.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_VERSION="${{ steps.get_release.outputs.version }}"
+          PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
+          PR_TITLE="${{ steps.update.outputs.pr_title }}"
+          PR_BRANCH="${PACKAGE_TARGET}-update-${LATEST_VERSION}"
+
+          LIB_NAME="${{ steps.lib.outputs.name }}"
+          LIB_CHANGELOG="${{ steps.lib.outputs.changelog }}"
+
+          # The sources the library files were downloaded from, as they now stand in VENDORS.md
+          SOURCES=$(grep -E "^source:.*/npm/${PACKAGE_TARGET}@" VENDORS.md | sed -E 's/^source:[[:space:]]*//' | tr -d '\r' | sed -e 's/$/\n/')
+
+          # The change log line only when the VENDORS.md entry gives one
+          INTRO=$(printf 'Update %s to version **%s**.' "$LIB_NAME" "$LATEST_VERSION")
+          if [ -n "$LIB_CHANGELOG" ]; then
+            INTRO=$(printf '%s\n\nChange log: %s' "$INTRO" "$LIB_CHANGELOG")
+          fi
+
+          PR_BODY=$(printf '%s\n\nVENDORS.md and the library files were updated automatically from:\n\n%s\n\nPlease review the downloaded files before merging.' "$INTRO" "$SOURCES")
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -B "$PR_BRANCH"
+          git add -A
+          git commit -m "$PR_TITLE"
+          git push origin "$PR_BRANCH" --force
+
+          gh pr create \
+            --base dev \
+            --head "$PR_BRANCH" \
+            --title "$PR_TITLE" \
+            --label enhancement \
+            --body "$PR_BODY"

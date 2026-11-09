@@ -94,7 +94,7 @@ k.test('batch-joins-manual-summary', 'a summary started from the panel while the
     await autoAnswer(batch);
     await manual;
     assert.equal(count('summary', 'j1@x'), 1);
-    assert.equal(record(ctx, 'j1@x').summary.summary, 'Manual summary');
+    assert.equal((await record(ctx, 'j1@x')).summary.summary, 'Manual summary');
 });
 
 /** Answer every held prompt but those in `keep` (with the default answers) until `cond()` holds. */
@@ -157,7 +157,7 @@ k.test('spam-batch-joins-refresh', 'the batch reaching a message whose manual sp
     const moves = ctx.m.calls.filter(c => c.api === 'messages.move' && c.args[0].includes(h.id));
     assert.equal(moves.length, 1, 'moved once');
     assert.equal(ctx.m.byHeaderId('sp1@x').folder.id, 'f-junk');
-    assert.equal(record(ctx, 'sp1@x').spam.moved, true);
+    assert.equal((await record(ctx, 'sp1@x')).spam.moved, true);
     assert.equal(count('summary', 'sp1@x'), 0, 'moved: no summary');
 });
 

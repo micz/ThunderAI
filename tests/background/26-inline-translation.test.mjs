@@ -69,7 +69,7 @@ k.test('trigger', 'the button: the generating panel, then the translation, store
     assert.equal(data.headerMessageId, 'b1@x');
     assert.equal(data.translated_text, 'Text b1@x');
     assert.equal(data.translated_subject, 'Betreff');
-    const t = record(ctx, 'b1@x').translation;
+    const t = (await record(ctx, 'b1@x')).translation;
     assert.equal(t.lang, 'German');
     assert.equal(t.translation_status, '1');
 });
@@ -91,7 +91,7 @@ k.test('skipped-status', 'status "-1" (the language is excluded, or already the 
     show(7, 'sk1@x');
     reset();
     await fromTab(ctx, 7, { command: 'triggerTranslationGeneration', headerMessageId: 'sk1@x' });
-    assert.equal(record(ctx, 'sk1@x').translation.translation_status, '-1');
+    assert.equal((await record(ctx, 'sk1@x')).translation.translation_status, '-1');
     assert.equal(ctx.m.sentTo(7, 'showTranslation')[0].data.translation_status, '-1');
 });
 
@@ -100,7 +100,7 @@ k.test('raw-newlines', 'a body with raw line breaks inside the JSON string is st
     show(7, 'rn1@x');
     reset();
     await fromTab(ctx, 7, { command: 'triggerTranslationGeneration', headerMessageId: 'rn1@x' });
-    const t = record(ctx, 'rn1@x').translation;
+    const t = (await record(ctx, 'rn1@x')).translation;
     assert.equal(t.translated_text, '\nHi, just a brief reminder.\tSee you soon!\r\n\n');
     assert.equal(t.translated_subject, 'Quick reminder');
     assert.equal(t.translation_status, '1');
@@ -112,7 +112,7 @@ k.test('html-sanitized', 'an HTML translation crosses the sanitizer on its way t
     reset();
     await fromTab(ctx, 7, { command: 'triggerTranslationGeneration', headerMessageId: 'h1@x' });
     assert.equal(ctx.m.sentTo(7, 'showTranslation')[0].data.translated_text, '<!--sanitized--><p>Hallo <b>Welt</b></p>');
-    assert.equal(record(ctx, 'h1@x').translation.translated_text, '<p>Hallo <b>Welt</b></p>');
+    assert.equal((await record(ctx, 'h1@x')).translation.translated_text, '<p>Hallo <b>Welt</b></p>');
 });
 
 k.test('plain-not-sanitized', 'a plain-text translation is handed on as it is (a < b stays a < b)', async () => {
@@ -128,7 +128,7 @@ k.test('plain-not-sanitized', 'a plain-text translation is handed on as it is (a
 k.test('remove', 'removeTranslation drops the stored translation and draws the button again', async () => {
     reset();
     await fromTab(ctx, 7, { command: 'removeTranslation', headerMessageId: 'p1@x' });
-    assert.equal(record(ctx, 'p1@x')?.translation, undefined);
+    assert.equal((await record(ctx, 'p1@x'))?.translation, undefined);
     assert.deepEqual(ctx.m.sentTo(7), [{ command: 'showTranslationButton', headerMessageId: 'p1@x' }]);
 });
 
@@ -137,7 +137,7 @@ k.test('refresh', 'refreshTranslation regenerates with a new API call', async ()
     show(7, 'b1@x');
     reset();
     await fromTab(ctx, 7, { command: 'refreshTranslation', headerMessageId: 'b1@x' });
-    assert.equal(record(ctx, 'b1@x').translation.translated_text, 'Neuer Text');
+    assert.equal((await record(ctx, 'b1@x')).translation.translated_text, 'Neuer Text');
     assert.equal(calls('b1@x'), 2);
 });
 
@@ -146,7 +146,7 @@ k.test('lang-fallback', 'with no translate_lang the target language is default_c
     await setPrefs(t, ctx, { translate_lang: '' });
     show(7, 'fb1@x');
     await fromTab(ctx, 7, { command: 'triggerTranslationGeneration', headerMessageId: 'fb1@x' });
-    assert.equal(record(ctx, 'fb1@x').translation.lang, 'Italian');
+    assert.equal((await record(ctx, 'fb1@x')).translation.lang, 'Italian');
 });
 
 k.test('no-language', 'no language at all: no job, nothing stored, the user is told and the button comes back', async (t) => {
@@ -156,7 +156,7 @@ k.test('no-language', 'no language at all: no job, nothing stored, the user is t
     reset();
     await fromTab(ctx, 7, { command: 'triggerTranslationGeneration', headerMessageId: 'nl1@x' });
     assert.equal(calls('nl1@x'), 0);
-    assert.equal(record(ctx, 'nl1@x'), null);
+    assert.equal((await record(ctx, 'nl1@x')), null);
     const alert = ctx.m.sentTo(7, 'sendAlert');
     assert.equal(alert.length, 1);
     assert.equal(alert[0].message, ctx.ctl.browser.i18n.getMessage('translate_no_language_configured'));
@@ -170,7 +170,7 @@ k.test('auto2-generates', 'translate_auto = 2: opening a message translates it a
     reset();
     await fromTab(ctx, 7, { command: 'initTranslation' });
     assert.deepEqual(ctx.m.commandsTo(7), ['showTranslationGenerating', 'showTranslation']);
-    assert.ok(record(ctx, 'a2@x').translation);
+    assert.ok((await record(ctx, 'a2@x')).translation);
 });
 
 k.test('auto2-skipped-folder', 'translate_auto = 2: a draft opened is not translated automatically', async () => {

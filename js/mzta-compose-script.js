@@ -430,6 +430,20 @@ function _removeToolbarItem(id) {
     _updateToolbarVisibility();
 }
 
+// The red notice at the top of a result panel whose result could not be saved (data.storage_error,
+// set by the background when the per-message storage write failed): the result is still shown
+// below it, and the notice says why it will not be there next time.
+function _buildStorageErrorNotice(errorText) {
+    const colors = _getThemeColors();
+    const ec = colors.summaryErr;
+    const notice = document.createElement('div');
+    notice.className = 'thunderai-storage-error';
+    notice.setAttribute('role', 'alert');
+    notice.style.cssText = `background-color: ${ec.bg}; color: ${ec.text}; border: 1px solid #cc0000; border-radius: 4px; padding: 2px 6px; margin-bottom: 4px; font-size: 12px; font-weight: normal; white-space: normal;`;
+    notice.textContent = browser.i18n.getMessage("storage_save_failed", [String(errorText)]);
+    return notice;
+}
+
 const _PANEL_ORDER = [
     'mzta-generic-error', 'mzta-generic-info',
     'mzta-spam-check-progress', 'mzta-spam-report-banner',
@@ -1562,6 +1576,7 @@ switch (message.command) {
     spamMenu.style.display = 'none';
     topRow.appendChild(spamMenu);
 
+    if (data.storage_error) badge.appendChild(_buildStorageErrorNotice(data.storage_error));
     badge.appendChild(topRow);
 
     // Bottom row (only when expanded): branding right-aligned, hidden via zero height
@@ -1802,6 +1817,7 @@ switch (message.command) {
     summaryBody.appendChild(summaryTextWrapper);
     summaryContainer.appendChild(summaryBody);
 
+    if (summaryData.storage_error) summaryContainer.prepend(_buildStorageErrorNotice(summaryData.storage_error));
     _addPanel('mzta-summary-banner', summaryContainer);
     return Promise.resolve(true);
   }
@@ -2071,6 +2087,7 @@ switch (message.command) {
 
     translationContainer.appendChild(translationTextWrapper);
 
+    if (translationData.storage_error) translationContainer.prepend(_buildStorageErrorNotice(translationData.storage_error));
     _addPanel('mzta-translation-banner', translationContainer);
     return Promise.resolve(true);
   }

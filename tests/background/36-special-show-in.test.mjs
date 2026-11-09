@@ -62,7 +62,7 @@ k.test('popup-runs-summarize', 'the popup running summarize acts on the message 
     ctx.m.tab(8).displayed = h.id;
     await ctx.ctl.dispatchMessage({ command: 'shortcut_do_prompt', tabId: 8, promptId: 'prompt_summarize' }, SENDERS.popup);
     await settle();
-    assert.ok(record(ctx, 'sum1@x')?.summary, 'summarized');
+    assert.ok((await record(ctx, 'sum1@x'))?.summary, 'summarized');
     assert.ok(ctx.m.sentTo(8, 'showSummary').length > 0, 'inline, in that tab');
 });
 
@@ -71,7 +71,7 @@ k.test('popup-runs-translate', 'the popup running translate acts on the message 
     ctx.m.tab(8).displayed = h.id;
     await ctx.ctl.dispatchMessage({ command: 'shortcut_do_prompt', tabId: 8, promptId: 'prompt_translate_this' }, SENDERS.popup);
     await settle();
-    assert.ok(record(ctx, 'tr1@x')?.translation, 'translated');
+    assert.ok((await record(ctx, 'tr1@x'))?.translation, 'translated');
     assert.ok(ctx.m.sentTo(8, 'showTranslation').some(c => c.data.headerMessageId === 'tr1@x'), 'shown in that tab');
 });
 
