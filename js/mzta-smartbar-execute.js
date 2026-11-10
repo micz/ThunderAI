@@ -17,7 +17,7 @@
  */
 
 /*
- *  The Smart bar's generative operations (claude-spec/10-smartbar.md "Compose"): the prompt the
+ *  The SmartBar's generative operations (claude-spec/10-smartbar.md "Compose"): the prompt the
  *  add-on builds for the special prompt prompt_smartbar_execute, and the checks of its answer.
  *  Only the compose operation uses it in this version; the operation and its params are part of
  *  the prompt, so a later generative operation extends it instead of adding a prompt.

@@ -18,7 +18,7 @@ import { caseTests } from '../helpers/known-issues/prompts.mjs';
 const k = caseTests('13a-migration-menu-order');
 
 // The special prompts with show_in 'none' in their shipped definition (spec 02 "Alphabetic-to-Position
-// Migration"): the summarize fragments and the three Smart bar prompts.
+// Migration"): the summarize fragments and the three SmartBar prompts.
 const HIDDEN = ['prompt_summarize_email_template', 'prompt_summarize_email_separator', 'prompt_smartbar_router', 'prompt_smartbar_execute', 'prompt_smartbar_chat'];
 
 // An older profile: hand-set positions, a custom prompt hidden from every menu, overrides, a user

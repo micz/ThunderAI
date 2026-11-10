@@ -215,10 +215,10 @@ startup; only processing calls await its registration-state read.
   the chat opens the answer's turn on its first token and drops a usage that
   arrives with no turn open. A provider's `requestAborted`
   releases the pending turn, allowing a new send with the same processing session.
-- The Smart bar router (spec 10) is a special command like the others: its call goes
+- The SmartBar router (spec 10) is a special command like the others: its call goes
   through the same hooks, in its own session (`json` format). Its prompt holds no mail body,
   only the instruction and the names of the participants, which the companion may
-  pseudonymize. A Smart bar Stop or replacement aborts the command: as for Stop, the
+  pseudonymize. A SmartBar Stop or replacement aborts the command: as for Stop, the
   pending hook work is cancelled and the session disposed.
 - ChatGPT Web is not covered: while the switch is on, a prompt on that connection is
   blocked with an alert before any tab opens (see "ChatGPT Web").

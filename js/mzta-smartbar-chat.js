@@ -17,7 +17,7 @@
  */
 
 /*
- *  The chat of the Smart bar (claude-spec/10-smartbar.md "Chat"): the conversation of a session
+ *  The chat of the SmartBar (claude-spec/10-smartbar.md "Chat"): the conversation of a session
  *  as the prompts carry it, and the prompt of the free conversation (special prompt
  *  prompt_smartbar_chat), the call made for a message no operation covers.
  *

@@ -1,4 +1,4 @@
-// The Prompts tab of the Smart bar page with a customized router text stored with no fingerprint
+// The Prompts tab of the SmartBar page with a customized router text stored with no fingerprint
 // (saved before fingerprints existed), no policy.
 //
 // Spec 02 "Default text updates": a text with no fingerprint gets no notice (the default it was
@@ -28,7 +28,7 @@ after(() => ctx.close());
 const k = uiTests('smartbar', '04');
 const $ = ctx.$;
 const S_UPDATE = 'spec 02 "Default text updates"';
-const S_PAGE = 'spec 05 "Smart Bar Settings Page (`pages/smartbar/`)"';
+const S_PAGE = 'spec 05 "SmartBar Settings Page (`pages/smartbar/`)"';
 
 k.test('no-fingerprint', S_UPDATE, 'a customized text with no fingerprint gets no notice', () => {
     assert.equal($('#smartbar_prompt_router_text').value, USER_ROUTER);

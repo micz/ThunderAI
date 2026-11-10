@@ -61,7 +61,7 @@ import {
 const TYPE_ORDER = [STORE_SUMMARY, STORE_TRANSLATION, STORE_SPAM];
 /**
  * Every store, in the order the overview, the rules, the counts and the deletions show them: the
- * per-message types, then the Smart bar's instructions (claude-spec/10-smartbar.md), which have
+ * per-message types, then the SmartBar's instructions (claude-spec/10-smartbar.md), which have
  * no durable copy and one record per instruction, so they are in neither the entry list nor the
  * orphan scan nor the realignment.
  */

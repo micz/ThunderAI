@@ -17,8 +17,8 @@
  */
 
 /*
- *  The Prompts tab of the Smart bar page (claude-spec/10-smartbar.md "Feature page",
- *  claude-spec/02-prompts.md "Smart bar prompts"): the texts of the three special prompts of the
+ *  The Prompts tab of the SmartBar page (claude-spec/10-smartbar.md "Feature page",
+ *  claude-spec/02-prompts.md "SmartBar prompts"): the texts of the three special prompts of the
  *  feature, each with the shared editor of the feature pages (bindSpecialPromptEditor(): Save,
  *  Restore default, the policy lock), and:
  *   - the JSON format section of the router and of execute shown read-only under the text: the

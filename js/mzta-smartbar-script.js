@@ -17,7 +17,7 @@
  */
 
 /*
- *  The Smart bar in the message pane (claude-spec/10-smartbar.md "Smart bar UI").
+ *  The SmartBar in the message pane (claude-spec/10-smartbar.md "SmartBar UI").
  *
  *  A classic content script, registered after js/mzta-compose-script.js for the message display
  *  only (mzta-background.js). Everything it draws lives in the shadow root of ONE host element,

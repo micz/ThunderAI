@@ -70,7 +70,7 @@ const overrideOf = p => Object.fromEntries(Object.entries(p || {}).filter(([k]) 
 const holds = (v, target) => v === target
     || (v !== null && typeof v === 'object' && Object.values(v).some(x => holds(x, target)));
 
-// prefix: the feature, when the page hosts several panels (the Smart bar page); the lookups of the
+// prefix: the feature, when the page hosts several panels (the SmartBar page); the lookups of the
 // panel's structural elements are then made inside the panel's section (feature.root).
 export async function connectionScenario(page, mode, prefix = prefixOfPage(page)) {
     const feature = FEATURE_PAGES[prefix];

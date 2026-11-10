@@ -100,7 +100,7 @@ export class GoogleGemini {
     top_p = '',
     top_k = '',
     extra_body = '',
-    // Not a preference: a special command that parses a JSON answer (the Smart bar router) asks
+    // Not a preference: a special command that parses a JSON answer (the SmartBar router) asks
     // for Gemini's JSON mode (responseMimeType). Never set by the chat window.
     json_mode = false,
   } = {}) {

@@ -3,7 +3,7 @@
  *
  *  openWebchat() installs the fake Worker for the provider (./fake-worker.mjs), then opens
  *  api_webchat/index.html with the query string the background builds (llm, call_id, prompt_id,
- *  prompt_name, ph_def_val; with `smartbar`, the Smart bar mode: smartbar=1 and hid, and no worker)
+ *  prompt_name, ph_def_val; with `smartbar`, the SmartBar mode: smartbar=1 and hid, and no worker)
  *  and the stored preferences given. It answers the window's
  *  `${llm}_ready_${call_id}` command; any other background command the file expects goes in
  *  `commands`, so a command nobody declared is still a harness violation.
@@ -43,11 +43,11 @@ export async function openWebchat({
     commands = {},
     permissions,
     openDefaultBrowser,
-    // Smart bar mode (spec 10 "Chat"): { hid }, the message of the chat. The page creates no worker.
+    // SmartBar mode (spec 10 "Chat"): { hid }, the message of the chat. The page creates no worker.
     smartbar = null,
 } = {}) {
     // An llm with no worker (an unknown connection type) expects none: any construction throws;
-    // so does the Smart bar mode, whose page talks to the background instead.
+    // so does the SmartBar mode, whose page talks to the background instead.
     const worker = expectWorker(!smartbar && Object.hasOwn(WORKER_FILES, llm) ? WORKER_FILES[llm] : null);
     // Built as the background builds it (openChatGPT() in mzta-background.js): each value through
     // one encodeURIComponent.

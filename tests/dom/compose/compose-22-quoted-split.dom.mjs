@@ -1,4 +1,4 @@
-// Group C: the background page's side of the Smart bar's compose operation. An empty document at
+// Group C: the background page's side of the SmartBar's compose operation. An empty document at
 // the background page's url, with js/lib/mzta-html-lines.js loaded as mzta-background.html loads
 // it, and js/mzta-utils.js imported into it (as compose-09).
 //

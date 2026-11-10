@@ -357,7 +357,7 @@ export function installApis(browser, m) {
             m.tabSends.push({ tabId, message: clone(message) });
             return m.tabAnswer ? m.tabAnswer(tabId, message) : true;
         },
-        // An extension page opened in a tab (the Smart bar page): a content tab with its url.
+        // An extension page opened in a tab (the SmartBar page): a content tab with its url.
         async create(props = {}) {
             rec('tabs.create', [props]);
             const tabId = m.addTab({ type: 'content', active: props.active !== false });
@@ -383,7 +383,7 @@ export function installApis(browser, m) {
     const icon = which => ({
         setIcon(details) { m.icons.push({ which, path: details.path }); return Promise.resolve(); },
         openPopup() { rec(which + '.openPopup', []); return Promise.resolve(); },
-        // The Smart bar's badge (no tabId: the same badge everywhere).
+        // The SmartBar's badge (no tabId: the same badge everywhere).
         setBadgeText(details) {
             m.badgeCalls.push({ which, text: details.text });
             m.badges[which].text = details.text;
@@ -442,7 +442,7 @@ export function installApis(browser, m) {
             m.windows.push({ id, url: opts.url, type: opts.type });
             return { id, tabs: [{ id: id * 10 }] };
         },
-        // The Smart bar's chat brought to front (one chat per message): recorded, nothing else.
+        // The SmartBar's chat brought to front (one chat per message): recorded, nothing else.
         async update(id, props) {
             rec('windows.update', [id, props]);
             return { id, ...props };
@@ -450,7 +450,7 @@ export function installApis(browser, m) {
     }, u);
 
     // Only the format of a compose window (isPlainTextCompose()) and the opening of a reply, a
-    // forward or a new message (chatgpt_replyMessage, the Smart bar's compose operation): what the
+    // forward or a new message (chatgpt_replyMessage, the SmartBar's compose operation): what the
     // compose script does with what it is sent is the compose area's. Each opens a reachable
     // messageCompose tab of the given format (`replyPlainText` on the model), already loaded;
     // `failComposeOpen` makes the next ones throw.

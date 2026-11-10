@@ -17,7 +17,7 @@
  */
 
 /*
- *  The API chat window in Smart bar mode (claude-spec/10-smartbar.md "Chat"): loaded by
+ *  The API chat window in SmartBar mode (claude-spec/10-smartbar.md "Chat"): loaded by
  *  controller.js only when the page is opened with ?smartbar=1, never otherwise.
  *
  *  The page makes no call itself. The channel stands where the provider worker would stand:

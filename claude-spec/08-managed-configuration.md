@@ -256,7 +256,7 @@ The per-message storage keys of [#955](https://github.com/micz/ThunderAI/issues/
 [#956](https://github.com/micz/ThunderAI/issues/956) are ordinary entries of the allowlist:
 `{feature}_storage_max_entries`, `{feature}_storage_max_age_days` and
 `{feature}_storage_error_max_age_days` (numbers, any non-negative integer, `0` = no limit, so no
-`PREF_NUMBER_RANGES` entry) for `spamfilter`, `summarize` and `translate`, the Smart bar's three
+`PREF_NUMBER_RANGES` entry) for `spamfilter`, `summarize` and `translate`, the SmartBar's three
 (`smartbar_retention_days`, `smartbar_retention_max_records`, `smartbar_retention_error_days`, the
 same rules for its records), the boolean
 `message_storage_cleanup_auto`, and `message_storage_batch_size` (the lot size of the bulk removals,
@@ -602,8 +602,8 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | A locked per-feature connection type | - | `<feature>/02-sweep-locked`, `spamfilter/06-locked-connection-type` |
 | An automatic summary is always inline | `09` | `summarize/02-sweep-locked` (`expected`), `summarize/18`-`20` (no display mode stored from a policy `summarize_auto` on page open) |
 | Organization prompts | `06a-org-prompts`, `06b-org-prompts-*`, `06j-org-prompts-display-properties`, `12-org-prompts-never-stored` | `menu_order/11-org-prompts-display` |
-| Enforced special prompt texts (and its UI) | `06c`-`06e`, `06l` (the Smart bar's three prompts, texts and connections) | `<feature>/07-special-prompts-text` (the Smart bar page: its Prompts tab, no update notice on an enforced text), `get-calendar-event/08-…-calendar-named` |
-| Enforced per-feature connections (and its UI) | `10a`-`10i` (validation, malformed, resolution and `initWorker()`, conflicts, never persisted / export / write guard / removal, hydration, webchat, feature-page coverage, the chat window's connection and configuration checks), `06l` (the Smart bar's three prefixes) | `<feature>/13-connection-enforced`, `<feature>/14-connection-unlocked`, `<feature>/15-text-save-keeps-connection` (generated from `tests/helpers/feature-pages.mjs`; the Smart bar page has one file per prefix, its editors' own Save ids) |
+| Enforced special prompt texts (and its UI) | `06c`-`06e`, `06l` (the SmartBar's three prompts, texts and connections) | `<feature>/07-special-prompts-text` (the SmartBar page: its Prompts tab, no update notice on an enforced text), `get-calendar-event/08-…-calendar-named` |
+| Enforced per-feature connections (and its UI) | `10a`-`10i` (validation, malformed, resolution and `initWorker()`, conflicts, never persisted / export / write guard / removal, hydration, webchat, feature-page coverage, the chat window's connection and configuration checks), `06l` (the SmartBar's three prefixes) | `<feature>/13-connection-enforced`, `<feature>/14-connection-unlocked`, `<feature>/15-text-save-keeps-connection` (generated from `tests/helpers/feature-pages.mjs`; the SmartBar page has one file per prefix, its editors' own Save ids) |
 | Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |
 | Account lists by policy (and the account checkboxes) | `07a`, `07b` | `spamfilter/08`, `spamfilter/09`, `addtags/08`, `addtags/09` |
 | Interaction points: per-feature provider override | `08-provider-override-locked-off` | - |

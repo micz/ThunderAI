@@ -1,7 +1,7 @@
-// The Smart bar page opened as the bar's "Details" link opens it (#activity), no policy, nothing
+// The SmartBar page opened as the bar's "Details" link opens it (#activity), no policy, nothing
 // stored in the smartbar store (the plugin's empty list).
 //
-// Spec 05 "Smart Bar Settings Page (`pages/smartbar/`)" and spec 10 "Feature page": the tab
+// Spec 05 "SmartBar Settings Page (`pages/smartbar/`)" and spec 10 "Feature page": the tab
 // named by the hash is shown at load; the background selects another tab of the page already open
 // by changing its hash (smartbar_open_page), which the page follows (hashchange); a tab clicked
 // puts its name in the hash, so a later request for another tab is always a change. With nothing
@@ -21,7 +21,7 @@ const ctx = await openPage('smartbar', { local: { connection_type: 'chatgpt_api'
 after(() => ctx.close());
 const k = uiTests('smartbar', '06');
 const $ = ctx.$;
-const S_PAGE = 'spec 05 "Smart Bar Settings Page (`pages/smartbar/`)"';
+const S_PAGE = 'spec 05 "SmartBar Settings Page (`pages/smartbar/`)"';
 const S_FEATURE = 'spec 10 "Feature page"';
 const S_ACT = 'spec 10 "Activity"';
 const selected = () => ctx.$$('#smartbar_tabs [role="tab"]').filter(t => t.getAttribute('aria-selected') === 'true').map(t => t.dataset.tab);

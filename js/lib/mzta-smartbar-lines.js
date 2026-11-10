@@ -17,13 +17,13 @@
  */
 
 /*
- *  The texts of the Smart bar's result lines (claude-spec/10-smartbar.md "Result lines"), shared
- *  by the bar in the message pane (js/mzta-smartbar-script.js) and the chat window in Smart bar
+ *  The texts of the SmartBar's result lines (claude-spec/10-smartbar.md "Result lines"), shared
+ *  by the bar in the message pane (js/mzta-smartbar-script.js) and the chat window in SmartBar
  *  mode (api_webchat/smartbarChat.js), so a line reads the same in both.
  *
  *  A CLASSIC script, like js/lib/mzta-html-lines.js: the bar is a classic content script, which
  *  cannot import a module. It defines one global, mztaSmartbarLines; the message display loads it
- *  before the bar, the chat window injects it only in Smart bar mode.
+ *  before the bar, the chat window injects it only in SmartBar mode.
  *
  *  The texts are i18n strings of the add-on, never the model's words.
  */

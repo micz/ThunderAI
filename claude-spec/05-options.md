@@ -106,7 +106,7 @@ Existing installs are unaffected — the empty default only applies to users who
 
 ### Special Prompt Integration Overrides
 
-The prefixes of `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`, and the Smart bar's three: `smartbar_router`, `smartbar_execute`, `smartbar_chat`, all on the Smart bar page) each get their own `use_specific_integration` and `connection_type` keys:
+The prefixes of `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`, and the SmartBar's three: `smartbar_router`, `smartbar_execute`, `smartbar_chat`, all on the SmartBar page) each get their own `use_specific_integration` and `connection_type` keys:
 
 ```
 {prefix}_use_specific_integration   (default: false)
@@ -261,13 +261,13 @@ ThunderAI Privacy owns model management and diagnostics. See
 | `spamfilter_storage_max_entries` / `summarize_storage_max_entries` / `translate_storage_max_entries` | `0` | Set on the storage management page (`pages/storage/`). The cleanup removes the oldest records of that type beyond this count, after the error and age rules; `0` = no limit. Any non-negative integer, so policy-settable with no extra rule. |
 | `spamfilter_storage_max_age_days` / `summarize_storage_max_age_days` / `translate_storage_max_age_days` | `0` | Set on the storage management page. The cleanup removes the records of that type older than this many days (by `createdAt`), after the error rule and before the count rule; `0` = no limit. |
 | `spamfilter_storage_error_max_age_days` / `summarize_storage_error_max_age_days` / `translate_storage_error_max_age_days` | `90` | Set on the storage management page. The cleanup first removes the records of that type that hold an error (`failed` 1) older than this many days; `0` = keep them. Any non-negative integer. |
-| `smartbar_enabled` | `false` | The Smart bar in the message display ([10-smartbar.md](10-smartbar.md)). Options page row "Smart bar" with its "Manage settings" button (`#btnManageSmartbarInfo`, opens `pages/smartbar/`). Needs no permission; not reconciled by `_reconcileFeatureFlags()` (each operation checks its own feature, connection and permissions). |
+| `smartbar_enabled` | `false` | The SmartBar in the message display ([10-smartbar.md](10-smartbar.md)). Options page row "SmartBar" with its "Manage settings" button (`#btnManageSmartbarInfo`, opens `pages/smartbar/`). Needs no permission; not reconciled by `_reconcileFeatureFlags()` (each operation checks its own feature, connection and permissions). |
 | `smartbar_mode` | `'compact'` | `'disabled'`, `'compact'` (an icon that opens the bar) or `'expanded'`. In `PREF_ENUMS`. |
 | `smartbar_default_destination` | `'execute'` | What Enter does in the bar: `'execute'` or `'chat'`. In `PREF_ENUMS`. |
 | `smartbar_history_size` | `20` | Past instructions offered as suggestions; `0` = none. |
 | `smartbar_parallel_limit` | `3` | Operations of one instruction running at once. In `PREF_NUMBER_RANGES` (`min: 1`); the page never stores less than `1`. |
-| `smartbar_retention_days` / `smartbar_retention_max_records` / `smartbar_retention_error_days` | `30` / `500` / `7` | The three retention rules of the Smart bar records, the same as the other types' (maximum age, maximum count, maximum age of the records holding an error); `0` = no limit. On the Smart bar page and on the storage management page. |
-| `smartbar_max_body_length` / `smartbar_additional_instructions` / `smartbar_signature` | `0` / `''` / `''` | The Smart bar's compose operation ([10-smartbar.md](10-smartbar.md) "Compose"; `smartbar_max_body_length` also for the chat's free answer), on the Smart bar page (the two texts are stored as typed, multiline). |
+| `smartbar_retention_days` / `smartbar_retention_max_records` / `smartbar_retention_error_days` | `30` / `500` / `7` | The three retention rules of the SmartBar records, the same as the other types' (maximum age, maximum count, maximum age of the records holding an error); `0` = no limit. On the SmartBar page and on the storage management page. |
+| `smartbar_max_body_length` / `smartbar_additional_instructions` / `smartbar_signature` | `0` / `''` / `''` | The SmartBar's compose operation ([10-smartbar.md](10-smartbar.md) "Compose"; `smartbar_max_body_length` also for the chat's free answer), on the SmartBar page (the two texts are stored as typed, multiline). |
 | `message_storage_batch_size` | `100` | **Policy-only**, no control in any page: the records a bulk removal of the per-message data handles per lot (it releases the storage lock between two lots, so the background's writes wait for one lot at most). An integer from 1 to 10000 (`PREF_NUMBER_RANGES`), anything else read as `100`. The startup rebuild always uses `100` (it runs before the policy is loaded). See [01-architecture.md](01-architecture.md#per-message-data-storage), "The cleanup lock and the lots". |
 | `message_storage_cleanup_auto` | `true` | Set on the storage management page. The scheduled cleanup of the per-message data: at startup if the last one is more than 24 hours old, else 2 hours after startup, then every 24 hours. `false` stops it (the background reacts to the change at once); "Apply rules now" still works. See [01-architecture.md](01-architecture.md#per-message-data-storage). |
 | `summarize` | `false` | Enable email summarization |
@@ -556,7 +556,7 @@ through the background. The rows are built by `renderSpamReportRows()` of `pages
 ### Storage Management Page (`pages/storage/`)
 
 `pages/storage/mzta-storage-manager.html` / `.js` / `.css` ([#956](https://github.com/micz/ThunderAI/issues/956)):
-the saved spam reports, summaries and translations, and the Smart bar's instructions
+the saved spam reports, summaries and translations, and the SmartBar's instructions
 ([01-architecture.md](01-architecture.md#per-message-data-storage)). Opened in a tab by the options
 page's `#btnManageMessageStorage` and by the spam log's link (`#spam`). Same look as the other
 settings pages (`mzta-design.css`, `body.mzta_feature_page`); the managed banner
@@ -566,7 +566,7 @@ realigns or migrates it; it shows the migration notices of `getMigrationState()`
 (`#storage_migrating`, `#storage_migration_failed`) and still shows what the database holds. Its one
 `storage.onChanged` listener skips the mirror keys (`isMirrorKey()`) and reloads the rules form when a
 rule key changes elsewhere, unless the form holds unsaved edits. The types are shown in the order
-summaries, translations, spam reports, Smart bar instructions (`storage_type_*`; the overview,
+summaries, translations, spam reports, SmartBar instructions (`storage_type_*`; the overview,
 the rules, the counts and the deletions cover the four, the entry list and the orphan scan only the
 first three, which are keyed on the Message-ID: `storage_smartbar_note` says so); a count per type reads
 `storage_count_item` ("Summaries: 3"), joined with commas. Every result or error goes in the result
@@ -617,7 +617,7 @@ what it removed before the error (`storage_action_error_partial`, from `error.re
 - **Manual actions** (`#actions_section`), each confirmed first (a refusal changes nothing), then its
   outcome shown and the overview and the list read again: delete one type (`#btn_delete_summary` /
   `_translation` / `_spam` / `_smartbar`, `storage_delete_<type>_confirm`, `taStorage.clear(type)`;
-  a Smart bar instruction still running is kept); delete the
+  a SmartBar instruction still running is kept); delete the
   errors (`#btn_delete_errors`, `deleteErrors()`); delete the entries older than N days
   (`#delete_older_days`, default 30, `#btn_delete_older`, `storage_delete_older_confirm`,
   `deleteOlderThan(days)`; a number below 1 shows `storage_days_invalid` and asks nothing); delete
@@ -834,7 +834,7 @@ still match. If `connection-ui.js` is ever changed to wrap its description text 
 
 Entry point from the options page via the "Menu Order" button (next to "Manage your prompts"). Provides drag-and-drop reordering and toggle-based visibility control for both the popup and the context menu. See `claude-spec/02-prompts.md` ("Menu Order Page") for the full behaviour, data flow, and exclusion rules.
 
-### Smart Bar Settings Page (`pages/smartbar/`)
+### SmartBar Settings Page (`pages/smartbar/`)
 
 `pages/smartbar/mzta-smartbar.html` / `.js` / `.css`, with `mzta-smartbar-prompts.js` (the Prompts
 tab) and `mzta-smartbar-activity.js` (the Activity tab). Opened, **once**, through the background
@@ -872,7 +872,7 @@ The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the manage
   refusal message `#smartbar_prompt_<key>_error` (router variables), the update notice
   `#smartbar_prompt_<key>_update` (Compare / Keep my text). Wired by `bindSpecialPromptEditor()`
   with `beforeSave` (the variable check) and `updateNotice` (spec 02 "Default text updates"),
-  after `applyManagedUI()`. Spec 02 "Smart bar prompts" and spec 10 "Feature page" have the rules.
+  after `applyManagedUI()`. Spec 02 "SmartBar prompts" and spec 10 "Feature page" have the rules.
 - **Activity tab** (`#tab_activity`): the filters, the rows and their actions, Stop all, Remove all
   errors, Show more, the note with its link to the storage management page (`openTab()`): spec 10
   "Activity". The elapsed times and the rate-limit countdowns tick every second only while the
@@ -1883,7 +1883,7 @@ both `style.display` and the `disabled` attribute together, and replaces all pri
 inline `btn.disabled = ...` toggling for these six buttons (on checkbox `click`, on
 `disable_*()` re-evaluation, and in the `onChange` of `bindPermissionToggle()`, which also covers a refused permission).
 
-The Smart bar row has the same button (`btnManageSmartbarInfo`, same visibility rule), but its
+The SmartBar row has the same button (`btnManageSmartbarInfo`, same visibility rule), but its
 click asks the background for the page (`smartbar_open_page`, no tab named) instead of calling
 `openTab()`: that page is opened once whatever tab its hash names (spec 10 "Feature page").
 

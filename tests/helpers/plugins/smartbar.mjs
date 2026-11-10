@@ -1,5 +1,5 @@
 /*
- *  The smartbar area's plugin (tests/smartbar/README.md): the Smart bar settings page
+ *  The smartbar area's plugin (tests/smartbar/README.md): the SmartBar settings page
  *  (pages/smartbar/), which the DOM harness does not know otherwise, and the default answers to
  *  the command its Activity tab sends at load (an empty list) and to smartbar_open_page (the
  *  options page's Manage settings: opened). Nothing else: a plugin is

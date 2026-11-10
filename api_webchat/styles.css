@@ -287,7 +287,7 @@ p {
     margin: 0 0 10px 0;
 }
 
-/* Smart bar mode only (smartbarChat.js, ?smartbar=1): the New conversation button in the header
+/* SmartBar mode only (smartbarChat.js, ?smartbar=1): the New conversation button in the header
    and the note above the input. Neither element exists otherwise. */
 #smartbarNewConversation {
     margin-left: auto;

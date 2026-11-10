@@ -1141,7 +1141,7 @@ export function getActiveSpecialPromptsIDs(args = {}) {
     spamfilter = false,
     summarize = false,
     translate = false,
-    // The Smart bar prompts are never in a menu: only the prefix -> prompt mapping of the
+    // The SmartBar prompts are never in a menu: only the prefix -> prompt mapping of the
     // per-feature connections asks for them (specialPromptIdsForPrefix() in js/mzta-prompts.js).
     smartbar = false,
     effective_conn = {}

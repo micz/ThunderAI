@@ -308,7 +308,7 @@ export const taPromptUtils = {
 
     // messageId is needed for the body: getMailInlineTextParts() asks the API for
     // the inline text parts directly. fullMessage stays for the subject header.
-    // targetLang: a language asked for explicitly (the Smart bar's "translate to German"),
+    // targetLang: a language asked for explicitly (the SmartBar's "translate to German"),
     // which replaces {%thunderai_translate_lang%}; omitted, the configured language is used,
     // as before. Every other placeholder is resolved as usual.
     async buildTranslationPrompt(fullMessage, messageId, targetLang = '') {

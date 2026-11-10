@@ -9,7 +9,7 @@ guard, hydration, validation - is in
 ## UI
 
 [`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), shared by the options page, the
-six feature settings pages, the Smart bar page and the setup wizard. It sends **no message of its own**: the page
+six feature settings pages, the SmartBar page and the setup wizard. It sends **no message of its own**: the page
 state is read from the hydrated `mztaManaged` (see
 [Hydration in every other context](08-managed-configuration.md#hydration-in-every-other-context)), which the first
 preference read has already filled:

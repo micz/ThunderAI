@@ -844,7 +844,7 @@ class MessagesArea extends HTMLElement {
         return this._currentTurnEl.querySelector('.turn-body');
     }
 
-    // Smart bar mode only (smartbarChat.js; never called otherwise): a model turn the page builds
+    // SmartBar mode only (smartbarChat.js; never called otherwise): a model turn the page builds
     // itself (result lines, drafts), appended but NOT made the current turn, so nothing streams
     // into it by accident. Returns { turn, body }.
     beginCustomBotTurn(labelText = this.llmName) {
@@ -855,7 +855,7 @@ class MessagesArea extends HTMLElement {
         return { turn, body };
     }
 
-    // Smart bar mode only: the next tokens stream into this turn (a free answer, through the one
+    // SmartBar mode only: the next tokens stream into this turn (a free answer, through the one
     // render path), until handleTokensDone() closes it.
     streamInto(turn) {
         this._streaming = null;

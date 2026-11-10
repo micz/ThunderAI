@@ -1,4 +1,4 @@
-// The Smart bar in the message display (js/mzta-smartbar-script.js), loaded after the scripts
+// The SmartBar in the message display (js/mzta-smartbar-script.js), loaded after the scripts
 // mzta-background.js registers before it, on a mail displayed as message "bar-A@example.com". The
 // background's answers are scripted here; what the background does is the background area's
 // (tests/background/44-smartbar).

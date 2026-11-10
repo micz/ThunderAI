@@ -115,7 +115,7 @@ export function resolveFeatureConnectionPrefs(getting, prompt, prefix) {
  * name, and hide the whole panel when "use specific integration" is off (no empty bordered
  * box). Runs now, and again on every change of the switch or the type select.
  */
-// `root`: the element holding the panel when a page hosts several (the Smart bar page); the
+// `root`: the element holding the panel when a page hosts several (the SmartBar page); the
 // panel and its pill are looked up inside it. Without it, the document.
 export function bindConnPanelTint(prefix, root = null) {
     const find = (id) => root ? root.querySelector('#' + id) : document.getElementById(id);
@@ -199,7 +199,7 @@ function bindPromptJsonCheck(textarea, promptIds) {
  * A prompt whose feature parses a JSON answer gets its text checked (bindPromptJsonCheck()) on
  * load, on every input and on Reset, which dispatches an input.
  *
- * `updateNotice` (opt-in, the Smart bar page today; claude-spec/02-prompts.md "Default text
+ * `updateNotice` (opt-in, the SmartBar page today; claude-spec/02-prompts.md "Default text
  * updates"): { el, onCompare(currentText, newDefault) }. Save stores with the text the
  * fingerprint of the default it was written against (`default_hash`, promptDefaultHash()); when
  * the shipped default no longer matches it and the text is the user's own, `el` is shown. Its

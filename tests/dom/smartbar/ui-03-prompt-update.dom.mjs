@@ -1,4 +1,4 @@
-// The Prompts tab of the Smart bar page with the three texts customized against an older default
+// The Prompts tab of the SmartBar page with the three texts customized against an older default
 // (a fingerprint that is not the current default's), no policy.
 //
 // Spec 02 "Default text updates": the notice is shown for each; a Save while it is pending keeps
@@ -41,7 +41,7 @@ after(() => ctx.close());
 const k = uiTests('smartbar', '03');
 const $ = ctx.$;
 const S_UPDATE = 'spec 02 "Default text updates"';
-const S_PAGE = 'spec 05 "Smart Bar Settings Page (`pages/smartbar/`)"';
+const S_PAGE = 'spec 05 "SmartBar Settings Page (`pages/smartbar/`)"';
 const notice = key => $('#smartbar_prompt_' + key + '_update');
 const ta = key => $('#smartbar_prompt_' + key + '_text');
 const currentHash = id => ctx.mods.prompts.promptDefaultHash(enText(id + '_full_text'));

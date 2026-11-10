@@ -1,7 +1,7 @@
-// The Smart bar settings page (pages/smartbar/) with an API global connection, no per-feature
+// The SmartBar settings page (pages/smartbar/) with an API global connection, no per-feature
 // override, no policy.
 //
-// Spec 05 "Smart Bar Settings Page (`pages/smartbar/`)": the tab strip (three tabs, Options shown
+// Spec 05 "SmartBar Settings Page (`pages/smartbar/`)": the tab strip (three tabs, Options shown
 // when the URL has no hash), the stored settings shown in their sections, each change stored
 // with its type (a select as its value, a number as a number and never below its minimum, an
 // emptied number as its default, a textarea as typed), the three connection panels, one per
@@ -36,7 +36,7 @@ const ctx = await openPage('smartbar', { local: STORED });
 after(() => ctx.close());
 const k = uiTests('smartbar', '01');
 const $ = ctx.$;
-const S_PAGE = 'spec 05 "Smart Bar Settings Page (`pages/smartbar/`)"';
+const S_PAGE = 'spec 05 "SmartBar Settings Page (`pages/smartbar/`)"';
 const PANELS = ['smartbar_router', 'smartbar_execute', 'smartbar_chat'];
 
 k.test('tabs', S_PAGE, 'three tabs, Options selected with no hash, its panel alone shown', () => {

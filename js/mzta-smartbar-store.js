@@ -17,7 +17,7 @@
  */
 
 /*
- *  The Smart bar's records (claude-spec/10-smartbar.md "Storage"): one per instruction the user
+ *  The SmartBar's records (claude-spec/10-smartbar.md "Storage"): one per instruction the user
  *  typed, in the smartbar store of js/mzta-storage.js (not mirrored in storage.local).
  *
  *  This module builds the record, derives its state from its operations and caps what can grow.

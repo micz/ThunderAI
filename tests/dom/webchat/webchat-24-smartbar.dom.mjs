@@ -1,5 +1,5 @@
-// The API chat window in Smart bar mode (?smartbar=1&hid=..., api_webchat/smartbarChat.js): the
-// chat of one message started from the Smart bar. A ChatGPT API window on the smartbar_chat
+// The API chat window in SmartBar mode (?smartbar=1&hid=..., api_webchat/smartbarChat.js): the
+// chat of one message started from the SmartBar. A ChatGPT API window on the smartbar_chat
 // prompt; the background's side is scripted here (what it does is tests/background/45-smartbar-chat).
 //
 // Spec 10 "Chat" ("The window"): no worker, the ready handshake as for any chat, a New conversation
@@ -13,7 +13,7 @@
 // resumed record, never twice, the message itself only as the newest turn); a turn from the bar drawn by the page; the prefilled instruction and the note
 // of the attached context; a message from a content script ignored; a refused message as a localized
 // text, never its code; a message stopped from outside (replaced) reading "Stopped", the input back.
-// Spec 01 "Component structure" (Smart bar mode: no worker, the components unchanged).
+// Spec 01 "Component structure" (SmartBar mode: no worker, the components unchanged).
 //
 // The tests run in order on one window; each builds on the previous ones.
 
@@ -47,7 +47,7 @@ const { ctx, worker, ready } = await openWebchat({
     llm: 'chatgpt_api',
     call_id: CHAT_ID,
     prompt_id: 'prompt_smartbar_chat',
-    prompt_name: 'Smart bar',
+    prompt_name: 'SmartBar',
     smartbar: { hid: HID },
     local: { chatgpt_model: 'gpt-test', chat_show_usage_data: true, hide_thinking: true },
     commands: {
@@ -86,12 +86,12 @@ const drafts = turn => [...turnBody(turn).querySelectorAll('.sb-draft')];
 const newConversation = () => ctx.document.getElementById('smartbarNewConversation');
 const contextNote = () => ctx.document.getElementById('smartbarContextNote');
 
-k.test('no-worker', S_COMP, 'Smart bar mode: no worker is created; the ready handshake as for any chat; the header and the button', () => {
+k.test('no-worker', S_COMP, 'SmartBar mode: no worker is created; the ready handshake as for any chat; the header and the button', () => {
     assert.equal(worker.instance, null);
     assert.deepEqual(worker.unexpected, []);
     assert.equal(sentCommands(ctx, ready).length, 1);
     assert.equal(sentCommands(ctx, 'api_send').length, 0);
-    assert.equal(ctx.document.getElementById('appHeaderModel').textContent, 'Smart bar | gpt-test');
+    assert.equal(ctx.document.getElementById('appHeaderModel').textContent, 'SmartBar | gpt-test');
     assert.equal(newConversation().textContent, msg('smartbar_chat_new_conversation'));
     assert.equal(contextNote().hidden, true);
     // No usage chip in this mode: the calls are the background's.
@@ -123,7 +123,7 @@ k.test('init-resume', S_CHAT, 'the session is resumed: the hidden earlier messag
     assert.equal(draft.querySelector('.sb-draft-body').textContent, 'I agree.\nSee you.');
     assert.equal(draft.querySelector('.create_btn').textContent, msg('smartbar_chat_create_email'));
     assert.deepEqual(lineTexts(bots[2]), []);
-    assert.equal(ctx.document.title.includes('Smart bar'), true);
+    assert.equal(ctx.document.title.includes('SmartBar'), true);
 });
 
 k.test('lines-buttons', S_CHAT, 'the result lines read as in the bar, with its buttons naming the record; never Open in chat', async () => {

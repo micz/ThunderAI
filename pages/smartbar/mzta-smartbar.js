@@ -17,7 +17,7 @@
  */
 
 /*
- *  The Smart bar page (claude-spec/10-smartbar.md "Feature page"): three tabs, Options (this
+ *  The SmartBar page (claude-spec/10-smartbar.md "Feature page"): three tabs, Options (this
  *  file), Prompts (mzta-smartbar-prompts.js) and Activity (mzta-smartbar-activity.js). The hash
  *  of the URL names the tab shown: the background opens the page once and selects a tab by
  *  changing it (smartbar_open_page), the bar's Details link asks for #activity.

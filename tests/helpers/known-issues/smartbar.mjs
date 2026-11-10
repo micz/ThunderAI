@@ -1,5 +1,5 @@
 /*
- *  Known issues of the smartbar area: assertions written from the spec of the Smart bar's own
+ *  Known issues of the smartbar area: assertions written from the spec of the SmartBar's own
  *  modules (claude-spec/10-smartbar.md "Operation registry", "Router", "Placeholders", "Storage";
  *  spec 01 "Per-Message Data Storage" for its store) that the shipped code contradicts today.
  *  The flows the background runs are the background area's. How they run (TODO

@@ -1,6 +1,6 @@
-// What the background does for the Smart bar page and the badge (claude-spec/10-smartbar.md
+// What the background does for the SmartBar page and the badge (claude-spec/10-smartbar.md
 // "Feature page", "Activity", "Badge"), through its real runtime.onMessage listener:
-//  - the Activity commands are accepted from the Smart bar page only;
+//  - the Activity commands are accepted from the SmartBar page only;
 //  - smartbar_activity_list: the records of a filter, newest first, an instruction in progress as
 //    it is in memory (live), with the counts of the running and the error records;
 //  - the badge of both actions: the running operations (the router at work counts as one) plus
@@ -88,7 +88,7 @@ const show = (tabId, hid) => {
     return h;
 };
 const run = (tabId, hid, instruction) => fromTab(ctx, tabId, { command: 'smartbar_run', headerMessageId: hid, instruction }, { turns: 200 });
-/** A command of the Smart bar page, from its tab. */
+/** A command of the SmartBar page, from its tab. */
 async function fromPage(message) {
     const answer = await ctx.ctl.dispatchMessage(message, { id: 'thunderai@micz.it', url: PAGE_URL + '#activity', tab: { id: 300, type: 'content' } });
     await settle();
@@ -110,7 +110,7 @@ async function holdRouters(count = 1) {
     };
 }
 
-k.test('page-only', 'the Activity commands are refused from anything but the Smart bar page', async () => {
+k.test('page-only', 'the Activity commands are refused from anything but the SmartBar page', async () => {
     show(7, 'po@x');
     assert.deepEqual(await fromTab(ctx, 7, { command: 'smartbar_activity_list', filter: 'all' }), { ok: false, error: 'not_page' });
     assert.deepEqual(await fromTab(ctx, 7, { command: 'smartbar_activity_stop_all' }), { ok: false, error: 'not_page' });

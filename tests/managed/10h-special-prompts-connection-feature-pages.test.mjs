@@ -19,7 +19,7 @@ test('FEATURE_PAGES covers special_prompts_with_integration exactly', () => {
     assert.deepEqual(Object.keys(FEATURE_PAGES).sort(), [...special_prompts_with_integration].sort());
 });
 
-// One file per feature and scenario; a page hosting several features (the Smart bar page) has the
+// One file per feature and scenario; a page hosting several features (the SmartBar page) has the
 // prefix in each file name. The text Save scenario only where the page edits the prompt's text.
 test('every feature page has the connection scenarios', () => {
     for (const [prefix, feature] of Object.entries(FEATURE_PAGES)) {

@@ -288,7 +288,7 @@ k.test('special-ids', 'getSpecialPromptIds(): the twelve special prompts', () =>
     assert.deepEqual([...p.getSpecialPromptIds()].sort(), [...SPECIAL_IDS].sort());
 });
 
-k.test('hidden-special-ids', 'getHiddenSpecialPromptIds(): the summarize email template and separator, and the three Smart bar prompts', () => {
+k.test('hidden-special-ids', 'getHiddenSpecialPromptIds(): the summarize email template and separator, and the three SmartBar prompts', () => {
     assert.deepEqual([...p.getHiddenSpecialPromptIds()].sort(), [...HIDDEN_SPECIAL_IDS].sort());
 });
 
@@ -297,7 +297,7 @@ k.test('special-prefix', 'getSpecialPromptPrefix(): each feature prompt to its f
         prompt_add_tags: 'add_tags', prompt_spamfilter: 'spamfilter', prompt_summarize: 'summarize',
         prompt_get_calendar_event: 'get_calendar_event', prompt_get_calendar_event_from_clipboard: 'get_calendar_event',
         prompt_get_task: 'get_task', prompt_translate_this: 'translate',
-        // The Smart bar prompts each have their own connection (claude-spec/10-smartbar.md).
+        // The SmartBar prompts each have their own connection (claude-spec/10-smartbar.md).
         prompt_smartbar_router: 'smartbar_router', prompt_smartbar_execute: 'smartbar_execute', prompt_smartbar_chat: 'smartbar_chat',
     };
     for (const [id, prefix] of Object.entries(expected)) assert.equal(p.getSpecialPromptPrefix(id), prefix, id);

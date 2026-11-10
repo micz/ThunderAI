@@ -807,7 +807,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   setFeatureManageVisibility(translate_info_btn, translate_el.checked);
 
-  // The Smart bar: its page is reachable only while the feature is on, like the others.
+  // The SmartBar: its page is reachable only while the feature is on, like the others.
   let smartbar_el = document.getElementById('smartbar_enabled');
   let smartbar_info_btn = document.getElementById('btnManageSmartbarInfo');
   smartbar_el.addEventListener('click', (event) => {
@@ -857,7 +857,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     openTab('/pages/translate/mzta-translate.html');
   });
 
-  // Through the background: the Smart bar page is opened once, whatever tab it shows (its URL
+  // Through the background: the SmartBar page is opened once, whatever tab it shows (its URL
   // carries the tab in its hash, which openTab()'s exact match would miss).
   document.getElementById('btnManageSmartbarInfo').addEventListener('click', () => {
     browser.runtime.sendMessage({ command: 'smartbar_open_page' }).catch(() => {});

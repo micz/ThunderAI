@@ -1,8 +1,8 @@
-// The Prompts tab of the Smart bar page (pages/smartbar/), opened on #prompts, nothing stored,
+// The Prompts tab of the SmartBar page (pages/smartbar/), opened on #prompts, nothing stored,
 // no policy.
 //
-// Spec 05 "Smart Bar Settings Page (`pages/smartbar/`)": the tab named by the hash shown.
-// Spec 02 "Smart bar prompts: router, execute and chat": the three texts shown, each with its
+// Spec 05 "SmartBar Settings Page (`pages/smartbar/`)": the tab named by the hash shown.
+// Spec 02 "SmartBar prompts: router, execute and chat": the three texts shown, each with its
 // editor (Save, Restore default, the unsaved-changes guard); the JSON format sections of the router
 // and of execute shown read-only under the text, never in the textarea and never saved; the
 // router's variables required on Save (a text without one is not saved, the message names the
@@ -28,8 +28,8 @@ const ctx = await openPage('smartbar', { local: { connection_type: 'chatgpt_api'
 after(() => ctx.close());
 const k = uiTests('smartbar', '02');
 const $ = ctx.$;
-const S_PAGE = 'spec 05 "Smart Bar Settings Page (`pages/smartbar/`)"';
-const S_PROMPTS = 'spec 02 "Smart bar prompts: router, execute and chat"';
+const S_PAGE = 'spec 05 "SmartBar Settings Page (`pages/smartbar/`)"';
+const S_PROMPTS = 'spec 02 "SmartBar prompts: router, execute and chat"';
 const S_UPDATE = 'spec 02 "Default text updates"';
 const KEYS = { router: 'prompt_smartbar_router', execute: 'prompt_smartbar_execute', chat: 'prompt_smartbar_chat' };
 const ta = key => $('#smartbar_prompt_' + key + '_text');

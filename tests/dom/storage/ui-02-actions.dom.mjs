@@ -56,7 +56,7 @@ const detail = (summary, translation, spam) => [
     msg('storage_count_item', [msg('storage_type_summary'), String(summary)]),
     msg('storage_count_item', [msg('storage_type_translation'), String(translation)]),
     msg('storage_count_item', [msg('storage_type_spam'), String(spam)]),
-    // The Smart bar's instructions, none in this file.
+    // The SmartBar's instructions, none in this file.
     msg('storage_count_item', [msg('storage_type_smartbar'), '0']),
 ].join(', ');
 async function withConfirm(answer, fn) {

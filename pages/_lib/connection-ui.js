@@ -1857,7 +1857,7 @@ function parseSvg(svgText) {
   return document.importNode(new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement, true);
 }
 
-// `root`: the element holding this panel, when a page hosts several (the Smart bar page, one
+// `root`: the element holding this panel, when a page hosts several (the SmartBar page, one
 // panel per special prompt). Every lookup is then made inside it, so the panels never reach
 // each other's elements; the structural ids repeat in each root, which keeps the shared CSS.
 // Without a root, the document: the six feature pages, unchanged.
@@ -1929,7 +1929,7 @@ function setupFeatureConnAdv({ getConnType, idPrefix, root = null }) {
   };
 }
 
-// `root` and `anchorId`: for a page hosting several panels (the Smart bar page), the element
+// `root` and `anchorId`: for a page hosting several panels (the SmartBar page), the element
 // holding this one and the id of its anchor row, which must be unique in the page. Every other
 // structural lookup is made inside `root` (see scopedFinder()). Without them, the document and
 // 'connection_ui_anchor', as on the six feature pages.

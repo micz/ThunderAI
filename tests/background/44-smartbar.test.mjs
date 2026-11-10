@@ -1,4 +1,4 @@
-// What the background does with a Smart bar instruction (claude-spec/10-smartbar.md "Flow",
+// What the background does with a SmartBar instruction (claude-spec/10-smartbar.md "Flow",
 // "Router", "Jobs", "Replacement", "Storage"), through its real runtime.onMessage listener, from the
 // tab that displays the message:
 //  - smartbar_run: refused when the feature is off, for an empty instruction, or from a tab that

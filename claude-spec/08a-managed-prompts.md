@@ -322,7 +322,7 @@ stored value that is still the raw i18n key.
 in [`pages/_lib/feature-page.js`](../pages/_lib/feature-page.js) — the one wiring of a special
 prompt editor (textarea, Save, Reset, "unsaved" note) the six feature pages share — after it
 has filled the textarea and set its buttons' initial state (summarize binds three editors, one
-per textarea; calendar one, with both calendar ids; the Smart bar page three, in its Prompts
+per textarea; calendar one, with both calendar ids; the SmartBar page three, in its Prompts
 tab: plain textareas with no highlight wrapper, whose update notice of a changed default never
 shows on an enforced text, see [02-prompts.md](02-prompts.md) "Default text updates"). It follows [Controls with their
 own load/save logic](08c-managed-ui.md#controls-with-their-own-loadsave-logic-data-mzta-pref), without a

@@ -33,7 +33,7 @@ export async function seedMessageData(records = {}) {
                 indexes: [index('createdAt'), index('size'), index('failed_createdAt', ['failed', 'createdAt'])],
                 records: (records[name] || []).map(r => ({ key: r.messageId, value: withSize(withFailed(name, r)) })),
             })),
-            // The Smart bar's store, in the same database (claude-spec/10-smartbar.md "Storage"):
+            // The SmartBar's store, in the same database (claude-spec/10-smartbar.md "Storage"):
             // without it the page would find the database incomplete and create it again, empty.
             {
                 name: 'smartbar',

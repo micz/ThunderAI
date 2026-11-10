@@ -12,10 +12,10 @@
  *               initializeSpecificIntegrationUI())
  *    textarea   the id of the textarea that edits that text
  *    save       the id of its Save button, when it is not #btn_save_prompt (a page with several
- *               editors: the Smart bar page)
+ *               editors: the SmartBar page)
  *    text       a stored text for that prompt that satisfies its response contract
  *    root       the id of the element holding the feature's panel, when the page hosts several
- *               (the Smart bar page: one section per special prompt); absent: the whole page
+ *               (the SmartBar page: one section per special prompt); absent: the whole page
  */
 
 export const FEATURE_PAGES = {
@@ -66,8 +66,8 @@ export function prefixesOfPage(page) {
 }
 
 /**
- * The feature prefix a FEATURE_PAGES page belongs to. A page hosting several features (the Smart
- * bar page) has no single one: its scenario files name the prefix themselves.
+ * The feature prefix a FEATURE_PAGES page belongs to. A page hosting several features (the
+ * SmartBar page) has no single one: its scenario files name the prefix themselves.
  */
 export function prefixOfPage(page) {
     const found = prefixesOfPage(page);

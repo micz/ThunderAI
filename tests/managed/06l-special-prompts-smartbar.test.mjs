@@ -1,10 +1,10 @@
-// Spec 08 / 08a / 08b: the three special prompts of the Smart bar (claude-spec/10-smartbar.md
+// Spec 08 / 08a / 08b: the three special prompts of the SmartBar (claude-spec/10-smartbar.md
 // "Special prompts and their connections") as policy keys.
 //  - _special_prompts_text: the three ids are valid keys; their texts are enforced as a read-time
 //    overlay and never stored. The router's variables ({OPERATIONS}, {PLACEHOLDERS},
 //    {LANGUAGE_RULE}) are required by the Prompts tab on the user's own Save only: a policy text
-//    without them is still enforced (spec 02 "Smart bar prompts": a variable the text lacks has
-//    its content appended at call time), and the Smart bar's prompts have no response contract
+//    without them is still enforced (spec 02 "SmartBar prompts": a variable the text lacks has
+//    its content appended at call time), and the SmartBar's prompts have no response contract
 //    (their JSON sections are the add-on's).
 //  - _special_prompts_connection: the three feature prefixes are valid keys; each implies its
 //    {prefix}_use_specific_integration / {prefix}_connection_type pair, locked, and overlays its
@@ -38,7 +38,7 @@ const PREFIXES = { smartbar_router: 'openai_comp_api', smartbar_execute: 'anthro
 test('the three texts are enforced, the router\'s without its variables too', () => {
     assert.deepEqual(Object.keys(ctx.mztaManaged.getSpecialPromptsText()).sort(), [...IDS].sort());
     for (const id of IDS) assert.equal(ctx.mztaManaged.getSpecialPromptText(id), T[id], id);
-    assert.equal(warnings.some(w => w.includes('prompt_smartbar_')), false, 'a Smart bar text was warned about: ' + warnings.join(' | '));
+    assert.equal(warnings.some(w => w.includes('prompt_smartbar_')), false, 'a SmartBar text was warned about: ' + warnings.join(' | '));
 });
 
 test('getSpecialPrompts() overlays the texts; storage keeps the user\'s text and default_hash', async () => {

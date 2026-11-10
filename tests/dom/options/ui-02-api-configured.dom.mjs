@@ -130,7 +130,7 @@ k.test('restore-flags', S_MANAGE, 'stored-on features show checked with their Ma
     }
 });
 
-k.test('manage-smartbar', S_MANAGE, 'the Smart bar\'s Manage button asks the background for its page (opened once), with no tab named, and opens no tab itself', async () => {
+k.test('manage-smartbar', S_MANAGE, 'the SmartBar\'s Manage button asks the background for its page (opened once), with no tab named, and opens no tab itself', async () => {
     const btn = $('#btnManageSmartbarInfo');
     assert.equal($('#smartbar_enabled').checked, true);
     assert.notEqual(btn.style.display, 'none');

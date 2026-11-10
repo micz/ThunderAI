@@ -1,6 +1,6 @@
 /*
  *  One context of the smartbar area: the core background (mock, console capture, core modules)
- *  and the Smart bar's modules, imported after the mock exists (js/mzta-prefs.js touches
+ *  and the SmartBar's modules, imported after the mock exists (js/mzta-prefs.js touches
  *  `browser` at import time, and the router reaches it through js/mzta-utils.js).
  *
  *  A test file is ONE context: call smartbarContext() once, at the top level.

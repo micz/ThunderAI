@@ -1,4 +1,4 @@
-// The Activity tab of the Smart bar page (pages/smartbar/), no policy, with the background's
+// The Activity tab of the SmartBar page (pages/smartbar/), no policy, with the background's
 // answers modelled here: a running instruction from the bar, a chat message whose router answer
 // was unreadable (json), a translation stopped by a rate limit, a finished reply.
 //
@@ -94,7 +94,7 @@ after(() => clock.uninstall());
 const k = uiTests('smartbar', '05');
 const $ = ctx.$;
 const S_ACT = 'spec 10 "Activity"';
-const S_PAGE = 'spec 05 "Smart Bar Settings Page (`pages/smartbar/`)"';
+const S_PAGE = 'spec 05 "SmartBar Settings Page (`pages/smartbar/`)"';
 const msg = (key, subs) => ctx.window.browser?.i18n?.getMessage
     ? ctx.window.browser.i18n.getMessage(key, subs) : enText(key);
 const row = id => $('#smartbar_activity_rows tr[data-record-id="' + id + '"]');

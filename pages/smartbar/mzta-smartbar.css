@@ -17,7 +17,7 @@
  */
 
 /* ===========================================================================
-   SMART BAR PAGE — page-specific styles. The shared design system lives in
+   SMARTBAR PAGE — page-specific styles. The shared design system lives in
    ../_lib/mzta-design.css, linked first. Three connection panels share the
    structural ids of the feature pages (one per section), so the shared rules
    apply to each.

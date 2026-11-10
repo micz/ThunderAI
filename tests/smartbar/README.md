@@ -1,6 +1,6 @@
-# Tests: Smart bar (operation registry, router, records)
+# Tests: SmartBar (operation registry, router, records)
 
-Level-1 tests of the Smart bar's own modules, written from
+Level-1 tests of the SmartBar's own modules, written from
 [`claude-spec/10-smartbar.md`](../../claude-spec/10-smartbar.md): each test file names the spec sections
 it covers in its opening comment. How to run the suite, the two levels, the mock and the known-issue
 mechanism are in the general [`tests/README.md`](../README.md). Paths below are relative to `tests/`.
@@ -28,7 +28,7 @@ The modules under test:
 What the background does with them (routing through the special command, replacement of an
 instruction, the jobs it starts) is the background area's ([`background/README.md`](../background/README.md));
 the chat's flow too (`background/45-smartbar-chat`); the bar in the message pane is the compose area's
-([`compose/README.md`](../compose/README.md)); the chat window in Smart bar mode is the webchat
+([`compose/README.md`](../compose/README.md)); the chat window in SmartBar mode is the webchat
 area's (`dom/webchat/webchat-24-smartbar`); the
 settings page (`pages/smartbar/`) is tested in `dom/smartbar/` (the no-policy, sweep and connection
 files the managed area generates, and the ui area's files).
@@ -51,7 +51,7 @@ tests/
 ├── helpers/known-issues/smartbar.mjs   the known issues, their shape (validateKnown()), and caseTests()
 ├── helpers/plugins/smartbar.mjs        the settings page, for openPage()
 └── smartbar/
-    ├── context.mjs                     smartbarContext(): the core background plus the Smart bar modules
+    ├── context.mjs                     smartbarContext(): the core background plus the SmartBar modules
     ├── 01-registry.test.mjs            registry, availability, params, plan, runPlanned()
     ├── 02-router.test.mjs              prompt, allow list, context, answer, correction attempt
     ├── 03-store.test.mjs               records, states, caps, the smartbar store and its cleanup

@@ -17,7 +17,7 @@
  */
 
 /*
- *  The Smart bar's operation registry (claude-spec/10-smartbar.md "Operation registry").
+ *  The SmartBar's operation registry (claude-spec/10-smartbar.md "Operation registry").
  *
  *  An operation is one entry:
  *    id            stable string ('tag', 'summarize', 'translate', 'compose', 'deliver_draft')
@@ -216,8 +216,8 @@ export function createSmartbarRegistry(operations = DEFAULT_OPERATIONS) {
     const byId = new Map();
     for (const op of operations) {
         const problems = operationProblems(op);
-        if (problems.length > 0) throw new Error(`Smart bar operation ${op?.id}: ` + problems.join('; '));
-        if (byId.has(op.id)) throw new Error(`Smart bar operation ${op.id}: declared twice`);
+        if (problems.length > 0) throw new Error(`SmartBar operation ${op?.id}: ` + problems.join('; '));
+        if (byId.has(op.id)) throw new Error(`SmartBar operation ${op.id}: declared twice`);
         byId.set(op.id, op);
     }
     return {

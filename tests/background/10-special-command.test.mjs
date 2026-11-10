@@ -13,7 +13,7 @@
 // inline <think> blocks are stripped with stripThinkTags(text, true, true): a dangling
 // unterminated <think> is dropped, and the leading whitespace a removed block leaves is trimmed.
 // Spec 04 "Thinking in special commands", onToken: each answer token reaches the callback as it arrives
-// (the Smart bar chat streams its free answer), the resolved value unchanged; an exception in it
+// (the SmartBar chat streams its free answer), the resolved value unchanged; an exception in it
 // never breaks the command (with ThunderAI Privacy on it is never called: 12-processing-worker).
 // Spec 04 "Batch cancellation", #batch-stop-on-rate-limit: sendPrompt() copies the worker's
 // `rateLimited` flag and `retryAfterMs` onto the rejected Error; it records the status of each

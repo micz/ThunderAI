@@ -17,7 +17,7 @@
  */
 
 /*
- *  The Activity tab of the Smart bar page (claude-spec/10-smartbar.md "Activity"): the records
+ *  The Activity tab of the SmartBar page (claude-spec/10-smartbar.md "Activity"): the records
  *  of the smartbar store and the instructions in progress, as the background gives them
  *  (smartbar_activity_list). The page holds no state of its own: every action is a command to
  *  the background, which acts through the same functions as the bar and then tells every view

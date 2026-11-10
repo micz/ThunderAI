@@ -1,4 +1,4 @@
-# Smart bar (issue #914)
+# SmartBar (issue #914)
 
 A text bar in the message display where the user types what they want done with the mail
 ("tag it urgent and reply confirming"). A first AI call, the **router**, reads the instruction
@@ -10,7 +10,7 @@ and sends.
 The feature has the bar, the router, the operation registry with five operations (`tag`,
 `summarize`, `translate`, `compose`: a reply, a reply to all, a forward or a new email, see
 "Compose"; `deliver_draft`), the per-instruction records, the chat (see "Chat": the API chat window
-opened in Smart bar mode, where every message goes through the router, a message no operation
+opened in SmartBar mode, where every message goes through the router, a message no operation
 covers gets a free answer, and an email is written as a draft the user creates later), the feature
 page with its Options, Prompts and Activity tabs (see "Feature page") and the badge (see "Badge").
 What is left out on purpose is listed at the end ("Deferred").
@@ -25,17 +25,17 @@ Files:
 | `js/mzta-smartbar-execute.js` | The prompt of the compose operation and the checks of its answer; the email and data sections shared with the chat |
 | `js/mzta-smartbar-chat.js` | The chat: the conversation of a session as the prompts carry it, the prompt of the free answer |
 | `js/lib/mzta-smartbar-lines.js` | The texts of the result lines (a classic script, global `mztaSmartbarLines`), shared by the bar and the chat |
-| `api_webchat/smartbarChat.js` | The chat window in Smart bar mode: the channel to the background, the turns it draws |
+| `api_webchat/smartbarChat.js` | The chat window in SmartBar mode: the channel to the background, the turns it draws |
 | `js/mzta-smartbar-store.js` | The per-instruction record and its states; thin calls over the `smartbar` store |
 | `js/mzta-storage.js` | The `smartbar` object store (not mirrored), its cleanup rules |
-| `mzta-background.js` | "The Smart bar" section: the flow, the jobs, the commands of the bar and of the chat |
+| `mzta-background.js` | "The SmartBar" section: the flow, the jobs, the commands of the bar and of the chat |
 | `pages/smartbar/` | The feature page: Options (`mzta-smartbar.js`), Prompts (`mzta-smartbar-prompts.js`), Activity (`mzta-smartbar-activity.js`) |
 | `pages/_lib/prompt-update.js` | The comparison of a prompt text with a newer default (the change picker in a box) |
 
 Tests: the `smartbar` area (`tests/smartbar/`, the modules), `tests/background/44-smartbar` (the
 flow), `tests/dom/compose/compose-21-smartbar` (the bar), `tests/dom/compose/compose-22-quoted-split`
 (the quoted part of a received mail), `tests/dom/smartbar/` (the page), `tests/background/45-smartbar-chat`
-(the chat flow), `tests/dom/webchat/webchat-24-smartbar` (the chat window in Smart bar mode),
+(the chat flow), `tests/dom/webchat/webchat-24-smartbar` (the chat window in SmartBar mode),
 `tests/smartbar/07-activity` (the store's queries, the badge counts, the default filter),
 `tests/background/46-smartbar-activity` (the page's commands, the badge, the page opened once),
 `tests/dom/smartbar/ui-02` to `ui-06` (the Prompts and Activity tabs, the tab of the hash). The reference instructions
@@ -43,7 +43,7 @@ of the router are in [10-smartbar-router-tests.md](10-smartbar-router-tests.md).
 
 ## Feature toggle and settings
 
-`smartbar_enabled` (default `false`) is the row "Smart bar" of the options page, with a "Manage
+`smartbar_enabled` (default `false`) is the row "SmartBar" of the options page, with a "Manage
 settings" button opening the feature page (`smartbar_open_page`, see "Feature page"). It is an ordinary feature flag: it
 needs no permission and is **not** reconciled by `_reconcileFeatureFlags()` (the operations check
 their own feature, connection and permissions each time, see "Operation registry").
@@ -191,7 +191,7 @@ failed operation: that line alone, run again in a new group; a compose line whos
 open is opened again with its stored text, see "Compose"), `smartbar_confirm` /
 `smartbar_cancel` (an operation waiting), `smartbar_dismiss`, `smartbar_open_chat`.
 
-**Chat destination** (and "Open in chat"): the chat of the message opens in Smart bar mode, or comes
+**Chat destination** (and "Open in chat"): the chat of the message opens in SmartBar mode, or comes
 to front, and the text becomes its next message (see "Chat"). "Open in chat" on a `json` error
 prefills the instruction instead, and attaches the unreadable answer to the next message.
 
@@ -432,7 +432,7 @@ chat's reply (`chatgpt_replyMessage`): `_beginComposeWindow()` in `mzta-backgrou
 ## Chat
 
 The chat of a message is the API chat window (`api_webchat/`, spec 01 "API WebChat") opened in
-**Smart bar mode**: `index.html?…&smartbar=1&hid=<headerMessageId>`, on the `smartbar_chat`
+**SmartBar mode**: `index.html?…&smartbar=1&hid=<headerMessageId>`, on the `smartbar_chat`
 connection (`llm`, `prompt_id=prompt_smartbar_chat`, so the header shows its provider and model as
 for any prompt), which must be an API connection (otherwise the bar's tab gets the
 `smartbar_error_no_connection` alert and no window opens). Without the flag nothing of this section
@@ -566,7 +566,7 @@ message of the chat on its group (several run at once). Each entry has an `Abort
 - an operation that finds a job of its kind already running on the message (the automatic
   processing of incoming mail, the context menu, the panel button) **joins** it, as the other
   callers do;
-- the jobs of a batch carry no group: a Smart bar Stop or replacement **never** stops them;
+- the jobs of a batch carry no group: a SmartBar Stop or replacement **never** stops them;
 - Stop of one operation aborts that operation's job only if it belongs to the instruction's group;
 - the working status counts the router and every operation.
 
@@ -595,7 +595,7 @@ message with no tab (the page as it is), so the page opened from one place is fo
 other (`openTab()`'s exact URL match would miss a page whose hash changed).
 
 - **Options**: the settings of "Feature toggle and settings", the three connection panels, the
-  keyboard shortcut, the retention rules (spec 05 "Smart Bar Settings Page").
+  keyboard shortcut, the retention rules (spec 05 "SmartBar Settings Page").
 - **Prompts**: the texts of `prompt_smartbar_router`, `prompt_smartbar_execute` and
   `prompt_smartbar_chat`, each with the feature pages' editor (`bindSpecialPromptEditor()`: Save,
   Restore default, the unsaved-changes guard, the policy lock of an enforced text). Under the

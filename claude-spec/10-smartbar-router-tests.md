@@ -1,10 +1,10 @@
-# Smart bar router: reference instructions
+# SmartBar router: reference instructions
 
 A set of instructions, in Italian and English, with the answer the router (special prompt
 `prompt_smartbar_router`, see [10-smartbar.md](10-smartbar.md) "Router") is expected to give. It
 serves two purposes:
 
-1. **Manual check of a model.** Paste an instruction in the Smart bar with the router connection
+1. **Manual check of a model.** Paste an instruction in the SmartBar with the router connection
    you want to evaluate and compare the operations shown with the expected ones. A model that gets
    most of these wrong is not suitable as a router.
 2. **Consistency with the registry.** `tests/smartbar/04-router-test-set.test.mjs` reads the JSON

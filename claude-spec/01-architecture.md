@@ -627,7 +627,7 @@ like `taBatchController`, logging through the background's `taLogger`) makes sur
 never runs twice on a message at the same time.
 
 - **One entry per `${kind}:${headerMessageId}`**, `kind` ∈ `summary | translation | spam |
-  add_tags | smartbar`, holding the job's promise (`smartbar`: the router of a Smart bar
+  add_tags | smartbar`, holding the job's promise (`smartbar`: the router of a SmartBar
   instruction, see [10-smartbar.md](10-smartbar.md) "Jobs"). It is the only authority for "in progress": the old
   `storage.session` processing flags (`setProcessing` / `isProcessing` in the three stores) are
   gone. They were checked and set across several awaits, so two callers could both pass, and
@@ -698,13 +698,13 @@ never runs twice on a message at the same time.
   the dialog: `data.assigned = false`). The dialog path joining a running job shows the job's
   tags in the confirmation dialog without an AI call; if that job produced no tags it runs its
   own. `_assign_tags()` stays serialized through `_enqueueTagAssign()`.
-- **Groups and abort (Smart bar).** `start(kind, id, fn, { groupId })` tags an entry with the
-  Smart bar instruction it belongs to, and every entry carries an `AbortController` (`entry.abort`,
+- **Groups and abort (SmartBar).** `start(kind, id, fn, { groupId })` tags an entry with the
+  SmartBar instruction it belongs to, and every entry carries an `AbortController` (`entry.abort`,
   handed to the job body: the summary and translation wrappers pass its signal to the special
   command, which stops its call at once). `abortGroup(groupId)` invalidates, then aborts, every
   entry of that group; `getGroup(groupId)` lists them. The jobs started by the batch, the panel
-  buttons or the menus carry no group, so a Smart bar Stop or replacement never stops them; a Smart
-  bar operation that finds one of them running joins it. An aborted entry is never revived. The
+  buttons or the menus carry no group, so a SmartBar Stop or replacement never stops them; a
+  SmartBar operation that finds one of them running joins it. An aborted entry is never revived. The
   wrappers take `options.groupId` (and the translation one `options.lang`, a language asked for
   explicitly, which is saved but never served from a cache in another language).
 - **Logs** (`do_debug`): `[taJobs] start|join|invalidate|revive|abort <kind>:<id>`, and `[taJobs] end <kind>:<id> <status>` when the job settles (plus, as errors, `[taJobs] <kind>:<id> threw: <message>` when a job body throws past its own catches and `[taJobs] <kind>:<id> returned no outcome`).
@@ -926,7 +926,7 @@ into both components (`messagesArea.init()`, `messageInput.init()`,
 worker/runtime messages into component method calls. It owns the module-level `promptData`
 (set once by `api_send`) and the Ctrl+/Ctrl-/Ctrl+0 font-zoom.
 
-**Smart bar mode.** Opened with `&smartbar=1&hid=<headerMessageId>` (the chat of the Smart bar,
+**SmartBar mode.** Opened with `&smartbar=1&hid=<headerMessageId>` (the chat of the SmartBar,
 [10-smartbar.md](10-smartbar.md) "Chat"), the controller creates **no worker**: it imports
 `smartbarChat.js` (only then) and injects its channel where the worker goes. `<message-input>` and
 `<messages-area>` post `chatMessage` / `stop` to it unchanged; it forwards them to the background,
@@ -1629,7 +1629,7 @@ with `with_html: true` returns `{ text, html }`, the html read from the detached
 `getCleanBodyHtml()`: it returns a detached clone, and the autoselect range needs live nodes. So they
 filter the live top-level nodes themselves, with `isInjectedNode()` (`MZTA_INJECTED_SELECTORS`):
 both skip the add-on's own elements — `#mzta-container` is always the body's first child, the
-`.mzta_dialog` are appended at its end, the Smart bar's `#mzta-smartbar-host` (message display only) sits
+`.mzta_dialog` are appended at its end, the SmartBar's `#mzta-smartbar-host` (message display only) sits
 right after `#mzta-container`, so a top-level check is enough — and a skipped node is never
 `firstNode` / `lastNode`, so the autoselect range leaves it out. `getOnlyTypedText` also **stops at
 `div.moz-signature`**, as it does at the citation: in a new message, with no quote to stop the walk,
@@ -1801,7 +1801,7 @@ into a plain text compose window* for the format), which waits for the tab to lo
 own `tabs.onUpdated` with `status` complete and a URL other than `about:blank`; another tab finishing
 its load meanwhile does not end the wait), and
 `COMPOSE_SCRIPT_LOAD_DELAY_MS` (500 ms) later runs `_insertComposeAnswer()` (`mzta-background.js`).
-The Smart bar's compose operation opens its reply, forward or new email through the same two
+The SmartBar's compose operation opens its reply, forward or new email through the same two
 functions ([10-smartbar.md](10-smartbar.md) "Compose", "Delivery"): `beginForward()` with no forward
 type and `beginNew()` with a subject, never a recipient nor a body, the text going in the same way
 (`insertReply` puts it above the first quote, `.moz-forward-container` or signature, so a forward's
@@ -2229,20 +2229,20 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-i18n.js` | i18n helper (wraps `browser.i18n.getMessage`) |
 | `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |
 | `js/mzta-store.js` | Storage abstraction helpers |
-| `js/mzta-storage.js` | The per-message data storage (`taStorage` class): spam reports, summaries, translations in IndexedDB (the working copy: their pages, counts and size, the cleanup and its schedule) and in their `storage.local` mirror (the durable copy), the rebuild and the realignment of the two; plus the Smart bar's `smartbar` store, not mirrored. See [Per-Message Data Storage](#per-message-data-storage) |
+| `js/mzta-storage.js` | The per-message data storage (`taStorage` class): spam reports, summaries, translations in IndexedDB (the working copy: their pages, counts and size, the cleanup and its schedule) and in their `storage.local` mirror (the durable copy), the rebuild and the realignment of the two; plus the SmartBar's `smartbar` store, not mirrored. See [Per-Message Data Storage](#per-message-data-storage) |
 | `js/mzta-storage-migration.js` | `migrateMessageDataToIndexedDB()`: moves the legacy `msg:` records of `storage.local` into the storage, at every background start |
 | `js/mzta-summarystore.js` | Summary wrapper over `taStorage` (`taSummaryStore` class): load / save / remove, error states, the metadata |
 | `js/mzta-translationstore.js` | Translation wrapper over `taStorage` (`taTranslationStore` class): load / save / remove, error states, the metadata |
 | `js/lib/idb.js` | `idb` 8.0.4 by Jake Archibald (vendored ES module, see `VENDORS.md`): the promise wrapper of IndexedDB `js/mzta-storage.js` opens the database with |
-| `js/mzta-job-registry.js` | In-flight job registry (`taJobRegistry`): one summary / translation / spam / add_tags / smartbar job per message, joined by later callers; the jobs of a Smart bar instruction grouped and abortable (`abortGroup()`) |
-| `js/mzta-smartbar-script.js` | The Smart bar in the message display (classic content script, shadow DOM `#mzta-smartbar-host`), see [10-smartbar.md](10-smartbar.md) |
-| `js/mzta-smartbar-registry.js` | The Smart bar's operation registry: availability, parameter checks, plan and run of an instruction |
-| `js/mzta-smartbar-router.js` | The Smart bar router: its prompt (never the email body) and the checks of its answer |
-| `js/mzta-smartbar-execute.js` | The Smart bar's compose operation: its prompt (the email delimited as data, cut to the length limit), the checks of its answer, its signature and HTML |
-| `js/mzta-smartbar-store.js` | The Smart bar records (one per instruction) and their states, over the `smartbar` store of `taStorage`; the current draft of a chat session |
-| `js/mzta-smartbar-chat.js` | The Smart bar chat: the conversation of a session as the prompts carry it, the prompt of the free answer |
-| `js/lib/mzta-smartbar-lines.js` | The texts of the Smart bar's result lines (classic script, global `mztaSmartbarLines`), shared by the bar and the chat window |
-| `api_webchat/smartbarChat.js` | The API chat window in Smart bar mode: the channel to the background and the turns it draws |
+| `js/mzta-job-registry.js` | In-flight job registry (`taJobRegistry`): one summary / translation / spam / add_tags / smartbar job per message, joined by later callers; the jobs of a SmartBar instruction grouped and abortable (`abortGroup()`) |
+| `js/mzta-smartbar-script.js` | The SmartBar in the message display (classic content script, shadow DOM `#mzta-smartbar-host`), see [10-smartbar.md](10-smartbar.md) |
+| `js/mzta-smartbar-registry.js` | The SmartBar's operation registry: availability, parameter checks, plan and run of an instruction |
+| `js/mzta-smartbar-router.js` | The SmartBar router: its prompt (never the email body) and the checks of its answer |
+| `js/mzta-smartbar-execute.js` | The SmartBar's compose operation: its prompt (the email delimited as data, cut to the length limit), the checks of its answer, its signature and HTML |
+| `js/mzta-smartbar-store.js` | The SmartBar records (one per instruction) and their states, over the `smartbar` store of `taStorage`; the current draft of a chat session |
+| `js/mzta-smartbar-chat.js` | The SmartBar chat: the conversation of a session as the prompts carry it, the prompt of the free answer |
+| `js/lib/mzta-smartbar-lines.js` | The texts of the SmartBar's result lines (classic script, global `mztaSmartbarLines`), shared by the bar and the chat window |
+| `api_webchat/smartbarChat.js` | The API chat window in SmartBar mode: the channel to the background and the turns it draws |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
 | `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |
@@ -2289,7 +2289,7 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 | `get-calendar-event/` | Calendar event extraction settings |
 | `get-task/` | Task creation settings |
 | `menu_order/` | Drag-and-drop reordering and visibility control for popup and context menus |
-| `smartbar/` | Smart bar settings: the bar's options, the three connection panels (router, execute, chat), the history rules (tabs-ready: one Options tab today), see [10-smartbar.md](10-smartbar.md) |
+| `smartbar/` | SmartBar settings: the bar's options, the three connection panels (router, execute, chat), the history rules (tabs-ready: one Options tab today), see [10-smartbar.md](10-smartbar.md) |
 | `spamfilter/` | Spam filter settings |
 | `storage/` | Storage management: the saved spam reports, summaries and translations, their retention rules and cleanup ([#956](https://github.com/micz/ThunderAI/issues/956), see [Per-Message Data Storage](#per-message-data-storage) and [05-options.md](05-options.md)) |
 | `summarize/` | Email summarization settings |
@@ -2368,8 +2368,8 @@ shown again every time the message is opened. It is kept in two places
 It used to be one `msg:<headerMessageId>` record per message in `storage.local`, with a field per
 type; those records are moved at startup (below).
 
-**The Smart bar store.** The same database holds a fourth object store, `smartbar`: one record per
-instruction typed in the Smart bar ([10-smartbar.md](10-smartbar.md) "Storage"), keyed by an
+**The SmartBar store.** The same database holds a fourth object store, `smartbar`: one record per
+instruction typed in the SmartBar ([10-smartbar.md](10-smartbar.md) "Storage"), keyed by an
 auto-increment `id` (several per message), indexes `messageId`, `sessionId`, `createdAt`, `size`,
 `failed_createdAt`, `state` and `state_failed_createdAt`. It is created in version 1 with the
 others (a database without it opens incomplete and is created again, then rebuilt from the

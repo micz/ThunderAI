@@ -83,16 +83,16 @@ import { mztaPrefs } from './mzta-prefs.js';
             config = {},
             processingClient,
             // Ask the provider for a JSON answer where it has a reliable JSON mode (OpenAI
-            // json_object, Gemini responseMimeType, Ollama format json). Used by the Smart bar
+            // json_object, Gemini responseMimeType, Ollama format json). Used by the SmartBar
             // router; the parser stays tolerant for every provider.
             jsonMode = false,
             // An AbortSignal: when it aborts, the worker is disposed and sendPrompt() rejects
             // with an error named 'AbortError' (err.aborted = true).
             signal = null,
-            // Called with the reasoning received so far, on each thinking token: the Smart bar
+            // Called with the reasoning received so far, on each thinking token: the SmartBar
             // shows it while the router works. Never part of the resolved value.
             onThinking = null,
-            // Called with each answer token as it arrives: the Smart bar's chat streams its free
+            // Called with each answer token as it arrives: the SmartBar's chat streams its free
             // answer through it. Never called while ThunderAI Privacy prepares the request (a
             // ProcessingWorker): its tokens would show the protected values, restored only in
             // the resolved answer. The resolved value is the same either way.
@@ -273,7 +273,7 @@ import { mztaPrefs } from './mzta-prefs.js';
             resetTimer();
             const clearTimer = () => { clearTimeout(timeoutId); };
 
-            // A caller that stops the command (the Smart bar's Stop, or a new instruction that
+            // A caller that stops the command (the SmartBar's Stop, or a new instruction that
             // replaces the running one): the worker is disposed at once by the finally below,
             // and no late answer is delivered.
             if (this.signal) {

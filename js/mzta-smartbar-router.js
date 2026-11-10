@@ -17,7 +17,7 @@
  */
 
 /*
- *  The Smart bar router (claude-spec/10-smartbar.md "Router"): the prompt the add-on builds for
+ *  The SmartBar router (claude-spec/10-smartbar.md "Router"): the prompt the add-on builds for
  *  the special prompt prompt_smartbar_router, and the checks of its answer.
  *
  *  The router NEVER receives the email body: a prompt injection in the mail must not be able to
@@ -241,7 +241,7 @@ export function readRouterOutput(parsed, allowList, options = {}) {
 }
 
 /**
- * Ask a Smart bar special command for a JSON object, with one correction attempt: `send(prompt)`
+ * Ask a SmartBar special command for a JSON object, with one correction attempt: `send(prompt)`
  * resolves the raw answer of one special command call. An answer that is not a JSON object (or
  * that `check(parsed, raw)` refuses by throwing a RouterJsonError) gets the prompt again with
  * `correction` appended; a second failure rejects with RouterJsonError (errorType 'json', the

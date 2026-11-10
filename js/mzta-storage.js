@@ -25,7 +25,7 @@
  *  message_date - plus the fields of its type. See claude-spec/01-architecture.md
  *  "Per-Message Data Storage".
  *
- *  A fourth store, smartbar, holds the Smart bar's records (claude-spec/10-smartbar.md "Storage"):
+ *  A fourth store, smartbar, holds the SmartBar's records (claude-spec/10-smartbar.md "Storage"):
  *  one per instruction, keyed by an auto-increment id, NOT mirrored (STORE_MIRRORED): nothing of
  *  what is said below about the mirror applies to it. ALL_STORES is the four, MESSAGE_STORES the
  *  three mirrored ones keyed on the Message-ID. A smartbar record still running is never removed
@@ -87,7 +87,7 @@ export const STORE_TRANSLATION = 'translation';
 /** The per-message stores: keyed by the Message-ID, one record per message, mirrored. */
 export const MESSAGE_STORES = Object.freeze([STORE_SPAM, STORE_SUMMARY, STORE_TRANSLATION]);
 /**
- * The Smart bar's store (claude-spec/10-smartbar.md): one record per instruction the user typed,
+ * The SmartBar's store (claude-spec/10-smartbar.md): one record per instruction the user typed,
  * keyed by an auto-increment id, NOT mirrored in storage.local. It can be lost if Thunderbird
  * evicts the database: nothing rebuilds it.
  */
@@ -502,7 +502,7 @@ async function deleteByCursor(type, indexName, range, limit = Infinity) {
     const tx = await openTransaction(type, 'readwrite');
     let cursor = await tx.store.index(indexName).openCursor(range);
     while (cursor && removed.length < limit) {
-        // A Smart bar instruction still being processed is never removed (it becomes
+        // A SmartBar instruction still being processed is never removed (it becomes
         // 'interrupted' at the next start, then expires like the others).
         if (isKeptRecord(type, cursor.value)) {
             cursor = await cursor.continue();
@@ -516,7 +516,7 @@ async function deleteByCursor(type, indexName, range, limit = Infinity) {
     return removed;
 }
 
-/** A record no bulk removal may delete: a Smart bar instruction still running. */
+/** A record no bulk removal may delete: a SmartBar instruction still running. */
 function isKeptRecord(type, record) {
     return type === STORE_SMARTBAR && record?.state === SMARTBAR_STATE_RUNNING;
 }
@@ -1176,7 +1176,7 @@ export class taStorage {
 
     // ---- The smartbar store ---------------------------------------------------------------------
     //
-    // One record per instruction typed in the Smart bar (claude-spec/10-smartbar.md), keyed by an
+    // One record per instruction typed in the SmartBar (claude-spec/10-smartbar.md), keyed by an
     // auto-increment id. Not mirrored: nothing is written to storage.local, and a database found
     // new is not rebuilt for it. Every write is under the cleanup lock, like the other stores. The
     // record itself (its fields and their states) is built by js/mzta-smartbar-store.js; here
@@ -1264,7 +1264,7 @@ export class taStorage {
 
     /**
      * The smartbar records of a session (the sessionId index), oldest first by createdAt (then
-     * id): the last `limit` of them, and how many the session holds. The chat of the Smart bar
+     * id): the last `limit` of them, and how many the session holds. The chat of the SmartBar
      * loads a session through it. { records: [], total: 0 } when there is none or the database
      * cannot be read.
      * @returns {Promise<{ records: object[], total: number }>}
@@ -1317,7 +1317,7 @@ export class taStorage {
     }
 
     /**
-     * The smartbar records of the Activity tab of the Smart bar page, newest first (the highest
+     * The smartbar records of the Activity tab of the SmartBar page, newest first (the highest
      * id first): those whose state is one of `states` (every record when `states` is null), at
      * most `limit` of them, older than the record `beforeId` when given (the next page).
      * { records: [], more: false } when the database cannot be read.
@@ -1813,7 +1813,7 @@ export class taStorage {
                 const total = await store.count();
                 const ageCut = maxAgeDays > 0 ? cutoff(now, maxAgeDays) : -Infinity;
                 const errorCut = errorMaxAgeDays > 0 ? cutoff(now, errorMaxAgeDays) : -Infinity;
-                // The records no rule removes (a running Smart bar instruction), counted on the
+                // The records no rule removes (a running SmartBar instruction), counted on the
                 // state_failed_createdAt index: `kept` of them, `keptOld` older than the age
                 // cutoff, `keptError` holding an error between the age and the error cutoffs.
                 let kept = 0;

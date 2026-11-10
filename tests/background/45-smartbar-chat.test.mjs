@@ -1,7 +1,7 @@
-// What the background does with the chat of the Smart bar (claude-spec/10-smartbar.md "Chat"),
+// What the background does with the chat of the SmartBar (claude-spec/10-smartbar.md "Chat"),
 // through its real runtime.onMessage listener: the bar's tab opens the chat, the chat window's tab
 // sends its messages.
-//  - opening: smartbar_open_chat opens the API chat window in Smart bar mode (smartbar=1, the
+//  - opening: smartbar_open_chat opens the API chat window in SmartBar mode (smartbar=1, the
 //    message, prompt_smartbar_chat) on the smartbar_chat connection; once ready it gets the session
 //    (smartbar_chat_init), then the text runs as its first message; a second open for the same
 //    message brings that window to front (windows.update) and appends the turn: one chat per
@@ -160,7 +160,7 @@ async function tickCompose(t) {
     await turns(60);
 }
 
-k.test('open', 'the chat opens in Smart bar mode on smartbar_chat, gets its session, then the text runs as its first message', async () => {
+k.test('open', 'the chat opens in SmartBar mode on smartbar_chat, gets its session, then the text runs as its first message', async () => {
     show(7, 'o1@x');
     routes['riassumi'] = json({ operations: [op('summarize')], context: [], unrecognized: '' });
     const chat = await openChat('o1@x', { text: 'riassumi' });

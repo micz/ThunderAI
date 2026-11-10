@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// The Smart bar has three special prompts, each with its own connection (claude-spec/10-smartbar.md):
+// The SmartBar has three special prompts, each with its own connection (claude-spec/10-smartbar.md):
 // the router (which operations an instruction asks for), execute and chat (data only until the
 // phases that use them).
 export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate', 'smartbar_router', 'smartbar_execute', 'smartbar_chat'];
@@ -331,7 +331,7 @@ export const prefs_default = {
     translate_storage_max_entries: 0,    // see spamfilter_storage_max_entries
     translate_storage_max_age_days: 0,
     translate_storage_error_max_age_days: 90,
-    // The Smart bar in the message pane (claude-spec/10-smartbar.md). Off by default.
+    // The SmartBar in the message pane (claude-spec/10-smartbar.md). Off by default.
     smartbar_enabled: false,
     smartbar_mode: 'compact',                // 'disabled', 'compact' (an icon that expands) or 'expanded'
     smartbar_default_destination: 'execute', // what Enter does: 'execute' (run the operations) or 'chat'
