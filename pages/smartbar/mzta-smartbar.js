@@ -26,8 +26,8 @@
  *  The Actions tab has one sub-tab per action (router, execute, chat), not in the hash: the first
  *  one is shown at load. Both tablists follow the ARIA tabs pattern: only the selected tab is in
  *  the tab order, the arrows, Home and End move between the tabs of a list (bindTabKeys()). Three connection panels, one per special prompt of the feature, each in
- *  the section of its prompt in its sub-tab, before the text; execute's sub-tab also holds the
- *  writing settings. initializeSpecificIntegrationUI() and bindConnPanelTint() get the section as
+ *  a card of its own, first in its sub-tab, before the prompt; execute's sub-tab also holds the
+ *  writing settings, between the two. initializeSpecificIntegrationUI() and bindConnPanelTint() get the section as
  *  their root, and every lookup of a panel stays inside it.
  *
  *  Every .option-input is saved on change, as on the other feature pages.
@@ -62,11 +62,11 @@ import {
 
 const taLog = new taLogger('mzta-smartbar-page', true);
 
-/** The three panels: feature prefix, special prompt, section (the prompt's, in its sub-tab of the Actions tab). */
+/** The three panels: feature prefix, special prompt, section (its own card, first in its sub-tab of the Actions tab). */
 export const SMARTBAR_PANELS = [
-    { prefix: 'smartbar_router', promptId: 'prompt_smartbar_router', section: 'smartbar_prompt_router_section' },
-    { prefix: 'smartbar_execute', promptId: 'prompt_smartbar_execute', section: 'smartbar_prompt_execute_section' },
-    { prefix: 'smartbar_chat', promptId: 'prompt_smartbar_chat', section: 'smartbar_prompt_chat_section' },
+    { prefix: 'smartbar_router', promptId: 'prompt_smartbar_router', section: 'smartbar_conn_router_section' },
+    { prefix: 'smartbar_execute', promptId: 'prompt_smartbar_execute', section: 'smartbar_conn_execute_section' },
+    { prefix: 'smartbar_chat', promptId: 'prompt_smartbar_chat', section: 'smartbar_conn_chat_section' },
 ];
 
 // The number preferences of the page, and the smallest value each accepts.

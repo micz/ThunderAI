@@ -44,17 +44,17 @@ export const FEATURE_PAGES = {
         text: 'Translate {%mail_html_body%} to {%thunderai_translate_lang%}, return {"subject", "body", "status"}',
     },
     smartbar_router: {
-        page: 'smartbar', promptId: 'prompt_smartbar_router', root: 'smartbar_prompt_router_section',
+        page: 'smartbar', promptId: 'prompt_smartbar_router', root: 'smartbar_conn_router_section',
         textarea: 'smartbar_prompt_router_text', save: 'btn_save_smartbar_router',
         text: 'Route the instruction. {OPERATIONS} {PLACEHOLDERS} {LANGUAGE_RULE}',
     },
     smartbar_execute: {
-        page: 'smartbar', promptId: 'prompt_smartbar_execute', root: 'smartbar_prompt_execute_section',
+        page: 'smartbar', promptId: 'prompt_smartbar_execute', root: 'smartbar_conn_execute_section',
         textarea: 'smartbar_prompt_execute_text', save: 'btn_save_smartbar_execute',
         text: 'Execute.',
     },
     smartbar_chat: {
-        page: 'smartbar', promptId: 'prompt_smartbar_chat', root: 'smartbar_prompt_chat_section',
+        page: 'smartbar', promptId: 'prompt_smartbar_chat', root: 'smartbar_conn_chat_section',
         textarea: 'smartbar_prompt_chat_text', save: 'btn_save_smartbar_chat',
         text: 'Chat.',
     },

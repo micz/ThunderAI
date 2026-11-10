@@ -151,7 +151,7 @@ k.test('subtab-cards', S_PAGE, 'each sub-tab is a card with its title and a one-
     }
 });
 
-k.test('execute-settings', S_PAGE, 'the writing settings are in execute\'s sub-tab of the Actions tab, before its prompt section', () => {
+k.test('execute-settings', S_PAGE, 'the writing settings are in execute\'s sub-tab of the Actions tab, after its connection card and before its prompt section', () => {
     const settings = $('#smartbar_execute_settings');
     assert.ok($('#subtab_execute').contains(settings));
     assert.equal($('#tab_options').contains(settings), false, 'not left in the Options tab');
@@ -159,19 +159,22 @@ k.test('execute-settings', S_PAGE, 'the writing settings are in execute\'s sub-t
         assert.ok(settings.querySelector('#' + id), id);
     }
     assert.ok(settings.compareDocumentPosition($('#smartbar_prompt_execute_section')) & ctx.window.Node.DOCUMENT_POSITION_FOLLOWING);
+    assert.ok(settings.compareDocumentPosition($('#smartbar_conn_execute_section')) & ctx.window.Node.DOCUMENT_POSITION_PRECEDING);
 });
 
-k.test('three-panels', S_PAGE, 'three connection panels, one per special prompt, each in its prompt\'s section in the sub-tab of its action with its own switch and anchor, before the text', () => {
+k.test('three-panels', S_PAGE, 'three connection panels, one per special prompt, each in a card of its own, first in the sub-tab of its action, with its own switch and anchor', () => {
     for (const prefix of PANELS) {
         const key = prefix.replace('smartbar_', '');
-        const section = ctx.document.getElementById('smartbar_prompt_' + key + '_section');
+        const section = ctx.document.getElementById('smartbar_conn_' + key + '_section');
         assert.ok(section, prefix);
-        assert.ok(ctx.document.getElementById('subtab_' + key).contains(section), prefix + ' in its sub-tab of the Actions tab');
+        const subpanel = ctx.document.getElementById('subtab_' + key);
+        assert.strictEqual(subpanel.firstElementChild, section, prefix + ' first card of its sub-tab of the Actions tab');
         const sw = section.querySelector('#' + prefix + '_use_specific_integration');
         assert.ok(sw, prefix + ' switch');
         assert.ok(section.querySelector('#' + prefix + '_connection_ui_anchor'), prefix + ' anchor');
-        const text = section.querySelector('#smartbar_prompt_' + key + '_text');
-        assert.ok(sw.compareDocumentPosition(text) & ctx.window.Node.DOCUMENT_POSITION_FOLLOWING, prefix + ' switch before the text');
+        const promptSection = ctx.document.getElementById('smartbar_prompt_' + key + '_section');
+        assert.equal(promptSection.contains(sw), false, prefix + ' switch not in the prompt section');
+        assert.ok(section.compareDocumentPosition(promptSection) & ctx.window.Node.DOCUMENT_POSITION_FOLLOWING, prefix + ' card before the prompt');
     }
     assert.equal(ctx.document.querySelector('#tab_options [id$="_use_specific_integration"]'), null, 'no switch left in the Options tab');
 });

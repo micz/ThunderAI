@@ -867,11 +867,12 @@ The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the manage
   (`commands.getAll()`, `_thunderai__smartbar`, shown as keys, `smartbar_shortcut_none` when unset)
   with the link to change it.
 - **Execute settings** (`#smartbar_execute_settings`, "Writing settings", execute's sub-tab of the
-  Actions tab, before its prompt section): `smartbar_max_body_length`,
+  Actions tab, after its connection card and before its prompt section): `smartbar_max_body_length`,
   `smartbar_additional_instructions`, `smartbar_signature`.
-- **Three connection panels**, in the Actions tab, each in the section of its prompt (in the
-  sub-tab of its action) and before its text: router (`#smartbar_prompt_router_section`), execute (`#smartbar_prompt_execute_section`) and
-  chat (`#smartbar_prompt_chat_section`, the connection of the chat window and of its free answers).
+- **Three connection panels**, in the Actions tab, each in a card of its own (no title), the first
+  card of the sub-tab of its action, before the prompt section: router (`#smartbar_conn_router_section`),
+  execute (`#smartbar_conn_execute_section`) and chat (`#smartbar_conn_chat_section`, the connection
+  of the chat window and of its free answers).
   Each is the
   same panel as on the other feature pages (`{prefix}_use_specific_integration`, the provider rows,
   the advanced options, the test strip, the tint), built by

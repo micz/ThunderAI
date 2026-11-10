@@ -81,8 +81,8 @@ per-feature connection (`special_prompts_with_integration`, spec 02 / 05):
 | `prompt_smartbar_execute` | `smartbar_execute` | The compose operation: the generative operations that have no prompt of their own (see "Compose") |
 | `prompt_smartbar_chat` | `smartbar_chat` | The chat: the window it opens on, and the free answer of a message no operation covers (see "Chat") |
 
-The Actions tab of the feature page shows the three connection panels, each in the section of its
-prompt (in the sub-tab of its action), before the text, built by
+The Actions tab of the feature page shows the three connection panels, each in a card of its own,
+the first of the sub-tab of its action, before the prompt, built by
 `initializeSpecificIntegrationUI({ root, anchorId })` scoped to that section
 (`pages/_lib/connection-ui.js`): the same panel as the other feature pages, three times on one
 page. The router's switch recommends a small, fast model. Execute's sub-tab also holds, before its
