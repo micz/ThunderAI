@@ -81,11 +81,12 @@ per-feature connection (`special_prompts_with_integration`, spec 02 / 05):
 | `prompt_smartbar_execute` | `smartbar_execute` | The compose operation: the generative operations that have no prompt of their own (see "Compose") |
 | `prompt_smartbar_chat` | `smartbar_chat` | The chat: the window it opens on, and the free answer of a message no operation covers (see "Chat") |
 
-The Options tab of the feature page shows the three connection panels, one section each, built by
-`initializeSpecificIntegrationUI({ root, anchorId })` scoped to its section (`pages/_lib/connection-ui.js`):
-the same panel as the other feature pages, three times on one page. The execute section ("Writing
-emails") explains what is sent and that recipients are never filled in, and holds the three compose
-settings; the chat panel carries a note on what the chat uses it for.
+The Prompts tab of the feature page shows the three connection panels, each in the section of its
+prompt, before the text, built by `initializeSpecificIntegrationUI({ root, anchorId })` scoped to that
+section (`pages/_lib/connection-ui.js`): the same panel as the other feature pages, three times on
+one page. The router's switch recommends a small, fast model. The Options tab keeps the execute
+settings section ("Writing emails": what is sent, recipients never filled in, the three compose
+settings).
 
 ## Bar
 
@@ -594,10 +595,11 @@ bar's and the chat's "Details" ask for `activity`; the options page's "Manage se
 message with no tab (the page as it is), so the page opened from one place is focused from the
 other (`openTab()`'s exact URL match would miss a page whose hash changed).
 
-- **Options**: the settings of "Feature toggle and settings", the three connection panels, the
+- **Options**: the settings of "Feature toggle and settings", the three compose settings, the
   keyboard shortcut, the retention rules (spec 05 "SmartBar Settings Page").
 - **Prompts**: the texts of `prompt_smartbar_router`, `prompt_smartbar_execute` and
-  `prompt_smartbar_chat`, each with the feature pages' editor (`bindSpecialPromptEditor()`: Save,
+  `prompt_smartbar_chat`, each preceded by its connection panel ("Use specific Model and API" and
+  the provider rows), each with the feature pages' editor (`bindSpecialPromptEditor()`: Save,
   Restore default, the unsaved-changes guard, the policy lock of an enforced text). Under the
   router's and execute's text, their JSON section (`ROUTER_JSON_SECTION`, `EXECUTE_JSON_SECTION`)
   shown read-only: the add-on appends it at call time, it is never in the textarea nor saved. On

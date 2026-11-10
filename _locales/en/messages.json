@@ -5390,16 +5390,8 @@
     "message": "None",
     "description": "SmartBar settings page: shown when no keyboard shortcut is set for the bar."
   },
-  "smartbar_router_title": {
-    "message": "Understanding the instructions",
-    "description": "SmartBar settings page: title of the section of the router (the AI call that decides which actions an instruction asks for)."
-  },
-  "smartbar_router_info": {
-    "message": "Every instruction is first sent to the AI to know which actions it asks for. Only the instruction and a few details of the email (subject, sender, names, tags) are sent, never its text. A small, fast model is recommended here.",
-    "description": "SmartBar settings page: explanation of the router section."
-  },
   "smartbar_router_use_specific_integration_info": {
-    "message": "If checked, the model and API below are used to understand the instructions, whatever the connection chosen in the ThunderAI options.",
+    "message": "If checked, the model and API below are used to understand the instructions, whatever the connection chosen in the ThunderAI options. A small, fast model is recommended here.",
     "description": "SmartBar settings page: description of the specific integration switch of the router."
   },
   "smartbar_execute_title": {
@@ -5437,14 +5429,6 @@
   "smartbar_signature_info": {
     "message": "Added under the written email when the instruction asks to sign without saying how (if empty, the name set in the ThunderAI options is used). A signature dictated in the instruction is used as it is. Thunderbird's own signature is not affected.",
     "description": "SmartBar settings page: help of the signature field."
-  },
-  "smartbar_chat_title": {
-    "message": "Chat",
-    "description": "SmartBar settings page: title of the section of the chat."
-  },
-  "smartbar_chat_info": {
-    "message": "The chat opened from the bar: every message goes through the router like an instruction of the bar; this connection answers the messages no action covers. Emails written in the chat are drafts you create with \"Create email\".",
-    "description": "SmartBar settings page: note on the chat section."
   },
   "smartbar_chat_use_specific_integration_info": {
     "message": "If checked, the model and API below are used by the chat opened from the bar, whatever the connection chosen in the ThunderAI options.",

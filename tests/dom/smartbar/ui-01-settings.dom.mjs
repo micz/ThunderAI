@@ -97,13 +97,19 @@ k.test('write-textarea', S_PAGE, 'a textarea is stored as typed', async () => {
     assert.strictEqual(writtenSince(ctx, since).smartbar_signature, '  -- \nMic  ');
 });
 
-k.test('three-panels', S_PAGE, 'three connection panels, one per special prompt, each with its own switch and anchor', () => {
+k.test('three-panels', S_PAGE, 'three connection panels, one per special prompt, each in its prompt\'s section of the Prompts tab with its own switch and anchor, before the text', () => {
     for (const prefix of PANELS) {
-        const section = ctx.document.getElementById(prefix + '_section');
+        const key = prefix.replace('smartbar_', '');
+        const section = ctx.document.getElementById('smartbar_prompt_' + key + '_section');
         assert.ok(section, prefix);
-        assert.ok(section.querySelector('#' + prefix + '_use_specific_integration'), prefix + ' switch');
+        assert.ok(ctx.document.getElementById('tab_prompts').contains(section), prefix + ' in the Prompts tab');
+        const sw = section.querySelector('#' + prefix + '_use_specific_integration');
+        assert.ok(sw, prefix + ' switch');
         assert.ok(section.querySelector('#' + prefix + '_connection_ui_anchor'), prefix + ' anchor');
+        const text = section.querySelector('#smartbar_prompt_' + key + '_text');
+        assert.ok(sw.compareDocumentPosition(text) & ctx.window.Node.DOCUMENT_POSITION_FOLLOWING, prefix + ' switch before the text');
     }
+    assert.equal(ctx.document.querySelector('#tab_options [id$="_use_specific_integration"]'), null, 'no switch left in the Options tab');
 });
 
 k.test('panel-switch', S_PAGE, 'each panel\'s own switch stores its own preference', async () => {

@@ -851,10 +851,12 @@ The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the manage
   `smartbar_history_size`, `smartbar_parallel_limit` (numbers), and the bar's keyboard shortcut
   (`commands.getAll()`, `_thunderai__smartbar`, shown as keys, `smartbar_shortcut_none` when unset)
   with the link to change it.
-- **Three connection panels**, one section each: router (`#smartbar_router_section`), execute
-  (`#smartbar_execute_section`, with `smartbar_max_body_length`, `smartbar_additional_instructions`,
-  `smartbar_signature`) and chat (`#smartbar_chat_section`, the connection of the chat window and of
-  its free answers). Each is the
+- **Execute settings** (`#smartbar_execute_settings`, Options tab): `smartbar_max_body_length`,
+  `smartbar_additional_instructions`, `smartbar_signature`.
+- **Three connection panels**, in the Prompts tab, each in the section of its prompt and before its
+  text: router (`#smartbar_prompt_router_section`), execute (`#smartbar_prompt_execute_section`) and
+  chat (`#smartbar_prompt_chat_section`, the connection of the chat window and of its free answers).
+  Each is the
   same panel as on the other feature pages (`{prefix}_use_specific_integration`, the provider rows,
   the advanced options, the test strip, the tint), built by
   `initializeSpecificIntegrationUI({ prefix, promptId, root: section, anchorId: prefix + '_connection_ui_anchor' })`:
@@ -866,7 +868,7 @@ The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the manage
 - **History** (`#smartbar_retention`): the three retention rules, `smartbar_retention_info` (no
   backup: the history may be lost when Thunderbird deletes the add-on's IndexedDB).
 - **Prompts tab** (`#tab_prompts`): one section per special prompt (`#smartbar_prompt_{router,
-  execute,chat}_section`): the textarea `#smartbar_prompt_<key>_text`, `#btn_save_smartbar_<key>` /
+  execute,chat}_section`): the connection panel first (above), then the textarea `#smartbar_prompt_<key>_text`, `#btn_save_smartbar_<key>` /
   `#btn_reset_smartbar_<key>` (the `btn_save` prefix is what the unsaved-changes guard reads), the
   unsaved marker, the read-only JSON section `#smartbar_prompt_<key>_locked` (router, execute), the
   refusal message `#smartbar_prompt_<key>_error` (router variables), the update notice

@@ -23,8 +23,8 @@
  *  changing it (smartbar_open_page), the bar's Details link asks for #activity.
  *
  *  Three connection panels, one per special prompt of the feature (router, execute, chat), each
- *  in its own section: initializeSpecificIntegrationUI() and bindConnPanelTint() get the section
- *  as their root, and every lookup of a panel stays inside it.
+ *  in the section of its prompt in the Prompts tab, before the text: initializeSpecificIntegrationUI()
+ *  and bindConnPanelTint() get the section as their root, and every lookup of a panel stays inside it.
  *
  *  Every .option-input is saved on change, as on the other feature pages.
  */
@@ -58,11 +58,11 @@ import {
 
 const taLog = new taLogger('mzta-smartbar-page', true);
 
-/** The three panels: feature prefix, special prompt, section. */
+/** The three panels: feature prefix, special prompt, section (the prompt's, in the Prompts tab). */
 export const SMARTBAR_PANELS = [
-    { prefix: 'smartbar_router', promptId: 'prompt_smartbar_router', section: 'smartbar_router_section' },
-    { prefix: 'smartbar_execute', promptId: 'prompt_smartbar_execute', section: 'smartbar_execute_section' },
-    { prefix: 'smartbar_chat', promptId: 'prompt_smartbar_chat', section: 'smartbar_chat_section' },
+    { prefix: 'smartbar_router', promptId: 'prompt_smartbar_router', section: 'smartbar_prompt_router_section' },
+    { prefix: 'smartbar_execute', promptId: 'prompt_smartbar_execute', section: 'smartbar_prompt_execute_section' },
+    { prefix: 'smartbar_chat', promptId: 'prompt_smartbar_chat', section: 'smartbar_prompt_chat_section' },
 ];
 
 // The number preferences of the page, and the smallest value each accepts.
@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // The page's own fields first, then each panel with its own fields.
     await restoreOptions(document.getElementById('smartbar_settings'));
+    await restoreOptions(document.getElementById('smartbar_execute_settings'));
     await restoreOptions(document.getElementById('smartbar_retention'));
     for (const panel of SMARTBAR_PANELS) {
         const root = document.getElementById(panel.section);

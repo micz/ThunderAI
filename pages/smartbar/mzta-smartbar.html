@@ -74,58 +74,11 @@
                 </div>
             </div>
 
-            <!-- THE ROUTER: its own connection (the panel of the smartbar_router prefix) -->
-            <div class="mzta_section smartbar_conn_section" id="smartbar_router_section">
-                <div class="mzta_prompt_title">__MSG_smartbar_router_title__</div>
-                <p class="mzta_help">__MSG_smartbar_router_info__</p>
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
-                        <div class="feature_desc">__MSG_smartbar_router_use_specific_integration_info__</div>
-                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="smartbar_router_use_specific_integration" name="smartbar_router_use_specific_integration" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-                <div id="mzta_conn_panel">
-                    <div id="mzta_conn_panel_header">
-                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
-                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
-                    </div>
-                    <table id="connection_ui_table">
-                        <tr id="smartbar_router_connection_ui_anchor"></tr>
-                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
-                    </table>
-                </div>
-            </div>
-
-            <!-- EXECUTE: the compose operation (reply, reply to all, forward, new email) -->
-            <div class="mzta_section smartbar_conn_section" id="smartbar_execute_section">
+            <!-- EXECUTE: the compose operation (reply, reply to all, forward, new email); its
+                 connection is in the Prompts tab, with its prompt -->
+            <div class="mzta_section" id="smartbar_execute_settings">
                 <div class="mzta_prompt_title">__MSG_smartbar_execute_title__</div>
                 <p class="mzta_help">__MSG_smartbar_execute_info__</p>
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
-                        <div class="feature_desc">__MSG_smartbar_execute_use_specific_integration_info__</div>
-                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="smartbar_execute_use_specific_integration" name="smartbar_execute_use_specific_integration" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-                <div id="mzta_conn_panel">
-                    <div id="mzta_conn_panel_header">
-                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
-                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
-                    </div>
-                    <table id="connection_ui_table">
-                        <tr id="smartbar_execute_connection_ui_anchor"></tr>
-                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
-                    </table>
-                </div>
                 <div class="mzta_field mzta_field_num">
                     <div class="mzta_field_num_text">
                         <span class="opt_title">__MSG_smartbar_max_body_length__</span>
@@ -144,33 +97,6 @@
                     <span class="opt_title">__MSG_smartbar_signature__</span>
                     <textarea id="smartbar_signature" name="smartbar_signature" rows="3" class="option-input"></textarea>
                     <span class="mzta_help">__MSG_smartbar_signature_info__</span>
-                </div>
-            </div>
-
-            <!-- CHAT: used from a later version (the chat mode) -->
-            <div class="mzta_section smartbar_conn_section" id="smartbar_chat_section">
-                <div class="mzta_prompt_title">__MSG_smartbar_chat_title__</div>
-                <p class="mzta_help">__MSG_smartbar_chat_info__</p>
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
-                        <div class="feature_desc">__MSG_smartbar_chat_use_specific_integration_info__</div>
-                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="smartbar_chat_use_specific_integration" name="smartbar_chat_use_specific_integration" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-                <div id="mzta_conn_panel">
-                    <div id="mzta_conn_panel_header">
-                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
-                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
-                    </div>
-                    <table id="connection_ui_table">
-                        <tr id="smartbar_chat_connection_ui_anchor"></tr>
-                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
-                    </table>
                 </div>
             </div>
 
@@ -217,6 +143,27 @@
             <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_router_section">
                 <div class="mzta_prompt_title">__MSG_smartbar_prompt_router_title__<span id="smartbar_prompt_router_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">__MSG_smartbar_prompt_router_info__</p>
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
+                        <div class="feature_desc">__MSG_smartbar_router_use_specific_integration_info__</div>
+                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="smartbar_router_use_specific_integration" name="smartbar_router_use_specific_integration" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+                <div id="mzta_conn_panel">
+                    <div id="mzta_conn_panel_header">
+                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    </div>
+                    <table id="connection_ui_table">
+                        <tr id="smartbar_router_connection_ui_anchor"></tr>
+                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                    </table>
+                </div>
                 <div class="smartbar_update_notice" id="smartbar_prompt_router_update" hidden>
                     <span>__MSG_prompt_default_update_notice__</span>
                     <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
@@ -241,6 +188,27 @@
             <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_execute_section">
                 <div class="mzta_prompt_title">__MSG_smartbar_prompt_execute_title__<span id="smartbar_prompt_execute_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">__MSG_smartbar_prompt_execute_info__</p>
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
+                        <div class="feature_desc">__MSG_smartbar_execute_use_specific_integration_info__</div>
+                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="smartbar_execute_use_specific_integration" name="smartbar_execute_use_specific_integration" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+                <div id="mzta_conn_panel">
+                    <div id="mzta_conn_panel_header">
+                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    </div>
+                    <table id="connection_ui_table">
+                        <tr id="smartbar_execute_connection_ui_anchor"></tr>
+                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                    </table>
+                </div>
                 <div class="smartbar_update_notice" id="smartbar_prompt_execute_update" hidden>
                     <span>__MSG_prompt_default_update_notice__</span>
                     <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
@@ -265,6 +233,27 @@
             <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_chat_section">
                 <div class="mzta_prompt_title">__MSG_smartbar_prompt_chat_title__<span id="smartbar_prompt_chat_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">__MSG_smartbar_prompt_chat_info__</p>
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
+                        <div class="feature_desc">__MSG_smartbar_chat_use_specific_integration_info__</div>
+                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="smartbar_chat_use_specific_integration" name="smartbar_chat_use_specific_integration" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+                <div id="mzta_conn_panel">
+                    <div id="mzta_conn_panel_header">
+                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    </div>
+                    <table id="connection_ui_table">
+                        <tr id="smartbar_chat_connection_ui_anchor"></tr>
+                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                    </table>
+                </div>
                 <div class="smartbar_update_notice" id="smartbar_prompt_chat_update" hidden>
                     <span>__MSG_prompt_default_update_notice__</span>
                     <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
