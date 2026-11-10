@@ -1,4 +1,4 @@
-// The Prompts tab of the SmartBar page (pages/smartbar/), opened on #prompts, nothing stored,
+// The Actions tab (id "prompts") of the SmartBar page (pages/smartbar/), opened on #prompts, nothing stored,
 // no policy.
 //
 // Spec 05 "SmartBar Settings Page (`pages/smartbar/`)": the tab named by the hash shown.
@@ -34,7 +34,7 @@ const S_UPDATE = 'spec 02 "Default text updates"';
 const KEYS = { router: 'prompt_smartbar_router', execute: 'prompt_smartbar_execute', chat: 'prompt_smartbar_chat' };
 const ta = key => $('#smartbar_prompt_' + key + '_text');
 
-k.test('tab-from-hash', S_PAGE, 'the page opened on #prompts shows the Prompts tab', () => {
+k.test('tab-from-hash', S_PAGE, 'the page opened on #prompts shows the Actions tab', () => {
     assert.equal($('#tab_btn_prompts').getAttribute('aria-selected'), 'true');
     assert.equal($('#tab_prompts').hidden, false);
     assert.equal($('#tab_options').hidden, true);

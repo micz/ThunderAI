@@ -4,8 +4,9 @@
 // Spec 05 "SmartBar Settings Page (`pages/smartbar/`)": the tab strip (three tabs, Options shown
 // when the URL has no hash), the stored settings shown in their sections, each change stored
 // with its type (a select as its value, a number as a number and never below its minimum, an
-// emptied number as its default, a textarea as typed), the three connection panels, one per
-// special prompt, each with its own controls; the keyboard shortcut of the bar shown.
+// emptied number as its default, a textarea as typed), the sub-tabs of the Actions tab, the
+// writing settings in execute's sub-tab, the three connection panels, one per special prompt,
+// each in the sub-tab of its action with its own controls; the keyboard shortcut of the bar shown.
 // The connection panels' policy behaviour is the managed area's (the 13-17 files of this folder).
 
 import { after } from 'node:test';
@@ -97,12 +98,36 @@ k.test('write-textarea', S_PAGE, 'a textarea is stored as typed', async () => {
     assert.strictEqual(writtenSince(ctx, since).smartbar_signature, '  -- \nMic  ');
 });
 
-k.test('three-panels', S_PAGE, 'three connection panels, one per special prompt, each in its prompt\'s section of the Prompts tab with its own switch and anchor, before the text', () => {
+k.test('subtabs', S_PAGE, 'the Actions tab has one sub-tab per action, the first shown at load, a click shows its panel alone', async () => {
+    const subtabs = () => [...ctx.document.querySelectorAll('#tab_prompts #smartbar_subtabs [role="tab"]')];
+    const shown = () => subtabs().map(t => !ctx.document.getElementById(t.getAttribute('aria-controls')).hidden);
+    assert.deepEqual(subtabs().map(t => t.dataset.subtab), ['router', 'execute', 'chat']);
+    assert.deepEqual(subtabs().map(t => t.getAttribute('aria-selected')), ['true', 'false', 'false']);
+    assert.deepEqual(shown(), [true, false, false]);
+    await ctx.click($('#subtab_btn_execute'));
+    assert.deepEqual(subtabs().map(t => t.getAttribute('aria-selected')), ['false', 'true', 'false']);
+    assert.deepEqual(shown(), [false, true, false]);
+    assert.equal(ctx.window.location.hash, '#options', 'a sub-tab is not in the hash');
+    await ctx.click($('#subtab_btn_router'));
+    assert.deepEqual(shown(), [true, false, false]);
+});
+
+k.test('execute-settings', S_PAGE, 'the writing settings are in execute\'s sub-tab of the Actions tab, before its prompt section', () => {
+    const settings = $('#smartbar_execute_settings');
+    assert.ok($('#subtab_execute').contains(settings));
+    assert.equal($('#tab_options').contains(settings), false, 'not left in the Options tab');
+    for (const id of ['smartbar_max_body_length', 'smartbar_additional_instructions', 'smartbar_signature']) {
+        assert.ok(settings.querySelector('#' + id), id);
+    }
+    assert.ok(settings.compareDocumentPosition($('#smartbar_prompt_execute_section')) & ctx.window.Node.DOCUMENT_POSITION_FOLLOWING);
+});
+
+k.test('three-panels', S_PAGE, 'three connection panels, one per special prompt, each in its prompt\'s section in the sub-tab of its action with its own switch and anchor, before the text', () => {
     for (const prefix of PANELS) {
         const key = prefix.replace('smartbar_', '');
         const section = ctx.document.getElementById('smartbar_prompt_' + key + '_section');
         assert.ok(section, prefix);
-        assert.ok(ctx.document.getElementById('tab_prompts').contains(section), prefix + ' in the Prompts tab');
+        assert.ok(ctx.document.getElementById('subtab_' + key).contains(section), prefix + ' in its sub-tab of the Actions tab');
         const sw = section.querySelector('#' + prefix + '_use_specific_integration');
         assert.ok(sw, prefix + ' switch');
         assert.ok(section.querySelector('#' + prefix + '_connection_ui_anchor'), prefix + ' anchor');

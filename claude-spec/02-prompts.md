@@ -422,7 +422,7 @@ editable text is only the first part of what is sent ([10-smartbar.md](10-smartb
 None of them has a response format of its own in the prompt checks (`{}` in the table of
 `js/mzta-prompts.js`): the JSON sections are the add-on's.
 
-**Editing** (the Prompts tab of the SmartBar page, [10-smartbar.md](10-smartbar.md) "Feature
+**Editing** (the Actions tab of the SmartBar page, [10-smartbar.md](10-smartbar.md) "Feature
 page"): the three texts are edited like the other special prompts (`bindSpecialPromptEditor()`:
 Save, Restore default, the policy lock), with these rules:
 

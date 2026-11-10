@@ -5394,9 +5394,9 @@
     "message": "If checked, the model and API below are used to understand the instructions, whatever the connection chosen in the ThunderAI options. A small, fast model is recommended here.",
     "description": "SmartBar settings page: description of the specific integration switch of the router."
   },
-  "smartbar_execute_title": {
-    "message": "Writing emails",
-    "description": "SmartBar settings page: title of the section of the settings used to write replies, forwards and new emails."
+  "smartbar_execute_settings_title": {
+    "message": "Writing settings",
+    "description": "SmartBar settings page, Actions tab, sub-tab of the writing action: title of the section of the settings used to write replies, forwards and new emails."
   },
   "smartbar_execute_info": {
     "message": "Used when an instruction asks to reply, forward or write an email: the text of the email is sent to the AI, and the result opens in a compose window for you to review. Recipients are never filled in.",
@@ -5455,48 +5455,52 @@
     "description": "SmartBar settings page: maximum age of the kept instructions that ended with an error."
   },
   "smartbar_tab_prompts": {
-    "message": "Prompts",
-    "description": "SmartBar settings page: the tab with the texts of the SmartBar's prompts."
+    "message": "Actions",
+    "description": "SmartBar settings page: the tab with the settings of the SmartBar's actions (understanding the instruction, writing emails, answers in the chat): their model and API, their prompt and the writing settings."
   },
   "smartbar_tab_activity": {
     "message": "Activity",
     "description": "SmartBar settings page: the tab listing the instructions typed in the SmartBar, running and past."
   },
   "smartbar_prompts_info": {
-    "message": "The instructions ThunderAI gives the AI for the SmartBar. The format of the answers is added by ThunderAI after your text and cannot be changed.",
-    "description": "SmartBar settings page, Prompts tab: introduction."
+    "message": "The settings of each action of the SmartBar: the model and API it uses and the instructions ThunderAI gives the AI. The format of the answers is added by ThunderAI after your text and cannot be changed.",
+    "description": "SmartBar settings page, Actions tab: introduction."
   },
   "smartbar_prompt_router_title": {
     "message": "Understanding the instruction",
-    "description": "SmartBar settings page, Prompts tab: title of the router prompt (the AI call that decides which actions an instruction asks for)."
+    "description": "SmartBar settings page, Actions tab: name of the sub-tab of the router action (the AI call that decides which actions an instruction asks for)."
+  },
+  "smartbar_prompt_section_title": {
+    "message": "Model and prompt",
+    "description": "SmartBar settings page, Actions tab: title of the section of an action holding its specific model and API and the text of its prompt."
   },
   "smartbar_prompt_router_info": {
     "message": "Decides which actions an instruction asks for. Keep {OPERATIONS}, {PLACEHOLDERS} and {LANGUAGE_RULE} in the text: ThunderAI replaces them with the available actions, the information the actions can use and the language rule. The email itself is never sent with this prompt.",
-    "description": "SmartBar settings page, Prompts tab: help of the router prompt. Do not translate the words inside the braces."
+    "description": "SmartBar settings page, Actions tab: help of the router prompt. Do not translate the words inside the braces."
   },
   "smartbar_prompt_execute_title": {
     "message": "Writing emails",
-    "description": "SmartBar settings page, Prompts tab: title of the prompt used to write replies, forwards and new emails."
+    "description": "SmartBar settings page, Actions tab: name of the sub-tab of the action that writes replies, forwards and new emails."
   },
   "smartbar_prompt_execute_info": {
     "message": "Writes the replies, forwards and new emails. ThunderAI adds after your text the email, the instruction, the kind of email to write and your writing settings.",
-    "description": "SmartBar settings page, Prompts tab: help of the execute prompt."
+    "description": "SmartBar settings page, Actions tab: help of the execute prompt."
   },
   "smartbar_prompt_chat_title": {
     "message": "Answers in the chat",
-    "description": "SmartBar settings page, Prompts tab: title of the prompt of the chat's free answers."
+    "description": "SmartBar settings page, Actions tab: name of the sub-tab of the chat's free answers."
   },
   "smartbar_prompt_chat_info": {
     "message": "Answers the messages of the chat that no action covers. ThunderAI adds after your text the email, the conversation so far and the new message.",
-    "description": "SmartBar settings page, Prompts tab: help of the chat prompt."
+    "description": "SmartBar settings page, Actions tab: help of the chat prompt."
   },
   "smartbar_prompt_locked_section": {
     "message": "Added by ThunderAI after your text (cannot be changed):",
-    "description": "SmartBar settings page, Prompts tab: label above the read-only answer format appended to the prompt."
+    "description": "SmartBar settings page, Actions tab: label above the read-only answer format appended to the prompt."
   },
   "smartbar_prompt_missing_variables": {
     "message": "Not saved: the text must contain $VARIABLES$.",
-    "description": "SmartBar settings page, Prompts tab: error when a prompt text lacks a required variable. $VARIABLES$ is a comma-separated list such as {OPERATIONS}, {LANGUAGE_RULE}.",
+    "description": "SmartBar settings page, Actions tab: error when a prompt text lacks a required variable. $VARIABLES$ is a comma-separated list such as {OPERATIONS}, {LANGUAGE_RULE}.",
     "placeholders": {
       "variables": {
         "content": "$1",

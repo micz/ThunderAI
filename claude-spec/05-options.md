@@ -844,17 +844,23 @@ second request focuses the open page and selects the tab asked for. Not reachabl
 The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the managed banner and
 `applyManagedUI()` once every panel is built. Saved on `change` like the other feature pages.
 
-- **Tabs**: a tab strip (`#smartbar_tabs`, `role="tablist"`): Options, Prompts, Activity. The tab
+- **Tabs**: a tab strip (`#smartbar_tabs`, `role="tablist"`): Options, Actions (`smartbar_tab_prompts`;
+  its id stays `prompts`: `#tab_prompts`, `#tab_btn_prompts`, the hash `#prompts`), Activity. The tab
   named in the URL hash is selected at load (none or unknown: Options) and on `hashchange`; a tab
   clicked puts its name in the hash (`history.replaceState`).
+- **Sub-tabs** of the Actions tab (`#smartbar_subtabs`, `role="tablist"`, a segmented control): one
+  per action, labelled with the prompt titles: router (`#subtab_router`), execute
+  (`#subtab_execute`), chat (`#subtab_chat`). Not in the hash: the first (router) is shown at load,
+  a click shows the panel of its button (`bindSubtabs()`).
 - **Settings** (`#smartbar_settings`): `smartbar_mode`, `smartbar_default_destination` (selects),
   `smartbar_history_size`, `smartbar_parallel_limit` (numbers), and the bar's keyboard shortcut
   (`commands.getAll()`, `_thunderai__smartbar`, shown as keys, `smartbar_shortcut_none` when unset)
   with the link to change it.
-- **Execute settings** (`#smartbar_execute_settings`, Options tab): `smartbar_max_body_length`,
+- **Execute settings** (`#smartbar_execute_settings`, "Writing settings", execute's sub-tab of the
+  Actions tab, before its prompt section): `smartbar_max_body_length`,
   `smartbar_additional_instructions`, `smartbar_signature`.
-- **Three connection panels**, in the Prompts tab, each in the section of its prompt and before its
-  text: router (`#smartbar_prompt_router_section`), execute (`#smartbar_prompt_execute_section`) and
+- **Three connection panels**, in the Actions tab, each in the section of its prompt (in the
+  sub-tab of its action) and before its text: router (`#smartbar_prompt_router_section`), execute (`#smartbar_prompt_execute_section`) and
   chat (`#smartbar_prompt_chat_section`, the connection of the chat window and of its free answers).
   Each is the
   same panel as on the other feature pages (`{prefix}_use_specific_integration`, the provider rows,
@@ -867,8 +873,9 @@ The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the manage
   (`persistPromptConnectionToPrefs()`, `resolveFeatureConnectionPrefs()`).
 - **History** (`#smartbar_retention`): the three retention rules, `smartbar_retention_info` (no
   backup: the history may be lost when Thunderbird deletes the add-on's IndexedDB).
-- **Prompts tab** (`#tab_prompts`): one section per special prompt (`#smartbar_prompt_{router,
-  execute,chat}_section`): the connection panel first (above), then the textarea `#smartbar_prompt_<key>_text`, `#btn_save_smartbar_<key>` /
+- **Actions tab** (`#tab_prompts`): one section per special prompt (`#smartbar_prompt_{router,
+  execute,chat}_section`, titled "Model and prompt", `smartbar_prompt_section_title`), each in the
+  sub-tab of its action: the connection panel first (above), then the textarea `#smartbar_prompt_<key>_text`, `#btn_save_smartbar_<key>` /
   `#btn_reset_smartbar_<key>` (the `btn_save` prefix is what the unsaved-changes guard reads), the
   unsaved marker, the read-only JSON section `#smartbar_prompt_<key>_locked` (router, execute), the
   refusal message `#smartbar_prompt_<key>_error` (router variables), the update notice

@@ -1,4 +1,4 @@
-// The Prompts tab of the SmartBar page with the three texts customized against an older default
+// The Actions tab (id "prompts") of the SmartBar page with the three texts customized against an older default
 // (a fingerprint that is not the current default's), no policy.
 //
 // Spec 02 "Default text updates": the notice is shown for each; a Save while it is pending keeps

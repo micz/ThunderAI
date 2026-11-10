@@ -2,7 +2,7 @@
 // "Special prompts and their connections") as policy keys.
 //  - _special_prompts_text: the three ids are valid keys; their texts are enforced as a read-time
 //    overlay and never stored. The router's variables ({OPERATIONS}, {PLACEHOLDERS},
-//    {LANGUAGE_RULE}) are required by the Prompts tab on the user's own Save only: a policy text
+//    {LANGUAGE_RULE}) are required by the Actions tab on the user's own Save only: a policy text
 //    without them is still enforced (spec 02 "SmartBar prompts": a variable the text lacks has
 //    its content appended at call time), and the SmartBar's prompts have no response contract
 //    (their JSON sections are the add-on's).

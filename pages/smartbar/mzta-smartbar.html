@@ -20,7 +20,8 @@
             <p class="mzta_page_subtitle mzta_help">__MSG_smartbar_page_info__</p>
         </div>
 
-        <!-- TABS: the hash of the URL names the tab shown (#options, #prompts, #activity). -->
+        <!-- TABS: the hash of the URL names the tab shown (#options, #prompts, #activity). The
+             Actions tab keeps the id "prompts" (the hash the background and the links use). -->
         <div id="smartbar_tabs" class="smartbar_tabs" role="tablist">
             <button type="button" role="tab" class="smartbar_tab" id="tab_btn_options" data-tab="options" aria-controls="tab_options" aria-selected="true">__MSG_smartbar_tab_options__</button>
             <button type="button" role="tab" class="smartbar_tab" id="tab_btn_prompts" data-tab="prompts" aria-controls="tab_prompts" aria-selected="false">__MSG_smartbar_tab_prompts__</button>
@@ -74,32 +75,6 @@
                 </div>
             </div>
 
-            <!-- EXECUTE: the compose operation (reply, reply to all, forward, new email); its
-                 connection is in the Prompts tab, with its prompt -->
-            <div class="mzta_section" id="smartbar_execute_settings">
-                <div class="mzta_prompt_title">__MSG_smartbar_execute_title__</div>
-                <p class="mzta_help">__MSG_smartbar_execute_info__</p>
-                <div class="mzta_field mzta_field_num">
-                    <div class="mzta_field_num_text">
-                        <span class="opt_title">__MSG_smartbar_max_body_length__</span>
-                        <span class="mzta_help">__MSG_smartbar_max_body_length_info__</span>
-                    </div>
-                    <div class="mzta_field_num_ctrl">
-                        <input type="number" id="smartbar_max_body_length" name="smartbar_max_body_length" min="0" step="1" class="option-input" />
-                    </div>
-                </div>
-                <div class="mzta_field">
-                    <span class="opt_title">__MSG_smartbar_additional_instructions__</span>
-                    <textarea id="smartbar_additional_instructions" name="smartbar_additional_instructions" rows="3" class="option-input"></textarea>
-                    <span class="mzta_help">__MSG_smartbar_additional_instructions_info__</span>
-                </div>
-                <div class="mzta_field">
-                    <span class="opt_title">__MSG_smartbar_signature__</span>
-                    <textarea id="smartbar_signature" name="smartbar_signature" rows="3" class="option-input"></textarea>
-                    <span class="mzta_help">__MSG_smartbar_signature_info__</span>
-                </div>
-            </div>
-
             <!-- RETENTION -->
             <div class="mzta_section" id="smartbar_retention">
                 <div class="mzta_prompt_title">__MSG_smartbar_retention_title__</div>
@@ -135,138 +110,178 @@
 
           </div>
 
-          <!-- PROMPTS: the texts of the three special prompts of the feature. The JSON format
-               sections are the add-on's: shown read-only, appended at call time, never saved. -->
+          <!-- ACTIONS (tab id "prompts"): the settings of the three actions of the feature, one
+               sub-tab each: the connection and the text of its special prompt, and for execute
+               its writing settings. The JSON format sections are the add-on's: shown read-only,
+               appended at call time, never saved. -->
           <div id="tab_prompts" class="smartbar_tabpanel" role="tabpanel" aria-labelledby="tab_btn_prompts" hidden>
             <p class="mzta_help smartbar_tab_intro">__MSG_smartbar_prompts_info__</p>
 
-            <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_router_section">
-                <div class="mzta_prompt_title">__MSG_smartbar_prompt_router_title__<span id="smartbar_prompt_router_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
-                <p class="mzta_help">__MSG_smartbar_prompt_router_info__</p>
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
-                        <div class="feature_desc">__MSG_smartbar_router_use_specific_integration_info__</div>
-                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+            <div id="smartbar_subtabs" class="smartbar_subtabs" role="tablist">
+                <button type="button" role="tab" class="smartbar_subtab" id="subtab_btn_router" data-subtab="router" aria-controls="subtab_router" aria-selected="true">__MSG_smartbar_prompt_router_title__</button>
+                <button type="button" role="tab" class="smartbar_subtab" id="subtab_btn_execute" data-subtab="execute" aria-controls="subtab_execute" aria-selected="false">__MSG_smartbar_prompt_execute_title__</button>
+                <button type="button" role="tab" class="smartbar_subtab" id="subtab_btn_chat" data-subtab="chat" aria-controls="subtab_chat" aria-selected="false">__MSG_smartbar_prompt_chat_title__</button>
+            </div>
+
+            <div id="subtab_router" class="smartbar_subpanel" role="tabpanel" aria-labelledby="subtab_btn_router">
+                <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_router_section">
+                    <div class="mzta_prompt_title">__MSG_smartbar_prompt_section_title__<span id="smartbar_prompt_router_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                    <p class="mzta_help">__MSG_smartbar_prompt_router_info__</p>
+                    <div class="feature_row">
+                        <div class="feature_info">
+                            <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
+                            <div class="feature_desc">__MSG_smartbar_router_use_specific_integration_info__</div>
+                            <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+                        </div>
+                        <label class="mzta_switch">
+                            <input type="checkbox" id="smartbar_router_use_specific_integration" name="smartbar_router_use_specific_integration" class="option-input" />
+                            <span class="track"></span>
+                        </label>
                     </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="smartbar_router_use_specific_integration" name="smartbar_router_use_specific_integration" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-                <div id="mzta_conn_panel">
-                    <div id="mzta_conn_panel_header">
-                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
-                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    <div id="mzta_conn_panel">
+                        <div id="mzta_conn_panel_header">
+                            <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                            <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                        </div>
+                        <table id="connection_ui_table">
+                            <tr id="smartbar_router_connection_ui_anchor"></tr>
+                            <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                        </table>
                     </div>
-                    <table id="connection_ui_table">
-                        <tr id="smartbar_router_connection_ui_anchor"></tr>
-                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
-                    </table>
-                </div>
-                <div class="smartbar_update_notice" id="smartbar_prompt_router_update" hidden>
-                    <span>__MSG_prompt_default_update_notice__</span>
-                    <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
-                    <button type="button" class="btn_secondary btn_small" data-action="dismiss">__MSG_prompt_default_update_dismiss__</button>
-                </div>
-                <div class="mzta_field">
-                    <div class="smartbar_editor_wrap">
-                        <textarea id="smartbar_prompt_router_text" rows="18" class="smartbar_prompt_text"></textarea>
+                    <div class="smartbar_update_notice" id="smartbar_prompt_router_update" hidden>
+                        <span>__MSG_prompt_default_update_notice__</span>
+                        <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
+                        <button type="button" class="btn_secondary btn_small" data-action="dismiss">__MSG_prompt_default_update_dismiss__</button>
                     </div>
-                    <div class="smartbar_prompt_error" id="smartbar_prompt_router_error" role="alert" hidden></div>
-                    <div class="smartbar_locked_section">
-                        <span class="mzta_help">__MSG_smartbar_prompt_locked_section__</span>
-                        <pre id="smartbar_prompt_router_locked"></pre>
-                    </div>
-                    <div class="btn_div">
-                        <button id="btn_reset_smartbar_router" class="btn_secondary" disabled>__MSG_reset_default__</button>
-                        <button id="btn_save_smartbar_router" class="btn_primary" disabled>__MSG_save__</button>
+                    <div class="mzta_field">
+                        <div class="smartbar_editor_wrap">
+                            <textarea id="smartbar_prompt_router_text" rows="18" class="smartbar_prompt_text"></textarea>
+                        </div>
+                        <div class="smartbar_prompt_error" id="smartbar_prompt_router_error" role="alert" hidden></div>
+                        <div class="smartbar_locked_section">
+                            <span class="mzta_help">__MSG_smartbar_prompt_locked_section__</span>
+                            <pre id="smartbar_prompt_router_locked"></pre>
+                        </div>
+                        <div class="btn_div">
+                            <button id="btn_reset_smartbar_router" class="btn_secondary" disabled>__MSG_reset_default__</button>
+                            <button id="btn_save_smartbar_router" class="btn_primary" disabled>__MSG_save__</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_execute_section">
-                <div class="mzta_prompt_title">__MSG_smartbar_prompt_execute_title__<span id="smartbar_prompt_execute_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
-                <p class="mzta_help">__MSG_smartbar_prompt_execute_info__</p>
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
-                        <div class="feature_desc">__MSG_smartbar_execute_use_specific_integration_info__</div>
-                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+            <div id="subtab_execute" class="smartbar_subpanel" role="tabpanel" aria-labelledby="subtab_btn_execute" hidden>
+                <!-- The writing settings of the compose operation (reply, reply to all, forward,
+                     new email), before its connection and prompt. -->
+                <div class="mzta_section" id="smartbar_execute_settings">
+                    <div class="mzta_prompt_title">__MSG_smartbar_execute_settings_title__</div>
+                    <p class="mzta_help">__MSG_smartbar_execute_info__</p>
+                    <div class="mzta_field mzta_field_num">
+                        <div class="mzta_field_num_text">
+                            <span class="opt_title">__MSG_smartbar_max_body_length__</span>
+                            <span class="mzta_help">__MSG_smartbar_max_body_length_info__</span>
+                        </div>
+                        <div class="mzta_field_num_ctrl">
+                            <input type="number" id="smartbar_max_body_length" name="smartbar_max_body_length" min="0" step="1" class="option-input" />
+                        </div>
                     </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="smartbar_execute_use_specific_integration" name="smartbar_execute_use_specific_integration" class="option-input" />
-                        <span class="track"></span>
-                    </label>
+                    <div class="mzta_field">
+                        <span class="opt_title">__MSG_smartbar_additional_instructions__</span>
+                        <textarea id="smartbar_additional_instructions" name="smartbar_additional_instructions" rows="3" class="option-input"></textarea>
+                        <span class="mzta_help">__MSG_smartbar_additional_instructions_info__</span>
+                    </div>
+                    <div class="mzta_field">
+                        <span class="opt_title">__MSG_smartbar_signature__</span>
+                        <textarea id="smartbar_signature" name="smartbar_signature" rows="3" class="option-input"></textarea>
+                        <span class="mzta_help">__MSG_smartbar_signature_info__</span>
+                    </div>
                 </div>
-                <div id="mzta_conn_panel">
-                    <div id="mzta_conn_panel_header">
-                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
-                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+
+                <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_execute_section">
+                    <div class="mzta_prompt_title">__MSG_smartbar_prompt_section_title__<span id="smartbar_prompt_execute_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                    <p class="mzta_help">__MSG_smartbar_prompt_execute_info__</p>
+                    <div class="feature_row">
+                        <div class="feature_info">
+                            <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
+                            <div class="feature_desc">__MSG_smartbar_execute_use_specific_integration_info__</div>
+                            <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+                        </div>
+                        <label class="mzta_switch">
+                            <input type="checkbox" id="smartbar_execute_use_specific_integration" name="smartbar_execute_use_specific_integration" class="option-input" />
+                            <span class="track"></span>
+                        </label>
                     </div>
-                    <table id="connection_ui_table">
-                        <tr id="smartbar_execute_connection_ui_anchor"></tr>
-                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
-                    </table>
-                </div>
-                <div class="smartbar_update_notice" id="smartbar_prompt_execute_update" hidden>
-                    <span>__MSG_prompt_default_update_notice__</span>
-                    <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
-                    <button type="button" class="btn_secondary btn_small" data-action="dismiss">__MSG_prompt_default_update_dismiss__</button>
-                </div>
-                <div class="mzta_field">
-                    <div class="smartbar_editor_wrap">
-                        <textarea id="smartbar_prompt_execute_text" rows="14" class="smartbar_prompt_text"></textarea>
+                    <div id="mzta_conn_panel">
+                        <div id="mzta_conn_panel_header">
+                            <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                            <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                        </div>
+                        <table id="connection_ui_table">
+                            <tr id="smartbar_execute_connection_ui_anchor"></tr>
+                            <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                        </table>
                     </div>
-                    <div class="smartbar_prompt_error" id="smartbar_prompt_execute_error" role="alert" hidden></div>
-                    <div class="smartbar_locked_section">
-                        <span class="mzta_help">__MSG_smartbar_prompt_locked_section__</span>
-                        <pre id="smartbar_prompt_execute_locked"></pre>
+                    <div class="smartbar_update_notice" id="smartbar_prompt_execute_update" hidden>
+                        <span>__MSG_prompt_default_update_notice__</span>
+                        <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
+                        <button type="button" class="btn_secondary btn_small" data-action="dismiss">__MSG_prompt_default_update_dismiss__</button>
                     </div>
-                    <div class="btn_div">
-                        <button id="btn_reset_smartbar_execute" class="btn_secondary" disabled>__MSG_reset_default__</button>
-                        <button id="btn_save_smartbar_execute" class="btn_primary" disabled>__MSG_save__</button>
+                    <div class="mzta_field">
+                        <div class="smartbar_editor_wrap">
+                            <textarea id="smartbar_prompt_execute_text" rows="14" class="smartbar_prompt_text"></textarea>
+                        </div>
+                        <div class="smartbar_prompt_error" id="smartbar_prompt_execute_error" role="alert" hidden></div>
+                        <div class="smartbar_locked_section">
+                            <span class="mzta_help">__MSG_smartbar_prompt_locked_section__</span>
+                            <pre id="smartbar_prompt_execute_locked"></pre>
+                        </div>
+                        <div class="btn_div">
+                            <button id="btn_reset_smartbar_execute" class="btn_secondary" disabled>__MSG_reset_default__</button>
+                            <button id="btn_save_smartbar_execute" class="btn_primary" disabled>__MSG_save__</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_chat_section">
-                <div class="mzta_prompt_title">__MSG_smartbar_prompt_chat_title__<span id="smartbar_prompt_chat_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
-                <p class="mzta_help">__MSG_smartbar_prompt_chat_info__</p>
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
-                        <div class="feature_desc">__MSG_smartbar_chat_use_specific_integration_info__</div>
-                        <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+            <div id="subtab_chat" class="smartbar_subpanel" role="tabpanel" aria-labelledby="subtab_btn_chat" hidden>
+                <div class="mzta_section smartbar_prompt_section" id="smartbar_prompt_chat_section">
+                    <div class="mzta_prompt_title">__MSG_smartbar_prompt_section_title__<span id="smartbar_prompt_chat_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                    <p class="mzta_help">__MSG_smartbar_prompt_chat_info__</p>
+                    <div class="feature_row">
+                        <div class="feature_info">
+                            <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__<span class="feature_locked_badge" id="specific_integration_locked_badge">&#128274; __MSG_specific_integration_mandatory_badge__</span></div>
+                            <div class="feature_desc">__MSG_smartbar_chat_use_specific_integration_info__</div>
+                            <div class="feature_locked_note" id="specific_integration_locked_note"></div>
+                        </div>
+                        <label class="mzta_switch">
+                            <input type="checkbox" id="smartbar_chat_use_specific_integration" name="smartbar_chat_use_specific_integration" class="option-input" />
+                            <span class="track"></span>
+                        </label>
                     </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="smartbar_chat_use_specific_integration" name="smartbar_chat_use_specific_integration" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-                <div id="mzta_conn_panel">
-                    <div id="mzta_conn_panel_header">
-                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
-                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    <div id="mzta_conn_panel">
+                        <div id="mzta_conn_panel_header">
+                            <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                            <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                        </div>
+                        <table id="connection_ui_table">
+                            <tr id="smartbar_chat_connection_ui_anchor"></tr>
+                            <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                        </table>
                     </div>
-                    <table id="connection_ui_table">
-                        <tr id="smartbar_chat_connection_ui_anchor"></tr>
-                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
-                    </table>
-                </div>
-                <div class="smartbar_update_notice" id="smartbar_prompt_chat_update" hidden>
-                    <span>__MSG_prompt_default_update_notice__</span>
-                    <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
-                    <button type="button" class="btn_secondary btn_small" data-action="dismiss">__MSG_prompt_default_update_dismiss__</button>
-                </div>
-                <div class="mzta_field">
-                    <div class="smartbar_editor_wrap">
-                        <textarea id="smartbar_prompt_chat_text" rows="10" class="smartbar_prompt_text"></textarea>
+                    <div class="smartbar_update_notice" id="smartbar_prompt_chat_update" hidden>
+                        <span>__MSG_prompt_default_update_notice__</span>
+                        <button type="button" class="btn_secondary btn_small" data-action="compare">__MSG_prompt_default_update_compare__</button>
+                        <button type="button" class="btn_secondary btn_small" data-action="dismiss">__MSG_prompt_default_update_dismiss__</button>
                     </div>
-                    <div class="smartbar_prompt_error" id="smartbar_prompt_chat_error" role="alert" hidden></div>
-                    <div class="btn_div">
-                        <button id="btn_reset_smartbar_chat" class="btn_secondary" disabled>__MSG_reset_default__</button>
-                        <button id="btn_save_smartbar_chat" class="btn_primary" disabled>__MSG_save__</button>
+                    <div class="mzta_field">
+                        <div class="smartbar_editor_wrap">
+                            <textarea id="smartbar_prompt_chat_text" rows="10" class="smartbar_prompt_text"></textarea>
+                        </div>
+                        <div class="smartbar_prompt_error" id="smartbar_prompt_chat_error" role="alert" hidden></div>
+                        <div class="btn_div">
+                            <button id="btn_reset_smartbar_chat" class="btn_secondary" disabled>__MSG_reset_default__</button>
+                            <button id="btn_save_smartbar_chat" class="btn_primary" disabled>__MSG_save__</button>
+                        </div>
                     </div>
                 </div>
             </div>

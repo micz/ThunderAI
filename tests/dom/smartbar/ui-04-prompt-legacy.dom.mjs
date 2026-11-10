@@ -1,4 +1,4 @@
-// The Prompts tab of the SmartBar page with a customized router text stored with no fingerprint
+// The Actions tab (id "prompts") of the SmartBar page with a customized router text stored with no fingerprint
 // (saved before fingerprints existed), no policy.
 //
 // Spec 02 "Default text updates": a text with no fingerprint gets no notice (the default it was

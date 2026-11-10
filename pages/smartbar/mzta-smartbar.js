@@ -18,13 +18,16 @@
 
 /*
  *  The SmartBar page (claude-spec/10-smartbar.md "Feature page"): three tabs, Options (this
- *  file), Prompts (mzta-smartbar-prompts.js) and Activity (mzta-smartbar-activity.js). The hash
- *  of the URL names the tab shown: the background opens the page once and selects a tab by
- *  changing it (smartbar_open_page), the bar's Details link asks for #activity.
+ *  file), Actions (id "prompts": mzta-smartbar-prompts.js for the texts) and Activity
+ *  (mzta-smartbar-activity.js). The hash of the URL names the tab shown: the background opens
+ *  the page once and selects a tab by changing it (smartbar_open_page), the bar's Details link
+ *  asks for #activity.
  *
- *  Three connection panels, one per special prompt of the feature (router, execute, chat), each
- *  in the section of its prompt in the Prompts tab, before the text: initializeSpecificIntegrationUI()
- *  and bindConnPanelTint() get the section as their root, and every lookup of a panel stays inside it.
+ *  The Actions tab has one sub-tab per action (router, execute, chat), not in the hash: the first
+ *  one is shown at load. Three connection panels, one per special prompt of the feature, each in
+ *  the section of its prompt in its sub-tab, before the text; execute's sub-tab also holds the
+ *  writing settings. initializeSpecificIntegrationUI() and bindConnPanelTint() get the section as
+ *  their root, and every lookup of a panel stays inside it.
  *
  *  Every .option-input is saved on change, as on the other feature pages.
  */
@@ -58,7 +61,7 @@ import {
 
 const taLog = new taLogger('mzta-smartbar-page', true);
 
-/** The three panels: feature prefix, special prompt, section (the prompt's, in the Prompts tab). */
+/** The three panels: feature prefix, special prompt, section (the prompt's, in its sub-tab of the Actions tab). */
 export const SMARTBAR_PANELS = [
     { prefix: 'smartbar_router', promptId: 'prompt_smartbar_router', section: 'smartbar_prompt_router_section' },
     { prefix: 'smartbar_execute', promptId: 'prompt_smartbar_execute', section: 'smartbar_prompt_execute_section' },
@@ -78,6 +81,7 @@ const NUMBER_MIN = {
 document.addEventListener('DOMContentLoaded', async () => {
     initUnsavedGuard();
     bindTabs();
+    bindSubtabs();
 
     const specialPrompts = await getSpecialPrompts();
     for (const panel of SMARTBAR_PANELS) {
@@ -105,7 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // After every panel is built: their provider rows are covered too.
     await applyManagedUI(document, taLog.do_debug);
 
-    // The Prompts tab: after applyManagedUI(), like the editors of the other feature pages
+    // The prompt editors of the Actions tab: after applyManagedUI(), like the editors of the other feature pages
     // (bindSpecialPromptEditor() locks a text the policy enforces itself).
     await initPromptsTab(await getSpecialPrompts(), taLog.do_debug);
 
@@ -159,6 +163,23 @@ function bindTabs() {
     });
     window.addEventListener('hashchange', () => selectTab(tabFromHash()));
     selectTab(tabFromHash());
+}
+
+// ── The sub-tabs of the Actions tab ──────────────────────────────────────────────────────────
+// One per action; the panel of the button clicked is shown, the others hidden.
+function selectSubtab(name) {
+    document.querySelectorAll('#smartbar_subtabs [role="tab"]').forEach(btn => {
+        const on = btn.dataset.subtab === name;
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        const panel = document.getElementById(btn.getAttribute('aria-controls'));
+        if (panel) panel.hidden = !on;
+    });
+}
+
+function bindSubtabs() {
+    const buttons = [...document.querySelectorAll('#smartbar_subtabs [role="tab"]')];
+    buttons.forEach(btn => btn.addEventListener('click', () => selectSubtab(btn.dataset.subtab)));
+    if (buttons.length > 0) selectSubtab(buttons[0].dataset.subtab);
 }
 
 // ── The keyboard shortcut of the bar ─────────────────────────────────────────────────────────

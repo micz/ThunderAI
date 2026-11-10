@@ -81,12 +81,13 @@ per-feature connection (`special_prompts_with_integration`, spec 02 / 05):
 | `prompt_smartbar_execute` | `smartbar_execute` | The compose operation: the generative operations that have no prompt of their own (see "Compose") |
 | `prompt_smartbar_chat` | `smartbar_chat` | The chat: the window it opens on, and the free answer of a message no operation covers (see "Chat") |
 
-The Prompts tab of the feature page shows the three connection panels, each in the section of its
-prompt, before the text, built by `initializeSpecificIntegrationUI({ root, anchorId })` scoped to that
-section (`pages/_lib/connection-ui.js`): the same panel as the other feature pages, three times on
-one page. The router's switch recommends a small, fast model. The Options tab keeps the execute
-settings section ("Writing emails": what is sent, recipients never filled in, the three compose
-settings).
+The Actions tab of the feature page shows the three connection panels, each in the section of its
+prompt (in the sub-tab of its action), before the text, built by
+`initializeSpecificIntegrationUI({ root, anchorId })` scoped to that section
+(`pages/_lib/connection-ui.js`): the same panel as the other feature pages, three times on one
+page. The router's switch recommends a small, fast model. Execute's sub-tab also holds, before its
+prompt, the execute settings section ("Writing settings": what is sent, recipients never filled
+in, the three compose settings).
 
 ## Bar
 
@@ -582,8 +583,9 @@ message still shows errors the user has not dismissed, the bar shows a notice
 
 ## Feature page
 
-`pages/smartbar/mzta-smartbar.html`: three tabs, **Options**, **Prompts**, **Activity**
-(`#smartbar_tabs`). The hash of the URL names the tab shown (`#options`, `#prompts`, `#activity`;
+`pages/smartbar/mzta-smartbar.html`: three tabs, **Options**, **Actions**, **Activity**
+(`#smartbar_tabs`). The hash of the URL names the tab shown (`#options`, `#prompts` for Actions,
+`#activity`;
 none or an unknown one: Options); a tab clicked puts its name in the hash (`replaceState`), and a
 `hashchange` selects the tab it names. It is not reachable from the popup.
 
@@ -595,10 +597,12 @@ bar's and the chat's "Details" ask for `activity`; the options page's "Manage se
 message with no tab (the page as it is), so the page opened from one place is focused from the
 other (`openTab()`'s exact URL match would miss a page whose hash changed).
 
-- **Options**: the settings of "Feature toggle and settings", the three compose settings, the
-  keyboard shortcut, the retention rules (spec 05 "SmartBar Settings Page").
-- **Prompts**: the texts of `prompt_smartbar_router`, `prompt_smartbar_execute` and
-  `prompt_smartbar_chat`, each preceded by its connection panel ("Use specific Model and API" and
+- **Options**: the settings of "Feature toggle and settings", the keyboard shortcut, the
+  retention rules (spec 05 "SmartBar Settings Page").
+- **Actions**: one sub-tab per action (router, execute, chat; the first shown at load, not in the
+  hash). Execute's sub-tab starts with the three compose settings ("Writing settings"). Each
+  sub-tab holds the text of its special prompt (`prompt_smartbar_router`,
+  `prompt_smartbar_execute`, `prompt_smartbar_chat`), preceded by its connection panel ("Use specific Model and API" and
   the provider rows), each with the feature pages' editor (`bindSpecialPromptEditor()`: Save,
   Restore default, the unsaved-changes guard, the policy lock of an enforced text). Under the
   router's and execute's text, their JSON section (`ROUTER_JSON_SECTION`, `EXECUTE_JSON_SECTION`)

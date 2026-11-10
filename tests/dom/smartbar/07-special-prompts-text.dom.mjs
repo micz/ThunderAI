@@ -1,5 +1,5 @@
 // Spec 08 "Enforced special prompt texts (_special_prompts_text)" -> "UI", on the SmartBar page
-// (its Prompts tab, the three prompts of the feature): see helpers/dom-prompt-text.mjs.
+// (its Actions tab, the three prompts of the feature): see helpers/dom-prompt-text.mjs.
 // Spec 02 "Default text updates": a text the policy enforces gets no update notice, and its
 // locked JSON section is still shown under it.
 
