@@ -130,11 +130,56 @@ body.mzta_feature_page #mzta_body.smartbar_tabbed_body > .smartbar_tabpanel {
 }
 
 /* The sub-tabs of the Actions tab, one per action: descriptive cards (icon,
-   title, one-line description) in a grid that wraps in a narrow window.
-   Prefixed with #mzta_card for the same reason as the tabs. */
+   title, one-line description), three columns that never wrap (the selected
+   card joins the panel below it, which a second row would cover). Each action
+   has a colour of its own (--sbAct), set on its card and on its panel: an
+   unselected card shows it on the border only, the selected one also on its
+   background, and its panel is framed in it. Prefixed with #mzta_card for the
+   same reason as the tabs. */
+#subtab_btn_router,
+#subtab_router {
+    --sbAct: #6a4bbf;
+}
+#subtab_btn_execute,
+#subtab_execute {
+    --sbAct: var(--success);
+}
+#subtab_btn_chat,
+#subtab_chat {
+    --sbAct: var(--accent);
+}
+/* --sbActBg is declared where --sbAct is (each card, each panel): a custom
+   property's var() resolves on the element that declares it, so declared on
+   the card strip, where --sbAct is not set, it would be invalid. */
+.smartbar_subtab,
+.smartbar_subpanel {
+    --sbActBg: color-mix(in srgb, var(--sbAct) 8%, var(--panel));
+}
+.smartbar_subtabs,
+.smartbar_subpanel {
+    --sbGap: 10px;
+}
+@media (prefers-color-scheme: dark) {
+    #subtab_btn_router,
+    #subtab_router {
+        --sbAct: #b39cf2;
+    }
+    #subtab_btn_execute,
+    #subtab_execute {
+        --sbAct: #5cc58e;
+    }
+    #subtab_btn_chat,
+    #subtab_chat {
+        --sbAct: var(--code);
+    }
+    .smartbar_subtab,
+    .smartbar_subpanel {
+        --sbActBg: color-mix(in srgb, var(--sbAct) 13%, var(--panel));
+    }
+}
 .smartbar_subtabs {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     margin: 0;
 }
@@ -145,8 +190,9 @@ body.mzta_feature_page #mzta_body.smartbar_tabbed_body > .smartbar_tabpanel {
     column-gap: 10px;
     row-gap: 2px;
     align-items: start;
+    position: relative;
     text-align: left;
-    border: 1px solid var(--fieldLine);
+    border: 1px solid var(--sbAct);
     border-radius: 10px;
     background: var(--panel);
     color: var(--text);
@@ -171,23 +217,53 @@ body.mzta_feature_page #mzta_body.smartbar_tabbed_body > .smartbar_tabpanel {
     color: var(--dim);
 }
 #mzta_card .smartbar_subtab:hover {
-    background: var(--accentLight);
-    border-color: color-mix(in srgb, var(--sbSel) 45%, var(--fieldLine));
+    background: color-mix(in srgb, var(--sbAct) 4%, var(--panel));
 }
+/* The selected card opens at the bottom (square corners, no bottom line) and
+   reaches down over the gap and the panel's top border: a negative bottom
+   margin as tall as the gap plus that border keeps its grid row (and so the
+   panel) where it is, the same extra bottom padding keeps its content in
+   place, and being positioned it paints over the panel, hiding the panel's
+   top border under it: the card and the panel read as one tab. (The card
+   itself, not a ::after: Gecko clips a button's content to its box.) */
 #mzta_card .smartbar_subtab[aria-selected="true"] {
-    background: var(--sbSelBg);
-    border-color: var(--sbSel);
-    color: var(--sbSel);
+    z-index: 1;
+    background: var(--sbActBg);
+    color: var(--sbAct);
+    border-bottom-color: transparent;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding-bottom: calc(10px + var(--sbGap) + 1px);
+    margin-bottom: calc(-1 * (var(--sbGap) + 1px));
 }
 #mzta_card .smartbar_subtab[aria-selected="true"] .smartbar_icon {
-    color: var(--sbSel);
+    color: var(--sbAct);
 }
 #mzta_card .smartbar_subtab[aria-selected="true"] .smartbar_subtab_desc {
-    color: color-mix(in srgb, var(--sbSel) 70%, var(--dim));
+    color: color-mix(in srgb, var(--sbAct) 70%, var(--dim));
 }
 #mzta_card .smartbar_subtab:focus-visible {
-    outline: 2px solid var(--sbSel);
+    outline: 2px solid var(--sbAct);
     outline-offset: 2px;
+}
+#mzta_card .smartbar_subtab[aria-selected="true"]:focus-visible {
+    outline-offset: -4px;
+}
+/* The panel of the selected action: framed in its colour, on its tint. The
+   corner under the first and the last card is square, where the card
+   meets it. */
+#tab_prompts > .smartbar_subpanel {
+    margin-top: var(--sbGap);
+    border: 1px solid var(--sbAct);
+    border-radius: 12px;
+    background: var(--sbActBg);
+    padding: 12px;
+}
+#tab_prompts > #subtab_router {
+    border-top-left-radius: 0;
+}
+#tab_prompts > #subtab_chat {
+    border-top-right-radius: 0;
 }
 
 

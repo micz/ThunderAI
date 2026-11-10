@@ -600,7 +600,8 @@ other (`openTab()`'s exact URL match would miss a page whose hash changed).
 - **Options**: the settings of "Feature toggle and settings", the keyboard shortcut, the
   retention rules (spec 05 "SmartBar Settings Page").
 - **Actions**: one sub-tab per action (router, execute, chat; the first shown at load, not in the
-  hash). Execute's sub-tab starts with the three compose settings ("Writing settings"). Each
+  hash), each a card with a colour of its own (border only when unselected; the selected card is
+  filled with its tint and joins its panel, framed in the same colour). Execute's sub-tab starts with the three compose settings ("Writing settings"). Each
   sub-tab holds the text of its special prompt (`prompt_smartbar_router`,
   `prompt_smartbar_execute`, `prompt_smartbar_chat`), preceded by its connection panel ("Use specific Model and API" and
   the provider rows), each with the feature pages' editor (`bindSpecialPromptEditor()`: Save,
