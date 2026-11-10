@@ -5462,9 +5462,21 @@
     "message": "Activity",
     "description": "SmartBar settings page: the tab listing the instructions typed in the SmartBar, running and past."
   },
-  "smartbar_prompts_info": {
-    "message": "The settings of each action of the SmartBar: the model and API it uses and the instructions ThunderAI gives the AI. The format of the answers is added by ThunderAI after your text and cannot be changed.",
-    "description": "SmartBar settings page, Actions tab: introduction."
+  "smartbar_actions_intro": {
+    "message": "The model, API and instructions used by each SmartBar action.",
+    "description": "SmartBar settings page, Actions tab: one-sentence introduction above the action cards."
+  },
+  "smartbar_subtab_router_desc": {
+    "message": "Decides which actions to run",
+    "description": "SmartBar settings page, Actions tab: one-line description on the card of the 'Understanding the instruction' action (smartbar_prompt_router_title). Keep it short."
+  },
+  "smartbar_subtab_execute_desc": {
+    "message": "Drafts and replies",
+    "description": "SmartBar settings page, Actions tab: one-line description on the card of the 'Writing emails' action (smartbar_prompt_execute_title). Keep it short."
+  },
+  "smartbar_subtab_chat_desc": {
+    "message": "Responses shown in the chat",
+    "description": "SmartBar settings page, Actions tab: one-line description on the card of the 'Answers in the chat' action (smartbar_prompt_chat_title). Keep it short."
   },
   "smartbar_prompt_router_title": {
     "message": "Understanding the instruction",

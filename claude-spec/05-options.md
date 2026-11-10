@@ -836,7 +836,7 @@ Entry point from the options page via the "Menu Order" button (next to "Manage y
 
 ### SmartBar Settings Page (`pages/smartbar/`)
 
-`pages/smartbar/mzta-smartbar.html` / `.js` / `.css`, with `mzta-smartbar-prompts.js` (the Prompts
+`pages/smartbar/mzta-smartbar.html` / `.js` / `.css`, with `mzta-smartbar-prompts.js` (the Actions
 tab) and `mzta-smartbar-activity.js` (the Activity tab). Opened, **once**, through the background
 (`smartbar_open_page`, spec 10 "Feature page") by the options page's `#btnManageSmartbarInfo` (no
 tab named: the page as it is) and by the bar's and the chat's "Details" link (the Activity tab); a
@@ -847,11 +847,21 @@ The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the manage
 - **Tabs**: a tab strip (`#smartbar_tabs`, `role="tablist"`): Options, Actions (`smartbar_tab_prompts`;
   its id stays `prompts`: `#tab_prompts`, `#tab_btn_prompts`, the hash `#prompts`), Activity. The tab
   named in the URL hash is selected at load (none or unknown: Options) and on `hashchange`; a tab
-  clicked puts its name in the hash (`history.replaceState`).
-- **Sub-tabs** of the Actions tab (`#smartbar_subtabs`, `role="tablist"`, a segmented control): one
-  per action, labelled with the prompt titles: router (`#subtab_router`), execute
-  (`#subtab_execute`), chat (`#subtab_chat`). Not in the hash: the first (router) is shown at load,
-  a click shows the panel of its button (`bindSubtabs()`).
+  clicked puts its name in the hash (`history.replaceState`). Folder tabs (an inline icon and the
+  label) attached to the panel below: `#mzta_body.smartbar_tabbed_body` is bordered, its top-left
+  corner square; the selected tab has the panel's background and overlaps its top border by 1px.
+  In a narrow window the labels shrink with an ellipsis, the strip never wraps.
+- **Sub-tabs** of the Actions tab (`#smartbar_subtabs`, `role="tablist"`): one card per action
+  (icon, the prompt title, a one-line description `smartbar_subtab_<key>_desc`) in a grid that
+  wraps: router (`#subtab_router`), execute (`#subtab_execute`), chat (`#subtab_chat`). The selected
+  card is accent-tinted (`--accent`; `--code`/`--codeBg` in dark mode). Not in the hash: the first
+  (router) is shown at load, a click shows the panel of its button (`bindSubtabs()`). Above the
+  cards, the one-sentence intro `smartbar_actions_intro`; that the JSON format is ThunderAI's and
+  cannot be changed is said by the caption of the locked section under the text.
+- **Keyboard** (both tablists, ARIA tabs pattern, `bindTabKeys()`): only the selected tab is in
+  the tab order (`tabindex` 0, the others -1); Left/Right move to the previous/next tab (wrapping),
+  Home/End to the first/last, selecting it; Enter/Space select the focused tab. A visible focus ring
+  on tabs and cards.
 - **Settings** (`#smartbar_settings`): `smartbar_mode`, `smartbar_default_destination` (selects),
   `smartbar_history_size`, `smartbar_parallel_limit` (numbers), and the bar's keyboard shortcut
   (`commands.getAll()`, `_thunderai__smartbar`, shown as keys, `smartbar_shortcut_none` when unset)

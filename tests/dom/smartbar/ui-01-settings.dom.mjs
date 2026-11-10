@@ -5,6 +5,7 @@
 // when the URL has no hash), the stored settings shown in their sections, each change stored
 // with its type (a select as its value, a number as a number and never below its minimum, an
 // emptied number as its default, a textarea as typed), the sub-tabs of the Actions tab, the
+// keyboard of both tablists (roving tabindex, arrows/Home/End), the sub-tab cards, the
 // writing settings in execute's sub-tab, the three connection panels, one per special prompt,
 // each in the sub-tab of its action with its own controls; the keyboard shortcut of the bar shown.
 // The connection panels' policy behaviour is the managed area's (the 13-17 files of this folder).
@@ -110,6 +111,44 @@ k.test('subtabs', S_PAGE, 'the Actions tab has one sub-tab per action, the first
     assert.equal(ctx.window.location.hash, '#options', 'a sub-tab is not in the hash');
     await ctx.click($('#subtab_btn_router'));
     assert.deepEqual(shown(), [true, false, false]);
+});
+
+k.test('tabs-keyboard', S_PAGE, 'both tablists: only the selected tab is in the tab order; arrows (wrapping), Home and End select and focus a tab', async () => {
+    const key = (el, k2) => ctx.fire(el, 'keydown', { key: k2 });
+    const order = sel => ctx.$$(sel + ' [role="tab"]').map(t => t.tabIndex);
+    // The sub-tabs: their selection never touches the hash.
+    await ctx.click($('#subtab_btn_router'));
+    assert.deepEqual(order('#smartbar_subtabs'), [0, -1, -1]);
+    await key($('#subtab_btn_router'), 'ArrowRight');
+    assert.equal($('#subtab_btn_execute').getAttribute('aria-selected'), 'true');
+    assert.equal(ctx.document.activeElement, $('#subtab_btn_execute'));
+    assert.deepEqual(order('#smartbar_subtabs'), [-1, 0, -1]);
+    assert.equal($('#subtab_execute').hidden, false);
+    await key($('#subtab_btn_execute'), 'End');
+    assert.equal($('#subtab_btn_chat').getAttribute('aria-selected'), 'true');
+    await key($('#subtab_btn_chat'), 'ArrowRight');
+    assert.equal($('#subtab_btn_router').getAttribute('aria-selected'), 'true', 'Right wraps to the first');
+    await key($('#subtab_btn_router'), 'ArrowLeft');
+    assert.equal($('#subtab_btn_chat').getAttribute('aria-selected'), 'true', 'Left wraps to the last');
+    await key($('#subtab_btn_chat'), 'Home');
+    assert.equal($('#subtab_btn_router').getAttribute('aria-selected'), 'true');
+    // The tabs: the hash follows.
+    assert.deepEqual(order('#smartbar_tabs'), [0, -1, -1]);
+    await key($('#tab_btn_options'), 'ArrowRight');
+    assert.equal(ctx.window.location.hash, '#prompts');
+    assert.equal(ctx.document.activeElement, $('#tab_btn_prompts'));
+    assert.deepEqual(order('#smartbar_tabs'), [-1, 0, -1]);
+    await key($('#tab_btn_prompts'), 'Home');
+    assert.equal(ctx.window.location.hash, '#options');
+    assert.equal($('#tab_options').hidden, false);
+});
+
+k.test('subtab-cards', S_PAGE, 'each sub-tab is a card with its title and a one-line description', () => {
+    for (const key of ['router', 'execute', 'chat']) {
+        const card = $('#subtab_btn_' + key);
+        assert.ok(card.querySelector('.smartbar_subtab_title').textContent.trim(), key + ' title');
+        assert.ok(card.querySelector('.smartbar_subtab_desc').textContent.trim(), key + ' description');
+    }
 });
 
 k.test('execute-settings', S_PAGE, 'the writing settings are in execute\'s sub-tab of the Actions tab, before its prompt section', () => {

@@ -24,7 +24,8 @@
  *  asks for #activity.
  *
  *  The Actions tab has one sub-tab per action (router, execute, chat), not in the hash: the first
- *  one is shown at load. Three connection panels, one per special prompt of the feature, each in
+ *  one is shown at load. Both tablists follow the ARIA tabs pattern: only the selected tab is in
+ *  the tab order, the arrows, Home and End move between the tabs of a list (bindTabKeys()). Three connection panels, one per special prompt of the feature, each in
  *  the section of its prompt in its sub-tab, before the text; execute's sub-tab also holds the
  *  writing settings. initializeSpecificIntegrationUI() and bindConnPanelTint() get the section as
  *  their root, and every lookup of a panel stays inside it.
@@ -145,6 +146,7 @@ function selectTab(name) {
     document.querySelectorAll('#smartbar_tabs [role="tab"]').forEach(btn => {
         const on = btn.dataset.tab === name;
         btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        btn.tabIndex = on ? 0 : -1;
         const panel = document.getElementById(btn.getAttribute('aria-controls'));
         if (panel) panel.hidden = !on;
     });
@@ -161,6 +163,7 @@ function bindTabs() {
     document.querySelectorAll('#smartbar_tabs [role="tab"]').forEach(btn => {
         btn.addEventListener('click', () => selectTab(btn.dataset.tab));
     });
+    bindTabKeys(document.getElementById('smartbar_tabs'), btn => selectTab(btn.dataset.tab));
     window.addEventListener('hashchange', () => selectTab(tabFromHash()));
     selectTab(tabFromHash());
 }
@@ -171,6 +174,7 @@ function selectSubtab(name) {
     document.querySelectorAll('#smartbar_subtabs [role="tab"]').forEach(btn => {
         const on = btn.dataset.subtab === name;
         btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        btn.tabIndex = on ? 0 : -1;
         const panel = document.getElementById(btn.getAttribute('aria-controls'));
         if (panel) panel.hidden = !on;
     });
@@ -179,7 +183,38 @@ function selectSubtab(name) {
 function bindSubtabs() {
     const buttons = [...document.querySelectorAll('#smartbar_subtabs [role="tab"]')];
     buttons.forEach(btn => btn.addEventListener('click', () => selectSubtab(btn.dataset.subtab)));
+    bindTabKeys(document.getElementById('smartbar_subtabs'), btn => selectSubtab(btn.dataset.subtab));
     if (buttons.length > 0) selectSubtab(buttons[0].dataset.subtab);
+}
+
+// ── Keyboard navigation of a tablist ─────────────────────────────────────────────────────────
+// The ARIA tabs pattern with automatic activation: Left/Right move to the previous/next tab
+// (wrapping), Home/End to the first/last, and the tab reached is selected and focused. Enter and
+// Space select the focused tab (a button already turns them into a click; kept explicit so the
+// behaviour does not depend on the element).
+function bindTabKeys(list, select) {
+    if (!list) return;
+    list.addEventListener('keydown', (e) => {
+        const tabs = [...list.querySelectorAll('[role="tab"]')];
+        const current = tabs.indexOf(e.target.closest('[role="tab"]'));
+        if (current < 0) return;
+        let next;
+        switch (e.key) {
+            case 'ArrowRight': next = (current + 1) % tabs.length; break;
+            case 'ArrowLeft': next = (current - 1 + tabs.length) % tabs.length; break;
+            case 'Home': next = 0; break;
+            case 'End': next = tabs.length - 1; break;
+            case 'Enter':
+            case ' ':
+                next = current;
+                break;
+            default:
+                return;
+        }
+        e.preventDefault();
+        select(tabs[next]);
+        tabs[next].focus();
+    });
 }
 
 // ── The keyboard shortcut of the bar ─────────────────────────────────────────────────────────

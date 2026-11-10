@@ -20,16 +20,18 @@
             <p class="mzta_page_subtitle mzta_help">__MSG_smartbar_page_info__</p>
         </div>
 
-        <!-- TABS: the hash of the URL names the tab shown (#options, #prompts, #activity). The
-             Actions tab keeps the id "prompts" (the hash the background and the links use). -->
+        <!-- TABS: folder tabs attached to the panel below (#mzta_body). The hash of the URL names the
+             tab shown (#options, #prompts, #activity). The Actions tab keeps the id "prompts" (the
+             hash the background and the links use). Only the selected tab is in the tab order
+             (roving tabindex, arrows/Home/End move between tabs: bindTabKeys()). -->
         <div id="smartbar_tabs" class="smartbar_tabs" role="tablist">
-            <button type="button" role="tab" class="smartbar_tab" id="tab_btn_options" data-tab="options" aria-controls="tab_options" aria-selected="true">__MSG_smartbar_tab_options__</button>
-            <button type="button" role="tab" class="smartbar_tab" id="tab_btn_prompts" data-tab="prompts" aria-controls="tab_prompts" aria-selected="false">__MSG_smartbar_tab_prompts__</button>
-            <button type="button" role="tab" class="smartbar_tab" id="tab_btn_activity" data-tab="activity" aria-controls="tab_activity" aria-selected="false">__MSG_smartbar_tab_activity__</button>
+            <button type="button" role="tab" class="smartbar_tab" id="tab_btn_options" data-tab="options" aria-controls="tab_options" aria-selected="true" tabindex="0"><svg class="smartbar_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg><span class="smartbar_tab_label">__MSG_smartbar_tab_options__</span></button>
+            <button type="button" role="tab" class="smartbar_tab" id="tab_btn_prompts" data-tab="prompts" aria-controls="tab_prompts" aria-selected="false" tabindex="-1"><svg class="smartbar_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span class="smartbar_tab_label">__MSG_smartbar_tab_prompts__</span></button>
+            <button type="button" role="tab" class="smartbar_tab" id="tab_btn_activity" data-tab="activity" aria-controls="tab_activity" aria-selected="false" tabindex="-1"><svg class="smartbar_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="smartbar_tab_label">__MSG_smartbar_tab_activity__</span></button>
         </div>
 
         <!-- BODY -->
-        <div id="mzta_body">
+        <div id="mzta_body" class="smartbar_tabbed_body">
           <div id="tab_options" class="smartbar_tabpanel" role="tabpanel" aria-labelledby="tab_btn_options">
 
             <!-- GENERAL SETTINGS -->
@@ -115,12 +117,25 @@
                its writing settings. The JSON format sections are the add-on's: shown read-only,
                appended at call time, never saved. -->
           <div id="tab_prompts" class="smartbar_tabpanel" role="tabpanel" aria-labelledby="tab_btn_prompts" hidden>
-            <p class="mzta_help smartbar_tab_intro">__MSG_smartbar_prompts_info__</p>
+            <p class="mzta_help smartbar_tab_intro">__MSG_smartbar_actions_intro__</p>
 
+            <!-- One card per action: icon, title (the prompt title), one-line description. -->
             <div id="smartbar_subtabs" class="smartbar_subtabs" role="tablist">
-                <button type="button" role="tab" class="smartbar_subtab" id="subtab_btn_router" data-subtab="router" aria-controls="subtab_router" aria-selected="true">__MSG_smartbar_prompt_router_title__</button>
-                <button type="button" role="tab" class="smartbar_subtab" id="subtab_btn_execute" data-subtab="execute" aria-controls="subtab_execute" aria-selected="false">__MSG_smartbar_prompt_execute_title__</button>
-                <button type="button" role="tab" class="smartbar_subtab" id="subtab_btn_chat" data-subtab="chat" aria-controls="subtab_chat" aria-selected="false">__MSG_smartbar_prompt_chat_title__</button>
+                <button type="button" role="tab" class="smartbar_subtab" id="subtab_btn_router" data-subtab="router" aria-controls="subtab_router" aria-selected="true" tabindex="0">
+                    <svg class="smartbar_icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                    <span class="smartbar_subtab_title">__MSG_smartbar_prompt_router_title__</span>
+                    <span class="smartbar_subtab_desc">__MSG_smartbar_subtab_router_desc__</span>
+                </button>
+                <button type="button" role="tab" class="smartbar_subtab" id="subtab_btn_execute" data-subtab="execute" aria-controls="subtab_execute" aria-selected="false" tabindex="-1">
+                    <svg class="smartbar_icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span class="smartbar_subtab_title">__MSG_smartbar_prompt_execute_title__</span>
+                    <span class="smartbar_subtab_desc">__MSG_smartbar_subtab_execute_desc__</span>
+                </button>
+                <button type="button" role="tab" class="smartbar_subtab" id="subtab_btn_chat" data-subtab="chat" aria-controls="subtab_chat" aria-selected="false" tabindex="-1">
+                    <svg class="smartbar_icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span class="smartbar_subtab_title">__MSG_smartbar_prompt_chat_title__</span>
+                    <span class="smartbar_subtab_desc">__MSG_smartbar_subtab_chat_desc__</span>
+                </button>
             </div>
 
             <div id="subtab_router" class="smartbar_subpanel" role="tabpanel" aria-labelledby="subtab_btn_router">
