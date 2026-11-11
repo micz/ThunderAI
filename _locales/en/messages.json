@@ -5086,6 +5086,82 @@
     "message": "Translation ready",
     "description": "SmartBar (message pane): the translate action completed (the translation is shown in its own panel)."
   },
+  "smartbar_op_delete_summary": {
+    "message": "Delete summary",
+    "description": "SmartBar: name of the action that deletes the stored summary of the email."
+  },
+  "smartbar_op_delete_translation": {
+    "message": "Delete translation",
+    "description": "SmartBar: name of the action that deletes the stored translation of the email."
+  },
+  "smartbar_op_spam_check": {
+    "message": "Spam check",
+    "description": "SmartBar: name of the action that checks whether the email is spam with the spam filter."
+  },
+  "smartbar_op_calendar_event": {
+    "message": "Calendar event",
+    "description": "SmartBar: name of the action that creates a calendar event from the email (through the ThunderAI Sparks add-on)."
+  },
+  "smartbar_op_task": {
+    "message": "Task",
+    "description": "SmartBar: name of the action that creates a task (a to-do item) from the email (through the ThunderAI Sparks add-on)."
+  },
+  "smartbar_result_summary_deleted": {
+    "message": "Summary deleted",
+    "description": "SmartBar (message pane): the delete summary action removed the stored summary of the email."
+  },
+  "smartbar_result_summary_none": {
+    "message": "No summary to delete",
+    "description": "SmartBar (message pane): the delete summary action found no stored summary for the email."
+  },
+  "smartbar_result_translation_deleted": {
+    "message": "Translation deleted",
+    "description": "SmartBar (message pane): the delete translation action removed the stored translation of the email."
+  },
+  "smartbar_result_translation_none": {
+    "message": "No translation to delete",
+    "description": "SmartBar (message pane): the delete translation action found no stored translation for the email."
+  },
+  "smartbar_result_spam_yes": {
+    "message": "Spam check: probably spam (score $SCORE$/100)",
+    "description": "SmartBar (message pane): the spam check completed and the score reached the spam threshold of the settings. $SCORE$ is the spam score, 0 to 100.",
+    "placeholders": {
+      "score": {
+        "content": "$1",
+        "example": "85"
+      }
+    }
+  },
+  "smartbar_result_spam_no": {
+    "message": "Spam check: not spam (score $SCORE$/100)",
+    "description": "SmartBar (message pane): the spam check completed and the score is below the spam threshold of the settings. $SCORE$ is the spam score, 0 to 100.",
+    "placeholders": {
+      "score": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "smartbar_result_calendar_event_opened": {
+    "message": "Calendar event: dialog opened",
+    "description": "SmartBar (message pane): the calendar event dialog was opened with the data read from the email, for the user to review and save."
+  },
+  "smartbar_result_task_opened": {
+    "message": "Task: dialog opened",
+    "description": "SmartBar (message pane): the task dialog was opened with the data read from the email, for the user to review and save."
+  },
+  "smartbar_error_sparks_missing": {
+    "message": "This action needs the ThunderAI Sparks add-on, which is not installed.",
+    "description": "SmartBar: error of the calendar event and task actions when the ThunderAI Sparks add-on is not installed. 'ThunderAI Sparks' is a product name."
+  },
+  "smartbar_error_sparks_old": {
+    "message": "This action needs an updated version of the ThunderAI Sparks add-on.",
+    "description": "SmartBar: error of the calendar event and task actions when the installed ThunderAI Sparks add-on is too old. 'ThunderAI Sparks' is a product name."
+  },
+  "smartbar_error_no_feature_prompt": {
+    "message": "The special prompt of this feature is missing. Restore its default text in the feature's settings.",
+    "description": "SmartBar: error of an action whose special prompt cannot be found (the user modified the special prompts)."
+  },
   "smartbar_result_compose_opened": {
     "message": "$ACTION$: compose window opened",
     "description": "SmartBar (message pane): the written email was opened in a compose window, for the user to review and send. $ACTION$ is the kind of email (Reply, Reply to all, Forward, New email).",

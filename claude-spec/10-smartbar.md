@@ -4,12 +4,13 @@ A text bar in the message display where the user types what they want done with 
 ("tag it urgent and reply confirming"). A first AI call, the **router**, reads the instruction
 and answers which **operations** it asks for; each operation then runs through the existing
 pipeline of its feature. Nothing is ever sent automatically: every operation acts on the message
-itself (tags, the summary panel, the translation panel) or opens a compose window the user reviews
-and sends.
+itself (tags, the summary panel, the translation panel, the spam report) or opens a window the user
+reviews: a compose window to send, a calendar event or task dialog to save.
 
-The feature has the bar, the router, the operation registry with five operations (`tag`,
-`summarize`, `translate`, `compose`: a reply, a reply to all, a forward or a new email, see
-"Compose"; `deliver_draft`), the per-instruction records, the chat (see "Chat": the API chat window
+The feature has the bar, the router, the operation registry with ten operations (`tag`,
+`summarize`, `translate`, `delete_summary`, `delete_translation`, `spam_check`, `calendar_event`,
+`task`, `compose`: a reply, a reply to all, a forward or a new email, see "Compose";
+`deliver_draft`), the per-instruction records, the chat (see "Chat": the API chat window
 opened in SmartBar mode, where every message goes through the router, a message no operation
 covers gets a free answer, and an email is written as a draft the user creates later), the feature
 page with its Options, Prompts and Activity tabs (see "Feature page") and the badge (see "Badge").
@@ -33,7 +34,8 @@ Files:
 | `pages/_lib/prompt-update.js` | The comparison of a prompt text with a newer default (the change picker in a box) |
 
 Tests: the `smartbar` area (`tests/smartbar/`, the modules), `tests/background/44-smartbar` (the
-flow), `tests/dom/compose/compose-21-smartbar` (the bar), `tests/dom/compose/compose-22-quoted-split`
+flow), `tests/background/47-smartbar-more-ops` (the deletions, the spam check, the calendar event
+and the task), `tests/dom/compose/compose-10-panels` (the panels taken out by a deletion), `tests/dom/compose/compose-21-smartbar` (the bar), `tests/dom/compose/compose-22-quoted-split`
 (the quoted part of a received mail), `tests/dom/smartbar/` (the page), `tests/background/45-smartbar-chat`
 (the chat flow), `tests/dom/webchat/webchat-24-smartbar` (the chat window in SmartBar mode),
 `tests/smartbar/07-activity` (the store's queries, the badge counts, the default filter),
@@ -215,9 +217,9 @@ prefills the instruction instead, and attaches the unreadable answer to the next
 | `description` | For the router (English): what it does and when to pick it |
 | `params` | `{ name: { type: 'string' \| 'string[]' \| 'boolean', enum?, required?, description } }`, optional unless `required` |
 | `requirements(env)` | Whether it can run now: feature on, connection usable, permissions granted; `env.source` (`'bar'` / `'chat'`) and `env.draft` (the chat session's current draft, or `null`) too |
-| `multiple` | Whether it may appear more than once in one instruction (`false` for all five) |
+| `multiple` | Whether it may appear more than once in one instruction (`false` for all ten) |
 | `risk` | `'direct'`, or `'confirm'` (waits for the user's Confirm) |
-| `runLast` | Optional: runs after every other operation of the instruction has ended (compose) |
+| `runLast` | Optional: runs after every other operation of the instruction has ended (compose, calendar_event, task: the window they open steals the focus) |
 | `deliverInChat` | Optional: in the chat the operation does not deliver when it ends, it ends `drafted` and the user delivers it later (compose) |
 | `dependsOn(ops, index)` | The other operations of the instruction it waits for: a static rule, never the model's; the plan moves it after them |
 | `run(ctx)` | Resolves `{ state, result, error, errorType, rawResponse, retryAt }`; `state` is `done`, `drafted`, `error` or `cancelled` |
@@ -228,20 +230,40 @@ selected text and `previousResult` (the stored result of a compose line whose wi
 open); in the chat also `source: 'chat'`, `deliverInChat`, the conversation so far, the attached
 unreadable answer (`rawContext`) and `currentDraft()`.
 
-The five operations of this version:
+The ten operations of this version:
 
 | id | params | Runs | Requires |
 |----|--------|------|----------|
 | `tag` | `tags: string[]` | With `tags`: those tags assigned through the add-tags assignment (its exclusions, its rule on creating missing tags), no model call. Without: the Add Tags special command pipeline | `add_tags` on, its permissions, its connection usable |
-| `summarize` | none | The Summarize pipeline as the panel button runs it (prompt, connection, the summary store, the panel) | `summarize` on, its connection usable |
-| `translate` | `language: string` | The Translate pipeline, into `language` when given (a translation into another language than the stored one is a new call, not the cache) | `translate` on, its connection usable |
+| `summarize` | none | The Summarize pipeline as the panel button runs it (prompt, connection, the summary store, the panel). Waits for a `delete_summary` of the same instruction (`dependsOn`) | `summarize` on, its connection usable |
+| `translate` | `language: string` | The Translate pipeline, into `language` when given (a translation into another language than the stored one is a new call, not the cache). Waits for a `delete_translation` of the same instruction | `translate` on, its connection usable |
+| `delete_summary` | none | What the summary banner's Delete does, for every tab displaying the message: a summary job still running invalidated, the stored summary removed, the panel taken out (`removeSummaryPanel` to the content script), the button back where the feature shows one (`_restoreSummaryButton()`). No model call. Always `done`, `result: { removed }` (`false`: "No summary to delete") | `summarize` on (no connection: nothing is generated) |
+| `delete_translation` | none | The same for the translation (`removeTranslationPanel`, `_restoreTranslationButton()`) | `translate` on |
+| `spam_check` | none | The spam filter's analysis as the panel's Refresh runs it (`_generateSpamReportForMessage()`: the allow, block and address book rules, the prompt, the report stored and shown in the panel when `spamfilter_show_msg_panel`), **never** moving the message (no `autoMove`); an analysis running on the message is joined. `result: { spamValue, threshold, spam }`, the line reads "Spam check: probably spam (score 85/100)" or "not spam" | `spamfilter` on, its permissions, its connection usable |
+| `calendar_event` | none | ThunderAI Sparks checked first (see "Sparks"); then the special prompt `prompt_get_calendar_event` on its connection, built as the context menu builds it (`preparePrompt()` with the body, the selected text, the custom placeholders; `finalizePrompt_get_calendar_event()` with the reminder rules), its answer read into the object Sparks receives (`buildSparksCalendarEventData()`, `js/mzta-utils.js`, shared with the menu: dates normalized, reminder, timezone, the link to the email with `calendar_append_email_link`), and Sparks' event dialog opened (`sendToSparks()`), where the user reviews and saves it. `done` once Sparks opened it. `runLast` | `get_calendar_event` on, its connection usable |
+| `task` | none | The same with `prompt_get_task`, `finalizePrompt_get_task()`, `buildSparksTaskData()` (`task_append_email_link`) and Sparks' task dialog. `runLast` | `get_task` on, its connection usable |
 | `compose` | `type: 'reply' \| 'reply_all' \| 'forward' \| 'new'`, required | Writes an email from this one and opens it in a compose window (see "Compose"); in the chat, a draft (see "Chat"); `runLast`, `deliverInChat` | the `smartbar_execute` connection usable (no feature switch of its own) |
 | `deliver_draft` | none | Creates the email of the chat's current draft now: the delivery of Create email (see "Chat"). Waits for a `compose` of the same instruction (`dependsOn`) | the chat (`source: 'chat'`) and a current draft in its session |
 
-No operation uses `risk: 'confirm'` yet; the registry, the bar and the chat support it.
+No operation uses `risk: 'confirm'` yet; the registry, the bar and the chat support it. The two
+deletions are `direct` like the banner's Delete: a deleted summary or translation is generated
+again on request.
 
 **Availability**: only the operations whose requirements hold are offered to the router; one the
 router names anyway is not run and is reported `unavailable`.
+
+**Sparks**: `calendar_event` and `task` open Thunderbird's dialogs through the ThunderAI Sparks
+add-on. Sparks is **not** a requirement: the operations are offered with their feature and
+connection, so "add it to the calendar" is always understood, and a missing Sparks is **said** in
+the line instead of ending in "Nothing matched". When the line runs, before any model call,
+`checkSparksPresence()` is asked again: not installed, the line ends in `error`, `errorType`
+`sparks`, "This action needs the ThunderAI Sparks add-on, which is not installed."; older than
+`sparks_min`, "This action needs an updated version of the ThunderAI Sparks add-on." A dialog Sparks
+could not open is an `error` (`sparks`) with Sparks' message after the menu's
+`calendar_opening_dialog_error` / `task_opening_dialog_error`; an answer with no JSON object an
+`error` (`api`) after `calendar_getting_data_error` / `task_getting_data_error`, and nothing reaches
+Sparks. Retry runs the line again (after installing Sparks, for instance). A line stopped during the
+model call opens no dialog.
 
 **Parameters** (`validateParams()`): an unknown parameter is refused (so is a recipient given to
 compose); types are coerced only where nothing can be lost (a number to a string, one string to a
@@ -253,10 +275,12 @@ parameters keep the line in `error` (`errorType` `params`); the other lines stil
 registry, never the model's and never a special case by id:
 
 - the `runLast` operations go after the others (their own order kept): the router gives "reply and
-  summarize" in that order, the plan runs summarize then compose;
+  summarize" in that order, the plan runs summarize then compose; "create an event and summarize",
+  summarize then calendar_event;
 - a line goes after the lines it depends on (`dependsOn`, which may name any other line of the
   instruction), even when the user named it first or when they are `runLast`: "make it shorter
-  and create it" runs `compose`, then `deliver_draft`, an exception to "compose runs last". It is a
+  and create it" runs `compose`, then `deliver_draft`, an exception to "compose runs last"; "summarize
+  again after deleting the summary" runs `delete_summary`, then `summarize`. It is a
   stable topological sort: among the lines whose dependencies are placed, the first non-`runLast`
   one in the user's order, else the first `runLast` one. A cycle keeps the user's order and drops
   the dependencies that would point forward.
@@ -548,7 +572,7 @@ actions toolbar. The session's **current draft** is the latest `drafted` operati
   opened". Without a draft it is not offered to the router, so "create the email" ends in
   `unrecognized` or in the free answer.
 
-Operations without `deliverInChat` (tag, summarize, translate) deliver at once, as from the bar.
+Operations without `deliverInChat` (every one but compose) deliver at once, as from the bar.
 
 ### Sessions
 
@@ -567,7 +591,11 @@ resumed.
 
 One instruction is one group of jobs in `taJobRegistry` (spec 01 "In-flight jobs"), with a
 `groupId`: the router job (kind `smartbar`) and one job per operation in its own feature's kind
-(`add_tags`, `summary`, `translation`; `smartbar_compose` for compose, which no one else starts).
+(`add_tags`, `summary`, `translation`; `smartbar_compose` for compose, `smartbar_calendar_event` and
+`smartbar_task` for the Sparks operations, which no one else starts). `delete_summary`,
+`delete_translation` and `deliver_draft` run no job. `spam_check` runs (or joins) the spam filter's
+own `spam` job, which carries no group, as a batch's: a Stop of the line or of the instruction never
+ends that analysis, and the line ends with it.
 The router job of the bar is keyed on the message, the one of a
 message of the chat on its group (several run at once). Each entry has an `AbortController`;
 `taJobRegistry.abortGroup(groupId)` invalidates then aborts every entry of the group. So:
@@ -744,7 +772,9 @@ Left out of this version on purpose:
   (it stays a reminder in the result line), no mailing lists, no CC, no `replyToList` reply type.
 - **Operations**: no operation more than once in one instruction (`multiple` is `false` for all);
   the output of one operation is never the input of another (`dependsOn` orders, it passes
-  nothing); custom prompts are not exposed as operations.
+  nothing); custom prompts are not exposed as operations. No deletion of the spam report, and no
+  calendar event from the clipboard (`prompt_get_calendar_event_from_clipboard` is a menu entry for
+  a compose window). The spam check never moves the message to the junk folder, whatever the score.
 - **Router**: no clarification question back to the user: an unclear instruction ends in
   `unrecognized` or "Nothing matched".
 - **Compose results**: no "Change type" menu to turn a reply into a forward (or the other way)

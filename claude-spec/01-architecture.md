@@ -583,6 +583,10 @@ correctly discarded by `_sendIfCurrent()` — the spinner spins forever. So:
   fire-and-forget task in the `runtime.onMessage` listener.
 - `showSummaryButton` / `showTranslationButton` also remove the generating panel: the button is
   what an invalidated job leaves behind.
+- `removeSummaryPanel` / `removeTranslationPanel` (message-aware, an id is required) take out the
+  banner and the generating panel and bump the counter, sending nothing back: the result was deleted
+  from outside the banner (the SmartBar's `delete_summary` / `delete_translation`, spec 10), which
+  then sends the button where the feature shows one.
 - A message change replaces the document, so panels never outlive their message; the one
   surviving document — an already-open tab re-injected on extension reload — gets both
   generating panels removed when the script loads.

@@ -31,10 +31,9 @@ import {
     i18nConditionalGet,
     getMailSubject,
     getTagsList,
-    extractJsonObject,
-    normalizeDateTimeString,
-    appendMessageLinkToDescription,
-    normalizeReminderMinutes,
+    buildSparksCalendarEventData,
+    buildSparksTaskData,
+    sendToSparks,
     normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -638,63 +637,29 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
+                        // The object Sparks receives (buildSparksCalendarEventData(), shared with
+                        // the SmartBar): dates, reminder, timezone, and the link to the original
+                        // email, added by code after the response so it never reaches the AI. No
+                        // source message from the clipboard or a compose tab (compose details
+                        // have no headerMessageId).
                         let calendar_event_data_obj = {};
                         try{
-                            calendar_event_data_obj = extractJsonObject(calendar_event_data);
+                            const link_source = (curr_prompt.id === 'prompt_get_calendar_event_from_clipboard' || tabs[0].type === 'messageCompose') ? null : curr_message;
+                            calendar_event_data_obj = buildSparksCalendarEventData(calendar_event_data, prefs_at, link_source, browser.i18n.getMessage('calendar_email_link_label'), this.logger);
                         }catch(err){
                             console.error("[ThunderAI] Error extracting JSON object from calendar event data: ", err.message);
                             sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + err.message });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        // Normalize date strings returned by the LLM
-                        if (calendar_event_data_obj.startDate) {
-                            calendar_event_data_obj.startDate = normalizeDateTimeString(calendar_event_data_obj.startDate);
-                        }
-                        if (calendar_event_data_obj.endDate) {
-                            calendar_event_data_obj.endDate = normalizeDateTimeString(calendar_event_data_obj.endDate);
-                        }
-                        // Reminder: the checkbox is the single switch (off = field always removed) [#887]
-                        normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
-                        // Timezone management
-                        calendar_event_data_obj.use_timezone = false;
-                        if(prefs_at.calendar_enforce_timezone){
-                            calendar_event_data_obj.use_timezone = true;
-                            calendar_event_data_obj.timezone = prefs_at.calendar_timezone;
-                        }
-                        // Link to the original email, added by code after the response:
-                        // it never reaches the AI. No source message from the clipboard
-                        // or a compose tab (compose details have no headerMessageId).
-                        if (prefs_at.calendar_append_email_link) {
-                            const link_source = (curr_prompt.id === 'prompt_get_calendar_event_from_clipboard' || tabs[0].type === 'messageCompose') ? null : curr_message;
-                            if (!appendMessageLinkToDescription(calendar_event_data_obj, link_source, browser.i18n.getMessage('calendar_email_link_label'))) {
-                                this.logger.log("calendar_append_email_link: no source message, link not added.");
-                            }
-                        }
-                        let calendar_event_data_str = JSON.stringify(calendar_event_data_obj);
-                        // Timezone management - END
                         this.logger.log("calendar_event_data: " + calendar_event_data);
-                        this.logger.log("calendar_event_data_obj: " + calendar_event_data_str);
-                        try{
-                            let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data_str})
-                            if(result_openCalendarEventDialog == 'ok'){
-                                taWorkingStatus.stopWorking();
-                                return {ok:'1'};
-                            } else {
-                                let err = result_openCalendarEventDialog.error;
-                                if (err && typeof err === 'string' && err.startsWith('|>>')) {
-                                    result_openCalendarEventDialog.error = browser.i18n.getMessage(result_openCalendarEventDialog.error.substring(3));
-                                }
-                                sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + result_openCalendarEventDialog.error });
-                                taWorkingStatus.stopWorking();
-                                return {ok:'0'};
-                            }
-                        }catch(err){
-                            console.error("[ThunderAI] Error opening calendar event dialog: ", err);
-                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
-                            taWorkingStatus.stopWorking();
-                            return {ok:'0'};
+                        this.logger.log("calendar_event_data_obj: " + JSON.stringify(calendar_event_data_obj));
+                        const sparks_calendar = await sendToSparks('calendar_event', calendar_event_data_obj);
+                        if (!sparks_calendar.ok) {
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + sparks_calendar.error });
                         }
+                        taWorkingStatus.stopWorking();
+                        return {ok: sparks_calendar.ok ? '1' : '0'};
                         break;  // Get a calendar event info - END
                     }
                     case 'prompt_get_task': {  // Get a task info
@@ -742,68 +707,28 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
+                        // The object Sparks receives (buildSparksTaskData(), shared with the
+                        // SmartBar): dates, reminder, timezone, and the link to the original
+                        // email, added by code after the response so it never reaches the AI.
+                        // No source message in a compose tab.
                         let task_data_obj = {};
                         try{
-                            task_data_obj = extractJsonObject(task_data);
-                            // Normalize date strings returned by the LLM
-                            if (task_data_obj.dueDate) {
-                                task_data_obj.dueDate = normalizeDateTimeString(task_data_obj.dueDate);
-                            }
-                            if (task_data_obj.initialDate) {
-                                task_data_obj.initialDate = normalizeDateTimeString(task_data_obj.initialDate);
-                            }
-                            if (!task_data_obj.dueDate) {
-                                delete task_data_obj.dueDate;
-                            }
-                            if (!task_data_obj.initialDate) {
-                                delete task_data_obj.initialDate;
-                            }
-                            // Reminder: the checkbox is the single switch (off = field always removed) [#887]
-                            normalizeReminderMinutes(task_data_obj, prefs_at.task_reminder_enabled, this.logger);
+                            const link_source = (tabs[0].type === 'messageCompose') ? null : curr_message;
+                            task_data_obj = buildSparksTaskData(task_data, prefs_at, link_source, browser.i18n.getMessage('calendar_email_link_label'), this.logger);
                         }catch(err){
                             console.error("[ThunderAI] Error extracting JSON object from task data: ", err.message);
                             sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        // Timezone management
-                        task_data_obj.use_timezone = false;
-                        if(prefs_at.calendar_enforce_timezone){
-                            task_data_obj.use_timezone = true;
-                            task_data_obj.timezone = prefs_at.calendar_timezone;
-                        }
-                        // Link to the original email, added by code after the response:
-                        // it never reaches the AI. No source message in a compose tab.
-                        if (prefs_at.task_append_email_link) {
-                            const link_source = (tabs[0].type === 'messageCompose') ? null : curr_message;
-                            if (!appendMessageLinkToDescription(task_data_obj, link_source, browser.i18n.getMessage('calendar_email_link_label'))) {
-                                this.logger.log("task_append_email_link: no source message, link not added.");
-                            }
-                        }
-                        let task_data_str = JSON.stringify(task_data_obj);
-                        // Timezone management - END
                         this.logger.log("task_data: " + task_data);
-                        this.logger.log("task_data_obj: " + task_data_str);
-                        try{
-                            let result_openTaskDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openTaskDialog", task_data: task_data_str})
-                            if(result_openTaskDialog == 'ok'){
-                                taWorkingStatus.stopWorking();
-                                return {ok:'1'};
-                            } else {
-                                let err = result_openTaskDialog.error;
-                                if (err && typeof err === 'string' && err.startsWith('|>>')) {
-                                    result_openTaskDialog.error = browser.i18n.getMessage(result_openTaskDialog.error.substring(3));
-                                }
-                                sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + result_openTaskDialog.error });
-                                taWorkingStatus.stopWorking();
-                                return {ok:'0'};
-                            }
-                        }catch(err){
-                            console.error("[ThunderAI] Error opening task dialog: ", err);
-                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
-                            taWorkingStatus.stopWorking();
-                            return {ok:'0'};
+                        this.logger.log("task_data_obj: " + JSON.stringify(task_data_obj));
+                        const sparks_task = await sendToSparks('task', task_data_obj);
+                        if (!sparks_task.ok) {
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + sparks_task.error });
                         }
+                        taWorkingStatus.stopWorking();
+                        return {ok: sparks_task.ok ? '1' : '0'};
                         break;
                     }   // Get a task info - END
                     default:

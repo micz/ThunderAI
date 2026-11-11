@@ -29,7 +29,10 @@ export async function smartbarContext(mockOpts = {}) {
 
 /** An availability env where every default operation can run. */
 export const ALL_AVAILABLE = Object.freeze({
-    features: { add_tags: true, summarize: true, translate: true },
-    permissions: { add_tags: true },
-    usable: { add_tags: true, summarize: true, translate: true, smartbar_execute: true },
+    features: { add_tags: true, summarize: true, translate: true, spamfilter: true, get_calendar_event: true, get_task: true },
+    permissions: { add_tags: true, spamfilter: true },
+    usable: {
+        add_tags: true, summarize: true, translate: true, spamfilter: true,
+        get_calendar_event: true, get_task: true, smartbar_execute: true,
+    },
 });

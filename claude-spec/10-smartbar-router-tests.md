@@ -43,6 +43,15 @@ reminder). The router gives the operations in the user's order, even when compos
 the add-on runs compose last (`runLast`, [10-smartbar.md](10-smartbar.md) "Operation registry"),
 which the test checks on every mixed case.
 
+**Deleting and the other features.** `delete_summary` / `delete_translation` remove the stored
+summary or translation of the email, never the email: "cancella la mail" is not covered. Asked
+together with a new summary (translation), the deletion runs first whatever the user's order
+(`summarize` / `translate` wait for it: `dependsOn`, checked by the test). `spam_check` checks the
+email with the spam filter. `calendar_event` / `task` read an event or a task from the email and
+open Thunderbird's dialog through ThunderAI Sparks; Sparks is not a requirement (a missing one is
+said by the line when it runs), so they are available here with their feature and connection, and
+they run last like compose (`runLast`, also checked).
+
 **The chat** ([10-smartbar.md](10-smartbar.md) "Chat"). A question about the email ("chi è il
 mittente?") is no operation and nothing unrecognized: the chat answers it freely. With a draft, a
 change of it ("più breve", "make it more formal", "aggiungi che…") is a `compose` of the draft's
@@ -209,6 +218,56 @@ whatever their order (its `dependsOn`, also checked). Without a draft the approv
       "operations": [{ "id": "translate", "params": { "language": "francese" } }, { "id": "summarize", "params": {} }],
       "context": [], "unrecognized": "in francese"
     }
+  },
+  {
+    "instruction": "cancella il riassunto",
+    "expected": { "operations": [{ "id": "delete_summary", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "delete the translation",
+    "expected": { "operations": [{ "id": "delete_translation", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "cancella il riassunto e rifallo",
+    "expected": {
+      "operations": [{ "id": "delete_summary", "params": {} }, { "id": "summarize", "params": {} }],
+      "context": [], "unrecognized": ""
+    }
+  },
+  {
+    "instruction": "traduci in spagnolo dopo aver eliminato la traduzione",
+    "expected": {
+      "operations": [{ "id": "translate", "params": { "language": "spagnolo" } }, { "id": "delete_translation", "params": {} }],
+      "context": [], "unrecognized": ""
+    }
+  },
+  {
+    "instruction": "è spam?",
+    "expected": { "operations": [{ "id": "spam_check", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "check whether this is spam",
+    "expected": { "operations": [{ "id": "spam_check", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "aggiungi al calendario",
+    "expected": { "operations": [{ "id": "calendar_event", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "create a task to pay this invoice",
+    "expected": { "operations": [{ "id": "task", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "crea un evento e riassumi",
+    "expected": {
+      "operations": [{ "id": "calendar_event", "params": {} }, { "id": "summarize", "params": {} }],
+      "context": [], "unrecognized": ""
+    }
+  },
+  {
+    "instruction": "crea un'attività",
+    "available": ["tag", "summarize", "translate"],
+    "expected": { "operations": [], "context": [], "unrecognized": "crea un'attività" }
   },
   {
     "instruction": "più breve",

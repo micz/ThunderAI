@@ -20,7 +20,9 @@
  *  The SmartBar's operation registry (claude-spec/10-smartbar.md "Operation registry").
  *
  *  An operation is one entry:
- *    id            stable string ('tag', 'summarize', 'translate', 'compose', 'deliver_draft')
+ *    id            stable string ('tag', 'summarize', 'translate', 'delete_summary',
+ *                  'delete_translation', 'spam_check', 'calendar_event', 'task', 'compose',
+ *                  'deliver_draft')
  *    description   for the router model: what it does and when to pick it (English)
  *    params        { name: { type: 'string' | 'string[]' | 'boolean', enum?, required?, description } }:
  *                  what the router may pass; a parameter is optional unless `required`
@@ -31,7 +33,8 @@
  *    multiple      whether more than one instance may appear in one instruction (false for all)
  *    risk          'direct' or 'confirm' ('confirm' waits for the user's Confirm)
  *    runLast       optional: the operation runs after every other operation of the instruction
- *                  has ended (compose: its window opens at the end and steals no focus mid-way)
+ *                  has ended (compose, calendar_event, task: their window opens at the end and
+ *                  steals no focus mid-way)
  *    dependsOn     (ops, index) => indices of the operations of the same instruction this one
  *                  waits for: a static rule, never the model's decision. It may name a line the
  *                  user gave later: the plan moves a line after the lines it waits for
@@ -72,7 +75,8 @@ export const DEFAULT_OPERATIONS = Object.freeze([
         requirements: (env) => !!env?.features?.summarize && !!env?.usable?.summarize,
         multiple: false,
         risk: 'direct',
-        dependsOn: () => [],
+        // "Delete the summary and summarize again": the deletion first, whatever the user's order.
+        dependsOn: (ops, index) => ops.filter(o => o.id === 'delete_summary' && o.index !== index).map(o => o.index),
         run: (ctx) => ctx.executors.summarize(ctx),
     },
     {
@@ -85,8 +89,75 @@ export const DEFAULT_OPERATIONS = Object.freeze([
         requirements: (env) => !!env?.features?.translate && !!env?.usable?.translate,
         multiple: false,
         risk: 'direct',
-        dependsOn: () => [],
+        // "Delete the translation and translate again": the deletion first.
+        dependsOn: (ops, index) => ops.filter(o => o.id === 'delete_translation' && o.index !== index).map(o => o.index),
         run: (ctx) => ctx.executors.translate(ctx),
+    },
+    {
+        id: 'delete_summary',
+        description: 'Delete the stored summary of the email (it disappears from the message). ' +
+            'Pick it for "delete the summary", "remove the summary", "cancella il riassunto". ' +
+            'Not for "summarize again": that is "summarize".',
+        params: {},
+        // No model call: the feature on is enough, whatever its connection.
+        requirements: (env) => !!env?.features?.summarize,
+        multiple: false,
+        risk: 'direct',
+        // A summarize of the same instruction waits for this one (its dependsOn).
+        dependsOn: () => [],
+        run: (ctx) => ctx.executors.delete_summary(ctx),
+    },
+    {
+        id: 'delete_translation',
+        description: 'Delete the stored translation of the email (it disappears from the message). ' +
+            'Pick it for "delete the translation", "remove the translation", "cancella la traduzione".',
+        params: {},
+        requirements: (env) => !!env?.features?.translate,
+        multiple: false,
+        risk: 'direct',
+        dependsOn: () => [],
+        run: (ctx) => ctx.executors.delete_translation(ctx),
+    },
+    {
+        id: 'spam_check',
+        description: 'Check whether the email is spam with the spam filter and show its report (a spam score and ' +
+            'an explanation); it never moves the email. Pick it for "is it spam?", "check for spam", "antispam", ' +
+            '"è spam?", "controlla lo spam".',
+        params: {},
+        requirements: (env) => !!env?.features?.spamfilter && !!env?.permissions?.spamfilter && !!env?.usable?.spamfilter,
+        multiple: false,
+        risk: 'direct',
+        dependsOn: () => [],
+        run: (ctx) => ctx.executors.spam_check(ctx),
+    },
+    {
+        id: 'calendar_event',
+        description: 'Create a calendar event from the email: its data are read from the email and Thunderbird\'s ' +
+            'event dialog opens, where the user reviews and saves it. Pick it for "add to calendar", "create an ' +
+            'event", "save the meeting", "aggiungi al calendario", "crea un evento".',
+        params: {},
+        // ThunderAI Sparks opens the dialog: it is checked when the line runs, so a missing or
+        // outdated Sparks is said in the line instead of hiding the operation.
+        requirements: (env) => !!env?.features?.get_calendar_event && !!env?.usable?.get_calendar_event,
+        multiple: false,
+        risk: 'direct',
+        // Its dialog steals the focus: after the other lines, like a compose window.
+        runLast: true,
+        dependsOn: () => [],
+        run: (ctx) => ctx.executors.calendar_event(ctx),
+    },
+    {
+        id: 'task',
+        description: 'Create a task (a to-do) from the email: its data are read from the email and Thunderbird\'s ' +
+            'task dialog opens, where the user reviews and saves it. Pick it for "create a task", "add a to-do", ' +
+            '"remind me to do it", "crea un\'attività", "aggiungi un task".',
+        params: {},
+        requirements: (env) => !!env?.features?.get_task && !!env?.usable?.get_task,
+        multiple: false,
+        risk: 'direct',
+        runLast: true,
+        dependsOn: () => [],
+        run: (ctx) => ctx.executors.task(ctx),
     },
     {
         id: 'compose',

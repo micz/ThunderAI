@@ -1,6 +1,11 @@
 // claude-spec/10-smartbar.md "Operation registry" (js/mzta-smartbar-registry.js):
-//  - five operations in this version, tag / summarize / translate / compose / deliver_draft, each a
+//  - ten operations in this version, tag / summarize / translate / delete_summary /
+//    delete_translation / spam_check / calendar_event / task / compose / deliver_draft, each a
 //    valid entry (id, description, params schema, requirements, multiple false, risk, dependsOn, run);
+//  - delete_summary / delete_translation need their feature on only (no model call); spam_check its
+//    feature, permission and connection; calendar_event / task their feature and connection, never
+//    Sparks (checked when the line runs), and run last like compose; summarize / translate wait for
+//    a delete of the same instruction;
 //  - deliver_draft ("Chat", "Drafts"): no params, available only in the chat with a current draft,
 //    waits for a compose of the same instruction and runs after it, wherever the user put it;
 //  - compose ("Compose"): a required type among reply / reply_all / forward / new, no recipient
@@ -44,8 +49,10 @@ function deferred() {
 const tick = () => new Promise(r => setImmediate(r));
 const plan = (ops, ids, routed = ids.map(id => ({ id }))) => R.planOperations(R.createSmartbarRegistry(ops), ids, routed);
 
-k.test('default-ops', 'the five operations of this version, valid, single-instance', () => {
-    assert.deepEqual(reg.all().map(op => op.id), ['tag', 'summarize', 'translate', 'compose', 'deliver_draft']);
+const OP_IDS = ['tag', 'summarize', 'translate', 'delete_summary', 'delete_translation', 'spam_check', 'calendar_event', 'task', 'compose', 'deliver_draft'];
+
+k.test('default-ops', 'the ten operations of this version, valid, single-instance', () => {
+    assert.deepEqual(reg.all().map(op => op.id), OP_IDS);
     for (const op of R.DEFAULT_OPERATIONS) {
         assert.deepEqual(R.operationProblems(op), [], op.id);
         assert.equal(op.multiple, false, op.id);
@@ -55,18 +62,56 @@ k.test('default-ops', 'the five operations of this version, valid, single-instan
     assert.equal(reg.get('tag').params.tags.type, 'string[]');
     assert.deepEqual(reg.get('summarize').params, {});
     assert.equal(reg.get('translate').params.language.type, 'string');
-    assert.deepEqual(reg.get('deliver_draft').params, {});
+    for (const id of ['delete_summary', 'delete_translation', 'spam_check', 'calendar_event', 'task', 'deliver_draft']) {
+        assert.deepEqual(reg.get(id).params, {}, id);
+    }
+    // The Sparks dialogs open at the end, like a compose window.
+    assert.deepEqual(reg.all().filter(op => op.runLast === true).map(op => op.id), ['calendar_event', 'task', 'compose']);
     assert.equal(reg.get('nope'), null);
 });
 
 k.test('run-executor', 'an operation runs through the executor of its id', async () => {
     const calls = [];
-    const executors = Object.fromEntries(['tag', 'summarize', 'translate', 'compose', 'deliver_draft'].map(id => [id, async ctx => {
+    const executors = Object.fromEntries(OP_IDS.map(id => [id, async ctx => {
         calls.push([id, ctx.params]);
         return { state: 'done' };
     }]));
     for (const op of reg.all()) await op.run({ params: { p: op.id }, executors });
-    assert.deepEqual(calls, [['tag', { p: 'tag' }], ['summarize', { p: 'summarize' }], ['translate', { p: 'translate' }], ['compose', { p: 'compose' }], ['deliver_draft', { p: 'deliver_draft' }]]);
+    assert.deepEqual(calls, OP_IDS.map(id => [id, { p: id }]));
+});
+
+k.test('new-ops-availability', 'delete_*: the feature on, no connection; spam_check: feature, permission, connection; calendar_event / task: feature and connection, never Sparks', () => {
+    const ids = env => reg.listAvailable(env).map(op => op.id);
+    // Deleting a stored result makes no model call: the feature on is enough.
+    const noConnection = { ...ALL_AVAILABLE, usable: { ...ALL_AVAILABLE.usable, summarize: false, translate: false } };
+    assert.ok(ids(noConnection).includes('delete_summary'));
+    assert.ok(ids(noConnection).includes('delete_translation'));
+    assert.ok(!ids(noConnection).includes('summarize'));
+    const summaryOff = { ...ALL_AVAILABLE, features: { ...ALL_AVAILABLE.features, summarize: false } };
+    assert.ok(!ids(summaryOff).includes('delete_summary'));
+    const translateOff = { ...ALL_AVAILABLE, features: { ...ALL_AVAILABLE.features, translate: false } };
+    assert.ok(!ids(translateOff).includes('delete_translation'));
+    for (const env of [
+        { ...ALL_AVAILABLE, features: { ...ALL_AVAILABLE.features, spamfilter: false } },
+        { ...ALL_AVAILABLE, permissions: { ...ALL_AVAILABLE.permissions, spamfilter: false } },
+        { ...ALL_AVAILABLE, usable: { ...ALL_AVAILABLE.usable, spamfilter: false } },
+    ]) assert.ok(!ids(env).includes('spam_check'));
+    for (const [id, feature] of [['calendar_event', 'get_calendar_event'], ['task', 'get_task']]) {
+        assert.ok(!ids({ ...ALL_AVAILABLE, features: { ...ALL_AVAILABLE.features, [feature]: false } }).includes(id), id);
+        assert.ok(!ids({ ...ALL_AVAILABLE, usable: { ...ALL_AVAILABLE.usable, [feature]: false } }).includes(id), id);
+    }
+    // Sparks is not a requirement: a missing one is said when the line runs.
+    assert.ok(ids({ ...ALL_AVAILABLE, sparks: false }).includes('calendar_event'));
+});
+
+k.test('delete-before-regenerate', 'summarize / translate wait for a delete of the same instruction, whatever the user\'s order', () => {
+    const avail = reg.listAvailable(ALL_AVAILABLE).map(op => op.id);
+    for (const [del, gen] of [['delete_summary', 'summarize'], ['delete_translation', 'translate']]) {
+        for (const routed of [[{ id: del }, { id: gen }], [{ id: gen }, { id: del }]]) {
+            const { lines } = R.planOperations(reg, avail, routed);
+            assert.deepEqual(lines.map(l => [l.id, l.dependsOn]), [[del, []], [gen, [0]]], JSON.stringify(routed));
+        }
+    }
 });
 
 k.test('invalid-entry', 'an invalid entry or a duplicated id is refused at creation', () => {
@@ -81,18 +126,20 @@ k.test('invalid-entry', 'an invalid entry or a duplicated id is refused at creat
 });
 
 k.test('availability', 'listAvailable() keeps only the operations whose requirements hold', () => {
-    assert.deepEqual(reg.listAvailable(ALL_AVAILABLE).map(op => op.id), ['tag', 'summarize', 'translate', 'compose']);
+    // Every operation but deliver_draft (the chat with a draft only), without the ones named.
+    const allBut = (...ids) => OP_IDS.filter(id => id !== 'deliver_draft' && !ids.includes(id));
+    assert.deepEqual(reg.listAvailable(ALL_AVAILABLE).map(op => op.id), allBut());
     assert.deepEqual(reg.listAvailable({}).map(op => op.id), []);
     assert.deepEqual(reg.listAvailable(null).map(op => op.id), []);
-    const noTagPermission = { ...ALL_AVAILABLE, permissions: { add_tags: false } };
-    assert.deepEqual(reg.listAvailable(noTagPermission).map(op => op.id), ['summarize', 'translate', 'compose']);
+    const noTagPermission = { ...ALL_AVAILABLE, permissions: { ...ALL_AVAILABLE.permissions, add_tags: false } };
+    assert.deepEqual(reg.listAvailable(noTagPermission).map(op => op.id), allBut('tag'));
     const translateOff = { ...ALL_AVAILABLE, features: { ...ALL_AVAILABLE.features, translate: false } };
-    assert.deepEqual(reg.listAvailable(translateOff).map(op => op.id), ['tag', 'summarize', 'compose']);
+    assert.deepEqual(reg.listAvailable(translateOff).map(op => op.id), allBut('translate', 'delete_translation'));
     const summaryUnusable = { ...ALL_AVAILABLE, usable: { ...ALL_AVAILABLE.usable, summarize: false } };
-    assert.deepEqual(reg.listAvailable(summaryUnusable).map(op => op.id), ['tag', 'translate', 'compose']);
+    assert.deepEqual(reg.listAvailable(summaryUnusable).map(op => op.id), allBut('summarize'));
     // compose has no feature switch of its own: the smartbar_execute connection is all it needs.
     const executeUnusable = { ...ALL_AVAILABLE, usable: { ...ALL_AVAILABLE.usable, smartbar_execute: false } };
-    assert.deepEqual(reg.listAvailable(executeUnusable).map(op => op.id), ['tag', 'summarize', 'translate']);
+    assert.deepEqual(reg.listAvailable(executeUnusable).map(op => op.id), allBut('compose'));
     assert.deepEqual(reg.listAvailable({ usable: { smartbar_execute: true } }).map(op => op.id), ['compose']);
     const throwing = R.createSmartbarRegistry([fake('a', { requirements: () => { throw new Error('x'); } }), fake('b')]);
     assert.deepEqual(throwing.listAvailable({}).map(op => op.id), ['b']);
@@ -287,9 +334,10 @@ k.test('deliver-draft-entry', 'deliver_draft: no params, single instance, direct
     assert.notEqual(op.runLast, true);
     assert.notEqual(op.deliverInChat, true);
     const draft = { type: 'reply' };
-    assert.deepEqual(reg.listAvailable({ ...ALL_AVAILABLE, source: 'chat', draft }).map(o => o.id), ['tag', 'summarize', 'translate', 'compose', 'deliver_draft']);
-    assert.deepEqual(reg.listAvailable({ ...ALL_AVAILABLE, source: 'chat', draft: null }).map(o => o.id), ['tag', 'summarize', 'translate', 'compose']);
-    assert.deepEqual(reg.listAvailable({ ...ALL_AVAILABLE, source: 'bar', draft }).map(o => o.id), ['tag', 'summarize', 'translate', 'compose']);
+    const withoutDeliver = OP_IDS.filter(id => id !== 'deliver_draft');
+    assert.deepEqual(reg.listAvailable({ ...ALL_AVAILABLE, source: 'chat', draft }).map(o => o.id), OP_IDS);
+    assert.deepEqual(reg.listAvailable({ ...ALL_AVAILABLE, source: 'chat', draft: null }).map(o => o.id), withoutDeliver);
+    assert.deepEqual(reg.listAvailable({ ...ALL_AVAILABLE, source: 'bar', draft }).map(o => o.id), withoutDeliver);
     // It needs no connection: the draft is written already.
     assert.deepEqual(reg.listAvailable({ source: 'chat', draft }).map(o => o.id), ['deliver_draft']);
     // Its description gives the router the approval phrases, and tells a change from an approval.

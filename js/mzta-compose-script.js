@@ -1837,6 +1837,18 @@ switch (message.command) {
     });
   }
 
+  case "removeSummaryPanel": {
+    // The summary deleted from outside the panel (the SmartBar's delete_summary): the panel and
+    // any spinner go; showSummaryButton follows when the feature shows a button.
+    return _mztaDisplayedMsgId.then(docId => {
+      if (!_isForThisMessage(message.headerMessageId, docId)) return false;
+      _mztaPanelSeq.summary++;
+      _removePanel('mzta-summary-banner');
+      _removePanel('mzta-summary-generating');
+      return true;
+    });
+  }
+
   case "showSummaryButton": {
     _mztaPanelSeq.summary++;
     // The button replaces any spinner, like showTranslationButton: it is also sent when a
@@ -2101,6 +2113,17 @@ switch (message.command) {
     // Same rule as hideSummaryGenerating.
     return _mztaDisplayedMsgId.then(docId => {
       if (message.headerMessageId && !_isForThisMessage(message.headerMessageId, docId)) return false;
+      _removePanel('mzta-translation-generating');
+      return true;
+    });
+  }
+
+  case "removeTranslationPanel": {
+    // Same as removeSummaryPanel, for the translation (the SmartBar's delete_translation).
+    return _mztaDisplayedMsgId.then(docId => {
+      if (!_isForThisMessage(message.headerMessageId, docId)) return false;
+      _mztaPanelSeq.translation++;
+      _removePanel('mzta-translation-banner');
       _removePanel('mzta-translation-generating');
       return true;
     });

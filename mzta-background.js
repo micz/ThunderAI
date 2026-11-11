@@ -40,6 +40,9 @@ import {
     checkIfTagLabelExists,
     getActiveSpecialPromptsIDs,
     checkSparksPresence,
+    buildSparksCalendarEventData,
+    buildSparksTaskData,
+    sendToSparks,
     getMessages,
     getMailInlineTextParts,
     extractJsonObject,
@@ -2378,7 +2381,16 @@ const _smartbarThinking = new Map();
 const SMARTBAR_THINKING_THROTTLE_MS = 250;
 // The job kind of each operation, for a Stop of one line (deliver_draft runs no job: it only
 // opens a compose window).
-const SMARTBAR_OPERATION_JOB_KIND = { tag: 'add_tags', summarize: 'summary', translate: 'translation', compose: 'smartbar_compose' };
+// delete_summary and delete_translation run no job either (a store removal), and spam_check's
+// analysis is the spam filter's own job, which no group holds (as a batch's): a Stop never ends it.
+const SMARTBAR_OPERATION_JOB_KIND = {
+    tag: 'add_tags',
+    summarize: 'summary',
+    translate: 'translation',
+    compose: 'smartbar_compose',
+    calendar_event: 'smartbar_calendar_event',
+    task: 'smartbar_task',
+};
 // The compose window of each message type of the compose operation (_beginComposeWindow()).
 const SMARTBAR_COMPOSE_WINDOW = { reply: 'replyToSender', reply_all: 'replyToAll', forward: 'forward', new: 'new' };
 // The wait before the automatic retry of a rate-limited call, when the provider named none.
@@ -2396,30 +2408,45 @@ async function _smartbarConfig() {
 }
 
 // What the requirements of the operations read (js/mzta-smartbar-registry.js): the features on,
-// their connection usable, the Add Tags permissions granted. compose has no feature of its own:
-// the smartbar_execute connection usable is all it needs. `chat`: { source, draft } for the
-// operations of the chat (deliver_draft needs the source 'chat' and a current draft).
+// their connection usable, the Add Tags and Spam Filter permissions granted. compose has no
+// feature of its own: the smartbar_execute connection usable is all it needs. ThunderAI Sparks
+// (calendar_event, task) is not here: it is checked when the line runs, so a missing one is said.
+// `chat`: { source, draft } for the operations of the chat (deliver_draft needs the source 'chat'
+// and a current draft).
 async function _smartbarEnv(chat = {}) {
     const prefs = await mztaPrefs.getPrefs([
-        'add_tags', 'summarize', 'translate', 'connection_type',
+        'add_tags', 'summarize', 'translate', 'spamfilter', 'get_calendar_event', 'get_task', 'connection_type',
         ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
     ]);
-    let add_tags_permission = false;
-    try {
-        add_tags_permission = await hasFeaturePermissions('add_tags');
-    } catch (e) {
-        taLog.error("SmartBar: could not check the Add Tags permissions: " + e);
-    }
+    const permission = async (feature) => {
+        try {
+            return await hasFeaturePermissions(feature);
+        } catch (e) {
+            taLog.error("SmartBar: could not check the " + feature + " permissions: " + e);
+            return false;
+        }
+    };
+    const special = await getSpecialPrompts();
+    const specialPrompt = (id) => special.find(p => p.id === id) || {};
     const usable = {
         add_tags: isApiUsableConnection(getConnectionType(prefs, await getAddTagsPrompt(), 'add_tags')),
         summarize: isApiUsableConnection(getConnectionType(prefs, await getSummarizePrompt(), 'summarize')),
         translate: isApiUsableConnection(getConnectionType(prefs, await getTranslatePrompt(), 'translate')),
-        smartbar_execute: isApiUsableConnection(getConnectionType(prefs,
-            (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_execute') || {}, 'smartbar_execute')),
+        spamfilter: isApiUsableConnection(getConnectionType(prefs, specialPrompt('prompt_spamfilter'), 'spamfilter')),
+        get_calendar_event: isApiUsableConnection(getConnectionType(prefs, specialPrompt('prompt_get_calendar_event'), 'get_calendar_event')),
+        get_task: isApiUsableConnection(getConnectionType(prefs, specialPrompt('prompt_get_task'), 'get_task')),
+        smartbar_execute: isApiUsableConnection(getConnectionType(prefs, specialPrompt('prompt_smartbar_execute'), 'smartbar_execute')),
     };
     return {
-        features: { add_tags: prefs.add_tags === true, summarize: prefs.summarize === true, translate: prefs.translate === true },
-        permissions: { add_tags: add_tags_permission },
+        features: {
+            add_tags: prefs.add_tags === true,
+            summarize: prefs.summarize === true,
+            translate: prefs.translate === true,
+            spamfilter: prefs.spamfilter === true,
+            get_calendar_event: prefs.get_calendar_event === true,
+            get_task: prefs.get_task === true,
+        },
+        permissions: { add_tags: await permission('add_tags'), spamfilter: await permission('spamfilter') },
         usable: usable,
         source: chat.source === 'chat' ? 'chat' : 'bar',
         draft: chat.draft ?? null,
@@ -2735,6 +2762,180 @@ async function _smartbarRunTranslate(ctx) {
     return _smartbarPanelOutcome(outcome, browser.i18n.getMessage('smartbar_error_no_language'));
 }
 
+// What delete_summary and delete_translation remove: the store, the job kind, the content script
+// command that takes the panel out of the message, and the button that may come back in its place.
+const SMARTBAR_DELETE_PANEL = {
+    summary: {
+        job: 'summary',
+        load: (hid) => summaryStore.loadSummary(hid),
+        remove: (hid) => summaryStore.removeSummary(hid),
+        hideCommand: 'removeSummaryPanel',
+        restore: (hid) => _restoreSummaryButton(null, hid),
+    },
+    translation: {
+        job: 'translation',
+        load: (hid) => translationStore.loadTranslation(hid),
+        remove: (hid) => translationStore.removeTranslation(hid),
+        hideCommand: 'removeTranslationPanel',
+        restore: (hid) => _restoreTranslationButton(null, hid),
+    },
+};
+
+// delete_summary / delete_translation: what the panel's delete button does (removeSummary,
+// removeTranslation), for every tab displaying the message: a job still running is invalidated
+// first, so it neither saves nor shows its result; the stored data removed; the panel taken out;
+// the button back where the feature shows one. No model call. Done in every case, result
+// { removed } (false: there was nothing to delete).
+async function _smartbarRunDeletePanel(ctx, what) {
+    const cfg = SMARTBAR_DELETE_PANEL[what];
+    const hid = ctx.message.headerMessageId;
+    const invalidated = taJobRegistry.invalidate(cfg.job, hid);
+    const stored = await cfg.load(hid);
+    if (stored) await cfg.remove(hid);
+    await _sendToTabsDisplaying(hid, { command: cfg.hideCommand, headerMessageId: hid });
+    await cfg.restore(hid);
+    return { state: 'done', result: { removed: !!stored || invalidated } };
+}
+
+// spam_check: the spam filter's analysis as the panel's Refresh runs it (its allow, block and
+// address book rules, its prompt and connection, the report stored and shown in the panel), never
+// moving the message. An analysis already running on the message is joined.
+async function _smartbarRunSpamCheck(ctx) {
+    const outcome = await _generateSpamReportForMessage(ctx.message.headerMessageId,
+        { tabId: ctx.tabId, messageId: ctx.message.id });
+    const report = outcome?.data?.report || null;
+    if (outcome?.status === 'ok' && report) {
+        const threshold = Number.isFinite(report.SpamThreshold) ? report.SpamThreshold : null;
+        return {
+            state: 'done',
+            result: {
+                spamValue: report.spamValue,
+                threshold: threshold,
+                spam: threshold !== null && Number(report.spamValue) >= threshold,
+            },
+        };
+    }
+    if (outcome?.rateLimited) {
+        return { state: 'error', error: report?.explanation || 'error', errorType: 'rate_limit', retryAt: _smartbarRetryAt(outcome.retryAfterMs) };
+    }
+    return { state: 'error', error: report?.explanation || 'error', errorType: 'api' };
+}
+
+// calendar_event and task: the special prompt of the feature, the preferences of the object
+// Sparks receives, and the texts of their errors (those of the context menu).
+const SMARTBAR_SPARKS = {
+    calendar_event: {
+        promptId: 'prompt_get_calendar_event',
+        feature: 'get_calendar_event',
+        job: 'smartbar_calendar_event',
+        prefs: ['calendar_enforce_timezone', 'calendar_timezone', 'calendar_append_email_link', 'calendar_reminder_enabled', 'calendar_reminder_rules'],
+        finalize: (fullPrompt, text, prefs) => taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, text, prefs.calendar_reminder_enabled, prefs.calendar_reminder_rules),
+        build: buildSparksCalendarEventData,
+        dataError: 'calendar_getting_data_error',
+        dialogError: 'calendar_opening_dialog_error',
+    },
+    task: {
+        promptId: 'prompt_get_task',
+        feature: 'get_task',
+        job: 'smartbar_task',
+        prefs: ['calendar_enforce_timezone', 'calendar_timezone', 'task_append_email_link', 'task_reminder_enabled', 'task_reminder_rules'],
+        finalize: (fullPrompt, text, prefs) => taPromptUtils.finalizePrompt_get_task(fullPrompt, text, prefs.task_reminder_enabled, prefs.task_reminder_rules),
+        build: buildSparksTaskData,
+        dataError: 'task_getting_data_error',
+        dialogError: 'task_opening_dialog_error',
+    },
+};
+
+// The object a calendar_event / task line hands to Sparks: the special prompt of the feature on
+// its connection, built as the context menu builds it (the email's body, the selected text when
+// there is one, the custom placeholders), then read into the object Sparks receives
+// (buildSparksCalendarEventData() / buildSparksTaskData(), the link to the email included).
+// Rejects on a config error, an API error, an abort, or an answer with no JSON object.
+async function _smartbarSparksData(ctx, cfg, signal) {
+    const { message } = ctx;
+    const prefs = await mztaPrefs.getPrefs([
+        'connection_type', 'do_debug', ...cfg.prefs,
+        ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+    ]);
+    const special = (await getSpecialPrompts()).find(p => p.id === cfg.promptId);
+    if (!special) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_feature_prompt'));
+        err.isConfigError = true;
+        throw err;
+    }
+    const connection = getConnectionType(prefs, special, cfg.feature);
+    if (!isApiUsableConnection(connection)) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_connection'));
+        err.isConfigError = true;
+        throw err;
+    }
+    // preparePrompt() expands the custom placeholders into the prompt's text: a copy, so the
+    // prompt list keeps its own.
+    const curr_prompt = { ...special };
+    const { msg_text, body_text } = await _loadMessageBody(message.id);
+    let fullPrompt = await taPromptUtils.preparePrompt({
+        curr_prompt: curr_prompt,
+        curr_message: message,
+        chatgpt_lang: await taPromptUtils.getDefaultLang(curr_prompt),
+        selection_text: ctx.selection || '',
+        body_text: body_text,
+        subject_text: message.subject || '',
+        msg_text: msg_text,
+    });
+    fullPrompt = cfg.finalize(fullPrompt, curr_prompt.text, prefs);
+    const cmd = new mzta_specialCommand({
+        processingClient,
+        prompt: fullPrompt,
+        llm: connection,
+        do_debug: prefs.do_debug,
+        config: special,
+        signal: signal,
+    });
+    await cmd.initWorker();
+    const answer = await cmd.sendPrompt();
+    try {
+        return cfg.build(answer, prefs, message, browser.i18n.getMessage('calendar_email_link_label'), taLog);
+    } catch (e) {
+        throw new Error(browser.i18n.getMessage(cfg.dataError) + ": " + (e?.message || e));
+    }
+}
+
+// calendar_event / task: ThunderAI Sparks first (checkSparksPresence(), at least sparks_min): a
+// missing or outdated one ends the line in error saying so (errorType 'sparks'), before any model
+// call. Then the data read from the email by the feature's special prompt, and Sparks' dialog
+// opened with them, where the user reviews and saves: done once Sparks opened it. A line stopped
+// meanwhile opens no dialog.
+async function _smartbarRunSparks(ctx, kind) {
+    const cfg = SMARTBAR_SPARKS[kind];
+    const presence = await checkSparksPresence();
+    if (presence !== 1) {
+        return {
+            state: 'error',
+            error: browser.i18n.getMessage(presence === 0 ? 'smartbar_error_sparks_old' : 'smartbar_error_sparks_missing'),
+            errorType: 'sparks',
+        };
+    }
+    const { message, groupId } = ctx;
+    const entry = taJobRegistry.start(cfg.job, message.headerMessageId, async (job) => {
+        const stopped = () => job.invalidated || job.abort.signal.aborted || ctx.signal?.aborted === true;
+        let data;
+        try {
+            data = await _smartbarSparksData(ctx, cfg, job.abort.signal);
+        } catch (error) {
+            return { status: 'ok', line: stopped() ? { state: 'cancelled' } : _smartbarComposeError(error) };
+        }
+        if (stopped()) return { status: 'ok', line: { state: 'cancelled' } };
+        const sent = await sendToSparks(kind, data);
+        if (!sent.ok) {
+            return { status: 'ok', line: { state: 'error', error: browser.i18n.getMessage(cfg.dialogError) + ": " + sent.error, errorType: 'sparks' } };
+        }
+        return { status: 'ok', line: { state: 'done', result: {} } };
+    }, { groupId: groupId });
+    const outcome = await entry.promise;
+    if (outcome?.line) return outcome.line;
+    return { state: 'error', error: outcome?.errorMessage || 'error', errorType: 'api' };
+}
+
 // The preferences of the compose operation: its connection, the email length, the additional
 // instructions, the signatures and the default language.
 async function _smartbarComposePrefs() {
@@ -2849,7 +3050,7 @@ async function _smartbarGenerateCompose(ctx, signal) {
     return { answer, prefs };
 }
 
-// A failed compose generation as a SmartBar line outcome.
+// A failed generation as a SmartBar line outcome: compose, and the data of calendar_event / task.
 function _smartbarComposeError(error) {
     const type = _smartbarErrorType(error);
     if (type === 'aborted') return { state: 'cancelled' };
@@ -2970,6 +3171,11 @@ const SMARTBAR_EXECUTORS = {
     tag: _smartbarRunTag,
     summarize: _smartbarRunSummarize,
     translate: _smartbarRunTranslate,
+    delete_summary: (ctx) => _smartbarRunDeletePanel(ctx, 'summary'),
+    delete_translation: (ctx) => _smartbarRunDeletePanel(ctx, 'translation'),
+    spam_check: _smartbarRunSpamCheck,
+    calendar_event: (ctx) => _smartbarRunSparks(ctx, 'calendar_event'),
+    task: (ctx) => _smartbarRunSparks(ctx, 'task'),
     compose: _smartbarRunCompose,
     deliver_draft: _smartbarRunDeliverDraft,
 };

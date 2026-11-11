@@ -1371,6 +1371,82 @@ export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = nu
   logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes));
 }
 
+// The ThunderAI Sparks add-on, which opens Thunderbird's calendar event and task dialogs.
+export const SPARKS_ADDON_ID = 'thunderai-sparks@micz.it';
+
+// The object Sparks' openCalendarEventDialog receives, from the AI answer of the calendar event
+// prompt (claude-spec/02-prompts.md): the JSON object read tolerantly (throws when there is none),
+// the dates normalized, the reminder normalized (normalizeReminderMinutes()), the timezone of the
+// options, and the link to the email (calendar_append_email_link, with linkSource the message:
+// null for none) added after the answer, so it never reaches the AI.
+// prefs: calendar_enforce_timezone, calendar_timezone, calendar_append_email_link,
+// calendar_reminder_enabled.
+export function buildSparksCalendarEventData(answer, prefs, linkSource, linkLabel, logger = null) {
+  const data_obj = extractJsonObject(answer);
+  if (data_obj.startDate) data_obj.startDate = normalizeDateTimeString(data_obj.startDate);
+  if (data_obj.endDate) data_obj.endDate = normalizeDateTimeString(data_obj.endDate);
+  // Reminder: the checkbox is the single switch (off = field always removed) [#887]
+  normalizeReminderMinutes(data_obj, prefs.calendar_reminder_enabled, logger);
+  data_obj.use_timezone = false;
+  if (prefs.calendar_enforce_timezone) {
+    data_obj.use_timezone = true;
+    data_obj.timezone = prefs.calendar_timezone;
+  }
+  if (prefs.calendar_append_email_link) {
+    if (!appendMessageLinkToDescription(data_obj, linkSource, linkLabel)) {
+      logger?.log("calendar_append_email_link: no source message, link not added.");
+    }
+  }
+  return data_obj;
+}
+
+// The object Sparks' openTaskDialog receives, from the AI answer of the task prompt: as
+// buildSparksCalendarEventData(), with the task's dates (an empty one removed) and its options.
+// prefs: calendar_enforce_timezone, calendar_timezone, task_append_email_link,
+// task_reminder_enabled.
+export function buildSparksTaskData(answer, prefs, linkSource, linkLabel, logger = null) {
+  const data_obj = extractJsonObject(answer);
+  if (data_obj.dueDate) data_obj.dueDate = normalizeDateTimeString(data_obj.dueDate);
+  if (data_obj.initialDate) data_obj.initialDate = normalizeDateTimeString(data_obj.initialDate);
+  if (!data_obj.dueDate) delete data_obj.dueDate;
+  if (!data_obj.initialDate) delete data_obj.initialDate;
+  // Reminder: the checkbox is the single switch (off = field always removed) [#887]
+  normalizeReminderMinutes(data_obj, prefs.task_reminder_enabled, logger);
+  data_obj.use_timezone = false;
+  if (prefs.calendar_enforce_timezone) {
+    data_obj.use_timezone = true;
+    data_obj.timezone = prefs.calendar_timezone;
+  }
+  if (prefs.task_append_email_link) {
+    if (!appendMessageLinkToDescription(data_obj, linkSource, linkLabel)) {
+      logger?.log("task_append_email_link: no source message, link not added.");
+    }
+  }
+  return data_obj;
+}
+
+// Hands a calendar event or a task to Sparks, which opens its dialog. kind: 'calendar_event' or
+// 'task'. Resolves { ok: true }, or { ok: false, error } with Sparks' error (an i18n key of this
+// add-on when it starts with '|>>') or, when Sparks did not answer, no_valid_data_received.
+// Never rejects.
+export async function sendToSparks(kind, data_obj) {
+  const request = kind === 'task'
+    ? { action: "openTaskDialog", task_data: JSON.stringify(data_obj) }
+    : { action: "openCalendarEventDialog", calendar_event_data: JSON.stringify(data_obj) };
+  try {
+    const result = await browser.runtime.sendMessage(SPARKS_ADDON_ID, request);
+    if (result == 'ok') return { ok: true };
+    let err = result?.error;
+    if (err && typeof err === 'string' && err.startsWith('|>>')) {
+      err = browser.i18n.getMessage(err.substring(3));
+    }
+    return { ok: false, error: String(err ?? browser.i18n.getMessage("no_valid_data_received")) };
+  } catch (err) {
+    console.error("[ThunderAI] Error opening the Sparks dialog: ", err);
+    return { ok: false, error: browser.i18n.getMessage("no_valid_data_received") };
+  }
+}
+
 // The values never logged: the API keys, and the extra request headers, which may
 // carry one (e.g. Azure's api-key).
 export function isAPIKeyValue(id){

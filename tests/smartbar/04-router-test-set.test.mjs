@@ -14,7 +14,10 @@
 //  - the chat (spec 10 "Chat"): a case's source and draft decide what is available (deliver_draft
 //    only in the chat with a draft); refinements are compose of the draft's type, approvals
 //    deliver_draft, a free question nothing at all; deliver_draft runs after a compose of the same
-//    instruction.
+//    instruction;
+//  - the deletions: delete_summary / delete_translation run before a summarize / translate of the
+//    same instruction (their dependsOn), and "cancella la mail" is none of them; calendar_event /
+//    task run last (runLast).
 // The model's actual answers are not tested here (no model at level 1): the file is also a manual
 // check of a router connection.
 
@@ -171,6 +174,35 @@ k.test('compose-last', 'in every mixed case the plan runs compose last, whatever
         assert.ok(lines.slice(at + 1).every(l => l.dependsOn.includes(at)), c.instruction);
         assert.ok(lines.slice(0, at).every(l => !l.runLast), c.instruction);
         assert.deepEqual(lines.map(l => l.index), lines.map((_, i) => i), c.instruction);
+    }
+});
+
+k.test('delete-first', 'a deletion asked with a new summary or translation runs first, whatever the router\'s order', () => {
+    const pairs = [['delete_summary', 'summarize'], ['delete_translation', 'translate']];
+    for (const [del, gen] of pairs) {
+        const both = cases.filter(c => [del, gen].every(id => c.expected.operations.some(op => op.id === id)));
+        assert.ok(both.length >= 1, del);
+        for (const c of both) {
+            const { lines } = R.planOperations(reg, availableIn(c), c.expected.operations);
+            const d = lines.findIndex(l => l.id === del);
+            const g = lines.findIndex(l => l.id === gen);
+            assert.ok(d < g && lines[g].dependsOn.includes(d), c.instruction);
+        }
+    }
+    assert.ok(cases.some(c => c.expected.operations[0]?.id === 'translate' && c.expected.operations.some(op => op.id === 'delete_translation')),
+        'one case where the user asks the new translation first');
+    // "Delete the email" is no deletion of a stored result.
+    const mail = cases.find(c => c.instruction === 'riassumi e cancella la mail');
+    assert.deepEqual(mail.expected.operations.map(op => op.id), ['summarize']);
+});
+
+k.test('sparks-last', 'calendar_event / task run after the other lines, whatever the router\'s order', () => {
+    const sparks = cases.filter(c => c.expected.operations.length > 1 && c.expected.operations.some(op => ['calendar_event', 'task'].includes(op.id)));
+    assert.ok(sparks.some(c => ['calendar_event', 'task'].includes(c.expected.operations[0].id)), 'one case where the user asks it first');
+    for (const c of sparks) {
+        const { lines } = R.planOperations(reg, availableIn(c), c.expected.operations);
+        const first = lines.findIndex(l => l.runLast);
+        assert.ok(lines.slice(first).every(l => l.runLast), c.instruction);
     }
 });
 

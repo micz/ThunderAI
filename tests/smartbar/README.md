@@ -7,7 +7,7 @@ mechanism are in the general [`tests/README.md`](../README.md). Paths below are 
 
 The modules under test:
 
-- `js/mzta-smartbar-registry.js`: the operations (`deliver_draft` among them), their availability, the
+- `js/mzta-smartbar-registry.js`: the ten operations (`deliver_draft`, the deletions, the spam check and the Sparks ones among them), their availability, the
   parameter checks, the plan of an instruction (runLast, the dependency sort) and how its lines run
   (limit, dependencies, confirmation, abort, a drafted outcome);
 - `js/mzta-smartbar-router.js`: the router prompt (never the email body), the placeholder allow list,

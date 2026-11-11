@@ -34,6 +34,11 @@
     tag: 'smartbar_op_tag',
     summarize: 'smartbar_op_summarize',
     translate: 'smartbar_op_translate',
+    delete_summary: 'smartbar_op_delete_summary',
+    delete_translation: 'smartbar_op_delete_translation',
+    spam_check: 'smartbar_op_spam_check',
+    calendar_event: 'smartbar_op_calendar_event',
+    task: 'smartbar_op_task',
     deliver_draft: 'smartbar_op_deliver_draft',
   };
   // The compose operation is named by its message type ("Reply to all"), its params' only field.
@@ -79,6 +84,19 @@
         }
         if (op.id === 'summarize') return msg('smartbar_result_summary_ready');
         if (op.id === 'translate') return msg('smartbar_result_translation_ready');
+        if (op.id === 'delete_summary') {
+          return msg(op.result?.removed === false ? 'smartbar_result_summary_none' : 'smartbar_result_summary_deleted');
+        }
+        if (op.id === 'delete_translation') {
+          return msg(op.result?.removed === false ? 'smartbar_result_translation_none' : 'smartbar_result_translation_deleted');
+        }
+        if (op.id === 'spam_check') {
+          // The spam filter's score (0-100) and its verdict against the user's threshold.
+          const score = String(op.result?.spamValue ?? '?');
+          return msg(op.result?.spam === true ? 'smartbar_result_spam_yes' : 'smartbar_result_spam_no', [score]);
+        }
+        if (op.id === 'calendar_event') return msg('smartbar_result_calendar_event_opened');
+        if (op.id === 'task') return msg('smartbar_result_task_opened');
         if (op.id === 'compose') return composeOpenedText(op.params?.type, op.result?.recipient);
         // deliver_draft: the window of the draft it created, named by the draft's type.
         if (op.id === 'deliver_draft' && op.result?.type) return composeOpenedText(op.result.type, op.result.recipient);

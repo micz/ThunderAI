@@ -228,6 +228,30 @@ k.test('translation-delete', S_DELETE, 'Delete in the banner menu removes the ba
     assert.deepEqual(sentCommands(ctx, 'removeTranslation').map(m => m.headerMessageId), [ID]);
 });
 
+// delete_summary / delete_translation of the SmartBar.
+const S_SMARTBAR_DELETE = 'spec 10 "Operation registry"';
+
+k.test('summary-removed-from-outside', S_SMARTBAR_DELETE, 'removeSummaryPanel takes out the banner and a spinner of this message only, sending nothing back', async () => {
+    await summary();
+    assert.equal(await send(ctx, { command: 'removeSummaryPanel', headerMessageId: OTHER }), false);
+    assert.ok($('#mzta-summary-banner'), 'another message: the banner stays');
+    const removes = sentCommands(ctx, 'removeSummary').length;
+    assert.equal(await send(ctx, { command: 'removeSummaryPanel', headerMessageId: ID }), true);
+    assert.equal($('#mzta-summary-banner'), null);
+    assert.equal(sentCommands(ctx, 'removeSummary').length, removes, 'the background removed it already');
+    await send(ctx, { command: 'showSummaryGenerating', headerMessageId: ID });
+    await send(ctx, { command: 'removeSummaryPanel', headerMessageId: ID });
+    assert.equal($('#mzta-summary-generating'), null);
+});
+
+k.test('translation-removed-from-outside', S_SMARTBAR_DELETE, 'removeTranslationPanel takes out the banner of this message only', async () => {
+    await translation();
+    assert.equal(await send(ctx, { command: 'removeTranslationPanel', headerMessageId: OTHER }), false);
+    assert.ok($('#mzta-translation-banner'));
+    assert.equal(await send(ctx, { command: 'removeTranslationPanel', headerMessageId: ID }), true);
+    assert.equal($('#mzta-translation-banner'), null);
+});
+
 k.test('translation-button-click', S_TRANSLATION, 'the button triggers the translation of this message', async () => {
     await send(ctx, { command: 'showTranslationButton', headerMessageId: ID });
     await ctx.click($('#mzta-toolbar-translation'));
