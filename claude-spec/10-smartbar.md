@@ -104,7 +104,11 @@ classic script (an IIFE): it reads no preference itself.
   ThunderAI's `#mzta-container` (else at the top of the body), so the mail's styles never reach it
   and it never reaches the mail. A host left by a previous injection is replaced. The host id is in
   `MZTA_INJECTED_SELECTORS`, so the body extraction never reads it. It follows
-  `prefers-color-scheme` and is hidden in print. It is static (not sticky).
+  `prefers-color-scheme` and is hidden in print. It is static (not sticky). The open bar is a card
+  set apart from the mail: an 8px margin, rounded corners (10px), a soft shadow (stronger in the
+  dark scheme), a 3px accent stripe on its left border and a background lightly tinted with the
+  accent (`#eef3fa` light, `#1f2733` dark); the compact icon keeps the same side
+  margin, so it lines up with the card.
 - **Compact** mode: an icon at the right, with a dot showing the state of the message (running,
   pending confirmation, error); a click opens the bar, ✕ or Escape closes it. **Expanded** mode:
   the bar is always open, with no ✕.

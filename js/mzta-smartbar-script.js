@@ -78,14 +78,16 @@
     :host { all: initial; display: block; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; }
     @media print { :host { display: none !important; } }
     * { box-sizing: border-box; }
-    .bar { --bg: #f5f5f5; --fg: #333; --line: #ddd; --field: #fff; --accent: #2c5e9b; --dim: #666;
+    .bar { --bg: #eef3fa; --fg: #333; --line: #ddd; --field: #fff; --accent: #2c5e9b; --dim: #666;
            --run: #2c5e9b; --pend: #b26a00; --err: #b3261e; --ok: #1b5e20; --think-bg: #f0f0f0;
+           --shadow: 0 2px 8px rgba(0, 0, 0, .12);
            color: var(--fg); }
     @media (prefers-color-scheme: dark) {
-      .bar { --bg: #1e1e1e; --fg: #ddd; --line: #444; --field: #2a2a2a; --accent: #6db3f2; --dim: #aaa;
-             --run: #6db3f2; --pend: #ffb74d; --err: #ff8a80; --ok: #a5d6a7; --think-bg: #2a2a2a; }
+      .bar { --bg: #1f2733; --fg: #ddd; --line: #444; --field: #2a2a2a; --accent: #6db3f2; --dim: #aaa;
+             --run: #6db3f2; --pend: #ffb74d; --err: #ff8a80; --ok: #a5d6a7; --think-bg: #2a2a2a;
+             --shadow: 0 2px 10px rgba(0, 0, 0, .5); }
     }
-    .compact_row { display: flex; justify-content: flex-end; padding: 2px 4px; }
+    .compact_row { display: flex; justify-content: flex-end; padding: 4px 8px; }
     .icon_btn { position: relative; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
                 border-radius: 14px; width: 28px; height: 28px; cursor: pointer; opacity: .65; font-size: 14px; line-height: 1; padding: 0; }
     .icon_btn:hover, .icon_btn:focus-visible { opacity: 1; }
@@ -93,13 +95,16 @@
     .dot.running { display: block; background: var(--run); }
     .dot.pending_confirmation { display: block; background: var(--pend); }
     .dot.error { display: block; background: var(--err); }
-    .panel { background: var(--bg); border-bottom: 1px solid var(--line); padding: 6px 8px; }
+    /* A card apart from the mail: margin, rounded corners, shadow, an accent stripe on the left,
+       and a background tinted with the accent. */
+    .panel { background: var(--bg); margin: 8px; padding: 8px 10px 6px 12px; border: 1px solid var(--line);
+             border-left: 3px solid var(--accent); border-radius: 10px; box-shadow: var(--shadow); }
     .input_row { display: flex; align-items: flex-start; gap: 6px; position: relative; }
     .input_wrap { flex: 1; position: relative; }
     textarea { width: 100%; resize: none; overflow-y: hidden; font: inherit; color: var(--fg); background: var(--field);
-               border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; line-height: 1.4; min-height: 26px; }
+               border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; line-height: 1.4; min-height: 26px; }
     textarea:focus { outline: none; border-color: var(--accent); }
-    button.act { border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 4px;
+    button.act { border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 6px;
                  padding: 2px 8px; cursor: pointer; font: inherit; min-height: 26px; }
     button.act:hover { border-color: var(--accent); }
     .suggest, .autocomplete-list { position: absolute; left: 0; right: 0; top: 100%; z-index: 10; margin: 2px 0 0; padding: 0;
