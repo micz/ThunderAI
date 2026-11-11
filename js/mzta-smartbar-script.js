@@ -127,6 +127,9 @@
     .line button.st { color: inherit; padding: 0; text-decoration: none; border-radius: 4px; }
     .line.done button.st { color: var(--ok); }
     .line button.st:hover, .line button.st:focus-visible { background: var(--line); }
+    /* A running line that can be stopped: a red square in place of its state symbol. */
+    .line button.st.stop { display: inline-flex; align-items: center; justify-content: center; height: 1.2em; }
+    .stop_square { display: block; width: .7em; height: .7em; background: var(--err); border-radius: 2px; }
     .countdown { color: var(--dim); }
     details.thinking-block { margin: 2px 0 2px 1.8em; background: var(--think-bg); border-radius: 4px; padding: 2px 6px; }
     details.thinking-block summary { cursor: pointer; color: var(--dim); font-style: italic; }
@@ -415,12 +418,18 @@
   }
 
   // A line that can be dismissed (onDismiss) has no button of its own for it: its state symbol is
-  // the button, with "Dismiss" as tooltip.
-  function line(cls, icon, text, extra = [], onDismiss = null) {
-    const label = msg('smartbar_dismiss_line');
-    const st = onDismiss
-      ? el('button', { type: 'button', class: 'st dismiss', text: icon, title: label, 'aria-label': label, onclick: onDismiss })
-      : el('span', { class: 'st', text: icon });
+  // the button, with "Dismiss" as tooltip. A running line that can be stopped (onStop) has a red
+  // square in place of its symbol, with "Stop" as tooltip.
+  function line(cls, icon, text, extra = [], onDismiss = null, onStop = null) {
+    let st;
+    if (onStop) {
+      const label = msg('smartbar_stop');
+      st = el('button', { type: 'button', class: 'st stop', title: label, 'aria-label': label, onclick: onStop },
+        [el('span', { class: 'stop_square' })]);
+    } else if (onDismiss) {
+      const label = msg('smartbar_dismiss_line');
+      st = el('button', { type: 'button', class: 'st dismiss', text: icon, title: label, 'aria-label': label, onclick: onDismiss });
+    } else st = el('span', { class: 'st', text: icon });
     return el('div', { class: 'line ' + cls }, [st, el('span', { class: 'tx', text: text }), ...extra]);
   }
 
@@ -446,8 +455,8 @@
     const ops = record.operations || [];
     const routing = record.state === 'running' && ops.length === 0 && !record.errorType;
     if (routing) {
-      box.appendChild(line('running', STATE_ICON.running, msg('smartbar_routing'),
-        [button(msg('smartbar_stop'), () => send('smartbar_stop', { recordId: record.id }), 'stop')]));
+      box.appendChild(line('running', STATE_ICON.running, msg('smartbar_routing'), [], null,
+        () => send('smartbar_stop', { recordId: record.id })));
       const t = thinkingNode();
       if (t) { t.open = wasOpen; box.appendChild(t); }
       return;
@@ -460,7 +469,8 @@
       if (op.dismissed) continue;
       const extra = [];
       let onDismiss = null;
-      if (op.state === 'running') extra.push(button(msg('smartbar_stop'), () => send('smartbar_stop', { recordId: record.id, index: op.index }), 'stop'));
+      let onStop = null;
+      if (op.state === 'running') onStop = () => send('smartbar_stop', { recordId: record.id, index: op.index });
       else if (op.state === 'done' || op.state === 'cancelled') onDismiss = () => send('smartbar_dismiss', { recordId: record.id, what: op.index });
       else if (op.state === 'pending_confirmation') {
         extra.push(button(msg('smartbar_confirm'), () => send('smartbar_confirm', { recordId: record.id, index: op.index }), 'confirm'));
@@ -468,7 +478,7 @@
       } else if (op.state === 'error') extra.push(...errorButtons(record, op.index, op.errorType, op.retryAt));
       // A draft of the chat: it is delivered from the chat (Create email).
       else if (op.state === 'drafted') extra.push(button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', {}), 'chat'));
-      box.appendChild(line(op.state, STATE_ICON[op.state] || '', opText(op), extra, onDismiss));
+      box.appendChild(line(op.state, STATE_ICON[op.state] || '', opText(op), extra, onDismiss, onStop));
     }
     // A message of the chat answered in free text: the answer is shown in the chat only.
     if (record.hasAnswer && !record.dismissed?.unrecognized) {

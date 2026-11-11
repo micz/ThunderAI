@@ -171,6 +171,10 @@ of its own for it, its state symbol (✓, ℹ, ?, 💬...) is the button, with t
 gone on the next visit; the notice is hidden by the bar only. The bar has no link to the feature
 page (the chat window keeps its "Details").
 
+Stop works the same way on a running line (the routing line and a running operation): no Stop
+on the right of the line, its state symbol is replaced by a red square button, with the tooltip
+"Stop" (`smartbar_stop`). The chat window keeps its own buttons (Stop and ×) on the right.
+
 Every update reaches the bar as `smartbar_update` with an increasing `seq` and its
 `headerMessageId`: an update older than the one drawn, or for another message, is ignored. The
 record sent to the bar never carries the raw answers (`hasRawResponse` instead), nor the text a

@@ -4941,7 +4941,7 @@
   },
   "smartbar_stop": {
     "message": "Stop",
-    "description": "SmartBar (message pane): button stopping an instruction or one of its actions."
+    "description": "SmartBar (message pane): button stopping an instruction or one of its actions; in the bar's result lines, the tooltip of the red square at the start of a running line."
   },
   "smartbar_collapse": {
     "message": "Close the SmartBar",

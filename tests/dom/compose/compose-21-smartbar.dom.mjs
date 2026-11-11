@@ -187,10 +187,18 @@ k.test('suggestions', S_KEYS, 'typing offers the matching past instructions; Esc
 
 // --- result lines -------------------------------------------------------------------------------
 
-k.test('routing', S_LINES, 'while the router works: one routing line with Stop', async () => {
+k.test('routing', S_LINES, 'while the router works: one routing line with Stop, a red square in place of its state symbol with the "Stop" tooltip', async () => {
     await update(record({ state: 'running' }), { running: true });
     assert.deepEqual(lines(), [msg('smartbar_routing')]);
     assert.ok(!hidden($('button.stop')));
+    const line0 = $$('.results .line')[0];
+    const st = line0.firstElementChild;
+    assert.equal(st, button(0, 'stop'), 'Stop is the first element of the line, the state symbol');
+    assert.ok(st.classList.contains('st'));
+    assert.ok(st.querySelector('.stop_square'));
+    assert.equal(st.title, msg('smartbar_stop'));
+    assert.equal(st.getAttribute('aria-label'), msg('smartbar_stop'));
+    assert.equal(line0.querySelectorAll('button').length, 1, 'no Stop on the right of the line');
     await ctx.click(button(0, 'stop'));
     // It names the record: a message of the chat shown in the bar is stopped too.
     assert.deepEqual(lastSent('smartbar_stop'), { command: 'smartbar_stop', headerMessageId: ID, recordId: 1 });
@@ -202,6 +210,7 @@ k.test('operation-lines', S_LINES, 'one line per operation; Stop on a running on
         { index: 1, id: 'translate', state: 'running' },
     ] }), { running: true });
     assert.deepEqual(lines(), [msg('smartbar_result_summary_ready'), msg('smartbar_line_running', [msg('smartbar_op_translate')])]);
+    assert.equal($$('.results .line')[1].firstElementChild, button(1, 'stop'), 'Stop on the left, in place of the state symbol');
     await ctx.click(button(1, 'stop'));
     assert.deepEqual(lastSent('smartbar_stop'), { command: 'smartbar_stop', headerMessageId: ID, recordId: 1, index: 1 });
 });
