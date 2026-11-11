@@ -5,8 +5,8 @@
 //
 // Spec 10 "Bar": a shadow-DOM host after ThunderAI's panels (#mzta-container), nothing when the
 // feature is off or the mode is disabled; compact mode is an icon that opens the bar, expanded mode
-// the bar at once; the state of the message comes from smartbar_get_state at load; "Details" opens
-// the Activity tab of the feature page.
+// the bar at once; the state of the message comes from smartbar_get_state at load; the bar has no
+// link to the feature page.
 // Spec 10 "Keyboard": Enter sends, Shift+Enter is a new line, a key during an IME composition does
 // nothing, no key typed in the bar reaches the page (Thunderbird's single-key shortcuts), ArrowUp in
 // an empty bar recalls the last instruction, Escape closes the compact bar; an instruction carries
@@ -206,6 +206,19 @@ k.test('operation-lines', S_LINES, 'one line per operation; Stop on a running on
     assert.deepEqual(lastSent('smartbar_stop'), { command: 'smartbar_stop', headerMessageId: ID, recordId: 1, index: 1 });
 });
 
+k.test('dismiss-symbol', S_LINES, 'a done line is dismissed from its state symbol, a button with the "Dismiss" tooltip; no × button', async () => {
+    await update(record({ id: 12, operations: [{ index: 0, id: 'summarize', state: 'done' }] }));
+    const line0 = $$('.results .line')[0];
+    const st = line0.querySelector('.st');
+    assert.equal(st.tagName, 'BUTTON');
+    assert.equal(st.textContent, '✔');
+    assert.equal(st.title, msg('smartbar_dismiss_line'));
+    assert.equal(st.getAttribute('aria-label'), msg('smartbar_dismiss_line'));
+    assert.equal(line0.querySelectorAll('button').length, 1, 'the symbol is the only button of the line');
+    await ctx.click(st);
+    assert.deepEqual(lastSent('smartbar_dismiss'), { command: 'smartbar_dismiss', headerMessageId: ID, recordId: 12, what: 0 });
+});
+
 k.test('error-line', S_LINES, 'an operation in error: Retry and Remove name the record and the index', async () => {
     await update(record({ id: 2, state: 'error', operations: [{ index: 0, id: 'tag', state: 'error', error: 'boom', errorType: 'api' }] }));
     assert.deepEqual(lines(), [msg('smartbar_line_error', [msg('smartbar_op_tag'), 'boom'])]);
@@ -315,10 +328,9 @@ k.test('selection-sent', S_KEYS, 'with text selected in the mail, the instructio
     ctx.document.dispatchEvent(new ctx.window.Event('selectionchange'));
 });
 
-k.test('details', S_BAR, '"Details" opens the Activity tab of the feature page', async () => {
-    const before = sentCommands(ctx, 'smartbar_open_page').length;
-    await ctx.click($('a.details'));
-    assert.deepEqual(sentCommands(ctx, 'smartbar_open_page').slice(before), [{ command: 'smartbar_open_page', tab: 'activity' }]);
+k.test('no-details', S_BAR, 'the bar has no Details link', () => {
+    assert.equal($('a.details'), null);
+    assert.equal($('.footer'), null);
 });
 
 k.test('disabled', S_BAR, 'the feature turned off removes the bar', async () => {

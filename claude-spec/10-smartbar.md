@@ -116,7 +116,6 @@ classic script (an IIFE): it reads no preference itself.
   destination (➤ execute or 💬 chat) and the other one; Stop while an instruction runs.
 - A `smartbar_config` message (any change of the four config preferences, sent to every message
   display tab) redraws the bar, or removes it.
-- "Details" opens the Activity tab of the feature page (`smartbar_open_page` with `tab: 'activity'`).
 - `{%…%}` placeholders: the bar loads the prompt editors' autocomplete
   (`js/mzta-placeholders-autocomplete.js`) with a dynamic `import()` when the engine allows it in a
   content script, with the list from `smartbar_placeholders`; without it the bar works the same.
@@ -163,8 +162,12 @@ answer is the line "Answered in the chat." (`hasAnswer`, the text stays in the c
 in chat". Stop (the routing line's and an operation's), Confirm and Cancel name the record
 (`recordId`), so they reach a message of the chat too.
 
-Done and cancelled lines, reports and the unrecognized line can be dismissed (×,
-`smartbar_dismiss`): stored on the record, so they stay gone on the next visit.
+Done and cancelled lines, reports, the unrecognized line (with "Answered in the chat." and
+"Nothing matched") and the "replaced with errors" notice can be dismissed: the line has no button
+of its own for it, its state symbol (✓, ℹ, ?, 💬...) is the button, with the tooltip "Dismiss"
+(`smartbar_dismiss_line`). It sends `smartbar_dismiss`, stored on the record, so the line stays
+gone on the next visit; the notice is hidden by the bar only. The bar has no link to the feature
+page (the chat window keeps its "Details").
 
 Every update reaches the bar as `smartbar_update` with an increasing `seq` and its
 `headerMessageId`: an update older than the one drawn, or for another message, is ignored. The

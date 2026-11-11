@@ -123,12 +123,14 @@
     .line.running .st { color: var(--run); }
     .line.pending_confirmation .st { color: var(--pend); }
     .line button { border: none; background: none; color: var(--accent); cursor: pointer; font: inherit; padding: 0 4px; text-decoration: underline; }
+    /* A line that can be dismissed: its state symbol is the button, with a tooltip. */
+    .line button.st { color: inherit; padding: 0; text-decoration: none; border-radius: 4px; }
+    .line.done button.st { color: var(--ok); }
+    .line button.st:hover, .line button.st:focus-visible { background: var(--line); }
     .countdown { color: var(--dim); }
     details.thinking-block { margin: 2px 0 2px 1.8em; background: var(--think-bg); border-radius: 4px; padding: 2px 6px; }
     details.thinking-block summary { cursor: pointer; color: var(--dim); font-style: italic; }
     .thinking-content { white-space: pre-wrap; color: var(--dim); font-size: 12px; max-height: 10em; overflow-y: auto; }
-    .footer { margin-top: 2px; text-align: right; }
-    .footer a { color: var(--accent); font-size: 11px; cursor: pointer; }
   `;
 
   // ── DOM helpers ─────────────────────────────────────────────────────────────────────────────
@@ -193,10 +195,7 @@
     const inputRow = el('div', { class: 'input_row' }, [inputWrap, sendBtn, altBtn, stopBtn, collapseBtn]);
 
     const results = el('div', { class: 'results', 'aria-live': 'polite' });
-    const details = el('a', { class: 'details', text: msg('smartbar_details'), href: '#' });
-    details.addEventListener('click', (e) => { e.preventDefault(); browser.runtime.sendMessage({ command: 'smartbar_open_page', tab: 'activity' }).catch(() => {}); });
-    const footer = el('div', { class: 'footer' }, [details]);
-    const panel = el('div', { class: 'panel' }, [inputRow, results, footer]);
+    const panel = el('div', { class: 'panel' }, [inputRow, results]);
 
     bar.append(compactRow, panel);
     root.appendChild(bar);
@@ -415,8 +414,14 @@
     return nodes;
   }
 
-  function line(cls, icon, text, extra = []) {
-    return el('div', { class: 'line ' + cls }, [el('span', { class: 'st', text: icon }), el('span', { class: 'tx', text: text }), ...extra]);
+  // A line that can be dismissed (onDismiss) has no button of its own for it: its state symbol is
+  // the button, with "Dismiss" as tooltip.
+  function line(cls, icon, text, extra = [], onDismiss = null) {
+    const label = msg('smartbar_dismiss_line');
+    const st = onDismiss
+      ? el('button', { type: 'button', class: 'st dismiss', text: icon, title: label, 'aria-label': label, onclick: onDismiss })
+      : el('span', { class: 'st', text: icon });
+    return el('div', { class: 'line ' + cls }, [st, el('span', { class: 'tx', text: text }), ...extra]);
   }
 
   function thinkingNode() {
@@ -434,8 +439,8 @@
     box.replaceChildren();
     const record = state?.record;
     if (state?.notice === 'replaced_with_errors' && !noticeHidden) {
-      box.appendChild(line('notice', 'ℹ', msg('smartbar_notice_replaced_errors'),
-        [button('×', () => { noticeHidden = true; renderResults(); }, 'dismiss')]));
+      box.appendChild(line('notice', 'ℹ', msg('smartbar_notice_replaced_errors'), [],
+        () => { noticeHidden = true; renderResults(); }));
     }
     if (!record || record.state === 'replaced') return;
     const ops = record.operations || [];
@@ -454,34 +459,33 @@
     for (const op of ops) {
       if (op.dismissed) continue;
       const extra = [];
+      let onDismiss = null;
       if (op.state === 'running') extra.push(button(msg('smartbar_stop'), () => send('smartbar_stop', { recordId: record.id, index: op.index }), 'stop'));
-      else if (op.state === 'done' || op.state === 'cancelled') extra.push(button('×', () => send('smartbar_dismiss', { recordId: record.id, what: op.index }), 'dismiss'));
+      else if (op.state === 'done' || op.state === 'cancelled') onDismiss = () => send('smartbar_dismiss', { recordId: record.id, what: op.index });
       else if (op.state === 'pending_confirmation') {
         extra.push(button(msg('smartbar_confirm'), () => send('smartbar_confirm', { recordId: record.id, index: op.index }), 'confirm'));
         extra.push(button(msg('smartbar_cancel'), () => send('smartbar_cancel', { recordId: record.id, index: op.index }), 'cancel'));
       } else if (op.state === 'error') extra.push(...errorButtons(record, op.index, op.errorType, op.retryAt));
       // A draft of the chat: it is delivered from the chat (Create email).
       else if (op.state === 'drafted') extra.push(button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', {}), 'chat'));
-      box.appendChild(line(op.state, STATE_ICON[op.state] || '', opText(op), extra));
+      box.appendChild(line(op.state, STATE_ICON[op.state] || '', opText(op), extra, onDismiss));
     }
     // A message of the chat answered in free text: the answer is shown in the chat only.
     if (record.hasAnswer && !record.dismissed?.unrecognized) {
       box.appendChild(line('answered', '💬', msg('smartbar_answered_in_chat'), [
         button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', {}), 'chat'),
-        button('×', () => send('smartbar_dismiss', { recordId: record.id, what: 'unrecognized' }), 'dismiss'),
-      ]));
+      ], () => send('smartbar_dismiss', { recordId: record.id, what: 'unrecognized' })));
     }
     if (!record.dismissed?.reports) {
       for (const report of record.reports || []) {
-        box.appendChild(line('report', 'ℹ', msg('smartbar_report_' + report.kind, [String(report.id || '')]),
-          [button('×', () => send('smartbar_dismiss', { recordId: record.id, what: 'reports' }), 'dismiss')]));
+        box.appendChild(line('report', 'ℹ', msg('smartbar_report_' + report.kind, [String(report.id || '')]), [],
+          () => send('smartbar_dismiss', { recordId: record.id, what: 'reports' })));
       }
     }
     if (record.unrecognized && !record.dismissed?.unrecognized) {
       box.appendChild(line('unrecognized', '?', msg('smartbar_unrecognized', [record.unrecognized]), [
         button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', { text: record.unrecognized, selection: lastSelection }), 'chat'),
-        button('×', () => send('smartbar_dismiss', { recordId: record.id, what: 'unrecognized' }), 'dismiss'),
-      ]));
+      ], () => send('smartbar_dismiss', { recordId: record.id, what: 'unrecognized' })));
     }
     const nothing = !record.errorType && ops.length === 0 && !record.unrecognized && !record.hasAnswer &&
       record.state !== 'running' && record.state !== 'interrupted';
@@ -492,8 +496,7 @@
         : msg('smartbar_no_operations_available'));
       box.appendChild(line('nothing', '?', text, [
         button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', { text: record.instruction, selection: lastSelection }), 'chat'),
-        button('×', () => send('smartbar_dismiss', { recordId: record.id, what: 'unrecognized' }), 'dismiss'),
-      ]));
+      ], () => send('smartbar_dismiss', { recordId: record.id, what: 'unrecognized' })));
     }
     if (record.state === 'interrupted') {
       box.appendChild(line('interrupted', STATE_ICON.cancelled, msg('smartbar_interrupted')));

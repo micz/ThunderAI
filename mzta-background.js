@@ -1504,7 +1504,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     .then(list => list.map(mapPlaceholderToSuggestion).filter(s => s.id !== 'additional_text'))
                     .catch(() => []);
             case 'smartbar_open_page':
-                // The feature page, opened once: the bar's and the chat's Details link (tab
+                // The feature page, opened once: the chat's Details link (tab
                 // 'activity'), the options page's Manage settings (no tab: the page as it is).
                 return _smartbarOpenPage(message.tab ?? null)
                     .catch(e => { taLog.error("SmartBar: the page could not be opened: " + e); return { ok: false }; });

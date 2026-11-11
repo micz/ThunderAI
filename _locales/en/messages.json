@@ -4949,7 +4949,11 @@
   },
   "smartbar_details": {
     "message": "Details",
-    "description": "SmartBar (message pane): link opening the SmartBar settings page."
+    "description": "SmartBar (AI chat window): link opening the Activity tab of the SmartBar settings page."
+  },
+  "smartbar_dismiss_line": {
+    "message": "Dismiss",
+    "description": "SmartBar (message pane): tooltip of the state symbol at the start of a result line; a click hides the line."
   },
   "smartbar_send_execute": {
     "message": "Run the actions",

@@ -20,7 +20,7 @@
  *  The SmartBar page (claude-spec/10-smartbar.md "Feature page"): three tabs, Options (this
  *  file), Actions (id "prompts": mzta-smartbar-prompts.js for the texts) and Activity
  *  (mzta-smartbar-activity.js). The hash of the URL names the tab shown: the background opens
- *  the page once and selects a tab by changing it (smartbar_open_page), the bar's Details link
+ *  the page once and selects a tab by changing it (smartbar_open_page), the chat's Details link
  *  asks for #activity.
  *
  *  The Actions tab has one sub-tab per action (router, execute, chat), not in the hash: the first
