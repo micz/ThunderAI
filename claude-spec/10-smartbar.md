@@ -785,6 +785,17 @@ Left out of this version on purpose:
   nothing); custom prompts are not exposed as operations. No
   calendar event from the clipboard (`prompt_get_calendar_event_from_clipboard` is a menu entry for
   a compose window). The spam check never moves the message to the junk folder, whatever the score.
+- **Message actions**: no operation changes the message itself in Thunderbird: no removal of a tag
+  (`tag` only adds), no read / unread nor flag (`messages.update`), no move to a folder the
+  instruction names (the folder resolved by the add-on, never by the model; the natural first
+  `risk: 'confirm'` operation), no archive, no junk / not junk mark (apart from the spam check, which
+  never moves).
+- **Answers in the bar**: no operation extracts a fact from the email ("the order number", "which
+  dates?"), answers a question about it or lists its action items in the result line; such a
+  question is answered freely only in the chat. Nothing is copied to the clipboard (it would need
+  the output of another line).
+- **Compose window**: the bar lives in the message display only: no proofreading, rewriting (tone,
+  length) or translation of the email being written through it.
 - **Router**: no clarification question back to the user: an unclear instruction ends in
   `unrecognized` or "Nothing matched".
 - **Compose results**: no "Change type" menu to turn a reply into a forward (or the other way)
