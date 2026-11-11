@@ -228,10 +228,17 @@ k.test('dismiss-symbol', S_LINES, 'a done line is dismissed from its state symbo
     assert.deepEqual(lastSent('smartbar_dismiss'), { command: 'smartbar_dismiss', headerMessageId: ID, recordId: 12, what: 0 });
 });
 
-k.test('error-line', S_LINES, 'an operation in error: Retry and Remove name the record and the index', async () => {
+k.test('error-line', S_LINES, 'an operation in error: Retry and Remove are symbols right after the ⚠, with tooltips, and name the record and the index', async () => {
     await update(record({ id: 2, state: 'error', operations: [{ index: 0, id: 'tag', state: 'error', error: 'boom', errorType: 'api' }] }));
     assert.deepEqual(lines(), [msg('smartbar_line_error', [msg('smartbar_op_tag'), 'boom'])]);
     assert.equal(button(0, 'chat'), null);
+    const kids = [...$$('.results .line')[0].children];
+    assert.deepEqual(kids.map(n => n.classList[0] === 'st' ? 'st' : n.classList.contains('retry') ? 'retry' : n.classList.contains('remove') ? 'remove' : n.className),
+        ['st', 'retry', 'remove', 'tx'], 'the ⚠, Retry, Remove, then the text: nothing on the right');
+    assert.equal(button(0, 'retry').title, msg('smartbar_retry'));
+    assert.equal(button(0, 'retry').getAttribute('aria-label'), msg('smartbar_retry'));
+    assert.equal(button(0, 'remove').title, msg('smartbar_remove'));
+    assert.equal(button(0, 'remove').getAttribute('aria-label'), msg('smartbar_remove'));
     await ctx.click(button(0, 'retry'));
     assert.deepEqual(lastSent('smartbar_retry'), { command: 'smartbar_retry', headerMessageId: ID, recordId: 2, index: 0, hasSelection: false, selection: '' });
     await ctx.click(button(0, 'remove'));

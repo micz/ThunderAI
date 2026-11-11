@@ -5188,7 +5188,7 @@
   },
   "smartbar_retry": {
     "message": "Retry",
-    "description": "SmartBar (message pane): button running a failed action again."
+    "description": "SmartBar (message pane): button running a failed action again; in the bar's result lines, the tooltip of the ↻ symbol after the error symbol."
   },
   "smartbar_retry_in": {
     "message": "retrying in $SECONDS$ s",
@@ -5201,7 +5201,7 @@
   },
   "smartbar_remove": {
     "message": "Remove",
-    "description": "SmartBar (message pane): button removing an error line."
+    "description": "SmartBar (message pane): button removing an error line; in the bar's result lines, the tooltip of the ✕ symbol after the error symbol."
   },
   "smartbar_confirm": {
     "message": "Confirm",

@@ -173,7 +173,10 @@ page (the chat window keeps its "Details").
 
 Stop works the same way on a running line (the routing line and a running operation): no Stop
 on the right of the line, its state symbol is replaced by a red square button, with the tooltip
-"Stop" (`smartbar_stop`). The chat window keeps its own buttons (Stop and ×) on the right.
+"Stop" (`smartbar_stop`). An error line (an operation's or the instruction's) has Retry (↻) and
+Remove (✕) as symbol buttons right after its ⚠, before the text, with the tooltips "Retry" and
+"Remove"; the rate-limit countdown and "Open in chat" stay after the text. The chat window keeps
+its own buttons (Stop, ×, Retry, Remove) on the right.
 
 Every update reaches the bar as `smartbar_update` with an increasing `seq` and its
 `headerMessageId`: an update older than the one drawn, or for another message, is ignored. The

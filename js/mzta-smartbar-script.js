@@ -127,6 +127,9 @@
     .line button.st { color: inherit; padding: 0; text-decoration: none; border-radius: 4px; }
     .line.done button.st { color: var(--ok); }
     .line button.st:hover, .line button.st:focus-visible { background: var(--line); }
+    /* Retry and Remove of an error line: symbols after the ⚠, with a tooltip. */
+    .line button.ic { color: var(--fg); padding: 0 2px; text-decoration: none; border-radius: 4px; min-width: 1.2em; }
+    .line button.ic:hover, .line button.ic:focus-visible { background: var(--line); }
     /* A running line that can be stopped: a red square in place of its state symbol. */
     .line button.st.stop { display: inline-flex; align-items: center; justify-content: center; height: 1.2em; }
     .stop_square { display: block; width: .7em; height: .7em; background: var(--err); border-radius: 2px; }
@@ -401,26 +404,38 @@
     return span;
   }
 
+  // A button of a line drawn as a symbol, with its name as tooltip.
+  function iconButton(icon, label, onClick, cls) {
+    const b = el('button', { type: 'button', class: 'ic ' + cls, text: icon, title: label, 'aria-label': label });
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  // The buttons of an error line: Retry and Remove are symbols at the start of the line, right
+  // after the ⚠ (lead); the countdown and "Open in chat" stay after the text (extra).
   function errorButtons(record, index, errorType, retryAt) {
-    const nodes = [];
+    const lead = [
+      iconButton('↻', msg('smartbar_retry'), () => send('smartbar_retry', selectionInfo({ recordId: record.id, index: index })), 'retry'),
+      iconButton('✕', msg('smartbar_remove'), () => send('smartbar_dismiss', { recordId: record.id, what: index ?? 'error' }), 'remove'),
+    ];
+    const extra = [];
     if (errorType === 'rate_limit') {
       const c = countdownNode(record, index, retryAt);
-      if (c) nodes.push(c);
+      if (c) extra.push(c);
     }
-    nodes.push(button(msg('smartbar_retry'), () => send('smartbar_retry', selectionInfo({ recordId: record.id, index: index })), 'retry'));
-    nodes.push(button(msg('smartbar_remove'), () => send('smartbar_dismiss', { recordId: record.id, what: index ?? 'error' }), 'remove'));
     if (errorType === 'json') {
       // The chat opens with the instruction prefilled, not sent; the background attaches the
       // unreadable answer (which the bar never receives) to the next message as context.
-      nodes.push(button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', { fromError: { recordId: record.id, index: index } }), 'chat'));
+      extra.push(button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', { fromError: { recordId: record.id, index: index } }), 'chat'));
     }
-    return nodes;
+    return { lead, extra };
   }
 
   // A line that can be dismissed (onDismiss) has no button of its own for it: its state symbol is
   // the button, with "Dismiss" as tooltip. A running line that can be stopped (onStop) has a red
-  // square in place of its symbol, with "Stop" as tooltip.
-  function line(cls, icon, text, extra = [], onDismiss = null, onStop = null) {
+  // square in place of its symbol, with "Stop" as tooltip. The lead buttons (an error's Retry and
+  // Remove) follow the state symbol, before the text.
+  function line(cls, icon, text, extra = [], onDismiss = null, onStop = null, lead = []) {
     let st;
     if (onStop) {
       const label = msg('smartbar_stop');
@@ -430,7 +445,7 @@
       const label = msg('smartbar_dismiss_line');
       st = el('button', { type: 'button', class: 'st dismiss', text: icon, title: label, 'aria-label': label, onclick: onDismiss });
     } else st = el('span', { class: 'st', text: icon });
-    return el('div', { class: 'line ' + cls }, [st, el('span', { class: 'tx', text: text }), ...extra]);
+    return el('div', { class: 'line ' + cls }, [st, ...lead, el('span', { class: 'tx', text: text }), ...extra]);
   }
 
   function thinkingNode() {
@@ -462,23 +477,29 @@
       return;
     }
     if (record.errorType && !record.dismissed?.error) {
+      const eb = errorButtons(record, null, record.errorType, record.retryAt);
       box.appendChild(line('error', STATE_ICON.error, msg('smartbar_line_router_error', [String(record.error || '')]),
-        errorButtons(record, null, record.errorType, record.retryAt)));
+        eb.extra, null, null, eb.lead));
     }
     for (const op of ops) {
       if (op.dismissed) continue;
       const extra = [];
       let onDismiss = null;
       let onStop = null;
+      let lead = [];
       if (op.state === 'running') onStop = () => send('smartbar_stop', { recordId: record.id, index: op.index });
       else if (op.state === 'done' || op.state === 'cancelled') onDismiss = () => send('smartbar_dismiss', { recordId: record.id, what: op.index });
       else if (op.state === 'pending_confirmation') {
         extra.push(button(msg('smartbar_confirm'), () => send('smartbar_confirm', { recordId: record.id, index: op.index }), 'confirm'));
         extra.push(button(msg('smartbar_cancel'), () => send('smartbar_cancel', { recordId: record.id, index: op.index }), 'cancel'));
-      } else if (op.state === 'error') extra.push(...errorButtons(record, op.index, op.errorType, op.retryAt));
+      } else if (op.state === 'error') {
+        const eb = errorButtons(record, op.index, op.errorType, op.retryAt);
+        extra.push(...eb.extra);
+        lead = eb.lead;
+      }
       // A draft of the chat: it is delivered from the chat (Create email).
       else if (op.state === 'drafted') extra.push(button(msg('smartbar_open_in_chat'), () => send('smartbar_open_chat', {}), 'chat'));
-      box.appendChild(line(op.state, STATE_ICON[op.state] || '', opText(op), extra, onDismiss, onStop));
+      box.appendChild(line(op.state, STATE_ICON[op.state] || '', opText(op), extra, onDismiss, onStop, lead));
     }
     // A message of the chat answered in free text: the answer is shown in the chat only.
     if (record.hasAnswer && !record.dismissed?.unrecognized) {
