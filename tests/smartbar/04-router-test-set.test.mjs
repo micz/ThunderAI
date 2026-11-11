@@ -15,8 +15,8 @@
 //    only in the chat with a draft); refinements are compose of the draft's type, approvals
 //    deliver_draft, a free question nothing at all; deliver_draft runs after a compose of the same
 //    instruction;
-//  - the deletions: delete_summary / delete_translation run before a summarize / translate of the
-//    same instruction (their dependsOn), and "cancella la mail" is none of them; calendar_event /
+//  - the deletions: delete_summary / delete_translation / delete_spam_report run before a
+//    summarize / translate / spam_check of the same instruction (their dependsOn), and "cancella la mail" is none of them; calendar_event /
 //    task run last (runLast).
 // The model's actual answers are not tested here (no model at level 1): the file is also a manual
 // check of a router connection.
@@ -177,8 +177,8 @@ k.test('compose-last', 'in every mixed case the plan runs compose last, whatever
     }
 });
 
-k.test('delete-first', 'a deletion asked with a new summary or translation runs first, whatever the router\'s order', () => {
-    const pairs = [['delete_summary', 'summarize'], ['delete_translation', 'translate']];
+k.test('delete-first', 'a deletion asked with a new summary, translation or spam check runs first, whatever the router\'s order', () => {
+    const pairs = [['delete_summary', 'summarize'], ['delete_translation', 'translate'], ['delete_spam_report', 'spam_check']];
     for (const [del, gen] of pairs) {
         const both = cases.filter(c => [del, gen].every(id => c.expected.operations.some(op => op.id === id)));
         assert.ok(both.length >= 1, del);

@@ -2381,7 +2381,7 @@ const _smartbarThinking = new Map();
 const SMARTBAR_THINKING_THROTTLE_MS = 250;
 // The job kind of each operation, for a Stop of one line (deliver_draft runs no job: it only
 // opens a compose window).
-// delete_summary and delete_translation run no job either (a store removal), and spam_check's
+// delete_summary, delete_translation and delete_spam_report run no job either (a store removal), and spam_check's
 // analysis is the spam filter's own job, which no group holds (as a batch's): a Stop never ends it.
 const SMARTBAR_OPERATION_JOB_KIND = {
     tag: 'add_tags',
@@ -2779,21 +2779,35 @@ const SMARTBAR_DELETE_PANEL = {
         hideCommand: 'removeTranslationPanel',
         restore: (hid) => _restoreTranslationButton(null, hid),
     },
+    // The spam filter's analysis is never invalidated: it is its own job (a batch's may still
+    // have a junk move to make), and it ignores the flag. While one runs, the panel shows its
+    // progress and stays: the report it ends with is a new one, stored and shown as usual.
+    spam_report: {
+        job: null,
+        runningJob: 'spam',
+        load: (hid) => spamReport.loadReportData(hid),
+        remove: (hid) => spamReport.removeReportData(hid),
+        hideCommand: 'removeSpamReportPanel',
+        restore: null,
+    },
 };
 
-// delete_summary / delete_translation: what the panel's delete button does (removeSummary,
-// removeTranslation), for every tab displaying the message: a job still running is invalidated
-// first, so it neither saves nor shows its result; the stored data removed; the panel taken out;
-// the button back where the feature shows one. No model call. Done in every case, result
-// { removed } (false: there was nothing to delete).
+// delete_summary / delete_translation / delete_spam_report: what the panel's delete button does
+// (removeSummary, removeTranslation, removeSpamReport), for every tab displaying the message: a
+// job still running is invalidated first, so it neither saves nor shows its result (not the spam
+// analysis, see SMARTBAR_DELETE_PANEL); the stored data removed; the panel taken out; the button
+// back where the feature shows one. No model call. Done in every case, result { removed } (false:
+// there was nothing to delete).
 async function _smartbarRunDeletePanel(ctx, what) {
     const cfg = SMARTBAR_DELETE_PANEL[what];
     const hid = ctx.message.headerMessageId;
-    const invalidated = taJobRegistry.invalidate(cfg.job, hid);
+    const invalidated = cfg.job ? taJobRegistry.invalidate(cfg.job, hid) : false;
     const stored = await cfg.load(hid);
     if (stored) await cfg.remove(hid);
-    await _sendToTabsDisplaying(hid, { command: cfg.hideCommand, headerMessageId: hid });
-    await cfg.restore(hid);
+    if (!cfg.runningJob || !taJobRegistry.isRunning(cfg.runningJob, hid)) {
+        await _sendToTabsDisplaying(hid, { command: cfg.hideCommand, headerMessageId: hid });
+    }
+    if (cfg.restore) await cfg.restore(hid);
     return { state: 'done', result: { removed: !!stored || invalidated } };
 }
 
@@ -3174,6 +3188,7 @@ const SMARTBAR_EXECUTORS = {
     delete_summary: (ctx) => _smartbarRunDeletePanel(ctx, 'summary'),
     delete_translation: (ctx) => _smartbarRunDeletePanel(ctx, 'translation'),
     spam_check: _smartbarRunSpamCheck,
+    delete_spam_report: (ctx) => _smartbarRunDeletePanel(ctx, 'spam_report'),
     calendar_event: (ctx) => _smartbarRunSparks(ctx, 'calendar_event'),
     task: (ctx) => _smartbarRunSparks(ctx, 'task'),
     compose: _smartbarRunCompose,

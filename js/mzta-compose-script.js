@@ -1472,6 +1472,18 @@ switch (message.command) {
       return Promise.resolve(true);
     }
 
+  case "removeSpamReportPanel": {
+    // The spam report deleted from outside its panel (the SmartBar's delete_spam_report): the
+    // report goes, as the panel's own Delete takes it out. The background sends it only while no
+    // analysis runs on the message, so the badge it removes is the report's, never a progress one.
+    return _mztaDisplayedMsgId.then(docId => {
+      if (!_isForThisMessage(message.headerMessageId, docId)) return false;
+      _removePanel('mzta-spam-report-banner');
+      _removeToolbarItem('mzta-toolbar-spam');
+      return true;
+    });
+  }
+
   case "showSpamReport": {
     _removePanel('mzta-spam-check-progress');
     _removeToolbarItem('mzta-toolbar-spam');

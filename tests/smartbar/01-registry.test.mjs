@@ -1,11 +1,12 @@
 // claude-spec/10-smartbar.md "Operation registry" (js/mzta-smartbar-registry.js):
-//  - ten operations in this version, tag / summarize / translate / delete_summary /
-//    delete_translation / spam_check / calendar_event / task / compose / deliver_draft, each a
+//  - eleven operations in this version, tag / summarize / translate / delete_summary /
+//    delete_translation / spam_check / delete_spam_report / calendar_event / task / compose /
+//    deliver_draft, each a
 //    valid entry (id, description, params schema, requirements, multiple false, risk, dependsOn, run);
-//  - delete_summary / delete_translation need their feature on only (no model call); spam_check its
-//    feature, permission and connection; calendar_event / task their feature and connection, never
-//    Sparks (checked when the line runs), and run last like compose; summarize / translate wait for
-//    a delete of the same instruction;
+//  - delete_summary / delete_translation / delete_spam_report need their feature on only (no model
+//    call, no permission); spam_check its feature, permission and connection; calendar_event / task
+//    their feature and connection, never Sparks (checked when the line runs), and run last like
+//    compose; summarize / translate / spam_check wait for a delete of the same instruction;
 //  - deliver_draft ("Chat", "Drafts"): no params, available only in the chat with a current draft,
 //    waits for a compose of the same instruction and runs after it, wherever the user put it;
 //  - compose ("Compose"): a required type among reply / reply_all / forward / new, no recipient
@@ -49,9 +50,9 @@ function deferred() {
 const tick = () => new Promise(r => setImmediate(r));
 const plan = (ops, ids, routed = ids.map(id => ({ id }))) => R.planOperations(R.createSmartbarRegistry(ops), ids, routed);
 
-const OP_IDS = ['tag', 'summarize', 'translate', 'delete_summary', 'delete_translation', 'spam_check', 'calendar_event', 'task', 'compose', 'deliver_draft'];
+const OP_IDS = ['tag', 'summarize', 'translate', 'delete_summary', 'delete_translation', 'spam_check', 'delete_spam_report', 'calendar_event', 'task', 'compose', 'deliver_draft'];
 
-k.test('default-ops', 'the ten operations of this version, valid, single-instance', () => {
+k.test('default-ops', 'the eleven operations of this version, valid, single-instance', () => {
     assert.deepEqual(reg.all().map(op => op.id), OP_IDS);
     for (const op of R.DEFAULT_OPERATIONS) {
         assert.deepEqual(R.operationProblems(op), [], op.id);
@@ -62,7 +63,7 @@ k.test('default-ops', 'the ten operations of this version, valid, single-instanc
     assert.equal(reg.get('tag').params.tags.type, 'string[]');
     assert.deepEqual(reg.get('summarize').params, {});
     assert.equal(reg.get('translate').params.language.type, 'string');
-    for (const id of ['delete_summary', 'delete_translation', 'spam_check', 'calendar_event', 'task', 'deliver_draft']) {
+    for (const id of ['delete_summary', 'delete_translation', 'spam_check', 'delete_spam_report', 'calendar_event', 'task', 'deliver_draft']) {
         assert.deepEqual(reg.get(id).params, {}, id);
     }
     // The Sparks dialogs open at the end, like a compose window.
@@ -80,7 +81,7 @@ k.test('run-executor', 'an operation runs through the executor of its id', async
     assert.deepEqual(calls, OP_IDS.map(id => [id, { p: id }]));
 });
 
-k.test('new-ops-availability', 'delete_*: the feature on, no connection; spam_check: feature, permission, connection; calendar_event / task: feature and connection, never Sparks', () => {
+k.test('new-ops-availability', 'delete_*: the feature on, no connection nor permission; spam_check: feature, permission, connection; calendar_event / task: feature and connection, never Sparks', () => {
     const ids = env => reg.listAvailable(env).map(op => op.id);
     // Deleting a stored result makes no model call: the feature on is enough.
     const noConnection = { ...ALL_AVAILABLE, usable: { ...ALL_AVAILABLE.usable, summarize: false, translate: false } };
@@ -91,6 +92,11 @@ k.test('new-ops-availability', 'delete_*: the feature on, no connection; spam_ch
     assert.ok(!ids(summaryOff).includes('delete_summary'));
     const translateOff = { ...ALL_AVAILABLE, features: { ...ALL_AVAILABLE.features, translate: false } };
     assert.ok(!ids(translateOff).includes('delete_translation'));
+    // The spam report too: neither the spam filter's connection nor its permissions.
+    const noSpamConnection = { ...ALL_AVAILABLE, usable: { ...ALL_AVAILABLE.usable, spamfilter: false },
+        permissions: { ...ALL_AVAILABLE.permissions, spamfilter: false } };
+    assert.ok(ids(noSpamConnection).includes('delete_spam_report'));
+    assert.ok(!ids({ ...ALL_AVAILABLE, features: { ...ALL_AVAILABLE.features, spamfilter: false } }).includes('delete_spam_report'));
     for (const env of [
         { ...ALL_AVAILABLE, features: { ...ALL_AVAILABLE.features, spamfilter: false } },
         { ...ALL_AVAILABLE, permissions: { ...ALL_AVAILABLE.permissions, spamfilter: false } },
@@ -104,9 +110,9 @@ k.test('new-ops-availability', 'delete_*: the feature on, no connection; spam_ch
     assert.ok(ids({ ...ALL_AVAILABLE, sparks: false }).includes('calendar_event'));
 });
 
-k.test('delete-before-regenerate', 'summarize / translate wait for a delete of the same instruction, whatever the user\'s order', () => {
+k.test('delete-before-regenerate', 'summarize / translate / spam_check wait for a delete of the same instruction, whatever the user\'s order', () => {
     const avail = reg.listAvailable(ALL_AVAILABLE).map(op => op.id);
-    for (const [del, gen] of [['delete_summary', 'summarize'], ['delete_translation', 'translate']]) {
+    for (const [del, gen] of [['delete_summary', 'summarize'], ['delete_translation', 'translate'], ['delete_spam_report', 'spam_check']]) {
         for (const routed of [[{ id: del }, { id: gen }], [{ id: gen }, { id: del }]]) {
             const { lines } = R.planOperations(reg, avail, routed);
             assert.deepEqual(lines.map(l => [l.id, l.dependsOn]), [[del, []], [gen, [0]]], JSON.stringify(routed));

@@ -37,6 +37,7 @@
     delete_summary: 'smartbar_op_delete_summary',
     delete_translation: 'smartbar_op_delete_translation',
     spam_check: 'smartbar_op_spam_check',
+    delete_spam_report: 'smartbar_op_delete_spam_report',
     calendar_event: 'smartbar_op_calendar_event',
     task: 'smartbar_op_task',
     deliver_draft: 'smartbar_op_deliver_draft',
@@ -94,6 +95,9 @@
           // The spam filter's score (0-100) and its verdict against the user's threshold.
           const score = String(op.result?.spamValue ?? '?');
           return msg(op.result?.spam === true ? 'smartbar_result_spam_yes' : 'smartbar_result_spam_no', [score]);
+        }
+        if (op.id === 'delete_spam_report') {
+          return msg(op.result?.removed === false ? 'smartbar_result_spam_report_none' : 'smartbar_result_spam_report_deleted');
         }
         if (op.id === 'calendar_event') return msg('smartbar_result_calendar_event_opened');
         if (op.id === 'task') return msg('smartbar_result_task_opened');

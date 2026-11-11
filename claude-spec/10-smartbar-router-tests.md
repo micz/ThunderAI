@@ -47,7 +47,8 @@ which the test checks on every mixed case.
 summary or translation of the email, never the email: "cancella la mail" is not covered. Asked
 together with a new summary (translation), the deletion runs first whatever the user's order
 (`summarize` / `translate` wait for it: `dependsOn`, checked by the test). `spam_check` checks the
-email with the spam filter. `calendar_event` / `task` read an event or a task from the email and
+email with the spam filter; `delete_spam_report` removes its stored report, never moving the email,
+and a `spam_check` asked with it runs after it (`dependsOn`, also checked). `calendar_event` / `task` read an event or a task from the email and
 open Thunderbird's dialog through ThunderAI Sparks; Sparks is not a requirement (a missing one is
 said by the line when it runs), so they are available here with their feature and connection, and
 they run last like compose (`runLast`, also checked).
@@ -248,6 +249,17 @@ whatever their order (its `dependsOn`, also checked). Without a draft the approv
   {
     "instruction": "check whether this is spam",
     "expected": { "operations": [{ "id": "spam_check", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "cancella il report antispam",
+    "expected": { "operations": [{ "id": "delete_spam_report", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "check for spam again after deleting the spam report",
+    "expected": {
+      "operations": [{ "id": "spam_check", "params": {} }, { "id": "delete_spam_report", "params": {} }],
+      "context": [], "unrecognized": ""
+    }
   },
   {
     "instruction": "aggiungi al calendario",

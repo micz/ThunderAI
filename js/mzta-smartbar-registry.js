@@ -21,8 +21,8 @@
  *
  *  An operation is one entry:
  *    id            stable string ('tag', 'summarize', 'translate', 'delete_summary',
- *                  'delete_translation', 'spam_check', 'calendar_event', 'task', 'compose',
- *                  'deliver_draft')
+ *                  'delete_translation', 'spam_check', 'delete_spam_report', 'calendar_event',
+ *                  'task', 'compose', 'deliver_draft')
  *    description   for the router model: what it does and when to pick it (English)
  *    params        { name: { type: 'string' | 'string[]' | 'boolean', enum?, required?, description } }:
  *                  what the router may pass; a parameter is optional unless `required`
@@ -127,8 +127,25 @@ export const DEFAULT_OPERATIONS = Object.freeze([
         requirements: (env) => !!env?.features?.spamfilter && !!env?.permissions?.spamfilter && !!env?.usable?.spamfilter,
         multiple: false,
         risk: 'direct',
-        dependsOn: () => [],
+        // "Delete the spam report and check again": the deletion first, or it would delete the
+        // new report.
+        dependsOn: (ops, index) => ops.filter(o => o.id === 'delete_spam_report' && o.index !== index).map(o => o.index),
         run: (ctx) => ctx.executors.spam_check(ctx),
+    },
+    {
+        id: 'delete_spam_report',
+        description: 'Delete the stored spam report of the email (it disappears from the message); it never moves ' +
+            'the email. Pick it for "delete the spam report", "remove the spam check", "cancella il report antispam". ' +
+            'Not for "check for spam again": that is "spam_check".',
+        params: {},
+        // No model call and no message moved: the feature on is enough, whatever its connection
+        // and its permissions.
+        requirements: (env) => !!env?.features?.spamfilter,
+        multiple: false,
+        risk: 'direct',
+        // A spam_check of the same instruction waits for this one (its dependsOn).
+        dependsOn: () => [],
+        run: (ctx) => ctx.executors.delete_spam_report(ctx),
     },
     {
         id: 'calendar_event',

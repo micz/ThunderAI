@@ -7,6 +7,9 @@
 //    same instruction, the deletion runs first and the new summary is generated, not the cached one;
 //  - spam_check: the spam filter's analysis (its prompt, the report stored), never moving the
 //    message; the line's result holds the score and the verdict against the threshold;
+//  - delete_spam_report: the stored report removed and its panel taken out (removeSpamReportPanel),
+//    no model call, the message never moved; removed false when there was nothing; asked with a
+//    spam check, the deletion runs first and the new report stays;
 //  - calendar_event / task: ThunderAI Sparks checked first: missing or outdated, the line ends in
 //    error (errorType sparks) saying so, with no model call; present, the feature's special prompt
 //    reads the email and Sparks receives the object the context menu would send (dates normalized,
@@ -160,6 +163,39 @@ k.test('spam-check', 'spam_check: the spam filter\'s analysis, the report stored
     } finally {
         answers.spam = null;
     }
+});
+
+k.test('delete-spam-report', 'delete_spam_report: the stored report removed and its panel taken out, no model call, the message never moved', async () => {
+    route('è spam?', 'spam_check');
+    route('cancella il report antispam', 'delete_spam_report');
+    const h = show(7, 'dsp1@x');
+    const folder = h.folderId;
+    await run('dsp1@x', 'è spam?');
+    assert.ok((await record(ctx, 'dsp1@x'))?.spam, 'a report stored first');
+    const calls = ctx.workers.prompts().length;
+    ctx.m.tabSends.length = 0;
+    await run('dsp1@x', 'cancella il report antispam');
+    assert.equal((await record(ctx, 'dsp1@x'))?.spam, undefined);
+    assert.equal(ctx.workers.prompts().length - calls, 1, 'the router only');
+    assert.ok(ctx.m.sentTo(7, 'removeSpamReportPanel').some(s => s.headerMessageId === 'dsp1@x'));
+    assert.equal(ctx.m.byHeaderId('dsp1@x').folderId, folder, 'not moved');
+    assert.deepEqual((await lines('dsp1@x')).map(o => [o.id, o.state, o.result]), [['delete_spam_report', 'done', { removed: true }]]);
+    // Nothing left: done all the same, removed false.
+    await run('dsp1@x', 'cancella il report antispam');
+    assert.deepEqual((await lines('dsp1@x')).map(o => [o.state, o.result]), [['done', { removed: false }]]);
+});
+
+k.test('delete-then-spam-check', 'delete the spam report and check again: the deletion first, then a new report that stays', async () => {
+    route('è spam?', 'spam_check');
+    route('ricontrolla lo spam dopo aver cancellato il report', 'spam_check', 'delete_spam_report');
+    show(7, 'dsp2@x');
+    await run('dsp2@x', 'è spam?');
+    const count = () => ctx.workers.prompts().filter(p => featureOf(p) === 'spam' && messageOf(p) === 'dsp2@x').length;
+    assert.equal(count(), 1);
+    await run('dsp2@x', 'ricontrolla lo spam dopo aver cancellato il report');
+    assert.equal(count(), 2, 'a new analysis');
+    assert.ok((await record(ctx, 'dsp2@x'))?.spam, 'the new report stored, not deleted after');
+    assert.deepEqual((await lines('dsp2@x')).map(o => [o.id, o.state, o.dependsOn]), [['delete_spam_report', 'done', []], ['spam_check', 'done', [0]]]);
 });
 
 k.test('sparks-missing', 'calendar_event / task without Sparks, or with an outdated one: an error that says so, no model call', async () => {

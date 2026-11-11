@@ -587,6 +587,10 @@ correctly discarded by `_sendIfCurrent()` — the spinner spins forever. So:
   banner and the generating panel and bump the counter, sending nothing back: the result was deleted
   from outside the banner (the SmartBar's `delete_summary` / `delete_translation`, spec 10), which
   then sends the button where the feature shows one.
+- `removeSpamReportPanel` (message-aware, an id is required) takes out the spam badge and its
+  explanation panel, sending nothing back: the report was deleted by the SmartBar's
+  `delete_spam_report`, which sends it only while no spam analysis runs on the message (the badge
+  is then the report's, never the in-progress one).
 - A message change replaces the document, so panels never outlive their message; the one
   surviving document — an already-open tab re-injected on extension reload — gets both
   generating panels removed when the script loads.

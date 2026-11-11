@@ -228,7 +228,7 @@ k.test('translation-delete', S_DELETE, 'Delete in the banner menu removes the ba
     assert.deepEqual(sentCommands(ctx, 'removeTranslation').map(m => m.headerMessageId), [ID]);
 });
 
-// delete_summary / delete_translation of the SmartBar.
+// delete_summary / delete_translation (and below, delete_spam_report) of the SmartBar.
 const S_SMARTBAR_DELETE = 'spec 10 "Operation registry"';
 
 k.test('summary-removed-from-outside', S_SMARTBAR_DELETE, 'removeSummaryPanel takes out the banner and a spinner of this message only, sending nothing back', async () => {
@@ -277,6 +277,16 @@ k.test('spam-delete', S_MODULES, 'Delete in the badge menu removes the badge and
     await ctx.click(menuRow($('#mzta-toolbar-spam'), 'spamfilter_delete'));
     assert.equal($('#mzta-toolbar-spam'), null);
     assert.deepEqual(sentCommands(ctx, 'removeSpamReport').map(m => m.headerMessageId), [ID]);
+});
+
+k.test('spam-removed-from-outside', S_SMARTBAR_DELETE, 'removeSpamReportPanel (delete_spam_report) takes out the badge of this message only, sending nothing back', async () => {
+    await send(ctx, { command: 'showSpamReport', data: { spamValue: 85, SpamThreshold: 70, explanation: 'Phishing', headerMessageId: ID } });
+    assert.equal(await send(ctx, { command: 'removeSpamReportPanel', headerMessageId: OTHER }), false);
+    assert.ok($('#mzta-toolbar-spam'), 'another message: the badge stays');
+    const removes = sentCommands(ctx, 'removeSpamReport').length;
+    assert.equal(await send(ctx, { command: 'removeSpamReportPanel', headerMessageId: ID }), true);
+    assert.equal($('#mzta-toolbar-spam'), null);
+    assert.equal(sentCommands(ctx, 'removeSpamReport').length, removes, 'the background removed it already');
 });
 
 // --- generic panels ----------------------------------------------------------------------------
