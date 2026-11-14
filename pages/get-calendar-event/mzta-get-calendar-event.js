@@ -34,6 +34,7 @@ import {
   makeTokenStateResolver
 } from "../../js/mzta-editor-highlight.js";
 import {
+  getSparksCalendars,
   isAPIKeyValue,
   setTomSelectBorder
 } from "../../js/mzta-utils.js";
@@ -192,7 +193,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(get_calendar_event_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
+    // Last: an older Sparks takes two seconds to not answer.
+    await initPreferredCalendar();
 });
+
+// Not an .option-input: the calendars arrive from Sparks after restoreOptions() has run, and
+// a restored '' would blank the select. A calendar id exists in one profile only, so no policy
+// can set this preference (EXCLUDED_KEYS in js/mzta-managed.js) and no lock applies here.
+async function initPreferredCalendar() {
+    const select = document.getElementById('calendar_preferred_id');
+    const status = document.getElementById('calendar_preferred_status');
+    const [stored, calendars] = await Promise.all([
+        mztaPrefs.getPref('calendar_preferred_id'),
+        getSparksCalendars()
+    ]);
+    if (calendars === null) {
+        status.textContent = browser.i18n.getMessage('calendar_preferred_load_error');
+        return;
+    }
+    const preferred = typeof stored === 'string' ? stored : '';
+    select.add(new Option(browser.i18n.getMessage('calendar_preferred_selected'), ''));
+    for (const calendar of calendars) {
+        // Provider and ID only serve to tell homonyms apart.
+        const homonym = calendars.filter(other => other.name === calendar.name).length > 1;
+        select.add(new Option(homonym ? `${calendar.name} (${calendar.type}; ${calendar.id})` : calendar.name, calendar.id));
+    }
+    if (preferred && !calendars.some(calendar => calendar.id === preferred)) {
+        const unavailable = new Option(browser.i18n.getMessage('calendar_preferred_missing'), preferred);
+        unavailable.disabled = true;
+        select.add(unavailable);
+        status.textContent = browser.i18n.getMessage('calendar_preferred_missing_info');
+    }
+    select.value = preferred;
+    select.disabled = false;
+    select.addEventListener('change', async () => {
+        await mztaPrefs.setPref('calendar_preferred_id', select.value);
+        status.textContent = '';
+    });
+}
 
 
 
