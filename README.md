@@ -187,9 +187,3 @@ _The language status represents the percentage of translated strings in the late
 - <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
 - <a href="https://hosted.weblate.org/engage/thunderai/">Hosted Weblate</a> for managing the localization
 - <a href="https://github.com/micz/Thunderbird-Addon-Options-Manager">Thunderbird Addon Options Manager</a> as the basis for the preference handling
-
-## Default calendar for events (development)
-
-The calendar event settings can choose a default calendar for new events, with
-matching Sparks support; Sparks warns and falls back if that calendar becomes unavailable.
-With no choice, the calendar selected in Thunderbird is used, as before.
