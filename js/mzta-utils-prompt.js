@@ -159,6 +159,35 @@ export const taPromptUtils = {
         return taPromptUtils.appendReminderStatements(fullPrompt, 'calendar', promptTemplate, reminder_enabled, reminder_rules);
     },
 
+    // Whether a calendar prompt asks for categories. The prompt decides, as it does for
+    // attendees: the shipped text, as it is in the user's language, asks for them; an edited
+    // prompt asks by naming the "categories" field or the {%calendar_categories%} placeholder.
+    // promptTemplate is the prompt as saved, NOT the resolved one: a mail mentioning
+    // "categories" must not count.
+    calendarCategoriesAsked(promptTemplate){
+        const text = String(promptTemplate ?? '').trim();
+        const shipped = text !== '' && text === browser.i18n.getMessage('prompt_get_calendar_event_full_text').trim();
+        return shipped || text.includes('"categories"') || placeholdersUtils.hasPlaceholder(text, 'calendar_categories');
+    },
+
+    // Text appended to a calendar prompt that asks for categories without giving the list: added
+    // by code to work in any language, as the reminder's format is. A prompt holding
+    // {%calendar_categories%} says in its own words what to do with them, so nothing is added.
+    getCalendarCategoriesStatement(promptTemplate){
+        const text = String(promptTemplate ?? '');
+        if(!taPromptUtils.calendarCategoriesAsked(text) || placeholdersUtils.hasPlaceholder(text, 'calendar_categories')) return '';
+        return browser.i18n.getMessage('prompt_calendar_categories_format');
+    },
+
+    // Async, unlike the reminder's: the statement holds a placeholder, which preparePrompt()
+    // never saw. args: the msg_text and selection_html of the prompt being finalized.
+    async appendCalendarCategoriesStatement(fullPrompt, promptTemplate, args = {}){
+        const statement = taPromptUtils.getCalendarCategoriesStatement(promptTemplate);
+        if(statement === '') return fullPrompt;
+        const replacements = await placeholdersUtils.getPlaceholdersValues({ ...args, prompt_text: statement });
+        return fullPrompt + " \n" + placeholdersUtils.replacePlaceholders({ text: statement, replacements, use_default_value: true });
+    },
+
     finalizePrompt_get_task(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
         return taPromptUtils.appendReminderStatements(fullPrompt, 'task', promptTemplate, reminder_enabled, reminder_rules);
     },
