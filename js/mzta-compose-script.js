@@ -340,6 +340,129 @@ function createLineJoiner() {
   };
 }
 
+// The top-level nodes of the body from `from` on, joined (createLineJoiner) and as a live range
+// from the first to the last node with text. A walker stops at the first node `stop()` accepts;
+// ThunderAI's own elements are skipped, so they are never in the range.
+function bodyRegion(accept, stop) {
+  const lines = createLineJoiner();
+  let firstNode = null;
+  let lastNode = null;
+  let started = false;
+  for (const node of Array.from(document.body.childNodes)) {
+    if (isInjectedNode(node)) continue; // ThunderAI's own panels and dialogs
+    if (!started) {
+      if (!accept(node)) continue;
+      started = true;
+    }
+    if (stop(node)) break;
+    // The line structure of the top-level flow (createLineJoiner): the old " "
+    // join made a multi-line compose body arrive as a single line, a "\n" join
+    // counted a plain text window's every <br> twice.
+    lines.add(node);
+    if (!firstNode) firstNode = node;
+    if (node.textContent.trim() !== '') lastNode = node;
+  }
+  if (!lastNode) lastNode = firstNode;
+  let range = null;
+  if (firstNode && lastNode) {
+    range = document.createRange();
+    range.setStartBefore(firstNode);
+    range.setEndAfter(lastNode);
+  }
+  return { lines, range };
+}
+
+const hasClass = (node, ...names) => node instanceof Element && names.some(name => node.classList.contains(name));
+
+// The text the user typed: from the top, up to the quoted text of a reply (.moz-cite-prefix),
+// of a forward (.moz-forward-container) or the signature (.moz-signature), which are not typed
+// text. The region of {%mail_typed_text%}, and the target of the SmartBar's changes.
+function typedRegion() {
+  return bodyRegion(() => true, node => hasClass(node, 'moz-cite-prefix', 'moz-forward-container', 'moz-signature'));
+}
+
+// The quoted text: from the quote of a reply or the forwarded content to the end.
+function quotedRegion() {
+  return bodyRegion(node => hasClass(node, 'moz-cite-prefix', 'moz-forward-container'), () => false);
+}
+
+// Whitespace as the SmartBar compares texts: every run (a no-break space included) one space,
+// none at either end.
+function normalizeSpaces(text) {
+  return String(text ?? '').replace(/[\s ]+/g, ' ').trim();
+}
+
+// The text of a live range with the whitespace normalized, and for each of its characters the
+// text node and offset it comes from (null for the space a line break or a block boundary
+// stands for, which has no character of its own). So a passage found in the text is a range of
+// the document.
+function textIndex(range) {
+  const chars = [];
+  const map = [];
+  let lastSpace = true;
+  const push = (ch, node, offset) => {
+    if (/[\s ]/.test(ch)) {
+      if (lastSpace) return;
+      chars.push(' ');
+      map.push(node ? [node, offset] : null);
+      lastSpace = true;
+      return;
+    }
+    chars.push(ch);
+    map.push([node, offset]);
+    lastSpace = false;
+  };
+  const walk = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (!range.intersectsNode(node)) return;
+      const start = node === range.startContainer ? range.startOffset : 0;
+      const end = node === range.endContainer ? range.endOffset : node.data.length;
+      for (let i = start; i < end; i++) push(node.data[i], node, i);
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE || isInjectedNode(node)) return;
+    if (node.nodeName === 'BR' || node.nodeName === 'HR') { push(' ', null, 0); return; }
+    const block = topLevelKind(node) !== 'inline';
+    if (block) push(' ', null, 0);
+    for (const child of Array.from(node.childNodes)) walk(child);
+    if (block) push(' ', null, 0);
+  };
+  // From the common ancestor: the text nodes outside the range are skipped above, and the
+  // elements outside it add only spaces, which collapse.
+  walk(range.commonAncestorContainer);
+  while (chars.length > 0 && chars[chars.length - 1] === ' ') { chars.pop(); map.pop(); }
+  return { text: chars.join(''), map };
+}
+
+// A passage of the region, found by its text (whitespace normalized): { status: 'found', range }
+// when it is there exactly once, else { status: 'not_found' | 'ambiguous' }.
+function findInRegion(region, passage) {
+  const needle = normalizeSpaces(passage);
+  if (!region || needle === '') return { status: 'not_found' };
+  const { text, map } = textIndex(region);
+  const at = text.indexOf(needle);
+  if (at < 0) return { status: 'not_found' };
+  if (text.indexOf(needle, at + 1) >= 0) return { status: 'ambiguous' };
+  // The needle is trimmed: its first and last characters are real ones, never a line break's.
+  const [startNode, startOffset] = map[at];
+  const [endNode, endOffset] = map[at + needle.length - 1];
+  const range = document.createRange();
+  range.setStart(startNode, startOffset);
+  range.setEnd(endNode, endOffset + 1);
+  return { status: 'found', range };
+}
+
+// The live selection when it is not collapsed and lies inside the region: { range, text }, or null.
+function selectionInRegion(region) {
+  const sel = window.getSelection();
+  if (!region || !sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+  const range = sel.getRangeAt(0);
+  if (range.compareBoundaryPoints(Range.START_TO_START, region) < 0 ||
+      range.compareBoundaryPoints(Range.END_TO_END, region) > 0) return null;
+  const text = sel.toString();
+  return text.trim() === '' ? null : { range: range.cloneRange(), text };
+}
+
 // ── Theme colors ────────────────────────────────────────────────────
 function _getThemeColors(spamValue, spamThreshold) {
     const isDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
@@ -768,52 +891,8 @@ switch (message.command) {
   }
 
   case "getOnlyTypedText": {
-    const lines = createLineJoiner();
-    const children = window.document.body.childNodes;
     const selection = window.getSelection();
-
-    let firstNode = null;
-    let lastNode = null;
-
-    for (const node of children) {
-      if (isInjectedNode(node)) continue; // ThunderAI's own panels and dialogs
-      if (node instanceof Element) {
-        if (node.classList.contains('moz-cite-prefix')) { // quoted text in a reply
-          break;
-        }
-        if (node.classList.contains('moz-forward-container')) { // quoted text in a forward
-          break;
-        }
-        if (node.classList.contains('moz-signature')) { // the signature is not typed text
-          break;
-        }
-      }
-      // The line structure of the top-level flow (createLineJoiner): the old " "
-      // join made a multi-line compose body arrive as a single line, a "\n" join
-      // counted a plain text window's every <br> twice.
-      lines.add(node);
-
-      // Track the first and last nodes for range
-      if (!firstNode) {
-        firstNode = node;
-      }
-      if(node.textContent.trim() != '') {
-        lastNode = node;
-      }
-    }
-
-    if(!lastNode) {
-      lastNode = firstNode;
-    }
-
-    // The typed region as a detached range: its markup is read from it directly, so the
-    // html twin no longer depends on the range being put in the live selection. [#978]
-    let range = null;
-    if (firstNode && lastNode) {
-      range = document.createRange();
-      range.setStartBefore(firstNode);
-      range.setEndAfter(lastNode);
-    }
+    const { lines, range } = typedRegion();
 
     // Autoselect only when the user has no meaningful selection: the same case in which the
     // background substitutes selection_text with the typed text (selection_text === '' after
@@ -839,50 +918,75 @@ switch (message.command) {
   }
 
   case "getOnlyQuotedText": {
-    const lines = createLineJoiner();
-    const children = window.document.body.childNodes;
     const selection = window.getSelection();
-  
-    let firstNode = null;
-    let lastNode = null;
-    let foundCitePrefix = false;
-  
-    for (const node of children) {
-      if (isInjectedNode(node)) continue; // ThunderAI's own panels and dialogs
-      if (!foundCitePrefix) {
-        if (node instanceof Element && (node.classList.contains('moz-cite-prefix') || node.classList.contains('moz-forward-container'))) {
-          foundCitePrefix = true;
-        } else {
-          continue;
-        }
-      }
-  
-      // Same line structure as getOnlyTypedText above.
-      lines.add(node);
-
-      if (!firstNode) {
-        firstNode = node;
-      }
-      if (node.textContent.trim() !== '') {
-        lastNode = node;
-      }
-    }
-  
-    if (!lastNode) {
-      lastNode = firstNode;
-    }
-  
-    if (message.do_autoselect && firstNode && lastNode) {
-      const range = document.createRange();
-      range.setStartBefore(firstNode);
-      range.setEndAfter(lastNode);
+    const { lines, range } = quotedRegion();
+    if (message.do_autoselect && range) {
       selection.removeAllRanges();
       selection.addRange(range);
     }
-
     return Promise.resolve(lines.text());
   }
-  
+
+  // The SmartBar chat of a compose window (claude-spec/10-smartbar-compose.md "What the model
+  // sees, at every turn"): the text written, the quoted part and the selection, read again at
+  // every message and by every operation. The selection counts only inside the text written:
+  // the quoted part is never a target.
+  case "smartbarComposeRead": {
+    const typed = typedRegion();
+    const quoted = quotedRegion();
+    return Promise.resolve({
+      typedText: typed.lines.text(),
+      quotedText: quoted.lines.text(),
+      selection: selectionInRegion(typed.range)?.text || '',
+    });
+  }
+
+  // The select operation: the passage the model gave, found exactly once in the text written
+  // (whitespace normalized), becomes the selection. Not found or found more than once, the
+  // selection is not changed.
+  case "smartbarComposeSelect": {
+    const found = findInRegion(typedRegion().range, message.passage);
+    if (found.status === 'found') {
+      if (!document.hasFocus()) window.focus();
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(found.range);
+    }
+    return Promise.resolve({ status: found.status });
+  }
+
+  // Apply of a proposal (claude-spec/10-smartbar-compose.md "Proposals and Apply"): the target is
+  // found again BY ITS TEXT, never by a range kept since the proposal. "all": the text written
+  // must still be the original; "selection": the live selection when it still holds the
+  // original, else the original found exactly once in the text written. Replaced in one editor
+  // command (insertIntoEditor(): one Ctrl+Z takes it back); the quote, the forwarded content and
+  // the signature are outside the range and never touched.
+  case "smartbarComposeReplace": {
+    const typed = typedRegion();
+    const original = normalizeSpaces(message.original);
+    let range = null;
+    let status = 'changed';
+    if (message.scope === 'all') {
+      if (normalizeSpaces(typed.lines.text()) === original) {
+        range = typed.range || startOfBodyRange();
+        status = 'found';
+      }
+    } else {
+      const live = selectionInRegion(typed.range);
+      if (live && original !== '' && normalizeSpaces(live.text) === original) {
+        range = live.range;
+        status = 'found';
+      } else {
+        const found = findInRegion(typed.range, message.original);
+        status = found.status === 'not_found' ? 'changed' : found.status;
+        range = found.range || null;
+      }
+    }
+    if (status !== 'found') return Promise.resolve({ status: status });
+    insertIntoEditor(range, message.isPlainText ? message.text : message.html, message.isPlainText === true);
+    return Promise.resolve({ status: 'applied' });
+  }
+
   
 
   case 'sendAlert':

@@ -4,7 +4,8 @@
 > being written. Implemented so far: the registry (`context`, `exclusive`, the five compose
 > operations), the router (the compose metadata, the reference cases), and the special prompt
 > `prompt_smartbar_compose` with its connection, its prompt module (`js/mzta-smartbar-compose.js`)
-> and its sub-tab of the feature page. The rest does not exist
+> and its sub-tab of the feature page, and the compose script's commands (see "The compose
+> script"). The rest does not exist
 > yet: until it does, [10-smartbar.md](10-smartbar.md) describes the SmartBar as it is, and its
 > "Deferred" section keeps "Compose window" with a pointer here. Once implemented, this file
 > describes the behavior (the status line goes) and the tests follow it.
@@ -232,8 +233,10 @@ shows it:
 **Apply** (`smartbar_compose_apply { recordId, index }`) of a body proposal reads the email again
 and finds the target **by its text**, never by a range kept since the proposal:
 
-- `all`: the typed text must still equal `original` (after the normalization of spec 07);
-- `selection`: `original` must occur **exactly once** in the typed text.
+- `all`: the typed text must still equal `original` (whitespace normalized);
+- `selection`: the live selection when it lies in the typed text and still holds `original` (so a
+  text the user selected where it occurs twice is still found), else `original` must occur
+  **exactly once** in the typed text.
 
 Found: it is replaced in one editor command (one Ctrl+Z takes it back) through the compose script,
 in the window's format (HTML: the picker's `composeResultHTML()` through `sanitizeBlockHtml()`;
@@ -250,8 +253,8 @@ The router does not see the email, so it cannot say which text to select: `selec
 A special command on `smartbar_compose` with the same prompt (the operation `select` and its
 `target`), whose answer is `{"text": ""}`: the passage **exactly** as it is in the typed text.
 
-The add-on looks for it in the typed text (whitespace normalized, through the line projection of
-`js/lib/mzta-html-lines.js`): found **exactly once**, the compose script selects it in the editor
+The add-on looks for it in the typed text (whitespace normalized, see "The compose script"):
+found **exactly once**, the compose script selects it in the editor
 (the editor focused first, as for an insertion) and the line is `done`, "Selected: “first
 words…”"; not found (`errorType` `select_not_found`, "The passage was not found in the email.") or
 found more than once (`select_ambiguous`, "The passage appears more than once in the email.") the
@@ -261,6 +264,28 @@ plain text compose window (the router does not see it).
 An operation of the same instruction that waits for `select` (`dependsOn`) reads the selection when
 it starts: "select the last paragraph and translate it into English" passes nothing from one line
 to the other, the selection in the editor does.
+
+## The compose script
+
+`js/mzta-compose-script.js` (the compose window's classic content script) answers three commands
+of the background:
+
+| Command | Answer |
+|---------|--------|
+| `smartbarComposeRead` | `{ typedText, quotedText, selection }`: the typed text and the quoted part with the line structure of `{%mail_typed_text%}` / `{%mail_quoted_text%}` (spec 03), the selected text, `''` unless the selection lies inside the typed text |
+| `smartbarComposeSelect { passage }` | `{ status: 'found' \| 'not_found' \| 'ambiguous' }`; found, the passage is the selection (the editor focused first) |
+| `smartbarComposeReplace { scope, original, text, html, isPlainText }` | `{ status: 'applied' \| 'changed' \| 'ambiguous' }`; applied, the target was replaced by `html` (`text` in a plain text window) through `insertIntoEditor()`, one editor command |
+
+- **The typed text and the quoted part** are the regions of `getOnlyTypedText` and
+  `getOnlyQuotedText`, shared by them (`typedRegion()`, `quotedRegion()`): the typed text runs from
+  the top (ThunderAI's own elements skipped) to the first `.moz-cite-prefix`,
+  `.moz-forward-container` or `.moz-signature`; the quoted part from the first cite prefix or
+  forward container to the end.
+- **A passage is found by its text** (`findInRegion()`): the live typed text is read as a string
+  with its whitespace normalized (every run, a no-break space included, one space; a `<br>` and a
+  block boundary one space), each character mapped to its text node and offset, so the passage
+  found is a range of the document, across inline elements and paragraphs. It must occur exactly
+  once; never in the quoted part.
 
 ## The free answer
 
