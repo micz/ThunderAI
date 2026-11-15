@@ -455,6 +455,37 @@ k.test('sessions', 'the window resumes the latest session; New conversation star
     await closeChat(chat);
 });
 
+k.test('maps-forgotten', 'New conversation is remembered only until its first record is stored; the newest record is cached only while the chat is open or something runs', async () => {
+    show(7, 'm1@x');
+    const hasOverride = () => ctx.bg.$eval("_smartbarSessionOverride.has('m1@x')");
+    const hasLatest = () => ctx.bg.$eval("_smartbarLatestId.has('m1@x')");
+    let chat = await openChat('m1@x');
+    await fromChat(chat, 'smartbar_chat_send', { text: 'first question' });
+    const fresh = await fromChat(chat, 'smartbar_chat_new_session');
+    assert.equal(hasOverride(), true, 'remembered while no record of the new session exists');
+    await fromChat(chat, 'smartbar_chat_send', { text: 'second question' });
+    assert.equal(hasOverride(), false, 'its first record names it now');
+    assert.equal((await latest('m1@x')).sessionId, fresh.sessionId);
+    // The bar still joins the new session, from the latest record.
+    routes['riassumi'] = json({ operations: [op('summarize')], context: [], unrecognized: '' });
+    await fromBar('m1@x', 'smartbar_run', { instruction: 'riassumi' });
+    await turns();
+    assert.equal((await latest('m1@x')).sessionId, fresh.sessionId);
+    assert.equal(hasLatest(), true, 'cached while the chat is open');
+    await closeChat(chat);
+    assert.equal(hasLatest(), false, 'forgotten once the chat is closed and nothing runs');
+    // A chat record that is the newest one still reaches the bar (the store answers), e.g. its Remove.
+    chat = await openChat('m1@x');
+    await fromChat(chat, 'smartbar_chat_send', { text: 'third question' });
+    const third = await latest('m1@x');
+    await closeChat(chat);
+    assert.equal(hasLatest(), false);
+    const barUpdates = ctx.m.sentTo(7, 'smartbar_update').length;
+    assert.equal((await fromBar('m1@x', 'smartbar_dismiss', { recordId: third.id, what: 'unrecognized' })).ok, true);
+    assert.equal(ctx.m.sentTo(7, 'smartbar_update').at(-1).record.id, third.id, 'the bar shows it, updated');
+    assert.ok(ctx.m.sentTo(7, 'smartbar_update').length > barUpdates);
+});
+
 k.test('raw-context', '"Open in chat" on a json error: the instruction prefilled, the raw answer attached to the next free answer only', async () => {
     show(7, 'j1@x');
     routes['gibberish'] = 'not json at all {RAW-MARK}';

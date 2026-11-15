@@ -55,7 +55,40 @@ async function started(prompt = 'Say hi', llm = 'chatgpt_api') {
 
 const setTimeoutPref = v => ctx.ctl.browser.storage.local.set({ special_command_timeout: v });
 
-k.test('no-worker-before-init', 'the constructor creates no Worker; initWorker() creates exactly one', async () => {
+k.test('abort-listener-removed', 'the abort listener on the caller\'s signal is removed once the prompt settles; an abort still rejects', async (t) => {
+    const controller = new AbortController();
+    const add = t.mock.method(controller.signal, 'addEventListener');
+    const remove = t.mock.method(controller.signal, 'removeEventListener');
+    const run = async (settle) => {
+        const cmd = new mzta_specialCommand({ prompt: 'x', llm: 'chatgpt_api', config: {}, signal: controller.signal });
+        await cmd.initWorker();
+        const w = ctx.workers.last();
+        const p = cmd.sendPrompt();
+        p.catch(() => {});
+        await flush(3);
+        settle(w);
+        await p.catch(() => {});
+    };
+    // Three commands on one signal, as a SmartBar instruction: a success, an error, a success.
+    await run(w => w.deliver(token('ok'), done()));
+    await run(w => w.deliver(error('boom')));
+    await run(w => w.deliver(done()));
+    const listeners = add.mock.calls.filter(c => c.arguments[0] === 'abort').map(c => c.arguments[1]);
+    assert.equal(listeners.length, 3);
+    assert.deepEqual(remove.mock.calls.filter(c => c.arguments[0] === 'abort').map(c => c.arguments[1]), listeners,
+        'each one removed, none left on the signal');
+    // Still listening while it runs: an abort rejects it as before.
+    const cmd = new mzta_specialCommand({ prompt: 'x', llm: 'chatgpt_api', config: {}, signal: controller.signal });
+    await cmd.initWorker();
+    const w = ctx.workers.last();
+    const p = cmd.sendPrompt();
+    await flush(3);
+    controller.abort();
+    await assert.rejects(p, err => err.name === 'AbortError' && err.aborted === true);
+    assert.equal(w.terminated, true);
+});
+
+k.test('no-worker-before-init','the constructor creates no Worker; initWorker() creates exactly one', async () => {
     const before = ctx.workers.created.length;
     const cmd = new mzta_specialCommand({ prompt: 'x', llm: 'ollama_api', config: {} });
     assert.equal(ctx.workers.created.length, before);

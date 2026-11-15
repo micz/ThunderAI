@@ -253,6 +253,10 @@ import { mztaPrefs } from './mzta-prefs.js';
     }
 
     sendPrompt(){
+        // The abort listener on the caller's signal, removed once the prompt settles: the caller
+        // may hand the same signal to several commands (a SmartBar instruction: the router, its
+        // correction attempt, the operations), and each settled one must not stay attached to it.
+        let onAbort = null;
         const promise = new Promise((resolve, reject) => {
             // HTTP status of the last retried failure. Long Retry-After waits can outlast
             // special_command_timeout, so a request still retrying a 429 when the timer
@@ -277,7 +281,7 @@ import { mztaPrefs } from './mzta-prefs.js';
             // replaces the running one): the worker is disposed at once by the finally below,
             // and no late answer is delivered.
             if (this.signal) {
-                const onAbort = () => {
+                onAbort = () => {
                     clearTimer();
                     const err = new Error('[ThunderAI] Special command aborted');
                     err.name = 'AbortError';
@@ -388,7 +392,10 @@ import { mztaPrefs } from './mzta-prefs.js';
         // Always terminate the worker once the prompt settles (success, error or timeout),
         // so workers are not leaked across batch processing. .finally() preserves the
         // resolved value / rejection unchanged.
-        return promise.finally(() => this.dispose());
+        return promise.finally(() => {
+            if (onAbort) this.signal.removeEventListener('abort', onAbort);
+            this.dispose();
+        });
     }
 
     // Terminate the worker and release its reference. Safe to call multiple times.

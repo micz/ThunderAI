@@ -902,6 +902,14 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
     "Reading the answer" in "Add tags: extra prompt statements"). An answer that still does not
     parse is shown whole as the body, with no subject and no status
 - Target language is determined by `translate_lang` pref, falling back to `default_chatgpt_lang`
+- A language asked for explicitly (`buildTranslationPrompt(fullMessage, messageId, targetLang)`: the
+  SmartBar's "translate to German", see [10-smartbar.md](10-smartbar.md)) replaces it: as the value
+  of `{%thunderai_translate_lang%}` when the text holds that placeholder; when it does not (a user
+  text that names its language in plain words), as a last line added after the resolved text,
+  `EXPLICIT_TRANSLATE_LANG_LINE` ("Translate into {LANG}, whatever language the text above
+  names."). Otherwise the model would translate into the text's language while the result is stored
+  with the language asked for, and served from the cache for it. The language goes in on one line
+  (whitespace collapsed) through `failSafePlaceholders()`
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
 - Banner includes refresh (↻) and delete (×) buttons

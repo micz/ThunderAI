@@ -2445,9 +2445,14 @@ const _smartbarChatGroups = new Map();
 // queue: [{ text, selection }] }.
 const _smartbarChats = new Map();
 // The session a message's next instruction joins when the user started a new conversation
-// (in memory: lost at restart, when the latest record's session is resumed instead).
+// (in memory: lost at restart, when the latest record's session is resumed instead). Only until
+// the first record of that session is stored: from then on the latest record names it, and the
+// entry is removed (_smartbarSessionStored()).
 const _smartbarSessionOverride = new Map();
 // The id of the newest record of each message: the bar shows a chat record only when it is it.
+// A cache of what the store answers (_smartbarLatestRecordId()), kept only while a record of the
+// chat can reach the bar: while an instruction runs on the message or its chat is open
+// (_smartbarForgetLatest()).
 const _smartbarLatestId = new Map();
 // Tokens of a free answer are sent to the chat at most every 100 ms.
 const SMARTBAR_CHAT_TOKEN_THROTTLE_MS = 100;
@@ -2579,6 +2584,27 @@ function _smartbarSessionFor(headerMessageId, latest) {
     return _smartbarSessionOverride.get(headerMessageId) || latest?.sessionId || smartbarNewId();
 }
 
+// A record was stored in the session a New conversation started: the latest record names that
+// session now, so the override is no longer needed. A record that could not be stored (its id
+// 'unsaved-...') leaves it, or the next instruction would go back to the previous session.
+function _smartbarSessionStored(headerMessageId, record) {
+    if (typeof record.id !== 'number') return;
+    if (_smartbarSessionOverride.get(headerMessageId) === record.sessionId) _smartbarSessionOverride.delete(headerMessageId);
+}
+
+// The id of the newest record of a message: the cache when it holds it, else the store.
+async function _smartbarLatestRecordId(headerMessageId) {
+    if (_smartbarLatestId.has(headerMessageId)) return _smartbarLatestId.get(headerMessageId);
+    return (await taSmartbarStore.latest(headerMessageId))?.id ?? null;
+}
+
+// The cache entry of a message is dropped once nothing can show a chat record in its bar any
+// more: no instruction of the bar or of the chat runs on it, and its chat is closed.
+function _smartbarForgetLatest(headerMessageId) {
+    if (_smartbarActive.has(headerMessageId) || _smartbarChatGroups.has(headerMessageId) || _smartbarChats.has(headerMessageId)) return;
+    _smartbarLatestId.delete(headerMessageId);
+}
+
 // The state of a message as the bar draws it. The record shown and `running` are read at once,
 // before any wait (_smartbarPushState() numbers the update at that moment); the stored latest
 // record only when neither a record is given nor an instruction runs. `available`: the operations
@@ -2682,7 +2708,7 @@ async function _smartbarPublish(state, extra = {}) {
     }
     if (state.source === 'chat') {
         await _smartbarChatPush(hid, state.record, { clientId: state.clientId ?? null });
-        if (!_smartbarActive.has(hid) && _smartbarLatestId.get(hid) === state.record.id) {
+        if (!_smartbarActive.has(hid) && await _smartbarLatestRecordId(hid) === state.record.id) {
             await _smartbarPushState(hid, state.record, extra, state.barAvailable);
         }
     } else {
@@ -3323,7 +3349,7 @@ async function _smartbarDeliverDraft(headerMessageId, recordId, index, tabId = n
         saved = await _smartbarSave({ ...latest, operations: (latest.operations || []).map(delivered) });
     }
     await _smartbarChatPush(headerMessageId, saved);
-    if (!_smartbarActive.has(headerMessageId) && _smartbarLatestId.get(headerMessageId) === recordId) {
+    if (!_smartbarActive.has(headerMessageId) && await _smartbarLatestRecordId(headerMessageId) === recordId) {
         await _smartbarPushState(headerMessageId, saved);
     }
     return { ok: true, result: { type: op.result.type, recipient: op.result.recipient || '' } };
@@ -3677,9 +3703,11 @@ function _smartbarJobId(state) {
 // Run the job of an instruction in progress, and publish its record when it ends.
 function _smartbarStartJob(state, body) {
     const job = taJobRegistry.start('smartbar', _smartbarJobId(state), body, { groupId: state.groupId });
-    job.promise.then(() => {
+    job.promise.then(async () => {
         _smartbarUnregister(state);
-        if (!state.replaced) return _smartbarPublish(state);
+        if (!state.replaced) await _smartbarPublish(state);
+        // After its last update, which still reads the cache.
+        _smartbarForgetLatest(state.headerMessageId);
     }).catch(e => taLog.error("SmartBar: " + e));
     return job;
 }
@@ -3733,6 +3761,7 @@ async function _smartbarRun({ headerMessageId, tabId, instruction, hasSelection,
         record.id = 'unsaved-' + groupId;
     }
     _smartbarLatestId.set(headerMessageId, record.id);
+    _smartbarSessionStored(headerMessageId, record);
     // The selected text itself is given by the bar (it reads it when the instruction is sent):
     // only the generative operations use it, as the selected_text context.
     const state = {
@@ -3782,6 +3811,7 @@ async function _smartbarChatRun({ headerMessageId, instruction, clientId = null,
         record.id = 'unsaved-' + groupId;
     }
     _smartbarLatestId.set(headerMessageId, record.id);
+    _smartbarSessionStored(headerMessageId, record);
     // An unreadable model answer brought in by "Open in chat": attached to this message only.
     const rawContext = chat.rawContext || '';
     chat.rawContext = null;
@@ -3949,8 +3979,7 @@ async function _smartbarDismiss(headerMessageId, recordId, what) {
         saved = await _smartbarSave(record, { keepState: true });
     }
     const bar = _smartbarActive.get(headerMessageId);
-    const latestId = _smartbarLatestId.get(headerMessageId);
-    const shownInBar = bar ? bar.record.id === recordId : (latestId === undefined || latestId === recordId);
+    const shownInBar = bar ? bar.record.id === recordId : await _smartbarLatestRecordId(headerMessageId) === recordId;
     await _smartbarPushState(headerMessageId, shownInBar ? saved : null);
     await _smartbarChatPush(headerMessageId, saved);
     return true;
@@ -4090,6 +4119,7 @@ function setupSmartbarChatListener() {
             _smartbarChats.delete(hid);
             // A compose window's chat closed: its records go with it, so what still runs stops.
             if (_smartbarIsComposeKey(hid)) _smartbarComposeStopAll(hid);
+            else _smartbarForgetLatest(hid);
         }
     });
     // A compose window closed (sent, saved and closed, discarded): its chat stays open, read-only.

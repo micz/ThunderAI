@@ -163,7 +163,9 @@ The texts of the lines (`opLabel()`, `opText()`, the state icons) are in `js/lib
 classic script the message display loads before the bar and the chat window imports, so a line reads
 the same in both.
 
-A record of the chat (the newest record of the message) is drawn the same way, with two lines of
+A record of the chat (the newest record of the message: `_smartbarLatestRecordId()`, a cache in
+memory, `_smartbarLatestId`, kept only while an instruction runs on the message or its chat is
+open, else the store) is drawn the same way, with two lines of
 its own: a draft (`drafted`) reads "Reply: draft ready in the chat", with "Open in chat"; a free
 answer is the line "Answered in the chat." (`hasAnswer`, the text stays in the chat), with "Open
 in chat". Stop (the routing line's and an operation's), Confirm and Cancel name the record
@@ -259,7 +261,7 @@ The eleven operations of this version:
 |----|--------|------|----------|
 | `tag` | `tags: string[]` | With `tags`: those tags assigned through the add-tags assignment (its exclusions, its rule on creating missing tags), no model call; a tagging running on the message is waited for first, never joined. Without: the Add Tags special command pipeline (a running one joined) | `add_tags` on, its permissions, its connection usable |
 | `summarize` | none | The Summarize pipeline as the panel button runs it (prompt, connection, the summary store, the panel). Waits for a `delete_summary` of the same instruction (`dependsOn`) | `summarize` on, its connection usable |
-| `translate` | `language: string` | The Translate pipeline, into `language` when given (a translation into another language than the stored one is a new call, not the cache; a running translation into another language is waited for, then this one runs). Waits for a `delete_translation` of the same instruction | `translate` on, its connection usable |
+| `translate` | `language: string` | The Translate pipeline, into `language` when given (a translation into another language than the stored one is a new call, not the cache; a running translation into another language is waited for, then this one runs; a user translate text with no `{%thunderai_translate_lang%}` gets the language as a last line, spec 02 "Translate"). Waits for a `delete_translation` of the same instruction | `translate` on, its connection usable |
 | `delete_summary` | none | What the summary banner's Delete does, for every tab displaying the message: a summary job still running invalidated, the stored summary removed, the panel taken out (`removeSummaryPanel` to the content script), the button back where the feature shows one (`_restoreSummaryButton()`). No model call. Always `done`, `result: { removed }` (`false`: "No summary to delete") | `summarize` on (no connection: nothing is generated) |
 | `delete_translation` | none | The same for the translation (`removeTranslationPanel`, `_restoreTranslationButton()`) | `translate` on |
 | `spam_check` | none | The spam filter's analysis as the panel's Refresh runs it (`_generateSpamReportForMessage()`: the allow, block and address book rules, the prompt, the report stored and shown in the panel when `spamfilter_show_msg_panel`), **never** moving the message (no `autoMove`); an analysis running on the message is joined. `result: { spamValue, threshold, spam }`, the line reads "Spam check: probably spam (score 85/100)" or "not spam". Waits for a `delete_spam_report` of the same instruction (`dependsOn`), or it would delete the new report | `spamfilter` on, its permissions, its connection usable |
@@ -603,7 +605,9 @@ Operations without `deliverInChat` (every one but compose) deliver at once, as f
 ### Sessions
 
 The chat shows the latest session of the message: the session of a New conversation started since
-Thunderbird started (`_smartbarSessionOverride`, in memory), else the latest record's. Its last 50
+Thunderbird started (`_smartbarSessionOverride`, in memory, and only until the first record of that
+session is stored: from then on the latest record names it, and the entry is removed), else the
+latest record's. Its last 50
 records are loaded (`sessionRecords()`, the in-progress ones as they are in memory), with a notice
 when the session holds more. The bar uses the same rule, so the bar and the chat of a message share
 the session: a new instruction from the bar after the chat was used continues it, and shows in the

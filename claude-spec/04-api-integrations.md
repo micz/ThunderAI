@@ -1011,6 +1011,9 @@ sent.
   rejects with an error named `AbortError` (`err.aborted = true`). The summary and translation jobs
   pass their registry entry's signal (`taJobRegistry`, spec 01 "In-flight jobs"), so a SmartBar
   Stop or replacement ends their call at once; a job body that sees an abort resolves `cancelled`.
+  The listener `sendPrompt()` adds to the signal is removed once the prompt settles, whatever the
+  outcome: a caller may hand one signal to several commands (a SmartBar instruction), and a
+  settled command must not stay attached to it.
 - **JSON mode:** a caller may pass `jsonMode: true` (the SmartBar router and its compose
   operation, which pass their signal too). It is asked only where
   the provider has a reliable one, and never over a format the user chose: OpenAI Responses

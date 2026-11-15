@@ -1,6 +1,8 @@
 // Spec 02 "Translate: Inline-Only Prompt System" (buildTranslationPrompt(fullMessage, messageId): the
 // prompt_translate_this text, its placeholders resolved by the standard system; the target language
-// is translate_lang, falling back to default_chatgpt_lang), spec 03 "Placeholder Resolution Order",
+// is translate_lang, falling back to default_chatgpt_lang; a language asked for explicitly replaces
+// it in {%thunderai_translate_lang%}, or is added as a last line when the text has no such
+// placeholder), spec 03 "Placeholder Resolution Order",
 // "Who supplies the values" (Translation: msg_text and mail_subject; body_text only when a text
 // body placeholder is in the prompt - that read needs a DOM, so it is tested in
 // tests/dom/compose/compose-09-background-extraction.dom.mjs; the shipped prompt never reaches it,
@@ -28,7 +30,7 @@ const k = caseTests('23-translation-summary');
 const PARTS = { 42: [{ contentType: 'text/plain', content: 'Ciao Bob,\ngrazie.' }] };
 const FULL_MESSAGE = { headers: { subject: ['Riunione di lunedi'] } };
 
-let ctx, u, prompts;
+let ctx, u, prompts, EXPLICIT_TRANSLATE_LANG_LINE, placeholdersUtils;
 
 before(async () => {
     vm.runInThisContext(readFileSync(repoPath('js/lib/mzta-html-lines.js'), 'utf8'), { filename: 'js/lib/mzta-html-lines.js' });
@@ -40,7 +42,8 @@ before(async () => {
             ctl.browser.messages.listInlineTextParts = async (id) => structuredClone(PARTS[id] ?? []);
         },
     });
-    u = (await import(new URL('js/mzta-utils-prompt.js', REPO).href)).taPromptUtils;
+    ({ taPromptUtils: u, EXPLICIT_TRANSLATE_LANG_LINE } = await import(new URL('js/mzta-utils-prompt.js', REPO).href));
+    ({ placeholdersUtils } = await import(new URL('js/mzta-placeholders.js', REPO).href));
     prompts = ctx.prompts;
 });
 
@@ -92,6 +95,24 @@ k.test('translate-custom-placeholder', 'a custom data placeholder in the transla
     await prompts.saveSpecialPromptTexts({ prompt_translate_this: 'To {%thunderai_translate_lang%}. {%thunderai_custom_rules%} subject body status' });
     const { promptText } = await u.buildTranslationPrompt(FULL_MESSAGE, 42);
     assert.equal(promptText, 'To German. Keep the names. Subject: Riunione di lunedi subject body status');
+});
+
+k.test('translate-explicit-placeholder', 'a language asked for explicitly takes the place of {%thunderai_translate_lang%}, with no added line', async () => {
+    await setPrefs({ translate_lang: 'German', _custom_placeholder: [] });
+    await prompts.saveSpecialPromptTexts({ prompt_translate_this: 'To {%thunderai_translate_lang%}: {%mail_html_body%} subject body status' });
+    const { promptText } = await u.buildTranslationPrompt(FULL_MESSAGE, 42, '  French ');
+    assert.equal(promptText, 'To French: Ciao Bob,<br>grazie. subject body status');
+});
+
+k.test('translate-explicit-no-placeholder', 'a user text naming its language in plain words: the language asked for explicitly is added as a last line', async () => {
+    await prompts.saveSpecialPromptTexts({ prompt_translate_this: 'Translate into French: {%mail_html_body%} subject body status' });
+    const { promptText } = await u.buildTranslationPrompt(FULL_MESSAGE, 42, 'German\n{%mail_subject%}');
+    assert.equal(promptText, 'Translate into French: Ciao Bob,<br>grazie. subject body status\n\n'
+        + EXPLICIT_TRANSLATE_LANG_LINE.split('{LANG}').join(placeholdersUtils.failSafePlaceholders('German {%mail_subject%}')));
+    assert.equal(promptText.includes('Riunione di lunedi'), false, 'the language is never read as a placeholder');
+    // No language asked for: the text as the user wrote it, no line.
+    const plain = await u.buildTranslationPrompt(FULL_MESSAGE, 42);
+    assert.equal(plain.promptText, 'Translate into French: Ciao Bob,<br>grazie. subject body status');
 });
 
 // --- getDefaultLang() ---------------------------------------------------------------------------

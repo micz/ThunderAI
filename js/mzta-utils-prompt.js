@@ -46,6 +46,10 @@ export const REMINDER_FEATURES = {
 // on they always get "reply in the same language", never the default language (claude-spec/02-prompts.md).
 export const SAME_LANGUAGE_PROMPT_IDS = ['prompt_rewrite_polite', 'prompt_rewrite_formal', 'prompt_proofread_this'];
 
+// The last line of a translate prompt whose text has no {%thunderai_translate_lang%}, when a
+// language is asked for explicitly (the SmartBar's "translate to German"): buildTranslationPrompt().
+export const EXPLICIT_TRANSLATE_LANG_LINE = 'Translate into {LANG}, whatever language the text above names.';
+
 // A user value closing a statement: a full stop is added unless it already ends with one (or ! ?).
 function endSentence(value) {
     return /[.!?]$/.test(value) ? value : value + ".";
@@ -355,20 +359,31 @@ export const taPromptUtils = {
             msg_text: { html: bodyHtml.html, text: bodyHtml.text },
             mail_subject: mailSubject,
         });
-        if (typeof targetLang === 'string' && targetLang.trim() !== '' &&
-            placeholdersUtils.hasPlaceholder(promptText, 'thunderai_translate_lang')) {
-            finalSubs['thunderai_translate_lang'] = placeholdersUtils.failSafePlaceholders(targetLang.trim());
+        // The language asked for explicitly, on one line, with no placeholder token in it.
+        const explicitLang = typeof targetLang === 'string'
+            ? placeholdersUtils.failSafePlaceholders(targetLang.replace(/\s+/g, ' ').trim())
+            : '';
+        const hasLangPlaceholder = placeholdersUtils.hasPlaceholder(promptText, 'thunderai_translate_lang');
+        if (explicitLang !== '' && hasLangPlaceholder) {
+            finalSubs['thunderai_translate_lang'] = explicitLang;
         }
 
         // Always the default values (all "" for these placeholders), whatever
         // placeholders_use_default_value says: this is a feature prompt with a fixed structure,
         // where a literal token is never useful - with the default empty exclusion list it would
         // send "{%thunderai_translate_exclude_lang%}" to the AI as if it were a language.
-        const fullPrompt = placeholdersUtils.replacePlaceholders({
+        let fullPrompt = placeholdersUtils.replacePlaceholders({
             text: promptText,
             replacements: finalSubs,
             use_default_value: true,
         });
+        // A user text that names its language in plain words, with no {%thunderai_translate_lang%}:
+        // the language asked for explicitly is added as a last line, or the model would translate
+        // into the prompt's language while the result is stored (and served from the cache) as
+        // the one asked for.
+        if (explicitLang !== '' && !hasLangPlaceholder) {
+            fullPrompt += '\n\n' + EXPLICIT_TRANSLATE_LANG_LINE.split('{LANG}').join(explicitLang);
+        }
 
         return { promptText: fullPrompt, promptInfo: prompt };
     },
