@@ -41,7 +41,15 @@
     calendar_event: 'smartbar_op_calendar_event',
     task: 'smartbar_op_task',
     deliver_draft: 'smartbar_op_deliver_draft',
+    // The compose window (claude-spec/10-smartbar-compose.md).
+    rewrite: 'smartbar_op_rewrite',
+    proofread: 'smartbar_op_proofread',
+    translate_text: 'smartbar_op_translate_text',
+    subject: 'smartbar_op_subject',
+    select: 'smartbar_op_select',
   };
+  // The operations of a compose window whose result is a proposal the user applies.
+  const PROPOSAL_OPS = ['rewrite', 'proofread', 'translate_text', 'subject'];
   // The compose operation is named by its message type ("Reply to all"), its params' only field.
   const COMPOSE_LABEL_KEYS = {
     reply: 'smartbar_op_compose_reply',
@@ -75,8 +83,15 @@
       case 'pending_confirmation': return msg('smartbar_line_pending', [label]);
       case 'cancelled': return msg('smartbar_line_cancelled', [label]);
       case 'error': return msg('smartbar_line_error', [label, String(op.error || '')]);
-      case 'drafted': return msg('smartbar_line_drafted', [label]);
+      case 'drafted':
+        if (PROPOSAL_OPS.includes(op.id)) {
+          return msg(op.result?.stale === true ? 'smartbar_line_proposal_stale' : 'smartbar_line_proposal_ready', [label]);
+        }
+        return msg('smartbar_line_drafted', [label]);
       case 'done':
+        // A proposal of a compose window, applied; a passage selected (its first words).
+        if (PROPOSAL_OPS.includes(op.id)) return msg('smartbar_result_applied', [label]);
+        if (op.id === 'select') return msg('smartbar_result_selected', [String(op.result?.passage || '')]);
         if (op.id === 'tag') {
           const tags = op.result?.tags || [];
           let text = tags.length > 0 ? msg('smartbar_result_tags_added', [tags.join(', ')]) : msg('smartbar_result_tags_none');
@@ -109,5 +124,5 @@
     }
   }
 
-  globalThis.mztaSmartbarLines = Object.freeze({ STATE_ICON, opLabel, opText });
+  globalThis.mztaSmartbarLines = Object.freeze({ STATE_ICON, PROPOSAL_OPS, opLabel, opText });
 })();

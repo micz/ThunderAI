@@ -33,6 +33,12 @@
  *  thinking block, never stored), the free answer (through <messages-area>'s one render path), the
  *  drafts (Create email) and the result lines, which read as in the bar
  *  (js/lib/mzta-smartbar-lines.js).
+ *
+ *  On a compose window (?compose=<tabId>, claude-spec/10-smartbar-compose.md) the same channel
+ *  draws the proposals instead of drafts: the proposed text (or subject) with Show differences
+ *  (the change picker), Apply (smartbar_chat_apply, with what the picker composed) and Copy. The
+ *  header names the email being written; once its window is closed
+ *  (smartbar_chat_compose_closed) the input, Apply and Retry are disabled, the turns stay.
  */
 
 // A classic script with no import or export: imported for its effect, it defines
@@ -40,6 +46,7 @@
 import '../js/lib/mzta-smartbar-lines.js';
 import { renderThinkingBlock } from './thinkingBlock.js';
 import { buildStyleSheet } from './sharedStyles.js';
+import { textToBlockHtml } from './diffPicker.js';
 
 const msg = (key, subs) => browser.i18n.getMessage(key, subs) || key;
 
@@ -62,6 +69,7 @@ const TURNS_CSS = `
     .sb-draft-subject { font-weight: 600; margin-bottom: 6px; }
     .sb-draft-body { white-space: pre-wrap; }
     .sb-draft .action-bar { margin-top: 8px; }
+    .sb-proposal.applied { opacity: .75; }
 `;
 
 // The header button and the note above the input live in the page's own document: their rules
@@ -85,6 +93,7 @@ const REFUSALS = {
     not_found: 'smartbar_chat_error_not_found',
     not_chat: 'smartbar_chat_error_closed',
     no_chat: 'smartbar_chat_error_closed',
+    compose_closed: 'smartbar_error_compose_closed',
 };
 
 /** The text of a background error: a known refusal code localized, else the error itself. */
@@ -107,11 +116,14 @@ export function createSmartbarChannel(options) {
 }
 
 class SmartbarChannel {
-    constructor({ messagesArea, messageInput, chatId, headerMessageId }) {
+    constructor({ messagesArea, messageInput, chatId, headerMessageId, compose = null }) {
         this.ma = messagesArea;
         this.mi = messageInput;
         this.chatId = chatId;
         this.headerMessageId = headerMessageId;
+        // The chat of a compose window (its tab id), else null; whether that window is closed.
+        this.compose = compose !== null && compose !== undefined && compose !== '';
+        this.composeClosed = false;
         this.sessionId = null;
         // recordId -> { record, seq, userTurn, turn, body, linesEl, thinkingEl, thinkingText,
         // streamStarted, answerDone }
@@ -186,11 +198,18 @@ class SmartbarChannel {
                 if (message.text) this.mi._setMessageInputValue(message.text);
                 this._showContextNote(message.hasRawContext === true);
                 break;
+            case 'smartbar_chat_compose_closed':
+                if (this.compose) this._composeWindowClosed();
+                break;
         }
     }
 
-    _init({ sessionId, records = [], total = 0, seq = 0 }) {
+    _init({ sessionId, records = [], total = 0, seq = 0, compose = null }) {
         this.sessionId = sessionId ?? null;
+        if (this.compose && compose) {
+            this._setComposeTitle(compose.subject);
+            if (compose.closed === true) this._composeWindowClosed();
+        }
         if (total > records.length) {
             this.ma.appendUserMessage(escapeHtml(msg('smartbar_chat_earlier_hidden', [String(total - records.length)])), 'info');
         }
@@ -231,6 +250,8 @@ class SmartbarChannel {
             } else {
                 this.mi.enableInput(true);
             }
+            // A compose window closed meanwhile: nothing more can be sent.
+            if (this.composeClosed) this._disableInput();
         }
         this._syncNewConversation();
     }
@@ -392,8 +413,8 @@ class SmartbarChannel {
         }
         if (record.errorType && !record.dismissed?.error) {
             box.appendChild(this._line('error', L.STATE_ICON.error, msg('smartbar_line_router_error', [String(record.error || '')]), [
-                record.errorType === 'rate_limit' ? this._countdown(view, null, record.retryAt, false) : null,
-                this._button(msg('smartbar_retry'), () => this._command('smartbar_chat_retry', { recordId: id, index: null }), 'retry'),
+                record.errorType === 'rate_limit' && !this.composeClosed ? this._countdown(view, null, record.retryAt, false) : null,
+                this.composeClosed ? null : this._button(msg('smartbar_retry'), () => this._command('smartbar_chat_retry', { recordId: id, index: null }), 'retry'),
                 this._button(msg('smartbar_remove'), () => this._command('smartbar_chat_dismiss', { recordId: id, what: 'error' }), 'remove'),
             ]));
         }
@@ -405,7 +426,16 @@ class SmartbarChannel {
             if (isDraft) box.appendChild(this._draftBlock(record, op));
             // A draft speaks for itself; once created, its line says the window opened.
             if (isDraft && op.state === 'drafted') continue;
+            // A proposal of a compose window: its text and its actions; once applied, its line
+            // says so. One whose target changed says it, with Retry (on the email as it is now).
+            const isProposal = this.compose && L.PROPOSAL_OPS.includes(op.id) && op.result &&
+                (op.state === 'drafted' || op.state === 'done') && (op.result.subject || op.result.text);
+            if (isProposal) box.appendChild(this._proposalBlock(view, op));
+            if (isProposal && op.state === 'drafted' && op.result.stale !== true) continue;
             const extra = [];
+            if (op.state === 'drafted' && op.result?.stale === true && !this.composeClosed) {
+                extra.push(this._button(msg('smartbar_retry'), () => this._command('smartbar_chat_retry', { recordId: id, index: op.index }), 'retry'));
+            }
             if (op.state === 'running') extra.push(this._button(msg('smartbar_stop'), () => this._command('smartbar_chat_stop', { recordId: id, index: op.index }), 'stop'));
             else if (op.state === 'done' || op.state === 'cancelled') extra.push(this._button('×', () => this._command('smartbar_chat_dismiss', { recordId: id, what: op.index }), 'dismiss'));
             else if (op.state === 'pending_confirmation') {
@@ -413,11 +443,11 @@ class SmartbarChannel {
                 extra.push(this._button(msg('smartbar_cancel'), () => this._command('smartbar_chat_cancel', { recordId: id, index: op.index }), 'cancel'));
             } else if (op.state === 'error') {
                 // "Open in chat" is the bar's: here the user is in the chat already.
-                if (op.errorType === 'rate_limit') {
+                if (op.errorType === 'rate_limit' && !this.composeClosed) {
                     const countdown = this._countdown(view, op.index, op.retryAt, op.autoRetried === true);
                     if (countdown) extra.push(countdown);
                 }
-                extra.push(this._button(msg('smartbar_retry'), () => this._command('smartbar_chat_retry', { recordId: id, index: op.index }), 'retry'));
+                if (!this.composeClosed) extra.push(this._button(msg('smartbar_retry'), () => this._command('smartbar_chat_retry', { recordId: id, index: op.index }), 'retry'));
                 extra.push(this._button(msg('smartbar_remove'), () => this._command('smartbar_chat_dismiss', { recordId: id, what: op.index }), 'remove'));
             }
             box.appendChild(this._line(op.state, L.STATE_ICON[op.state] || '', L.opText(op), extra));
@@ -435,9 +465,13 @@ class SmartbarChannel {
                 [this._button('×', () => this._command('smartbar_chat_dismiss', { recordId: id, what: 'unrecognized' }), 'dismiss')]));
         }
         if (record.state === 'interrupted') box.appendChild(this._line('interrupted', L.STATE_ICON.cancelled, msg('smartbar_interrupted')));
-        // Stopped from outside (the feature turned off; for a turn of the bar, a new instruction).
-        if (record.state === 'replaced') box.appendChild(this._line('cancelled', L.STATE_ICON.cancelled, msg('smartbar_chat_replaced')));
-        if (lines > 0) {
+        // Stopped from outside (the feature turned off; for a turn of the bar, a new instruction;
+        // in a compose window, the window closed).
+        if (record.state === 'replaced') {
+            box.appendChild(this._line('cancelled', L.STATE_ICON.cancelled, msg(this.compose ? 'smartbar_chat_compose_replaced' : 'smartbar_chat_replaced')));
+        }
+        // Details opens the Activity tab, which never lists a compose window's records.
+        if (lines > 0 && !this.compose) {
             box.appendChild(el('div', { class: 'sb-line details' }, [
                 this._button(msg('smartbar_details'), () => browser.runtime.sendMessage({ command: 'smartbar_open_page', tab: 'activity' }).catch(() => {}), 'details'),
             ]));
@@ -475,6 +509,96 @@ class SmartbarChannel {
         return block;
     }
 
+    // A proposal of a compose window (claude-spec/10-smartbar-compose.md "Proposals and Apply"):
+    // the proposed text (what it changes in its label) or subject, and its actions: Show
+    // differences opens the change picker on the original and the proposal (its own "use this
+    // answer" applies too), Apply sends smartbar_chat_apply (with what the picker composed, once
+    // opened), Copy copies the proposal (the picker's result, once opened). Applied, Apply reads
+    // "Applied"; a target changed or the compose window closed, Apply is disabled.
+    _proposalBlock(view, op) {
+        const L = globalThis.mztaSmartbarLines;
+        const record = view.record;
+        const result = op.result;
+        const isSubject = op.id === 'subject';
+        const applied = op.state === 'done';
+        const block = el('div', { class: 'sb-draft sb-proposal' + (applied ? ' applied' : '') });
+        block.dataset.index = String(op.index);
+        if (isSubject) {
+            block.appendChild(el('div', { class: 'sb-draft-label', text: msg('smartbar_chat_subject_label') }));
+            block.appendChild(el('div', { class: 'sb-draft-subject', text: result.subject }));
+        } else {
+            const target = msg(result.scope === 'selection' ? 'smartbar_chat_target_selection' : 'smartbar_chat_target_all');
+            block.appendChild(el('div', { class: 'sb-draft-label', text: msg('smartbar_chat_proposal_label', [L.opLabel(op.id, op.params), target]) }));
+            block.appendChild(el('div', { class: 'sb-draft-body', text: result.text }));
+        }
+        const bar = el('div', { class: 'action-bar' });
+        const status = el('span', { class: 'sb-draft-status' });
+        const picker = () => (view.pickerIndex === op.index ? view.turn._mztaPicker || null : null);
+        const apply = el('button', { type: 'button', class: 'apply_btn mzta-btn-secondary', text: msg(applied ? 'smartbar_chat_applied' : 'smartbar_chat_apply') });
+        apply.disabled = applied || this.composeClosed || result.stale === true;
+        const doApply = async () => {
+            if (applied || this.composeClosed || result.stale === true) return;
+            apply.disabled = true;
+            status.textContent = '';
+            const p = picker();
+            const composed = p && !isSubject ? { text: p.composeResultText(), html: p.composeResultHTML() } : {};
+            const res = await this._command('smartbar_chat_apply', { recordId: record.id, index: op.index, ...composed });
+            if (!res?.ok) {
+                const why = ['changed', 'ambiguous'].includes(res?.status)
+                    ? msg('smartbar_line_proposal_stale', [L.opLabel(op.id, op.params)])
+                    : refusalText(res?.error);
+                status.textContent = msg('smartbar_chat_apply_failed', [why]);
+            }
+        };
+        apply.addEventListener('click', doApply);
+        if (!isSubject) {
+            const diff = el('button', { type: 'button', class: 'diff_btn mzta-btn-secondary', text: msg('btn_show_differences') });
+            diff.disabled = view.pickerIndex === op.index;
+            diff.addEventListener('click', async () => {
+                diff.disabled = true;
+                const granularity = await this.ma._resolveDiffGranularity();
+                view.pickerIndex = op.index;
+                this.ma.appendDiffPicker(textToBlockHtml(result.original || ''), textToBlockHtml(result.text), view.turn, granularity, () => doApply);
+            });
+            bar.appendChild(diff);
+        }
+        bar.appendChild(apply);
+        const copy = el('button', { type: 'button', class: 'copy_btn mzta-btn-secondary', text: msg('apiwebchat_copy') });
+        copy.addEventListener('click', () => {
+            const p = picker();
+            const text = isSubject ? result.subject : (p ? p.composeResultText() : result.text);
+            navigator.clipboard?.writeText(text).catch(() => {});
+        });
+        bar.appendChild(copy);
+        bar.appendChild(status);
+        block.appendChild(bar);
+        return block;
+    }
+
+    // The header of a compose window's chat: the email being written.
+    _setComposeTitle(subject) {
+        const s = String(subject ?? '').trim();
+        this.composeTitle.textContent = s !== '' ? msg('smartbar_chat_compose_title', [s]) : msg('smartbar_chat_compose_title_new');
+        this.composeTitle.hidden = false;
+    }
+
+    // The compose window closed: the note above the input, the input disabled for good, Apply
+    // and Retry disabled (every turn drawn again); the turns, Copy and the picker stay.
+    _composeWindowClosed() {
+        if (this.composeClosed) return;
+        this.composeClosed = true;
+        this.composeClosedNote.hidden = false;
+        this._disableInput();
+        for (const key of [...this.countdowns.keys()]) this._clearCountdown(key);
+        for (const view of this.views.values()) this._renderLines(view);
+    }
+
+    _disableInput() {
+        this.mi.enableInput(false);
+        const textarea = this.mi.shadowRoot?.querySelector('textarea') || this.mi.querySelector?.('textarea');
+        if (textarea) textarea.disabled = true;
+    }
+
     // ── The parts of the page outside the transcript ─────────────────────────────────────────
     _turnsEl() {
         return this.ma.shadowRoot?.querySelector('#messages') || null;
@@ -496,6 +620,17 @@ class SmartbarChannel {
         this.contextNote.hidden = true;
         const input = document.querySelector('message-input');
         input?.parentNode?.insertBefore(this.contextNote, input);
+
+        // A compose window's chat: the email it works on, in the header, and the note shown once
+        // its window is closed.
+        this.composeTitle = el('span', { id: 'smartbarComposeTitle' });
+        this.composeTitle.hidden = true;
+        this.composeClosedNote = el('div', { id: 'smartbarComposeClosedNote', role: 'status', text: msg('smartbar_chat_compose_closed_note') });
+        this.composeClosedNote.hidden = true;
+        if (this.compose) {
+            header?.insertBefore(this.composeTitle, this.newConversationBtn);
+            input?.parentNode?.insertBefore(this.composeClosedNote, input);
+        }
     }
 
     _showContextNote(show) {

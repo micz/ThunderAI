@@ -143,6 +143,8 @@ if (smartbarMode && worker_path) {
         messageInput: messageInput,
         chatId: call_id,
         headerMessageId: urlParams.get('hid') ?? '',
+        // The chat of a compose window (claude-spec/10-smartbar-compose.md): its tab id.
+        compose: urlParams.get('compose'),
     });
 } else if (worker_path) {
     let closed = false;

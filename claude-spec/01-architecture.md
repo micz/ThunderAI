@@ -945,8 +945,12 @@ off, the endpoint check, the header, the startup notice and the zoom are unchang
 `<messages-area>` serve this mode only: `beginCustomBotTurn()` (a model turn the page fills itself:
 result lines, drafts) and `streamInto(turn)` (the free answer streamed into that turn through the
 one render path). The page adds a New conversation button to `#appHeader` and a note above the
-input (adopted sheets, as everywhere in the window). **Without the flag none of this runs**: the
-webchat tests run unchanged.
+input (adopted sheets, as everywhere in the window). With `&compose=<tabId>` as well (the chat of a
+compose window, [10-smartbar-compose.md](10-smartbar-compose.md), `hid` then being
+`compose:<tabId>`) the channel draws proposals with the change picker (`appendDiffPicker()`, its
+result read back for Apply), names the email being written in the header (`#smartbarComposeTitle`)
+and shows `#smartbarComposeClosedNote` above the input once its window is closed. **Without the
+flag none of this runs**: the webchat tests run unchanged.
 
 **URL parameters.** The background opens the window at `api_webchat/index.html?llm=<connection
 type>&call_id=<id>&ph_def_val=<0|1>&prompt_id=<id>&prompt_name=<name>`, each value through **one**

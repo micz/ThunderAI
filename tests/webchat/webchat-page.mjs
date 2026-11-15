@@ -3,7 +3,8 @@
  *
  *  openWebchat() installs the fake Worker for the provider (./fake-worker.mjs), then opens
  *  api_webchat/index.html with the query string the background builds (llm, call_id, prompt_id,
- *  prompt_name, ph_def_val; with `smartbar`, the SmartBar mode: smartbar=1 and hid, and no worker)
+ *  prompt_name, ph_def_val; with `smartbar`, the SmartBar mode: smartbar=1 and hid (and compose,
+ *  the chat of a compose window), and no worker)
  *  and the stored preferences given. It answers the window's
  *  `${llm}_ready_${call_id}` command; any other background command the file expects goes in
  *  `commands`, so a command nobody declared is still a harness violation.
@@ -56,6 +57,8 @@ export async function openWebchat({
     if (prompt_id !== null) query += '&prompt_id=' + encodeURIComponent(prompt_id);
     if (prompt_name !== null) query += '&prompt_name=' + encodeURIComponent(prompt_name);
     if (smartbar) query += '&smartbar=1&hid=' + encodeURIComponent(smartbar.hid);
+    // The chat of a compose window (claude-spec/10-smartbar-compose.md): its tab id.
+    if (smartbar?.compose !== undefined) query += '&compose=' + encodeURIComponent(smartbar.compose);
     const ready = `${llm}_ready_${call_id}`;
     const ctx = await openPage('webchat', {
         query,

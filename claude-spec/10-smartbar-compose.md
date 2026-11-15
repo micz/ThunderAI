@@ -6,8 +6,8 @@
 > `prompt_smartbar_compose` with its connection, its prompt module (`js/mzta-smartbar-compose.js`)
 > and its sub-tab of the feature page, the compose script's commands (see "The compose script"),
 > and the background (see "The background"): opening, messages, operations, Apply, Retry, the
-> compose window closing. Not yet: the chat window's compose mode, the popup entry and the
-> shortcut. The rest does not exist
+> compose window closing, and the chat window's compose mode (see "The window"). Not yet: the
+> popup entry and the shortcut. The rest does not exist
 > yet: until it does, [10-smartbar.md](10-smartbar.md) describes the SmartBar as it is, and its
 > "Deferred" section keeps "Compose window" with a pointer here. Once implemented, this file
 > describes the behavior (the status line goes) and the tests follow it.
@@ -329,6 +329,40 @@ of the background:
   is now.
 - **Dismiss**, **New conversation** (the records dropped; refused while a message is understood or
   answered) and **Stop** as in the chat of a message, in memory.
+
+## The window
+
+`api_webchat/smartbarChat.js` with `compose` (the controller passes the `compose` parameter of the
+URL to the channel):
+
+- **The header**: `#smartbarComposeTitle` after the brand, "Writing: <subject>"
+  (`smartbar_chat_compose_title`), or `smartbar_chat_compose_title_new` with no subject, from
+  `smartbar_chat_init`'s `compose`.
+- **A proposal** (`rewrite`, `proofread`, `translate_text`, `subject`, `drafted` or `done`) is a block
+  (`.sb-draft.sb-proposal`): its label (`smartbar_chat_proposal_label`: the operation and what it
+  changes, `smartbar_chat_target_selection` / `_all`; `smartbar_chat_subject_label` for a subject),
+  the proposed text or subject, and its toolbar:
+  - **Show differences** (`btn_show_differences`, not for a subject): the change picker in a turn of
+    its own (`appendDiffPicker()`, the original and the proposal as block HTML, `textToBlockHtml()`,
+    the user's granularity), owned by the record's turn; its own "use this answer" applies too.
+    Disabled once opened;
+  - **Apply** (`smartbar_chat_apply`): `smartbar_chat_apply { recordId, index }`, plus `text` /
+    `html` (`composeResultText()` / `composeResultHTML()`) once the picker is open. Refused, the
+    block says why (`smartbar_chat_apply_failed`: the target changed, or the background's refusal).
+    Applied, it reads "Applied" (`smartbar_chat_applied`), disabled; a stale proposal or a closed
+    compose window disable it;
+  - **Copy**: the proposal (the picker's result once open), or the subject.
+- **The lines**: a proposal waiting has no line (its block speaks); applied, "<operation>: applied to
+  the email" (`smartbar_result_applied`); stale, "<operation>: the email changed since this proposal,
+  ask again" (`smartbar_line_proposal_stale`) with Retry; a passage selected "Selected: “…”"
+  (`smartbar_result_selected`); the `conflict` report `smartbar_report_conflict`. The labels of the
+  five operations are `smartbar_op_<id>` (`js/lib/mzta-smartbar-lines.js`, its `PROPOSAL_OPS`).
+  A message stopped from outside reads `smartbar_chat_compose_replaced` (the feature turned off, or
+  the compose window closed). No "Details": the Activity tab never lists these records.
+- **The compose window closed** (`smartbar_chat_compose_closed`, or `compose.closed` at the init):
+  `#smartbarComposeClosedNote` above the input (`smartbar_chat_compose_closed_note`), the input
+  disabled for good (also after a message ends), every turn drawn again: Apply disabled, no Retry,
+  no rate-limit countdown; Copy and the picker stay.
 
 ## The free answer
 

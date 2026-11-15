@@ -327,6 +327,33 @@ p {
     flex: 1;
 }
 
+/* The chat of a compose window (claude-spec/10-smartbar-compose.md): the email being written in
+   the header, and the note shown once its window is closed. */
+#smartbarComposeTitle {
+    margin-left: 12px;
+    font-size: .85em;
+    color: var(--ink-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+#smartbarComposeTitle[hidden],
+#smartbarComposeClosedNote[hidden] {
+    display: none;
+}
+
+#smartbarComposeClosedNote {
+    margin: 0 16px;
+    padding: 4px 10px;
+    font-size: .85em;
+    background: var(--warn-bg, var(--info-bg));
+    color: var(--warn-ink, var(--info-ink));
+    border: 1px solid var(--warn-border, var(--info-border));
+    border-radius: var(--r-sm);
+}
+
 #smartbarContextNote button {
     border: none;
     background: none;

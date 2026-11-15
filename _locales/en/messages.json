@@ -5288,6 +5288,15 @@
       }
     }
   },
+  "smartbar_report_conflict": {
+    "message": "Only one change of the text at a time, not done: $ID$",
+    "description": "SmartBar chat of a compose window: the instruction asked for two changes of the text written; only the first one is done. $ID$ is the action left out.",
+    "placeholders": {
+      "id": {
+        "content": "$1"
+      }
+    }
+  },
   "smartbar_notice_replaced_errors": {
     "message": "The previous instruction had errors you did not look at: it was replaced by this one.",
     "description": "SmartBar (message pane): shown when a new instruction replaces one whose results still held errors."
@@ -5320,11 +5329,67 @@
     "message": "Create the email",
     "description": "SmartBar: name of the action that creates the email from the current draft of the chat."
   },
+  "smartbar_op_rewrite": {
+    "message": "Rewrite",
+    "description": "SmartBar chat of a compose window: name of the action that rewrites the text being written."
+  },
+  "smartbar_op_proofread": {
+    "message": "Proofread",
+    "description": "SmartBar chat of a compose window: name of the action that corrects spelling and grammar of the text being written."
+  },
+  "smartbar_op_translate_text": {
+    "message": "Translate",
+    "description": "SmartBar chat of a compose window: name of the action that translates the text being written."
+  },
+  "smartbar_op_subject": {
+    "message": "Subject",
+    "description": "SmartBar chat of a compose window: name of the action that proposes a subject for the email being written."
+  },
+  "smartbar_op_select": {
+    "message": "Select",
+    "description": "SmartBar chat of a compose window: name of the action that selects a passage of the text being written."
+  },
   "smartbar_line_drafted": {
     "message": "$ACTION$: draft ready in the chat",
     "description": "SmartBar: an email written in the chat and not created yet. $ACTION$ is the kind of email (e.g. \"Reply\").",
     "placeholders": {
       "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_line_proposal_ready": {
+    "message": "$ACTION$: proposal ready",
+    "description": "SmartBar chat of a compose window: a change of the email is proposed and not applied yet. $ACTION$ is the action (e.g. \"Rewrite\").",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_line_proposal_stale": {
+    "message": "$ACTION$: the email changed since this proposal, ask again",
+    "description": "SmartBar chat of a compose window: the proposal could not be applied, because the text it changes is no longer in the email as it was. $ACTION$ is the action.",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_result_applied": {
+    "message": "$ACTION$: applied to the email",
+    "description": "SmartBar chat of a compose window: the proposal was written into the email. $ACTION$ is the action.",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_result_selected": {
+    "message": "Selected: “$PASSAGE$…”",
+    "description": "SmartBar chat of a compose window: the passage was selected in the email. $PASSAGE$ is its first words.",
+    "placeholders": {
+      "passage": {
         "content": "$1"
       }
     }
@@ -5425,6 +5490,68 @@
         "content": "$1"
       }
     }
+  },
+  "smartbar_chat_proposal_label": {
+    "message": "$ACTION$: proposal for $TARGET$",
+    "description": "SmartBar chat of a compose window: the label above a proposed text. $ACTION$ is the action (e.g. \"Rewrite\"), $TARGET$ is what it changes (smartbar_chat_target_selection or smartbar_chat_target_all).",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      },
+      "target": {
+        "content": "$2"
+      }
+    }
+  },
+  "smartbar_chat_target_selection": {
+    "message": "the selected text",
+    "description": "SmartBar chat of a compose window: what a proposal changes, used in smartbar_chat_proposal_label."
+  },
+  "smartbar_chat_target_all": {
+    "message": "the whole text",
+    "description": "SmartBar chat of a compose window: what a proposal changes, used in smartbar_chat_proposal_label."
+  },
+  "smartbar_chat_subject_label": {
+    "message": "Proposed subject",
+    "description": "SmartBar chat of a compose window: the label above a proposed subject."
+  },
+  "smartbar_chat_apply": {
+    "message": "Apply",
+    "description": "SmartBar chat of a compose window: the button that writes a proposal into the email."
+  },
+  "smartbar_chat_applied": {
+    "message": "Applied",
+    "description": "SmartBar chat of a compose window: shown in place of the Apply button once the proposal is in the email."
+  },
+  "smartbar_chat_apply_failed": {
+    "message": "Not applied: $ERROR$",
+    "description": "SmartBar chat of a compose window: the proposal could not be written into the email. $ERROR$ says why.",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_chat_compose_title": {
+    "message": "Writing: $SUBJECT$",
+    "description": "SmartBar chat of a compose window: the header names the email being written. $SUBJECT$ is its subject.",
+    "placeholders": {
+      "subject": {
+        "content": "$1"
+      }
+    }
+  },
+  "smartbar_chat_compose_title_new": {
+    "message": "Writing a new email",
+    "description": "SmartBar chat of a compose window: the header, while the email being written has no subject."
+  },
+  "smartbar_chat_compose_closed_note": {
+    "message": "The email window was closed: the conversation stays readable, nothing more can be sent to it.",
+    "description": "SmartBar chat of a compose window: the note above the input, disabled, once the compose window is closed."
+  },
+  "smartbar_chat_compose_replaced": {
+    "message": "Stopped: the SmartBar was turned off, or the email window was closed.",
+    "description": "SmartBar chat of a compose window: a message stopped from outside."
   },
   "smartbar_chat_replaced": {
     "message": "Stopped: the SmartBar was turned off, or a new instruction from the bar replaced it.",
