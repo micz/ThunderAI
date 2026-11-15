@@ -99,4 +99,5 @@ For detailed documentation see [`claude-spec/`](claude-spec/):
 - [09-ai-processing.md](claude-spec/09-ai-processing.md) — Async companion hook contract and lifecycle
 - [10-smartbar.md](claude-spec/10-smartbar.md) — SmartBar: the bar, operation registry, router, chat, jobs, records, feature page (Options / Prompts / Activity), badge
   - [10-smartbar-router-tests.md](claude-spec/10-smartbar-router-tests.md) — reference instructions of the router, checked against the registry
+  - [10-smartbar-compose.md](claude-spec/10-smartbar-compose.md) — design (not implemented yet): the SmartBar chat on a compose window, its operations and proposals
 - [99-thunderbird-team-spec.md](claude-spec/99-thunderbird-team-spec.md) — Thunderbird WebExtensions development guidelines (API usage, experiments, review requirements)

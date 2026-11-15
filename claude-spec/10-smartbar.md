@@ -795,7 +795,9 @@ Left out of this version on purpose:
   question is answered freely only in the chat. Nothing is copied to the clipboard (it would need
   the output of another line).
 - **Compose window**: the bar lives in the message display only: no proofreading, rewriting (tone,
-  length) or translation of the email being written through it.
+  length) or translation of the email being written through it. The agreed design (the chat only,
+  on the compose window, with the compose operations of a single router) is in
+  [10-smartbar-compose.md](10-smartbar-compose.md), not implemented yet.
 - **Router**: no clarification question back to the user: an unclear instruction ends in
   `unrecognized` or "Nothing matched".
 - **Compose results**: no "Change type" menu to turn a reply into a forward (or the other way)
