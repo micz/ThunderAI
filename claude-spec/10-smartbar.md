@@ -185,6 +185,12 @@ its own buttons (Stop, ×, Retry, Remove) on the right.
 
 Every update reaches the bar as `smartbar_update` with an increasing `seq` and its
 `headerMessageId`: an update older than the one drawn, or for another message, is ignored. The
+`seq` is taken together with the state it carries (the record shown and `running` are read
+before any wait, `_smartbarPushState()`), never after the reads that follow: the lines of an
+instruction publish without waiting for one another, and an update built from an older state must
+never carry a higher `seq` than a newer one (the bar would end on it, e.g. still "running" once the
+instruction is over). The operations available ("Nothing matched") are read once per instruction
+(`state.barAvailable`), not at every change of its lines. The
 record sent to the bar never carries the raw answers (`hasRawResponse` instead), nor the text a
 compose line generated (its result keeps `type` and `recipient` only), nor the chat's `answer`
 (`hasAnswer` instead) and `draft`.
@@ -210,7 +216,10 @@ displays that message (`not_displayed` otherwise).
 
 The other commands: `smartbar_stop` (the whole instruction, or one operation by `index`),
 `smartbar_retry` (the router of a failed instruction: a new instruction with the same text; or one
-failed operation: that line alone, run again in a new group; a compose line whose window could not
+failed operation: that line alone, run again in a new group, with its stored parameters checked
+again by `validateParams()` (a line kept in error for its parameters, `errorType` `params`, stores
+them as the router gave them: when they still do not pass, the line is not run and the command
+answers `{ ok: false, error: 'params' }`); a compose line whose window could not
 open is opened again with its stored text, see "Compose"), `smartbar_confirm` /
 `smartbar_cancel` (an operation waiting), `smartbar_dismiss`, `smartbar_open_chat`.
 
@@ -248,9 +257,9 @@ The eleven operations of this version:
 
 | id | params | Runs | Requires |
 |----|--------|------|----------|
-| `tag` | `tags: string[]` | With `tags`: those tags assigned through the add-tags assignment (its exclusions, its rule on creating missing tags), no model call. Without: the Add Tags special command pipeline | `add_tags` on, its permissions, its connection usable |
+| `tag` | `tags: string[]` | With `tags`: those tags assigned through the add-tags assignment (its exclusions, its rule on creating missing tags), no model call; a tagging running on the message is waited for first, never joined. Without: the Add Tags special command pipeline (a running one joined) | `add_tags` on, its permissions, its connection usable |
 | `summarize` | none | The Summarize pipeline as the panel button runs it (prompt, connection, the summary store, the panel). Waits for a `delete_summary` of the same instruction (`dependsOn`) | `summarize` on, its connection usable |
-| `translate` | `language: string` | The Translate pipeline, into `language` when given (a translation into another language than the stored one is a new call, not the cache). Waits for a `delete_translation` of the same instruction | `translate` on, its connection usable |
+| `translate` | `language: string` | The Translate pipeline, into `language` when given (a translation into another language than the stored one is a new call, not the cache; a running translation into another language is waited for, then this one runs). Waits for a `delete_translation` of the same instruction | `translate` on, its connection usable |
 | `delete_summary` | none | What the summary banner's Delete does, for every tab displaying the message: a summary job still running invalidated, the stored summary removed, the panel taken out (`removeSummaryPanel` to the content script), the button back where the feature shows one (`_restoreSummaryButton()`). No model call. Always `done`, `result: { removed }` (`false`: "No summary to delete") | `summarize` on (no connection: nothing is generated) |
 | `delete_translation` | none | The same for the translation (`removeTranslationPanel`, `_restoreTranslationButton()`) | `translate` on |
 | `spam_check` | none | The spam filter's analysis as the panel's Refresh runs it (`_generateSpamReportForMessage()`: the allow, block and address book rules, the prompt, the report stored and shown in the panel when `spamfilter_show_msg_panel`), **never** moving the message (no `autoMove`); an analysis running on the message is joined. `result: { spamValue, threshold, spam }`, the line reads "Spam check: probably spam (score 85/100)" or "not spam". Waits for a `delete_spam_report` of the same instruction (`dependsOn`), or it would delete the new report | `spamfilter` on, its permissions, its connection usable |
@@ -614,12 +623,20 @@ One instruction is one group of jobs in `taJobRegistry` (spec 01 "In-flight jobs
 own `spam` job, which carries no group, as a batch's: a Stop of the line or of the instruction never
 ends that analysis, and the line ends with it.
 The router job of the bar is keyed on the message, the one of a
-message of the chat on its group (several run at once). Each entry has an `AbortController`;
+message of the chat on its group (several run at once). The jobs of the kinds only the SmartBar
+starts (`smartbar_compose`, `smartbar_calendar_event`, `smartbar_task`) are keyed on the message
+and the group (`<headerMessageId>|<groupId>`): two instructions on the same message (the bar and
+the chat, two messages of the chat) each keep their own entry, so the Stop of either finds it. Each entry has an `AbortController`;
 `taJobRegistry.abortGroup(groupId)` invalidates then aborts every entry of the group. So:
 
 - an operation that finds a job of its kind already running on the message (the automatic
   processing of incoming mail, the context menu, the panel button) **joins** it, as the other
-  callers do;
+  callers do; but not when it asks for another result than that job gives: a `translate` with a
+  `language` joins only a translation into that language (the job records its language,
+  `entry.lang`), and a `tag` with `tags` never joins (the running job chooses its own tags). Those
+  two **wait** for the running job to end, then run (`_waitJobOrAbort()`: a Stop of the
+  instruction ends the wait, the line ends `cancelled`; while it waits it has no job of its own,
+  so a Stop of that line alone finds nothing to stop);
 - the jobs of a batch carry no group: a SmartBar Stop or replacement **never** stops them;
 - Stop of one operation aborts that operation's job only if it belongs to the instruction's group;
 - the working status counts the router and every operation.
@@ -766,6 +783,11 @@ One record per instruction in the `smartbar` object store of the per-message dat
   `pending_confirmation` or a final state, a `retryAt` set, the instruction replaced or dismissed.
   Progress and reasoning are never stored. A save on a record removed meanwhile does not put it
   back.
+- The record of an instruction in progress is the one its state holds, changed in place; a save
+  (`_smartbarSaveState()`) finishes it in memory first (state derived, raw answers capped) and
+  writes a copy, and **never** puts that copy back over it once written: a change made while the
+  copy was being written (another line ending, a Remove, a Create email on a draft of the same
+  record) stays, in memory and in the next save.
 - At startup every record still `running` becomes `interrupted`, its unfinished operations
   `cancelled` (`taSmartbarStore.markInterrupted()`).
 - **Retention**: the cleanup applies to the store the three rules of the other types:

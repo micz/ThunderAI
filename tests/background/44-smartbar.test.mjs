@@ -23,7 +23,12 @@
 //    signature the instruction asked for; done once the window is open, the recipient kept as a
 //    reminder; compose runs after the other operations; a json error keeps the raw answer and
 //    opens no window; a stopped generation opens no window; a window that could not open is
-//    opened again by Retry without a new generation.
+//    opened again by Retry without a new generation; the compose job is keyed on the message and
+//    the instruction's group, so the Stop of its line finds it beside another instruction's;
+//  - Retry of a line checks its stored parameters again: a line kept in error for them is not run;
+//  - "Jobs": a translation into a language asked for explicitly waits for a running translation
+//    into another language (a plain translate joins it), and a Stop of the instruction ends the
+//    wait; named tags wait for a running tagging, never joining it.
 // The record itself and the router's pure parts are the smartbar area's (tests/smartbar/).
 // splitQuotedHtml() (DOMParser) is the compose area's: here a stand-in reads the model's
 // text/plain twin, and records what it was given.
@@ -522,6 +527,125 @@ k.test('compose-window-retry', 'a window that could not open: error compose_wind
     assert.equal(again.state, 'done');
     assert.equal(composePrompts.length, generated, 'no new generation');
     assert.equal(insertsTo(ctx.m.replies.at(-1).tabId)[0].text, '<!--sanitized--><p>Kept text.</p>');
+});
+
+k.test('compose-job-per-group', 'the compose job is keyed on the message and the instruction\'s group: the Stop of the line finds it', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    composeRoute('reply, held', 'reply');
+    show(7, 'c11@x');
+    const hold = holding();
+    ctx.workers.respond = (w, prompt) => (String(prompt).includes(COMPOSE_MARK) ? hold.respond(w, prompt) : answering(respondAll)(w, prompt));
+    // Another instruction's compose on the same message (the chat's), still running: never in the way.
+    let releaseOther;
+    const other = taJobRegistry.start('smartbar_compose', 'c11@x|other-group', () => new Promise(r => { releaseOther = r; }), { groupId: 'other-group' });
+    try {
+        await run(7, 'c11@x', 'reply, held');
+        for (let i = 0; i < 400 && hold.held.length === 0; i++) await new Promise(r => setImmediate(r));
+        assert.equal(hold.held.length, 1, 'the compose call is running');
+        const rec = await taSmartbarStore.latest('c11@x');
+        const entry = taJobRegistry.get('smartbar_compose', 'c11@x|' + rec.groupId);
+        assert.ok(entry, 'keyed on <headerMessageId>|<groupId>');
+        assert.deepEqual(taJobRegistry.getGroup(rec.groupId).map(e => e.kind).filter(kind => kind === 'smartbar_compose'), ['smartbar_compose']);
+        assert.deepEqual(await fromTab(ctx, 7, { command: 'smartbar_stop', headerMessageId: 'c11@x', index: composeOf(rec).index }), { ok: true });
+        assert.equal(entry.abort.signal.aborted, true, 'this instruction\'s job stopped');
+        assert.equal(other.abort.signal.aborted, false, 'the other one untouched');
+        await settle();
+    } finally {
+        ctx.workers.respond = answering(respondAll);
+        releaseOther({ status: 'ok' });
+    }
+    const rec = await settled(t, 'c11@x');
+    assert.equal(composeOf(rec).state, 'cancelled');
+});
+
+k.test('retry-params', 'Retry of a line kept in error for its parameters checks them again: they do not pass, it is not run', async () => {
+    routes['tag it oddly'] = json({ operations: [op('tag', { tags: 5, foo: 'x' })], context: [], unrecognized: '' });
+    show(7, 'rp1@x');
+    await run(7, 'rp1@x', 'tag it oddly');
+    const rec = await taSmartbarStore.latest('rp1@x');
+    const line = rec.operations[0];
+    assert.deepEqual([line.id, line.state, line.errorType, line.params], ['tag', 'error', 'params', { tags: 5, foo: 'x' }]);
+    const tagCalls = ctx.workers.prompts().filter(p => featureOf(p) === 'add_tags').length;
+    assert.deepEqual(await fromTab(ctx, 7, { command: 'smartbar_retry', headerMessageId: 'rp1@x', recordId: rec.id, index: line.index }),
+        { ok: false, error: 'params' });
+    await settle();
+    assert.equal(ctx.workers.prompts().filter(p => featureOf(p) === 'add_tags').length, tagCalls, 'no tag call');
+    assert.deepEqual(ctx.m.byHeaderId('rp1@x').tags ?? [], [], 'no tag assigned');
+    const after = await taSmartbarStore.get(rec.id);
+    assert.deepEqual([after.state, after.operations[0].state, after.operations[0].errorType], [rec.state, 'error', 'params'], 'the record as it was');
+});
+
+k.test('translate-language-waits', 'translate to German while the translation into Italian runs: waited for, then a German translation (a plain translate joins it)', async () => {
+    routes['translate to German'] = json({ operations: [op('translate', { language: 'German' })], context: [], unrecognized: '' });
+    routes['traduci'] = json({ operations: [op('translate')], context: [], unrecognized: '' });
+    const h = show(7, 'tw1@x');
+    const hold = holding();
+    const isItalian = p => featureOf(String(p)) === 'translation' && messageOf(String(p)) === 'tw1@x' && !String(p).includes('German');
+    ctx.workers.respond = (w, prompt) => (isItalian(prompt) ? hold.respond(w, prompt) : answering(respondAll)(w, prompt));
+    const count = lang => ctx.workers.prompts().filter(p => featureOf(p) === 'translation' && messageOf(p) === 'tw1@x'
+        && (lang === 'German' ? p.includes('German') : !p.includes('German'))).length;
+    let italian;
+    try {
+        // The translation into the configured language (Italian), as the panel button runs it.
+        italian = ctx.bg._generateTranslationForMessage('tw1@x', null, { messageId: h.id });
+        for (let i = 0; i < 400 && hold.held.length === 0; i++) await new Promise(r => setImmediate(r));
+        assert.equal(hold.held.length, 1, 'the Italian translation runs');
+        // A plain translate joins it: no second call.
+        await run(7, 'tw1@x', 'traduci');
+        await settle(50);
+        assert.equal(count('Italian'), 1, 'joined');
+        const german = run(7, 'tw1@x', 'translate to German');
+        await settle();
+        assert.equal(count('German'), 0, 'not joined to the Italian one, and not started while it runs');
+        hold.held[0].answer(JSON.stringify({ subject: 'Oggetto', body: 'Testo', status: '1' }));
+        await italian;
+        await german;
+        await settle();
+    } finally {
+        ctx.workers.respond = answering(respondAll);
+    }
+    assert.equal(count('German'), 1, 'then its own call');
+    const stored = await taSmartbarStore.latest('tw1@x');
+    assert.deepEqual(stored.operations.map(o => [o.id, o.state, o.params]), [['translate', 'done', { language: 'German' }]]);
+    assert.equal((await record(ctx, 'tw1@x')).translation.lang, 'German', 'the German translation stored last');
+});
+
+k.test('translate-language-wait-stopped', 'a translation waiting for another language\'s ends cancelled when the instruction is stopped', async () => {
+    routes['translate to French'] = json({ operations: [op('translate', { language: 'French' })], context: [], unrecognized: '' });
+    show(7, 'tw2@x');
+    let release;
+    const running = taJobRegistry.start('translation', 'tw2@x', () => new Promise(r => { release = r; }));
+    running.lang = 'Italian';
+    const pending = run(7, 'tw2@x', 'translate to French');
+    await settle();
+    const rec = await taSmartbarStore.latest('tw2@x');
+    assert.equal(rec.operations[0].state, 'running', 'waiting');
+    assert.deepEqual(await fromTab(ctx, 7, { command: 'smartbar_stop', headerMessageId: 'tw2@x' }), { ok: true });
+    await pending;
+    await settle();
+    assert.equal(running.abort.signal.aborted, false, 'the other translation is not stopped');
+    assert.equal((await taSmartbarStore.get(rec.id)).operations[0].state, 'cancelled');
+    assert.equal(ctx.workers.prompts().filter(p => featureOf(p) === 'translation' && messageOf(p) === 'tw2@x').length, 0);
+    release({ status: 'ok' });
+    await settle(20);
+});
+
+k.test('named-tags-wait', 'named tags while a tagging runs: waited for, never joined, then assigned', async () => {
+    routes['tag it Work, please'] = json({ operations: [op('tag', { tags: ['Work'] })], context: [], unrecognized: '' });
+    show(7, 'gw1@x');
+    let release;
+    taJobRegistry.start('add_tags', 'gw1@x', () => new Promise(r => { release = r; }));
+    const pending = run(7, 'gw1@x', 'tag it Work, please');
+    await settle();
+    assert.deepEqual(ctx.m.byHeaderId('gw1@x').tags ?? [], [], 'not assigned while the other tagging runs');
+    assert.equal((await taSmartbarStore.latest('gw1@x')).operations[0].state, 'running');
+    // The running tagging chose other tags (no report): joining it would end the line with them.
+    release({ status: 'ok', data: { tags: ['Personal'], assigned: true } });
+    await pending;
+    await settle();
+    assert.deepEqual(ctx.m.byHeaderId('gw1@x').tags, ['work']);
+    const line = (await taSmartbarStore.latest('gw1@x')).operations[0];
+    assert.deepEqual([line.state, line.result.tags, line.result.joined], ['done', ['Work'], false]);
 });
 
 k.test('clean', 'no worker left alive, no unmodelled API, no unhandled rejection', () => {

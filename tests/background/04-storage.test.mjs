@@ -1,6 +1,6 @@
 // Spec 01 "Per-Message Data Storage", taStorage (js/mzta-storage.js):
 //  - the per-message data (spam reports, summaries, translations) lives in IndexedDB: database
-//    `thunderai-message-data`, version 1, one object store per type (`spam`, `summary`,
+//    `thunderai-message-data`, version 2, one object store per type (`spam`, `summary`,
 //    `translation`), keyPath `messageId` (the header Message-ID alone: a new translation replaces
 //    the previous one whatever its language), indexes `createdAt`, `size` and `failed_createdAt`
 //    ([failed, createdAt]);
@@ -22,7 +22,10 @@
 //    hours after the start; then every 24 hours, one timer; { time, removed } stored in
 //    storage.local; nothing while message_storage_cleanup_auto is off;
 //  - eviction: a deleted database answers as empty and is created again; one without its three
-//    stores is deleted and created again; a database that cannot be opened gives null / [] / 0 to
+//    stores is deleted and created again; a database of version 1 (5.2.0: the three stores, no
+//    smartbar store) is upgraded to version 2 keeping its records, with no delete and no rebuild,
+//    and one of version 1 that already holds the smartbar store (a development one) is upgraded
+//    too; a database that cannot be opened gives null / [] / 0 to
 //    the reads, a resolved delete and a rejected write; an aborted transaction leaves no unhandled
 //    rejection;
 //  - the mirror: every record also lives in storage.local under spam: / summary: / translation:
@@ -79,7 +82,7 @@ function rawAll(store) {
 const raw = async (store, id) => (await rawAll(store)).find(r => r.messageId === id);
 const clearAll = () => taStorage.clearAllRecords();
 
-k.test('schema', 'the database: its name, version 1, the three stores keyed on messageId, the createdAt, size and failed_createdAt indexes, and the smartbar store', async () => {
+k.test('schema', 'the database: its name, version 2, the three stores keyed on messageId, the createdAt, size and failed_createdAt indexes, and the smartbar store', async () => {
     await st.writeSummary('schema@x', { summary: 'S' });
     const db = await new Promise((resolve, reject) => {
         const open = indexedDB.open('thunderai-message-data');
@@ -87,7 +90,7 @@ k.test('schema', 'the database: its name, version 1, the three stores keyed on m
         open.onerror = () => reject(open.error);
     });
     try {
-        assert.equal(db.version, 1);
+        assert.equal(db.version, 2);
         assert.deepEqual([...db.objectStoreNames].sort(), ['smartbar', 'spam', 'summary', 'translation']);
         const tx = db.transaction(['spam', 'summary', 'translation'], 'readonly');
         for (const name of ['spam', 'summary', 'translation']) {
@@ -516,12 +519,32 @@ function rawDelete() {
     });
 }
 
-/** Create the database at version 1 with only the given stores, then close it. */
-function rawCreate(stores) {
+/**
+ * Create the database at version 1 with only the given stores (a smartbar one keyed on an
+ * auto-increment id, the others on messageId), put the given records ({ store: [record] }), then
+ * close it.
+ */
+function rawCreate(stores, records = {}) {
     return new Promise((resolve, reject) => {
         const open = indexedDB.open(MESSAGE_DB_NAME, 1);
-        open.onupgradeneeded = () => { for (const name of stores) open.result.createObjectStore(name, { keyPath: 'messageId' }); };
+        open.onupgradeneeded = () => {
+            for (const name of stores) {
+                open.result.createObjectStore(name, name === 'smartbar' ? { keyPath: 'id', autoIncrement: true } : { keyPath: 'messageId' });
+            }
+            for (const [name, list] of Object.entries(records)) {
+                for (const record of list) open.transaction.objectStore(name).put(record);
+            }
+        };
         open.onsuccess = () => { open.result.close(); resolve(); };
+        open.onerror = () => reject(open.error);
+    });
+}
+
+/** The version of the database, read with the raw API. */
+function rawVersion() {
+    return new Promise((resolve, reject) => {
+        const open = indexedDB.open(MESSAGE_DB_NAME);
+        open.onsuccess = () => { const v = open.result.version; open.result.close(); resolve(v); };
         open.onerror = () => reject(open.error);
     });
 }
@@ -545,12 +568,12 @@ k.test('evicted-recreated', 'a database deleted under the add-on (eviction): an 
     assert.deepEqual(await rawStoreNames(), ['smartbar', 'spam', 'summary', 'translation']);
 });
 
-k.test('missing-stores-recreated', 'a database at version 1 without its stores is deleted and created again, empty, with a warning', async () => {
+k.test('missing-stores-recreated', 'a database at version 1 without its stores (upgraded to version 2: the smartbar store added) is deleted and created again, empty, with a warning', async () => {
     await rawDelete();
     await rawCreate(['spam']);
     ctx.con.clear();
     assert.equal(await st.getRecord('ms@x'), null);
-    assert.match(ctx.con.all().join(' | '), /no summary, translation, smartbar object store/);
+    assert.match(ctx.con.all().join(' | '), /no summary, translation object store/);
     assert.deepEqual(await rawStoreNames(), ['smartbar', 'spam', 'summary', 'translation']);
     await st.writeTranslation('ms@x', { translated_text: 'T' });
     assert.equal((await st.getRecord('ms@x')).translation.translated_text, 'T');
@@ -558,6 +581,36 @@ k.test('missing-stores-recreated', 'a database at version 1 without its stores i
     const tx = db.transaction('summary', 'readonly');
     assert.deepEqual([...tx.store.indexNames].sort(), ['createdAt', 'failed_createdAt', 'size'], 'the indexes too');
     await tx.done;
+});
+
+k.test('upgrade-from-5.2.0', 'a database of version 1 as 5.2.0 left it (three stores, no smartbar store) is upgraded to version 2: its records kept, the smartbar store added, nothing deleted', async () => {
+    await rawDelete();
+    const createdAt = Date.now();
+    await rawCreate(['spam', 'summary', 'translation'], {
+        summary: [{ messageId: 'up@x', createdAt: createdAt, size: 1, failed: 0, summary: 'kept' }],
+    });
+    ctx.con.clear();
+    assert.equal((await st.getRecord('up@x')).summary.summary, 'kept', 'the record of version 1 is still there (not rebuilt from a mirror that has no key for it)');
+    assert.doesNotMatch(ctx.con.all().join(' | '), /object store/, 'no store missing: not deleted');
+    assert.equal(await rawVersion(), 2);
+    assert.deepEqual(await rawStoreNames(), ['smartbar', 'spam', 'summary', 'translation']);
+    const db = await taStorage.openDB();
+    const tx = db.transaction('smartbar', 'readonly');
+    assert.deepEqual([...tx.store.indexNames].sort(),
+        ['createdAt', 'failed_createdAt', 'messageId', 'sessionId', 'size', 'state', 'state_failed_createdAt'], 'the smartbar indexes');
+    await tx.done;
+});
+
+k.test('upgrade-dev-with-smartbar', 'a development database of version 1 that already holds the smartbar store is upgraded to version 2 without creating it twice, its records kept', async () => {
+    await rawDelete();
+    await rawCreate(['spam', 'summary', 'translation', 'smartbar'], {
+        spam: [{ messageId: 'dev@x', createdAt: Date.now(), size: 1, failed: 0, spamValue: 10 }],
+    });
+    ctx.con.clear();
+    assert.equal((await st.getRecord('dev@x')).spam.spamValue, 10);
+    assert.doesNotMatch(ctx.con.all().join(' | '), /object store/);
+    assert.equal(await rawVersion(), 2);
+    assert.deepEqual(await rawStoreNames(), ['smartbar', 'spam', 'summary', 'translation']);
 });
 
 k.test('open-fails-empty', 'the database cannot be opened: reads answer as an empty cache, deletes resolve, a write rejects', async (t) => {

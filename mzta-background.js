@@ -104,7 +104,8 @@ import {
     createSmartbarRegistry,
     describeOperations,
     planOperations,
-    runPlanned
+    runPlanned,
+    validateParams
 } from './js/mzta-smartbar-registry.js';
 import {
     askRouter,
@@ -2103,9 +2104,40 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
         return { status: 'skipped' };
     }
-    const running = taJobRegistry.get('translation', headerMessageId);
-    if (running) return _joinTranslationJob(running, headerMessageId, tabId, options);
-    return taJobRegistry.start('translation', headerMessageId, (entry) => _runTranslationJob(entry, headerMessageId, tabId, { ...options, explicitLang }, lang), { groupId: options.groupId }).promise;
+    // A running translation is joined, but by a language asked for explicitly only when it is
+    // into that language: one into another language (the automatic one, the panel's) is waited
+    // for, then this one runs (options.signal: the SmartBar's Stop ends the wait). The lookup
+    // and the registration after the wait still follow each other with no await in between.
+    for (;;) {
+        const running = taJobRegistry.get('translation', headerMessageId);
+        if (!running) break;
+        if (!explicitLang || running.lang === lang) return _joinTranslationJob(running, headerMessageId, tabId, options);
+        taLog.log("[ThunderAI] Translation into " + lang + " for " + headerMessageId + ": waiting for the translation into " + running.lang + " in progress.");
+        if (await _waitJobOrAbort(running, options.signal)) return { status: 'cancelled' };
+    }
+    const entry = taJobRegistry.start('translation', headerMessageId, (entry) => _runTranslationJob(entry, headerMessageId, tabId, { ...options, explicitLang }, lang), { groupId: options.groupId });
+    entry.lang = lang;
+    return entry.promise;
+}
+
+// Wait for a running job to end, or for `signal` (optional) to abort. Resolves true when the wait
+// was aborted. A job's promise never rejects (taJobRegistry ends it with an outcome).
+async function _waitJobOrAbort(entry, signal = null) {
+    if (!signal) {
+        await entry.promise;
+        return false;
+    }
+    if (signal.aborted) return true;
+    let onAbort = null;
+    const aborted = new Promise(resolve => {
+        onAbort = () => resolve(true);
+        signal.addEventListener('abort', onAbort, { once: true });
+    });
+    try {
+        return await Promise.race([entry.promise.then(() => false), aborted]);
+    } finally {
+        signal.removeEventListener('abort', onAbort);
+    }
 }
 
 // See _joinSummaryJob().
@@ -2547,20 +2579,22 @@ function _smartbarSessionFor(headerMessageId, latest) {
     return _smartbarSessionOverride.get(headerMessageId) || latest?.sessionId || smartbarNewId();
 }
 
-// Send a SmartBar update to every tab displaying the message, with the next sequence number.
-async function _smartbarPush(headerMessageId, payload) {
-    _smartbarSeq++;
-    await _sendToTabsDisplaying(headerMessageId, { ...payload, headerMessageId: headerMessageId, seq: _smartbarSeq });
-}
-
-// The state of a message as the bar draws it.
-async function _smartbarState(headerMessageId, record = null, extra = {}) {
+// The state of a message as the bar draws it. The record shown and `running` are read at once,
+// before any wait (_smartbarPushState() numbers the update at that moment); the stored latest
+// record only when neither a record is given nor an instruction runs. `available`: the operations
+// the bar lists when nothing matched, as a promise (an instruction computes it once, see
+// _smartbarPublish()); read now when not given.
+async function _smartbarState(headerMessageId, record = null, extra = {}, available = null) {
     const active = _smartbarActive.get(headerMessageId);
-    const rec = record || active?.record || await taSmartbarStore.latest(headerMessageId);
+    const shown = record || active?.record || null;
+    const snapshot = shown ? _smartbarRecordForBar(shown) : null;
+    const running = !!active;
+    const availableIds = available || _smartbarAvailableIds();
+    const latest = shown ? null : await taSmartbarStore.latest(headerMessageId);
     return {
-        record: rec ? _smartbarRecordForBar(rec) : null,
-        running: !!active,
-        available: await _smartbarAvailableIds(),
+        record: snapshot || (latest ? _smartbarRecordForBar(latest) : null),
+        running: running,
+        available: await availableIds,
         ...extra,
     };
 }
@@ -2586,8 +2620,15 @@ function _smartbarRecordForBar(record) {
     };
 }
 
-async function _smartbarPushState(headerMessageId, record = null, extra = {}) {
-    await _smartbarPush(headerMessageId, { command: 'smartbar_update', ...(await _smartbarState(headerMessageId, record, extra)) });
+// Send the state of a message to every tab displaying it. The sequence number is taken together
+// with the state (_smartbarState() reads it before its first wait), never after the waits: two
+// updates sent close together (the lines of an instruction publish without waiting for one
+// another) carry their numbers in the order of their states, so the bar, which ignores an update
+// older than one it has drawn, never ends on the older one.
+async function _smartbarPushState(headerMessageId, record = null, extra = {}, available = null) {
+    const seq = ++_smartbarSeq;
+    const state = await _smartbarState(headerMessageId, record, extra, available);
+    await _sendToTabsDisplaying(headerMessageId, { command: 'smartbar_update', ...state, headerMessageId: headerMessageId, seq: seq });
     _smartbarActivityChanged();
 }
 
@@ -2623,7 +2664,9 @@ function _smartbarChatPush(headerMessageId, record, extra = {}) {
 
 // Every change of an instruction in progress reaches both views of the message: the bar (which
 // shows the newest record, but its own instruction while one runs) and the chat (every record of
-// its session).
+// its session). The operations the bar lists when nothing matched are read once per instruction
+// (state.barAvailable), not at every change of its lines: the preferences, the prompts and the
+// permissions they come from do not change while it runs.
 async function _smartbarPublish(state, extra = {}) {
     const hid = state.headerMessageId;
     if (state.source === 'compose') {
@@ -2632,13 +2675,18 @@ async function _smartbarPublish(state, extra = {}) {
         await _smartbarChatPush(hid, state.record, { clientId: state.clientId ?? null });
         return;
     }
+    if (!state.barAvailable) {
+        state.barAvailable = _smartbarAvailableIds();
+        // A failed read is not kept: the next update reads again.
+        state.barAvailable.catch(() => { state.barAvailable = null; });
+    }
     if (state.source === 'chat') {
         await _smartbarChatPush(hid, state.record, { clientId: state.clientId ?? null });
         if (!_smartbarActive.has(hid) && _smartbarLatestId.get(hid) === state.record.id) {
-            await _smartbarPushState(hid, state.record, extra);
+            await _smartbarPushState(hid, state.record, extra, state.barAvailable);
         }
     } else {
-        await _smartbarPushState(hid, state.record, extra);
+        await _smartbarPushState(hid, state.record, extra, state.barAvailable);
         await _smartbarChatPush(hid, state.record);
     }
 }
@@ -2656,6 +2704,16 @@ async function _smartbarSave(record, options = {}) {
         taLog.error("SmartBar: could not store the record " + record.id + ": " + e);
         return record;
     }
+}
+
+// Store the record of an instruction in progress (or of a record held by one). The record in
+// memory is finished at once (its state derived, its raw answers capped: what the store would
+// give back) and stays the one the state holds; the write is a copy of it. A save never puts its
+// copy back over the record afterwards: a change made while it was being written (another line
+// ending, a Remove, a Create email) would be lost, in memory and in the next save.
+function _smartbarSaveState(state, options = {}) {
+    state.record = smartbarFinishRecord(state.record, options);
+    return _smartbarSave(state.record, options);
 }
 
 // The reasoning of a running router call, sent to the bars at most every 250 ms (never stored).
@@ -2775,7 +2833,8 @@ function _smartbarTagOutcome(outcome) {
 // The tag operation. With params.tags: those tags, through the add-tags assignment (its
 // exclusions, and its rule about creating missing tags: add_tags_auto_force_existing), with no
 // model call. Without: the Add Tags special command pipeline, unchanged. A tag job already
-// running on the message (the automatic tagging, the context menu, the popup) is joined.
+// running on the message (the automatic tagging, the context menu, the popup) is joined without
+// params.tags; with them it is waited for (it chooses its own tags), then they are assigned.
 async function _smartbarRunTag(ctx) {
     const { message, params, groupId } = ctx;
     try {
@@ -2785,14 +2844,21 @@ async function _smartbarRunTag(ctx) {
     } catch (e) {
         return { state: 'error', error: String(e?.message || e), errorType: 'permission' };
     }
-    const running = taJobRegistry.get('add_tags', message.headerMessageId);
-    if (running) {
-        taJobRegistry.logJoin(running);
-        return _smartbarTagOutcome(await running.promise);
-    }
+    const explicitTags = Array.isArray(params.tags) && params.tags.length > 0;
+    // Read before the lookup, so the lookup and the registration follow each other with no await.
     const prefs = await _smartbarAddTagsPrefs();
+    for (;;) {
+        const running = taJobRegistry.get('add_tags', message.headerMessageId);
+        if (!running) break;
+        if (!explicitTags) {
+            taJobRegistry.logJoin(running);
+            return _smartbarTagOutcome(await running.promise);
+        }
+        taLog.log("SmartBar: the tags asked for " + message.headerMessageId + " wait for the tagging in progress.");
+        if (await _waitJobOrAbort(running, ctx.signal)) return { state: 'cancelled' };
+    }
     const entry = taJobRegistry.start('add_tags', message.headerMessageId, async (job) => {
-        if (Array.isArray(params.tags) && params.tags.length > 0) {
+        if (explicitTags) {
             const accountId = message.folder?.accountId || '';
             const prefs_msg = await addTags_resolveAccountPrefs(prefs, accountId);
             try {
@@ -2836,7 +2902,7 @@ async function _smartbarRunSummarize(ctx) {
 // The translate operation: the Translate pipeline, into params.language when given.
 async function _smartbarRunTranslate(ctx) {
     const outcome = await _generateTranslationForMessage(ctx.message.headerMessageId, ctx.tabId,
-        { resolvedMessage: ctx.message, manual: true, groupId: ctx.groupId, lang: ctx.params.language || '' });
+        { resolvedMessage: ctx.message, manual: true, groupId: ctx.groupId, lang: ctx.params.language || '', signal: ctx.signal });
     return _smartbarPanelOutcome(outcome, browser.i18n.getMessage('smartbar_error_no_language'));
 }
 
@@ -3008,7 +3074,10 @@ async function _smartbarRunSparks(ctx, kind) {
         };
     }
     const { message, groupId } = ctx;
-    const entry = taJobRegistry.start(cfg.job, message.headerMessageId, async (job) => {
+    // Keyed on the message AND the instruction's group: no one else starts this kind, and two
+    // instructions on the same message (the bar and the chat, two messages of the chat) each keep
+    // their own entry, so the Stop of either finds it (getGroup(), abortGroup()).
+    const entry = taJobRegistry.start(cfg.job, message.headerMessageId + '|' + groupId, async (job) => {
         const stopped = () => job.invalidated || job.abort.signal.aborted || ctx.signal?.aborted === true;
         let data;
         try {
@@ -3169,7 +3238,8 @@ function _smartbarComposeError(error) {
 async function _smartbarRunCompose(ctx) {
     const { message, params, groupId } = ctx;
     const type = params.type;
-    const entry = taJobRegistry.start('smartbar_compose', message.headerMessageId, async (job) => {
+    // Keyed on the message AND the instruction's group, as the Sparks operations (_smartbarRunSparks()).
+    const entry = taJobRegistry.start('smartbar_compose', message.headerMessageId + '|' + groupId, async (job) => {
         const stopped = () => job.invalidated || job.abort.signal.aborted || ctx.signal?.aborted === true;
         let result = ctx.previousResult?.type === type && ctx.previousResult?.body ? ctx.previousResult : null;
         let prefs = null;
@@ -3235,16 +3305,23 @@ async function _smartbarDeliverDraft(headerMessageId, recordId, index, tabId = n
     if (!message) return { ok: false, error: 'not_found' };
     const opened = await _smartbarOpenCompose(message, op.result);
     if (!opened.ok) return { ok: false, error: opened.error };
-    // Read again: the record may have changed while the window opened.
-    const latest = holder ? holder.record : (await taSmartbarStore.get(recordId) || record);
-    const updated = {
-        ...latest,
-        operations: (latest.operations || []).map(o => o.index === index
-            ? { ...o, state: 'done', error: null, errorType: null, finishedAt: Date.now() }
-            : o),
-    };
-    const saved = await _smartbarSave(updated);
-    if (holder) holder.record = saved;
+    const delivered = (o) => o.index === index
+        ? { ...o, state: 'done', error: null, errorType: null, finishedAt: Date.now() }
+        : o;
+    // Read again: the record may have changed while the window opened. Held by an instruction in
+    // progress (found again: it may have ended, or a Retry may have started, meanwhile): changed in
+    // place, so the next saves of its other lines keep the delivery instead of putting the draft
+    // back.
+    const current = _smartbarFindState(headerMessageId, recordId);
+    let saved;
+    if (current) {
+        current.record.operations = (current.record.operations || []).map(delivered);
+        await _smartbarSaveState(current);
+        saved = current.record;
+    } else {
+        const latest = (holder ? holder.record : await taSmartbarStore.get(recordId)) || record;
+        saved = await _smartbarSave({ ...latest, operations: (latest.operations || []).map(delivered) });
+    }
     await _smartbarChatPush(headerMessageId, saved);
     if (!_smartbarActive.has(headerMessageId) && _smartbarLatestId.get(headerMessageId) === recordId) {
         await _smartbarPushState(headerMessageId, saved);
@@ -3452,7 +3529,7 @@ async function _smartbarRunLines(state, lines) {
                 state.record.draft = { type: line.result.type, subject: line.result.subject || '', body: line.result.body, groupId: state.groupId };
             }
             const meaningful = line.state === 'pending_confirmation' || SMARTBAR_FINAL_STATES.includes(line.state) || line.retryAt;
-            const step = meaningful ? _smartbarSave(state.record).then(r => { state.record = r; }) : Promise.resolve();
+            const step = meaningful ? _smartbarSaveState(state) : Promise.resolve();
             step.then(() => _smartbarPublish(state)).catch(() => {});
         },
     });
@@ -3466,7 +3543,7 @@ async function _smartbarRecordError(state, error) {
     state.record.error = type === 'aborted' ? browser.i18n.getMessage('smartbar_stopped') : (error?.message || String(error));
     state.record.rawResponse = error?.rawResponse ?? null;
     state.record.retryAt = type === 'rate_limit' ? _smartbarRetryAt(error?.retryAfterMs) : null;
-    state.record = await _smartbarSave(state.record);
+    await _smartbarSaveState(state);
 }
 
 // The router and then the operations of one instruction: the body of the 'smartbar' job. In the
@@ -3498,7 +3575,7 @@ async function _smartbarProcess(state, job) {
     state.record.routerContext = routed.output.context;
     state.record.reports = plan.reports;
     state.record.operations = plan.lines.map(smartbarRecordOperation);
-    state.record = await _smartbarSave(state.record);
+    await _smartbarSaveState(state);
     await _smartbarPublish(state);
 
     if (chat && plan.lines.length === 0) {
@@ -3517,13 +3594,13 @@ async function _smartbarProcess(state, job) {
             state.stream?.flush();
         }
         if (state.replaced) return { status: 'cancelled' };
-        state.record = await _smartbarSave(state.record);
+        await _smartbarSaveState(state);
         return { status: 'ok' };
     }
 
     if (plan.lines.length > 0) await _smartbarRunLines(state, plan.lines);
     if (state.replaced) return { status: 'cancelled' };
-    state.record = await _smartbarSave(state.record);
+    await _smartbarSaveState(state);
     return { status: 'ok' };
 }
 
@@ -3771,6 +3848,21 @@ async function _smartbarStop(headerMessageId, index = null, recordId = null) {
     return false;
 }
 
+// The parameters a Retry of one line runs with: those the router gave, checked again as
+// planOperations() checks them (validateParams()), since a line kept in error for its parameters
+// (errorType 'params') stores them as the router gave them. null when they do not pass (or the
+// operation is no longer in the registry): the line is not run, and stays as it is.
+function _smartbarRetryParams(op) {
+    const registered = smartbarRegistry.get(op.id);
+    if (!registered) return null;
+    const checked = validateParams(registered, op.params);
+    if (!checked.ok) {
+        taLog.log("SmartBar: no Retry of " + op.id + ", its parameters do not pass: " + checked.error);
+        return null;
+    }
+    return checked.params;
+}
+
 // Retry: the router of an instruction-level error (a new instruction with the same text, from the
 // bar or in the chat as the record came), or one failed operation of the record (a fresh run of
 // that line alone, in a new group).
@@ -3785,6 +3877,8 @@ async function _smartbarRetry({ headerMessageId, tabId, recordId, index = null, 
     if (chat ? !!_smartbarFindState(headerMessageId, recordId) : _smartbarActive.has(headerMessageId)) return { ok: false, error: 'busy' };
     const op = record.operations.find(o => o.index === index);
     if (!op || op.state !== 'error') return { ok: false };
+    const params = _smartbarRetryParams(op);
+    if (!params) return { ok: false, error: 'params' };
     const message = await _resolveMessage(headerMessageId, null, tabId);
     if (!message) return { ok: false, error: 'not_found' };
     const groupId = smartbarNewId();
@@ -3806,14 +3900,14 @@ async function _smartbarRetry({ headerMessageId, tabId, recordId, index = null, 
         : o);
     _smartbarRegister(state);
     const line = {
-        index: op.index, id: op.id, params: op.params, state: 'queued', dependsOn: [], risk: smartbarRegistry.get(op.id)?.risk || 'direct',
+        index: op.index, id: op.id, params: params, state: 'queued', dependsOn: [], risk: smartbarRegistry.get(op.id)?.risk || 'direct',
         // A compose window that could not open: its text is kept, no new generation.
         previousResult: op.errorType === 'compose_window' ? (op.result ?? null) : null,
     };
     await _smartbarPublish(state);
     _smartbarStartJob(state, async () => {
         await _smartbarRunLines(state, [line]);
-        state.record = await _smartbarSave(state.record);
+        await _smartbarSaveState(state);
         return { status: 'ok' };
     });
     return { ok: true };
@@ -3845,8 +3939,15 @@ async function _smartbarDismiss(headerMessageId, recordId, what) {
     } else {
         return false;
     }
-    const saved = await _smartbarSave(record, { keepState: true });
-    if (active) active.record = saved;
+    // An instruction in progress keeps its record (changed in place above): what is shown next
+    // is that record as it is then, not the copy the save wrote.
+    let saved;
+    if (active) {
+        await _smartbarSaveState(active, { keepState: true });
+        saved = active.record;
+    } else {
+        saved = await _smartbarSave(record, { keepState: true });
+    }
     const bar = _smartbarActive.get(headerMessageId);
     const latestId = _smartbarLatestId.get(headerMessageId);
     const shownInBar = bar ? bar.record.id === recordId : (latestId === undefined || latestId === recordId);
@@ -4379,6 +4480,8 @@ async function _smartbarComposeRetry(key, recordId, index = null, auto = false) 
     const op = record.operations.find(o => o.index === index);
     // An error, or a proposal whose target changed (asked again on the current text).
     if (!op || !(op.state === 'error' || (op.state === 'drafted' && op.result?.stale === true))) return { ok: false };
+    const params = _smartbarRetryParams(op);
+    if (!params) return { ok: false, error: 'params' };
     let read;
     try {
         read = await _smartbarComposeRead(chat.composeTabId);
@@ -4397,11 +4500,11 @@ async function _smartbarComposeRetry(key, recordId, index = null, auto = false) 
         ? { ...o, state: 'running', result: null, error: null, errorType: null, retryAt: null, autoRetried: o.autoRetried || auto }
         : o);
     _smartbarRegister(state);
-    const line = { index: op.index, id: op.id, params: op.params, state: 'queued', dependsOn: [], risk: smartbarRegistry.get(op.id)?.risk || 'direct' };
+    const line = { index: op.index, id: op.id, params: params, state: 'queued', dependsOn: [], risk: smartbarRegistry.get(op.id)?.risk || 'direct' };
     await _smartbarPublish(state);
     _smartbarStartJob(state, async () => {
         await _smartbarRunLines(state, [line]);
-        state.record = await _smartbarSave(state.record);
+        await _smartbarSaveState(state);
         return { status: 'ok' };
     });
     return { ok: true };

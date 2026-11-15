@@ -80,7 +80,7 @@ import { mztaPrefs } from './mzta-prefs.js';
 
 /** The database, its schema version, its object stores and their indexes. */
 export const MESSAGE_DB_NAME = 'thunderai-message-data';
-export const MESSAGE_DB_VERSION = 1;
+export const MESSAGE_DB_VERSION = 2;
 export const STORE_SPAM = 'spam';
 export const STORE_SUMMARY = 'summary';
 export const STORE_TRANSLATION = 'translation';
@@ -301,9 +301,11 @@ function openMessageDB(onLost) {
                     store.createIndex(INDEX_SIZE, 'size');
                     store.createIndex(INDEX_FAILED_CREATED_AT, ['failed', 'createdAt']);
                 }
-                // Version 1 too: nothing of this storage has been released yet. A development
-                // database without it opens without its object store, and is created again
-                // (openCheckedMessageDB()), then rebuilt from the mirror.
+            }
+            // Version 2: the SmartBar's store. Version 1 shipped in 5.2.0 with the three mirrored
+            // stores only; their records are kept. A development database of version 1 may
+            // already hold it: it is never created twice.
+            if (oldVersion < 2 && !db.objectStoreNames.contains(STORE_SMARTBAR)) {
                 const smartbar = db.createObjectStore(STORE_SMARTBAR, { keyPath: 'id', autoIncrement: true });
                 smartbar.createIndex(INDEX_MESSAGE_ID, 'messageId');
                 smartbar.createIndex(INDEX_SESSION_ID, 'sessionId');
@@ -334,7 +336,7 @@ function openMessageDB(onLost) {
 }
 
 /**
- * Open the database and check that it has its three object stores. A database at the current
+ * Open the database and check that it has its four object stores. A database at the current
  * version without them (damaged, or partly evicted) is never upgraded, so it would stay broken:
  * it is deleted and created again, empty. Its new open runs upgrade() from version 0, which
  * marks it new, so the background rebuilds it from the mirror.
@@ -734,7 +736,7 @@ export class taStorage {
     // ---- The database -------------------------------------------------------------------------
 
     /**
-     * The connection of this context, opened once, with its three object stores (see
+     * The connection of this context, opened once, with its four object stores (see
      * openCheckedMessageDB()). Future schema versions go in upgrade() (openMessageDB()). Rejects
      * when the database cannot be opened; the next call tries again.
      * @returns {Promise<IDBPDatabase>}
@@ -745,7 +747,7 @@ export class taStorage {
             if (_dbPromise === opening) _dbPromise = null;
             // The background opens it again at once, so it is the first to find it new after an
             // eviction (a page opening it first would create it, and the background would then
-            // find it at version 1 and never rebuild it). After the close in progress: a timer.
+            // find it at the current version and never rebuild it). After the close in progress: a timer.
             // The reads wait for it from now on, not only once it has started.
             if (_rebuildWatch) {
                 const rebuild = new Promise(resolve => setTimeout(resolve, 0))

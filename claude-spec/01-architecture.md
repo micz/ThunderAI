@@ -712,9 +712,13 @@ never runs twice on a message at the same time.
   command, which stops its call at once). `abortGroup(groupId)` invalidates, then aborts, every
   entry of that group; `getGroup(groupId)` lists them. The jobs started by the batch, the panel
   buttons or the menus carry no group, so a SmartBar Stop or replacement never stops them; a
-  SmartBar operation that finds one of them running joins it. An aborted entry is never revived. The
+  SmartBar operation that finds one of them running joins it (but a `tag` with explicit tags, and a
+  translation into a language asked for explicitly while one into another language runs, wait for
+  it instead, see [10-smartbar.md](10-smartbar.md) "Jobs"). An aborted entry is never revived. The
   wrappers take `options.groupId` (and the translation one `options.lang`, a language asked for
-  explicitly, which is saved but never served from a cache in another language).
+  explicitly, which is saved but never served from a cache in another language, nor joined to a
+  running translation into another language: the entry records its language, `entry.lang`, and
+  `options.signal` ends the wait).
 - **Logs** (`do_debug`): `[taJobs] start|join|invalidate|revive|abort <kind>:<id>`, and `[taJobs] end <kind>:<id> <status>` when the job settles (plus, as errors, `[taJobs] <kind>:<id> threw: <message>` when a job body throws past its own catches and `[taJobs] <kind>:<id> returned no outcome`).
 
 ### Context-menu actions: one source for messages and UI tab
@@ -2384,9 +2388,11 @@ type; those records are moved at startup (below).
 **The SmartBar store.** The same database holds a fourth object store, `smartbar`: one record per
 instruction typed in the SmartBar ([10-smartbar.md](10-smartbar.md) "Storage"), keyed by an
 auto-increment `id` (several per message), indexes `messageId`, `sessionId`, `createdAt`, `size`,
-`failed_createdAt`, `state` and `state_failed_createdAt`. It is created in version 1 with the
-others (a database without it opens incomplete and is created again, then rebuilt from the
-mirror). It is **not mirrored** (`STORE_MIRRORED`): nothing goes to `storage.local`, the
+`failed_createdAt`, `state` and `state_failed_createdAt`. It is created by version 2 of the
+database (the `oldVersion < 2` branch of `upgrade`): version 1, released in 5.2.0, holds the three
+mirrored stores only, and its records are kept through the upgrade (no delete, no rebuild). A
+development database of version 1 that already holds the store is not touched (the branch checks
+`objectStoreNames` first). It is **not mirrored** (`STORE_MIRRORED`): nothing goes to `storage.local`, the
 reconcile and the rebuild ignore it, and its records are lost on an eviction. `ALL_STORES` (the
 four) is what the size, the stats, the cleanup, its preview, `clear()`, `clearAllRecords()`,
 `deleteErrors()` and `deleteOlderThan()` go over; `MESSAGE_STORES` (the three mirrored ones) is
@@ -2423,7 +2429,8 @@ record as `newValue`; every listener filters on the exact keys it watches (see
 [05-options.md](05-options.md), the record stores). The disk used is roughly twice the IndexedDB
 total the options page and the storage management page show.
 
-**Schema.** Database `thunderai-message-data`, version 1; the name, the version, the store and index
+**Schema.** Database `thunderai-message-data`, version 2 (version 1: the three stores below, released
+in 5.2.0; version 2 adds the `smartbar` store, see "The SmartBar store"); the name, the version, the store and index
 names are constants at the top of `js/mzta-storage.js` (`MESSAGE_DB_NAME`, `MESSAGE_DB_VERSION`,
 `MESSAGE_STORES`, `INDEX_CREATED_AT`, `INDEX_SIZE`, `INDEX_FAILED_CREATED_AT`). Future versions go in
 the `upgrade` callback (`openMessageDB()`). Three object stores, `spam`, `summary`, `translation`,
@@ -2706,7 +2713,7 @@ permission (an update would ask every user for it), and `navigator.storage.persi
 database is the working copy, rebuilt from it:
 - **A new database.** `openMessageDB()`'s `upgrade` callback marks the database new (a module flag,
   per context) when it runs with `oldVersion === 0`: a first start, an evicted database, or one that
-  `openCheckedMessageDB()` deleted and created again because it opened without its three object
+  `openCheckedMessageDB()` deleted and created again because it opened without its four object
   stores (its second open upgrades from 0 too).
 - **`taStorage.reconcileIfNew()`** opens the database and, when the flag is set, clears it and runs
   `reconcileWithMirror()`; it resolves its counts, or `null` when the database was not new. A failed
@@ -2717,7 +2724,7 @@ database is the working copy, rebuilt from it:
   connection (`blocking`, `terminated`) is opened again at once (a `setTimeout(0)` after the close)
   through `reconcileIfNew()`, so a database evicted while Thunderbird runs is rebuilt then. The
   reopen is immediate, not lazy, on purpose: if a page opened the database first, it would create it
-  (the page never rebuilds) and the background would then find it at version 1, not new, and never
+  (the page never rebuilds) and the background would then find it at the current version, not new, and never
   rebuild it. **The reads wait for that rebuild**: from the moment the connection is lost until the
   rebuild ends, `getRecord()`, `getPage()`, `count()` and `getTotalSize()` of the background first
   await it, so a summary asked for meanwhile finds the saved one instead of being generated again
