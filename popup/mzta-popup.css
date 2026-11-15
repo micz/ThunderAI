@@ -113,6 +113,26 @@ body {
     cursor: default;
   }
 
+  /* The SmartBar chat of a compose window: one entry above the search, in the accent blue. */
+  #mzta_smartbar_compose_chat{
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 4px;
+    background-color: #0060df;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  #mzta_smartbar_compose_chat:hover{
+    background-color: #0250bb;
+  }
+
   #mzta_batch_progress{
     display: block;
     margin-top: 3px;

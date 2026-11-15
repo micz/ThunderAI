@@ -33,7 +33,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       'google_gemini_api_key',
       'anthropic_api_key',
       'ollama_host',
-      'openai_comp_host'
+      'openai_comp_host',
+      'smartbar_enabled'
     ]);
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
@@ -76,6 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let tabId = reponse.lastShortcutTabId;
     tabType = reponse.lastShortcutTabType;
+    setupSmartbarComposeChat(prefs.smartbar_enabled === true, tabId, tabType);
     let filtering = reponse.lastShortcutFiltering;
     let _prompts_data = reponse.lastShortcutPromptsData;
     taLog.log("_prompts_data: " + JSON.stringify(_prompts_data));
@@ -336,6 +338,26 @@ async function sendPrompt(prompt_id, tabId){
  // was resolved"). Swallow it, as done elsewhere for fire-and-forget messages.
  browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id}).catch(() => {});
  window.close();
+}
+
+// The entry "SmartBar chat" (claude-spec/10-smartbar-compose.md "Opening it"): in a compose window
+// only, with the SmartBar on. It asks the background to open the chat of that compose window (or
+// bring it to front) and closes the popup, as a prompt does (fire-and-forget: closing the popup
+// tears down the message conduit).
+function setupSmartbarComposeChat(enabled, tabId, tabType){
+ const btn = document.getElementById('mzta_smartbar_compose_chat');
+ if(!btn){
+   return;
+ }
+ if(!enabled || tabType !== 'messageCompose' || tabId === null || tabId === undefined){
+   btn.style.display = 'none';
+   return;
+ }
+ btn.style.display = 'block';
+ btn.addEventListener('click', () => {
+   browser.runtime.sendMessage({command: "smartbar_compose_open_chat", tabId: tabId}).catch(() => {});
+   window.close();
+ });
 }
 
 // Show/hide the "Stop processing" banner based on the batch status snapshot.

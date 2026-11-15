@@ -866,7 +866,8 @@ The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the manage
 - **Settings** (`#smartbar_settings`): `smartbar_mode`, `smartbar_default_destination` (selects),
   `smartbar_history_size`, `smartbar_parallel_limit` (numbers), and the bar's keyboard shortcut
   (`commands.getAll()`, `_thunderai__smartbar`, shown as keys, `smartbar_shortcut_none` when unset)
-  with the link to change it.
+  with the link to change it, and what it does (`#smartbar_shortcut_info`: the bar in a message,
+  the SmartBar chat in a compose window).
 - **Execute settings** (`#smartbar_execute_settings`, "Writing settings", execute's sub-tab of the
   Actions tab, after its connection card and before its prompt section): `smartbar_max_body_length`,
   `smartbar_additional_instructions`, `smartbar_signature`.

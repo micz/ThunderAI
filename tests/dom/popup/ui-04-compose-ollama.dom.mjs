@@ -53,6 +53,7 @@ const S_POPUP = 'spec 02 "Popup Menu"';
 const S_WIZ = 'spec 05 "Setup Wizard (`pages/setup-wizard/`)"';
 const S_BATCH = 'spec 04 "Batch cancellation (user-triggered stop)"';
 const S_FLOW = 'spec 01 "Data Flow: User Action → AI Response"';
+const S_SB_OPEN = 'spec 10 "compose window: Opening it"';
 
 const rows = () => ctx.$$('#mzta_autocomplete-items .mzta_autocomplete-item');
 const sent = command => ctx.apiCalls('browser.runtime.sendMessage').map(c => c.args[0]).filter(m => m?.command === command);
@@ -93,6 +94,10 @@ k.test('stop-sends-cancel', S_BATCH, '"Stop processing" disables and relabels it
     assert.equal($('#mzta_batch_stop_btn').disabled, true);
     assert.equal($('#mzta_batch_stop_btn').textContent, msg('batch_stopping'));
     assert.equal(ctx.dialogs.filter(d => d.kind === 'close').length, closes + 1);
+});
+
+k.test('no-smartbar-compose-entry', S_SB_OPEN, 'a compose window with the SmartBar off: no SmartBar chat entry', () => {
+    assert.equal($('#mzta_smartbar_compose_chat').style.display, 'none');
 });
 
 k.coverage();

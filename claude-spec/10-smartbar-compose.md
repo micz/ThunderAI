@@ -1,17 +1,5 @@
 # SmartBar in the compose window
 
-> **Status: being implemented.** This file is the agreed design of the SmartBar for the email
-> being written. Implemented so far: the registry (`context`, `exclusive`, the five compose
-> operations), the router (the compose metadata, the reference cases), and the special prompt
-> `prompt_smartbar_compose` with its connection, its prompt module (`js/mzta-smartbar-compose.js`)
-> and its sub-tab of the feature page, the compose script's commands (see "The compose script"),
-> and the background (see "The background"): opening, messages, operations, Apply, Retry, the
-> compose window closing, and the chat window's compose mode (see "The window"). Not yet: the
-> popup entry and the shortcut. The rest does not exist
-> yet: until it does, [10-smartbar.md](10-smartbar.md) describes the SmartBar as it is, and its
-> "Deferred" section keeps "Compose window" with a pointer here. Once implemented, this file
-> describes the behavior (the status line goes) and the tests follow it.
-
 The SmartBar of the message display acts on the email being **read**. In a compose window the user
 works on the email being **written**: they correct it, change its tone or length, translate it, ask
 for a subject, often in a series of requests ("correct it", "shorter", "now more formal"). That series
@@ -39,12 +27,18 @@ which changes the selection, never the text.
 The compose chat exists only while `smartbar_enabled` is on. `smartbar_mode` and
 `smartbar_default_destination` are about the bar of the message display and do not apply here.
 
-- **Popup**: in a compose window only, the `compose_action` popup shows one entry, "SmartBar chat",
-  at the top of the prompts. It is not shown in the message display popup (the bar and its chat
-  destination are there).
+- **Popup**: in a compose window only, the `compose_action` popup shows one entry, "SmartBar chat"
+  (`#mzta_smartbar_compose_chat`, `popup_smartbar_compose_chat`, with its tooltip), above the
+  search of the prompts, when `smartbar_enabled` is on (the popup reads it); the prompts are listed
+  as usual. It is not shown in the message display popup (the bar and its chat destination are
+  there). A click sends `smartbar_compose_open_chat { tabId }` (the popup's
+  `lastShortcutTabId`) and closes the popup without waiting, as a prompt does.
 - **Keyboard shortcut**: the same command `_thunderai__smartbar` (default `Ctrl+Alt+B`). In a message
-  display tab it opens the bar as today; in a compose tab (`tab.type === 'messageCompose'`) it opens
-  the compose chat. The settings page's text of the shortcut says both.
+  display tab it opens the bar as before; in a compose tab (`tab.type === 'messageCompose'`) the
+  background's `commands.onCommand` listener opens the compose chat itself
+  (`_smartbarComposeChatOpen(tab.id)`), with no message. Its manifest description
+  (`smartbar_command_description`) and the settings page (`smartbar_shortcut_info`, under the
+  keys) say both.
 - **Connection**: the chat runs on the `smartbar_chat` connection, which must be an API connection.
   Otherwise the compose window gets the `smartbar_error_no_connection` alert (`sendAlert` through
   the compose script) and no window opens.
@@ -409,17 +403,17 @@ the other special prompts and per-feature connections (spec 08), with nothing to
 - Text inserted at the cursor: adding a paragraph is a `rewrite` of the typed text.
 - History: nothing stored, nothing resumed.
 
-## Tests (to write with the implementation)
+## Tests
 
-- `smartbar` area: the `context` and `exclusive` rules of the registry and the plan, the compose
-  operations' params, `buildComposePrompt()` and the answer checks, the router metadata and the
-  operation list of each context, the reference cases with `context: "compose"`.
-- `background` area: opening (popup entry, shortcut by tab type), one chat per compose window, the
-  window closing (instructions stopped, chat kept), records never stored and outside the badge,
-  Apply found / changed / ambiguous, the subject, `select` and the line waiting for it.
-- `compose` area: the compose script's new commands (select a passage, replace the typed text or a
-  passage in one editor command, in HTML and plain text), the typed text / quoted part / selection
-  read at every turn.
-- `webchat` area: the chat window with `compose=`: the proposals with Show differences and Apply,
-  the input disabled after the compose window closed, Copy still available.
-- `ui` area: the fourth sub-tab of Actions.
+- `smartbar` area: `tests/smartbar/01-registry` (the `context` and `exclusive` rules, the compose
+  operations, the plan), `02-router` (the compose metadata), `04-router-test-set` (the reference
+  cases with `context: "compose"`), `06-chat` (the proposals in the conversation, the email being
+  written in the free answer), `08-compose-prompt` (`buildComposePrompt()`, the target, the answer).
+- `background` area: `tests/background/48-smartbar-compose` (opening from the popup and by the
+  shortcut, every message, the operations, Apply, Retry, the window closing, records never stored
+  and outside the badge).
+- `compose` area: `tests/dom/compose/compose-23-smartbar-compose` (the compose script's commands).
+- `webchat` area: `tests/dom/webchat/webchat-25-smartbar-compose` (the window).
+- `ui` area: `tests/dom/smartbar/ui-01` / `ui-02` / `07` (the fourth sub-tab of Actions), the
+  `13`-`17-*-smartbar_compose` connection scenarios, `tests/dom/popup/ui-08-smartbar-compose` (the
+  popup's entry; its absence in `ui-03` and `ui-04`).

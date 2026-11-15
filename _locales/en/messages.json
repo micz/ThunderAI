@@ -4896,8 +4896,16 @@
     "description": "Name of the SmartBar feature: the bar in the message pane where the user types an instruction for the displayed email. Options page feature row, its settings page title, storage page."
   },
   "smartbar_command_description": {
-    "message": "Opens the SmartBar of the displayed email",
+    "message": "Opens the SmartBar of the displayed email, or its chat in a compose window",
     "description": "Keyboard shortcut list (Thunderbird add-on shortcuts): what the SmartBar shortcut does."
+  },
+  "popup_smartbar_compose_chat": {
+    "message": "SmartBar chat",
+    "description": "Popup menu of a compose window: the entry that opens the SmartBar chat of the email being written. \"SmartBar\" is a feature name."
+  },
+  "popup_smartbar_compose_chat_tooltip": {
+    "message": "Ask the SmartBar to correct, rewrite or translate the email you are writing",
+    "description": "Popup menu of a compose window: the tooltip of the SmartBar chat entry."
   },
   "prefs_OptionText_smartbar_Info": {
     "message": "Adds a bar to the message pane where you type what to do with the email, in your own words: for example \"tag as urgent and summarize\" or \"translate to English\". ThunderAI runs the matching actions. Nothing is ever sent automatically.",
@@ -5636,6 +5644,10 @@
   "smartbar_shortcut_none": {
     "message": "None",
     "description": "SmartBar settings page: shown when no keyboard shortcut is set for the bar."
+  },
+  "smartbar_shortcut_info": {
+    "message": "In a message: opens the bar. In a compose window: opens the SmartBar chat of the email being written.",
+    "description": "SmartBar settings page: what the keyboard shortcut does, under its keys."
   },
   "smartbar_router_use_specific_integration_info": {
     "message": "If checked, the model and API below are used to understand the instructions, whatever the connection chosen in the ThunderAI options. A small, fast model is recommended here.",

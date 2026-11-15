@@ -431,6 +431,12 @@ export function installApis(browser, m) {
         },
     }, u);
 
+    // The keyboard shortcuts (manifest `commands`): only the event the background listens to; a
+    // test presses a shortcut by calling its listeners with (command, tab).
+    browser.commands = strict('browser.commands', {
+        onCommand: makeEvent(),
+    }, u);
+
     // Only what opening the API chat window takes (openChatGPT()): the window itself is the
     // webchat area's. Each window gets one tab, whose content never answers. onRemoved is the
     // event the ready listener watches (a test closes a window by calling its listeners).

@@ -46,7 +46,8 @@ let released = false;
 let askedAtRelease = 0;
 
 const ctx = await openPage('popup', {
-    local: { connection_type: 'chatgpt_web' },
+    // The SmartBar on: its compose entry must still not show in a reading tab.
+    local: { connection_type: 'chatgpt_web', smartbar_enabled: true },
     permissions: { contains: () => false },
     commands: {
         popup_menu_ready: () => ({
@@ -68,6 +69,7 @@ const $ = ctx.$;
 const S_POPUP = 'spec 02 "Popup Menu"';
 const S_WIZ = 'spec 05 "Setup Wizard (`pages/setup-wizard/`)"';
 const S_BATCH = 'spec 04 "Batch cancellation (user-triggered stop)"';
+const S_SB_OPEN = 'spec 10 "compose window: Opening it"';
 
 const rows = () => ctx.$$('#mzta_autocomplete-items .mzta_autocomplete-item');
 const rowOf = id => rows().find(r => r.dataset.id === id);
@@ -212,6 +214,10 @@ k.test('digit-selects', S_POPUP, 'a digit selects its row without running it (`d
     assert.equal(input().value, 'Late');
     assert.equal(list().style.display, 'none');
     assert.equal(runs().length, 1);
+});
+
+k.test('no-smartbar-compose-entry', S_SB_OPEN, 'a reading tab: no SmartBar chat entry, even with the SmartBar on', () => {
+    assert.equal(ctx.$('#mzta_smartbar_compose_chat').style.display, 'none');
 });
 
 k.coverage();

@@ -560,9 +560,14 @@ messenger.commands.onCommand.addListener((command, tab) => {
     if (command === "_thunderai__do_action") {
         handleShortcut(tab);
     } else if (command === "_thunderai__smartbar") {
-        // Expand the SmartBar of the displayed message and put the cursor in it.
+        // Expand the SmartBar of the displayed message and put the cursor in it. In a compose
+        // window, the same shortcut opens its SmartBar chat (claude-spec/10-smartbar-compose.md
+        // "Opening it"): the background knows the tab, no message carries it.
         if (tab && ["mail", "messageDisplay"].includes(tab.type)) {
             sendTabMessageSafe(tab.id, { command: 'smartbar_focus' });
+        } else if (tab?.type === 'messageCompose') {
+            _smartbarComposeChatOpen(tab.id)
+                .catch(e => taLog.error("SmartBar: the chat of the compose window could not be opened: " + e));
         }
     }
 });

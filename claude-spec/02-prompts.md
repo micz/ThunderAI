@@ -711,6 +711,7 @@ To give a new default prompt a shipped icon, drop the PNG in `images/context_men
 - **Selecting vs. running.** A click (mousedown) on a row runs the prompt at once. A digit or Enter only *selects* it — its label goes into the search box and the list closes — and a further Enter runs it, unless `dynamic_menu_force_enter` is on: then selecting runs it at once. Running sends `{command: "shortcut_do_prompt", tabId, promptId}` with the tab the popup was opened for (`lastShortcutTabId`) and closes the popup without waiting for the answer
 - Permission banners: with ChatGPT Web, Claude API or OpenAI API selected and its host permission missing, the popup shows that provider's red banner (`#ask_chatgpt_web_perm` / `#ask_anthropic_api_perm` / `#ask_openai_api_perm`) in place of the search box (`#mzta_search_banner` hidden). A click opens the welcome page (`pages/onboarding/`), where the permission is granted
 - No tab: when `popup_menu_ready` answers nothing (no tab ready for the popup), the loading spinner is hidden and the popup stays empty
+- SmartBar chat: in a compose window (`lastShortcutTabType` `messageCompose`) with `smartbar_enabled` on, the entry `#mzta_smartbar_compose_chat` above the search opens the SmartBar chat of that compose window (`smartbar_compose_open_chat { tabId }`) and closes the popup ([10-smartbar-compose.md](10-smartbar-compose.md) "Opening it"); hidden otherwise
 
 ### Context Menu
 - Dynamically built from all prompts with `show_in` set to `"context"` or `"both"`, filtered to reading types only (`type` 0 or 1)

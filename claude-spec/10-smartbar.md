@@ -71,8 +71,10 @@ in `PREF_NUMBER_RANGES` (`min: 1`); every one is policy-settable (spec 08). The 
 rules are also on the storage management page (spec 05).
 
 The keyboard shortcut `_thunderai__smartbar` (manifest `commands`, default `Ctrl+Alt+B`) opens the
-bar of the displayed message and puts the cursor in it (`smartbar_focus` to the tab). The settings
-page shows the current shortcut (`commands.getAll()`).
+bar of the displayed message and puts the cursor in it (`smartbar_focus` to the tab); in a compose
+window it opens the SmartBar chat of the email being written
+([10-smartbar-compose.md](10-smartbar-compose.md) "Opening it"). The settings page shows the
+current shortcut (`commands.getAll()`) and what it does in each window (`smartbar_shortcut_info`).
 
 ### Special prompts and their connections
 
@@ -799,10 +801,9 @@ Left out of this version on purpose:
   dates?"), answers a question about it or lists its action items in the result line; such a
   question is answered freely only in the chat. Nothing is copied to the clipboard (it would need
   the output of another line).
-- **Compose window**: the bar lives in the message display only: no proofreading, rewriting (tone,
-  length) or translation of the email being written through it. The agreed design (the chat only,
-  on the compose window, with the compose operations of a single router) is in
-  [10-smartbar-compose.md](10-smartbar-compose.md), not implemented yet.
+- **Compose window**: the bar lives in the message display only. The email being written has the
+  SmartBar chat instead, opened on the compose window, with the compose operations of the same
+  router: see [10-smartbar-compose.md](10-smartbar-compose.md).
 - **Router**: no clarification question back to the user: an unclear instruction ends in
   `unrecognized` or "Nothing matched".
 - **Compose results**: no "Change type" menu to turn a reply into a forward (or the other way)

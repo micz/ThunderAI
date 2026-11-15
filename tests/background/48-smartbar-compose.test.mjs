@@ -5,7 +5,8 @@
 //  - opening: smartbar_compose_open_chat (the popup only) opens the API chat window in SmartBar
 //    mode on the compose window (hid compose:<tabId>, compose=<tabId>), on the smartbar_chat
 //    connection; once ready it gets an empty conversation and the subject; a second open brings it
-//    to front;
+//    to front; the shortcut _thunderai__smartbar does the same in a compose tab, and still focuses
+//    the bar in a message tab;
 //  - every message: the email read again (smartbarComposeRead); the router gets the compose
 //    context line and the metadata of the email being written, never its text nor an address,
 //    and the operations of the compose context only;
@@ -47,7 +48,8 @@ const editPrompts = [];
 const chatPrompts = [];
 
 const ctx = await bgContext({
-    statements: [...STARTUP, 'setupSmartbarConfigListener();', 'setupSmartbarChatListener();'],
+    // The shortcut's listener: the one the startup registers.
+    statements: [...STARTUP, 'setupSmartbarConfigListener();', 'setupSmartbarChatListener();', 'messenger.commands.onCommand.addListener('],
     local: { ...API, smartbar_enabled: true },
     mail: { accounts: [{ id: 'acc1', name: 'Account 1', identities: [{ id: 'id1', email: 'me@example.test' }] }] },
     setup(m) {
@@ -332,6 +334,24 @@ k.test('closed', 'the compose window closed: the chat told and kept, the next me
     // The chat window itself is still known: its commands are answered.
     const fresh = await fromChat(chat30, 'smartbar_chat_new_session');
     assert.equal(fresh.ok, true);
+});
+
+k.test('shortcut', 'the SmartBar shortcut: in a compose tab its chat opens (once), in a message tab the bar is focused', async () => {
+    addCompose(34);
+    const press = async (tab) => {
+        for (const fn of [...ctx.ctl.browser.commands.onCommand._listeners]) fn('_thunderai__smartbar', tab);
+        await turns();
+    };
+    const before = ctx.m.windows.length;
+    await press({ id: 34, type: 'messageCompose', windowId: 94 });
+    assert.equal(ctx.m.windows.length, before + 1, 'the chat window of the compose window');
+    const url = new URL(ctx.m.windows.at(-1).url);
+    assert.deepEqual([url.searchParams.get('hid'), url.searchParams.get('compose')], ['compose:34', '34']);
+    await press({ id: 34, type: 'messageCompose', windowId: 94 });
+    assert.equal(ctx.m.windows.length, before + 1, 'brought to front, not opened again');
+    await press({ id: 7, type: 'mail', windowId: 1 });
+    assert.equal(ctx.m.sentTo(7, 'smartbar_focus').length, 1);
+    assert.equal(ctx.m.windows.length, before + 1);
 });
 
 k.test('feature-off', 'the feature off: the chat of a compose window does not open', async () => {
