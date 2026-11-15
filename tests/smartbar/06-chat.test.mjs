@@ -112,4 +112,30 @@ k.test('prompt-data', 'the email and the conversation are declared as data; a de
     assert.ok(!p.includes('r'.repeat(C.RAW_CONTEXT_CAP + 1)));
 });
 
+// claude-spec/10-smartbar-compose.md: the conversation of a compose window's chat carries its
+// proposals (applied or not) and its subjects; its free answer names the email being written.
+k.test('compose-turns', 'a compose window: the proposals and the subjects in the conversation, the select line as an operation', () => {
+    const turns = C.conversationTurns([{
+        id: 'compose-1', instruction: 'correct it and suggest a subject', operations: [
+            { index: 0, id: 'proofread', params: {}, state: 'done', result: { scope: 'all', original: 'helo', text: 'hello', applied: true } },
+            { index: 1, id: 'subject', params: {}, state: 'drafted', result: { subject: 'Greetings' } },
+            { index: 2, id: 'select', params: { target: 'x' }, state: 'error', result: null },
+        ],
+    }, {
+        id: 'compose-2', instruction: 'translate the selection', operations: [
+            { index: 0, id: 'translate_text', params: { language: 'German' }, state: 'drafted', result: { scope: 'selection', original: 'yes', text: 'ja' } },
+        ],
+    }]);
+    assert.equal(turns[1].text, 'Proposal (proofread, the whole text), applied to the email:\nhello\n\nSubject proposed: Greetings\n\nOperations: select: error');
+    assert.equal(turns[3].text, 'Proposal (translate_text, the selected text), not applied:\nja');
+});
+
+k.test('compose-header', 'the free answer of a compose window: the email section names the email being written', () => {
+    const p = C.buildChatPrompt({ text: 'T', email: { subject: 'S', text: 'Text written so far:\nhi' }, message: 'is it polite?', emailHeader: C.COMPOSE_EMAIL_HEADER });
+    assert.ok(p.includes(C.COMPOSE_EMAIL_HEADER + '\n' + E.EMAIL_START));
+    assert.ok(!p.includes(E.EMAIL_HEADER));
+    // The default stays the email being read.
+    assert.ok(C.buildChatPrompt({ text: 'T', email: {}, message: 'm' }).includes(E.EMAIL_HEADER + '\n' + E.EMAIL_START));
+});
+
 k.coverage();

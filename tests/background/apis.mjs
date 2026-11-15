@@ -468,11 +468,20 @@ export function installApis(browser, m) {
         }
     };
     browser.compose = strict('browser.compose', {
+        // The format, and the details a test gave the tab (`composeDetails`: subject, type, to,
+        // cc), as a compose window holds them.
         async getComposeDetails(tabId) {
             rec('compose.getComposeDetails', [tabId]);
             const t = m.tab(tabId);
             if (!t || t.type !== 'messageCompose') throw new Error('Invalid compose tab: ' + tabId);
-            return { isPlainText: t.isPlainText === true };
+            return { ...clone(t.composeDetails || {}), isPlainText: t.isPlainText === true };
+        },
+        // The SmartBar's subject proposal applied: the details merged into the tab's.
+        async setComposeDetails(tabId, details) {
+            rec('compose.setComposeDetails', [tabId, details]);
+            const t = m.tab(tabId);
+            if (!t || t.type !== 'messageCompose') throw new Error('Invalid compose tab: ' + tabId);
+            t.composeDetails = { ...(t.composeDetails || {}), ...clone(details) };
         },
         async beginReply(messageId, replyType, details) {
             rec('compose.beginReply', [messageId, replyType, details]);

@@ -37,8 +37,12 @@ export const RECORD_STATES = Object.freeze(['running', 'pending_confirmation', '
 export const OPERATION_STATES = Object.freeze(['running', 'pending_confirmation', 'drafted', 'done', 'error', 'cancelled']);
 /** The final states of an operation. */
 export const FINAL_OPERATION_STATES = Object.freeze(['drafted', 'done', 'error', 'cancelled']);
-/** The sources of a record: the bar in the message pane, or the chat started from it. */
-export const RECORD_SOURCES = Object.freeze(['bar', 'chat']);
+/**
+ * The sources of a record: the bar in the message pane, the chat started from it, or the chat of
+ * a compose window (claude-spec/10-smartbar-compose.md: its records live in memory only, never
+ * in the store).
+ */
+export const RECORD_SOURCES = Object.freeze(['bar', 'chat', 'compose']);
 
 /** The longest rawResponse and answer kept (characters). */
 export const RAW_RESPONSE_CAP = 8000;
@@ -67,7 +71,7 @@ export function newId() {
  *   sessionId    the bar's session on this message
  *   groupId      this instruction's id, carried by each of its jobs
  *   instruction  what the user typed
- *   source       'bar' or 'chat'
+ *   source       'bar', 'chat' or 'compose'
  */
 export function newRecord({ messageId, metadata = {}, sessionId, groupId, instruction, source = 'bar', now = Date.now() }) {
     return {

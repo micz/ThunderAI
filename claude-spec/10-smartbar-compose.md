@@ -4,8 +4,10 @@
 > being written. Implemented so far: the registry (`context`, `exclusive`, the five compose
 > operations), the router (the compose metadata, the reference cases), and the special prompt
 > `prompt_smartbar_compose` with its connection, its prompt module (`js/mzta-smartbar-compose.js`)
-> and its sub-tab of the feature page, and the compose script's commands (see "The compose
-> script"). The rest does not exist
+> and its sub-tab of the feature page, the compose script's commands (see "The compose script"),
+> and the background (see "The background"): opening, messages, operations, Apply, Retry, the
+> compose window closing. Not yet: the chat window's compose mode, the popup entry and the
+> shortcut. The rest does not exist
 > yet: until it does, [10-smartbar.md](10-smartbar.md) describes the SmartBar as it is, and its
 > "Deferred" section keeps "Compose window" with a pointer here. Once implemented, this file
 > describes the behavior (the status line goes) and the tests follow it.
@@ -47,36 +49,47 @@ The compose chat exists only while `smartbar_enabled` is on. `smartbar_mode` and
   Otherwise the compose window gets the `smartbar_error_no_connection` alert (`sendAlert` through
   the compose script) and no window opens.
 
-**One chat per compose window**: the background keeps `composeTabId → { chatId, windowId, tabId,
-ready, sessionId, closed, queue }` (`_smartbarComposeChats`), apart from the chats of the messages.
-An open chat is brought to front; a closed chat window is forgotten. The window is the API chat in
-SmartBar mode, with `compose=<composeTabId>` instead of `hid=<headerMessageId>`
-(`index.html?…&smartbar=1&compose=<tabId>`). Its header names the email being written (its subject,
-or "New email" while it has none).
+Both send the background `smartbar_compose_open_chat { tabId }` (`_smartbarComposeChatOpen()`),
+accepted from the popup only (`sender.url` under `popup/`; `not_popup` otherwise), for a tab that
+is a compose window (`compose.getComposeDetails()` answers), with the feature on.
+
+**One chat per compose window**: the chats of the compose windows share the background's maps of
+the chats of the messages (`_smartbarChats`, `_smartbarChatGroups`) under the key
+`compose:<tabId>` (`_smartbarComposeKey()`) in place of a headerMessageId, with `{ chatId,
+windowId, tabId, composeTabId, ready, closed, sessionId, records, queue }`. An open chat is brought
+to front (`windows.update`); a closed chat window is forgotten, and what it still ran stops. The
+window is the API chat in SmartBar mode with that key as its `hid` and the compose tab as `compose`
+(`index.html?…&smartbar=1&hid=compose%3A<tabId>&compose=<tabId>`). Once ready it gets
+`smartbar_chat_init` with its records (none at the first opening) and `compose: { subject, closed }`.
+Its header names the email being written (its subject, or "New email" while it has none).
 
 ## When the compose window closes
 
 When the compose window closes (sent, saved and closed, or discarded: `tabs.onRemoved` of the
 compose tab), the chat **stays open**:
 
-- every instruction still running is stopped (`abortGroup()` of each of its groups), its lines
-  `cancelled`;
+- every instruction still running is stopped (as a replaced one: `abortGroup()` of its group,
+  its record `replaced`, its unfinished lines `cancelled`), and the chat window gets
+  `smartbar_chat_compose_closed`;
 - the input is disabled, with a notice above it: "The email window was closed: the conversation
   stays readable, nothing more can be sent to it.";
 - Apply, Retry and Select are disabled; Copy and the change picker's view stay, so the user can still
   copy a text by hand before closing the chat;
-- `closed` is set on its entry; the shortcut and the popup can no longer reach it (no compose tab
-  has its id), and closing the chat window forgets it.
+- `closed` is set on its entry; a message (`smartbar_chat_send`), Apply and Retry are refused
+  (`compose_closed`); the shortcut and the popup can no longer reach it (no compose tab has its
+  id), and closing the chat window forgets it.
 
 ## Records: in memory only
 
 A message of the compose chat is a record like the chat's of a message ([10-smartbar.md](10-smartbar.md)
-"Storage"), with `source: 'compose'`, `composeTabId` instead of `messageId`, and no
-`subject` / `from` / `message_date`. It is **never written to the `smartbar` store**: it lives in
-memory, with its chat, and is gone when the chat window closes. So:
+"Storage"), with `source: 'compose'` (one of the store's `RECORD_SOURCES`), the id
+`compose-<groupId>`, `composeTabId`, `messageId` `null` and the subject of the email being written.
+It is **never written to the `smartbar` store**: `_smartbarSave()` only finishes it
+(`finishRecord()`: caps, derived state), and it lives in its chat's `records`, gone when the chat
+window closes. So:
 
-- it is not listed in the Activity tab, and does not count in the badge: the chat window is the only
-  place where it is shown;
+- it is not listed in the Activity tab, and does not count in the badge (`_smartbarLiveStates()`
+  leaves the `compose:` keys out): the chat window is the only place where it is shown;
 - there is no session to resume after a restart nor after the chat window closed: a new chat on the
   same compose window starts empty;
 - **New conversation** clears the turns and the conversation the prompts carry, as in the chat of a
@@ -287,15 +300,50 @@ of the background:
   found is a range of the document, across inline elements and paragraphs. It must occur exactly
   once; never in the quoted part.
 
+## The background
+
+`mzta-background.js`, "The chat of a compose window", over the flow of the chat of a message
+(`_smartbarProcess()`, `_smartbarRunLines()`, the jobs, Stop):
+
+- **A message** (`smartbar_chat_send` from the chat window, `_smartbarComposeChatRun()`): the email
+  read (`_smartbarComposeRead()`: `compose.getComposeDetails()` for the subject, the kind, the `to`
+  and `cc` addresses (their names only reach the router), the format; `smartbarComposeRead` for
+  the texts); a compose window that cannot be read refuses it (`compose_closed`). A record in
+  memory, then the router with `{ compose: read }` (the compose context, its metadata, no
+  placeholder: see "Router"), the plan in the compose context, its lines, or the free answer.
+  Every message appends: none stops another.
+- **An operation** (`_smartbarRunComposeEdit()`, its job `smartbar_compose_edit` keyed on the
+  window, the group and the line): the email read again, the target (`composeTarget()`), the
+  prompt, the special command, then the line's outcome: `drafted` with the proposal, `done` for a
+  passage selected, an `error` (`no_selection`, `select_not_found`, `select_ambiguous`, or the
+  call's). A Stop of the line or of the message ends it `cancelled`.
+- **Apply** (`smartbar_chat_apply { recordId, index, text?, html? }`, `_smartbarComposeApply()`):
+  `text` / `html` are what the change picker composed, when the user opened it; else the whole
+  proposal. The HTML is the picker's through `sanitizeBlockHtml()`, else the text as paragraphs
+  (`plainTextToHtml()`), but a one-paragraph proposal for a selection stays inline (escaped, `<br>`
+  per line), so it splits no paragraph. A plain text window gets the text. Answers
+  `{ ok, status }`: `applied` (the line `done`, `result.applied`), else `changed` / `ambiguous` (the
+  line stays `drafted`, `result.stale`). Only a `drafted` line is applied.
+- **Retry** (`smartbar_chat_retry`): an instruction-level error sends the message again; a failed
+  line, or a proposal marked stale, runs that line alone again in a new group, on the email as it
+  is now.
+- **Dismiss**, **New conversation** (the records dropped; refused while a message is understood or
+  answered) and **Stop** as in the chat of a message, in memory.
+
 ## The free answer
 
 A message no operation covers gets the free answer, as in the chat of a message: the
 `smartbar_chat` connection, `prompt_smartbar_chat`, no JSON section. Its message
-(`buildChatPrompt()` with the compose context) carries the typed text, the quoted part and the
+(`buildChatPrompt()` with `emailHeader: COMPOSE_EMAIL_HEADER`, which names the email being
+written) carries the typed text, the quoted part (cut first by `smartbar_max_body_length`) and the
 selection as data (instead of the received email), the conversation so far, the user's message, the
 language rule. It answers questions about the email being written or the message quoted ("what did
 they ask me?", "is the tone too harsh?"). Its text stays in the chat; it never reaches the email
 (Copy only).
+
+**The conversation** the prompts carry (`conversationTurns()`) holds the proposals: "Proposal
+(<operation>, the whole text | the selected text), applied to the email | not applied:" and the
+text, and "Subject proposed[, applied]: …", so "shorter" after a proposal not applied refers to it.
 
 ## Jobs and lines
 

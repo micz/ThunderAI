@@ -109,12 +109,22 @@ import {
 import {
     askRouter,
     buildRouterPrompt,
+    capText,
     describePlaceholders,
     participantNames,
     readRouterOutput,
     routerPlaceholderAllowList,
-    RouterJsonError
+    RouterJsonError,
+    ROUTER_COMPOSE_NO_PLACEHOLDERS
 } from './js/mzta-smartbar-router.js';
+import {
+    askComposeOperation,
+    buildComposePrompt,
+    composeProposal,
+    composeTarget,
+    trimComposeTexts,
+    BODY_OPERATIONS as SMARTBAR_BODY_OPERATIONS
+} from './js/mzta-smartbar-compose.js';
 import {
     askCompose,
     bodyWithSignature,
@@ -130,6 +140,7 @@ import {
     buildChatPrompt,
     conversationTurns,
     renderConversation,
+    COMPOSE_EMAIL_HEADER as SMARTBAR_COMPOSE_EMAIL_HEADER,
     RAW_CONTEXT_CAP as SMARTBAR_RAW_CONTEXT_CAP
 } from './js/mzta-smartbar-chat.js';
 import {
@@ -140,6 +151,7 @@ import {
     hasErrors as smartbarHasErrors,
     newId as smartbarNewId,
     currentDraft as smartbarCurrentDraft,
+    finishRecord as smartbarFinishRecord,
     CHAT_SESSION_LIMIT as SMARTBAR_CHAT_SESSION_LIMIT,
     FINAL_OPERATION_STATES as SMARTBAR_FINAL_STATES,
     badgeCounts as smartbarBadgeCounts
@@ -1473,10 +1485,30 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'smartbar_chat_create':
             case 'smartbar_chat_new_session':
             case 'smartbar_chat_drop_context':
+            case 'smartbar_chat_apply':
                 return (async () => {
                     const hid = message.headerMessageId;
                     const chat = _smartbarChats.get(hid);
                     if (!chat || !chat.tabId || sender.tab?.id !== chat.tabId || message.chatId !== chat.chatId) return { ok: false, error: 'not_chat' };
+                    // The chat of a compose window (claude-spec/10-smartbar-compose.md): its
+                    // records live in memory, its changes are proposals applied to the email.
+                    if (_smartbarIsComposeKey(hid)) {
+                        switch (message.command) {
+                            case 'smartbar_chat_send':
+                                return _smartbarComposeChatRun({ key: hid, instruction: message.text, clientId: message.clientId ?? null });
+                            case 'smartbar_chat_stop':
+                                return { ok: await _smartbarStop(hid, message.index ?? null, message.recordId ?? _smartbarChatTurnInProgress(hid)?.record.id ?? null) };
+                            case 'smartbar_chat_retry':
+                                return _smartbarComposeRetry(hid, message.recordId, message.index ?? null, message.auto === true);
+                            case 'smartbar_chat_dismiss':
+                                return { ok: await _smartbarComposeDismiss(hid, message.recordId, message.what) };
+                            case 'smartbar_chat_apply':
+                                return _smartbarComposeApply(hid, message.recordId, message.index, { text: message.text ?? null, html: message.html ?? null });
+                            case 'smartbar_chat_new_session':
+                                return _smartbarComposeNewSession(hid);
+                        }
+                        return { ok: false };
+                    }
                     switch (message.command) {
                         case 'smartbar_chat_send':
                             return _smartbarChatRun({ headerMessageId: hid, instruction: message.text, clientId: message.clientId ?? null });
@@ -1499,6 +1531,14 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     }
                     return { ok: false };
                 })().catch(e => { taLog.error("Error in " + message.command + ": " + e); return { ok: false, error: String(e?.message || e) }; });
+            // The chat of a compose window (claude-spec/10-smartbar-compose.md "Opening it"): the
+            // popup's entry in a compose window names its tab. Only from an extension page (the
+            // popup), never from a content script.
+            case 'smartbar_compose_open_chat':
+                if (typeof sender?.url !== 'string' || !sender.url.startsWith(browser.runtime.getURL('popup/'))) return Promise.resolve({ ok: false, error: 'not_popup' });
+                return _smartbarComposeChatOpen(message.tabId)
+                    .then(ok => ({ ok: ok }))
+                    .catch(e => { taLog.error("SmartBar: the chat of the compose window could not be opened: " + e); return { ok: false }; });
             case 'smartbar_placeholders':
                 // The {%placeholder%} autocomplete of the bar's input: the placeholders a reading
                 // context offers, as the prompt editors list them (a content script cannot read
@@ -2390,7 +2430,26 @@ const SMARTBAR_OPERATION_JOB_KIND = {
     compose: 'smartbar_compose',
     calendar_event: 'smartbar_calendar_event',
     task: 'smartbar_task',
+    // The operations of a compose window (claude-spec/10-smartbar-compose.md).
+    rewrite: 'smartbar_compose_edit',
+    proofread: 'smartbar_compose_edit',
+    translate_text: 'smartbar_compose_edit',
+    subject: 'smartbar_compose_edit',
+    select: 'smartbar_compose_edit',
 };
+// The chat of a compose window (claude-spec/10-smartbar-compose.md) shares the maps of the chats
+// of the messages (_smartbarChats, _smartbarChatGroups), under the key 'compose:<tabId>' in place
+// of a headerMessageId: a compose window has no stable Message-ID. Its records are never stored,
+// and it is neither in the Activity tab nor in the badge (_smartbarLiveStates()).
+const SMARTBAR_COMPOSE_KEY_PREFIX = 'compose:';
+function _smartbarComposeKey(composeTabId) {
+    return SMARTBAR_COMPOSE_KEY_PREFIX + composeTabId;
+}
+function _smartbarIsComposeKey(key) {
+    return typeof key === 'string' && key.startsWith(SMARTBAR_COMPOSE_KEY_PREFIX);
+}
+// The longest passage a select line shows (its first words).
+const SMARTBAR_SELECT_SHOWN_CAP = 60;
 // The compose window of each message type of the compose operation (_beginComposeWindow()).
 const SMARTBAR_COMPOSE_WINDOW = { reply: 'replyToSender', reply_all: 'replyToAll', forward: 'forward', new: 'new' };
 // The wait before the automatic retry of a rate-limited call, when the provider named none.
@@ -2412,7 +2471,8 @@ async function _smartbarConfig() {
 // feature of its own: the smartbar_execute connection usable is all it needs. ThunderAI Sparks
 // (calendar_event, task) is not here: it is checked when the line runs, so a missing one is said.
 // `chat`: { source, draft } for the operations of the chat (deliver_draft needs the source 'chat'
-// and a current draft).
+// and a current draft); { source: 'compose', isPlainText } for the chat of a compose window, whose
+// operations are the compose context's (select not in a plain text window).
 async function _smartbarEnv(chat = {}) {
     const prefs = await mztaPrefs.getPrefs([
         'add_tags', 'summarize', 'translate', 'spamfilter', 'get_calendar_event', 'get_task', 'connection_type',
@@ -2450,8 +2510,10 @@ async function _smartbarEnv(chat = {}) {
         },
         permissions: { add_tags: await permission('add_tags'), spamfilter: await permission('spamfilter') },
         usable: usable,
-        source: chat.source === 'chat' ? 'chat' : 'bar',
+        source: ['chat', 'compose'].includes(chat.source) ? chat.source : 'bar',
         draft: chat.draft ?? null,
+        context: chat.source === 'compose' ? 'compose' : 'message',
+        compose: chat.source === 'compose' ? { isPlainText: chat.isPlainText === true } : null,
     };
 }
 
@@ -2559,6 +2621,12 @@ function _smartbarChatPush(headerMessageId, record, extra = {}) {
 // its session).
 async function _smartbarPublish(state, extra = {}) {
     const hid = state.headerMessageId;
+    if (state.source === 'compose') {
+        // A compose window's chat: its window only (no bar, no store).
+        _smartbarComposeRemember(hid, state.record);
+        await _smartbarChatPush(hid, state.record, { clientId: state.clientId ?? null });
+        return;
+    }
     if (state.source === 'chat') {
         await _smartbarChatPush(hid, state.record, { clientId: state.clientId ?? null });
         if (!_smartbarActive.has(hid) && _smartbarLatestId.get(hid) === state.record.id) {
@@ -2573,6 +2641,9 @@ async function _smartbarPublish(state, extra = {}) {
 // Store a record at one of the meaningful points; a failure is logged, never fatal (the bar
 // still shows the state, which lives in memory until the instruction ends).
 async function _smartbarSave(record, options = {}) {
+    // A compose window's record lives in memory only (claude-spec/10-smartbar-compose.md
+    // "Records: in memory only"): finished as the store would finish it, never written.
+    if (record?.source === 'compose') return smartbarFinishRecord(record, options);
     try {
         const saved = await taSmartbarStore.save(record, options);
         return saved || record;
@@ -3195,6 +3266,12 @@ const SMARTBAR_EXECUTORS = {
     task: (ctx) => _smartbarRunSparks(ctx, 'task'),
     compose: _smartbarRunCompose,
     deliver_draft: _smartbarRunDeliverDraft,
+    // The compose window (claude-spec/10-smartbar-compose.md "Operations").
+    rewrite: (ctx) => _smartbarRunComposeEdit(ctx, 'rewrite'),
+    proofread: (ctx) => _smartbarRunComposeEdit(ctx, 'proofread'),
+    translate_text: (ctx) => _smartbarRunComposeEdit(ctx, 'translate_text'),
+    subject: (ctx) => _smartbarRunComposeEdit(ctx, 'subject'),
+    select: (ctx) => _smartbarRunComposeEdit(ctx, 'select'),
 };
 
 // The metadata the router gets about the message: never its body.
@@ -3217,8 +3294,12 @@ async function _smartbarRouterMetadata(message, hasSelection) {
 
 // The router call: resolves { parsed } or rejects (RouterJsonError, a config error, an API error).
 // `chat` (the chat only): { draft, onThinking }: the router is told whether the session holds a
-// draft (draft_exists, draft_type), and deliver_draft is offered only then.
+// draft (draft_exists, draft_type), and deliver_draft is offered only then. With `compose` (the
+// chat of a compose window, what _smartbarComposeRead() read): the operations of the compose
+// context, the metadata of the email being written, no placeholder and no context
+// (claude-spec/10-smartbar-compose.md "Router").
 async function _smartbarRoute(headerMessageId, record, message, hasSelection, signal, chat = null) {
+    const compose = chat?.compose || null;
     const prefs = await mztaPrefs.getPrefs([
         'connection_type', 'do_debug',
         ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
@@ -3237,19 +3318,34 @@ async function _smartbarRoute(headerMessageId, record, message, hasSelection, si
     }
     let text = routerPrompt.text;
     if (text === 'prompt_smartbar_router_full_text') text = browser.i18n.getMessage('prompt_smartbar_router_full_text');
-    const available = smartbarRegistry.listAvailable(await _smartbarEnv(chat ? { source: 'chat', draft: chat.draft } : {}));
-    const placeholders = await getPlaceholders(true);
-    const allowList = routerPlaceholderAllowList(placeholders.filter(ph => String(ph.is_default) === '1'),
+    const available = smartbarRegistry.listAvailable(await _smartbarEnv(compose
+        ? { source: 'compose', isPlainText: compose.isPlainText }
+        : (chat ? { source: 'chat', draft: chat.draft } : {})));
+    const placeholders = compose ? [] : await getPlaceholders(true);
+    const allowList = compose ? [] : routerPlaceholderAllowList(placeholders.filter(ph => String(ph.is_default) === '1'),
         ph => i18nConditionalGet(ph.name));
-    const metadata = await _smartbarRouterMetadata(message, hasSelection);
-    if (chat) {
-        metadata.draftExists = !!chat.draft;
-        metadata.draftType = chat.draft?.type || '';
+    let metadata;
+    if (compose) {
+        metadata = {
+            context: 'compose',
+            subject: compose.subject,
+            composeType: compose.composeType,
+            recipients: compose.recipients,
+            hasSelection: compose.selection.trim() !== '',
+            typedTextEmpty: compose.typedText.trim() === '',
+            hasQuotedPart: compose.quotedText.trim() !== '',
+        };
+    } else {
+        metadata = await _smartbarRouterMetadata(message, hasSelection);
+        if (chat) {
+            metadata.draftExists = !!chat.draft;
+            metadata.draftType = chat.draft?.type || '';
+        }
     }
     const prompt = buildRouterPrompt({
         text: text,
         operations: describeOperations(available),
-        placeholders: describePlaceholders(allowList),
+        placeholders: compose ? ROUTER_COMPOSE_NO_PLACEHOLDERS : describePlaceholders(allowList),
         instruction: record.instruction,
         metadata: metadata,
     });
@@ -3269,7 +3365,8 @@ async function _smartbarRoute(headerMessageId, record, message, hasSelection, si
     };
     const { parsed } = await askRouter(prompt, send);
     return {
-        output: readRouterOutput(parsed, allowList, {
+        // In a compose window the context is never used: the operations get the texts themselves.
+        output: readRouterOutput(parsed, allowList, compose ? {} : {
             hasSelection: hasSelection,
             instruction: record.instruction,
             knownIds: placeholders.map(ph => ph.id),
@@ -3290,10 +3387,12 @@ async function _smartbarStartLine(state, line) {
             groupId: state.groupId,
             index: line.index,
             report: () => {},
-            source: state.source === 'chat' ? 'chat' : 'bar',
-            // In the chat an operation with deliverInChat (compose) ends 'drafted' instead of
-            // delivering.
-            deliverInChat: state.source === 'chat' && op.deliverInChat === true,
+            source: ['chat', 'compose'].includes(state.source) ? state.source : 'bar',
+            // In the chat an operation with deliverInChat (compose; in a compose window, every
+            // proposal) ends 'drafted' instead of delivering.
+            deliverInChat: ['chat', 'compose'].includes(state.source) && op.deliverInChat === true,
+            // The chat of a compose window: its tab and its key.
+            compose: state.source === 'compose' ? { key: state.headerMessageId, tabId: state.composeTabId } : null,
             tabId: state.tabId,
             executors: SMARTBAR_EXECUTORS,
             // What the generative operations add to the email (compose): the instruction, the
@@ -3305,7 +3404,7 @@ async function _smartbarStartLine(state, line) {
             previousResult: line.previousResult ?? null,
             // The chat only: the conversation so far (refinements see the previous drafts), an
             // unreadable model answer the user brought in, and the draft deliver_draft delivers.
-            conversation: state.source === 'chat' ? renderConversation(conversationTurns(state.sessionRecords || [])) : '',
+            conversation: ['chat', 'compose'].includes(state.source) ? renderConversation(conversationTurns(state.sessionRecords || [])) : '',
             rawContext: state.rawContext || '',
             currentDraft: () => {
                 const own = smartbarCurrentDraft([state.record]);
@@ -3365,12 +3464,15 @@ async function _smartbarRecordError(state, error) {
 // chat, a message no operation covers gets the free answer instead.
 async function _smartbarProcess(state, job) {
     const { headerMessageId } = state;
-    const chat = state.source === 'chat';
+    const compose = state.source === 'compose';
+    // The chat of a message or of a compose window: a message no operation covers gets the free
+    // answer.
+    const chat = state.source === 'chat' || compose;
     taWorkingStatus.startWorking();
     let routed = null;
     try {
         routed = await _smartbarRoute(headerMessageId, state.record, state.message, state.hasSelection, job.abort.signal,
-            chat ? { draft: state.draft, onThinking: (t) => state.stream?.thinking('router', t) } : null);
+            chat ? { draft: state.draft, compose: compose ? state.compose : null, onThinking: (t) => state.stream?.thinking('router', t) } : null);
     } catch (error) {
         // Replaced: the record is already marked.
         if (!state.replaced) await _smartbarRecordError(state, error);
@@ -3382,7 +3484,7 @@ async function _smartbarProcess(state, job) {
     }
     if (state.replaced) return { status: 'cancelled' };
 
-    const plan = planOperations(smartbarRegistry, routed.availableIds, routed.output.operations);
+    const plan = planOperations(smartbarRegistry, routed.availableIds, routed.output.operations, { context: compose ? 'compose' : 'message' });
     state.record.unrecognized = routed.output.unrecognized;
     state.record.routerContext = routed.output.context;
     state.record.reports = plan.reports;
@@ -3395,7 +3497,7 @@ async function _smartbarProcess(state, job) {
         // that part stays a note, no free answer.)
         taWorkingStatus.startWorking();
         try {
-            const answer = await _smartbarChatAnswer(state, job.abort.signal);
+            const answer = compose ? await _smartbarComposeAnswer(state, job.abort.signal) : await _smartbarChatAnswer(state, job.abort.signal);
             if (answer === '') throw new Error(browser.i18n.getMessage('smartbar_error_empty_answer'));
             if (!state.replaced) state.record.answer = answer;
         } catch (error) {
@@ -3462,7 +3564,7 @@ async function _smartbarChatAnswer(state, signal) {
 // Keep an instruction in progress where the commands find it: the bar's on its message, the
 // chat's among the messages of the chat.
 function _smartbarRegister(state) {
-    if (state.source === 'chat') {
+    if (state.source === 'chat' || state.source === 'compose') {
         if (!_smartbarChatGroups.has(state.headerMessageId)) _smartbarChatGroups.set(state.headerMessageId, new Map());
         _smartbarChatGroups.get(state.headerMessageId).set(state.record.id, state);
     } else {
@@ -3471,7 +3573,7 @@ function _smartbarRegister(state) {
 }
 
 function _smartbarUnregister(state) {
-    if (state.source === 'chat') {
+    if (state.source === 'chat' || state.source === 'compose') {
         const groups = _smartbarChatGroups.get(state.headerMessageId);
         if (groups?.get(state.record.id) === state) groups.delete(state.record.id);
         if (groups && groups.size === 0) _smartbarChatGroups.delete(state.headerMessageId);
@@ -3483,7 +3585,7 @@ function _smartbarUnregister(state) {
 // The job of an instruction: the bar's keyed on its message (one at a time, it replaces), each
 // message of the chat on its own group (several at once).
 function _smartbarJobId(state) {
-    return state.source === 'chat' ? state.headerMessageId + '|chat|' + state.groupId : state.headerMessageId;
+    return state.source === 'chat' || state.source === 'compose' ? state.headerMessageId + '|chat|' + state.groupId : state.headerMessageId;
 }
 
 // Run the job of an instruction in progress, and publish its record when it ends.
@@ -3623,7 +3725,10 @@ function _smartbarReplace(state) {
     // The chat shows every record of its session: a replaced one (the feature turned off, or the
     // bar's previous instruction) reaches it, so its turn is not left "in progress".
     _smartbarSave(smartbarMarkReplaced(state.record), { keepState: true })
-        .then(saved => _smartbarChatPush(state.headerMessageId, saved))
+        .then(saved => {
+            if (state.source === 'compose') _smartbarComposeRemember(state.headerMessageId, saved);
+            return _smartbarChatPush(state.headerMessageId, saved);
+        })
         .catch(() => {});
 }
 
@@ -3868,9 +3973,456 @@ async function _smartbarChatNewSession(headerMessageId) {
 function setupSmartbarChatListener() {
     browser.windows.onRemoved.addListener((windowId) => {
         for (const [hid, chat] of [..._smartbarChats]) {
-            if (chat.windowId === windowId) _smartbarChats.delete(hid);
+            if (chat.windowId !== windowId) continue;
+            _smartbarChats.delete(hid);
+            // A compose window's chat closed: its records go with it, so what still runs stops.
+            if (_smartbarIsComposeKey(hid)) _smartbarComposeStopAll(hid);
         }
     });
+    // A compose window closed (sent, saved and closed, discarded): its chat stays open, read-only.
+    browser.tabs.onRemoved.addListener((tabId) => {
+        _smartbarComposeClosed(tabId);
+    });
+}
+
+// ---- The chat of a compose window (claude-spec/10-smartbar-compose.md) ---------------------
+//
+// The same chat window in SmartBar mode, opened on a compose window instead of a message
+// (?smartbar=1&hid=compose:<tabId>&compose=<tabId>): every message goes through the router with
+// the operations of the compose context, a message no operation covers gets the free answer, and
+// every change of the email is a proposal the user applies (smartbar_chat_apply). Its records live
+// in memory only, in chat.records, with its window.
+
+// The email being written, read at every message and by every operation: its details (subject,
+// kind, recipients, format) and, through the compose script, the typed text, the quoted part and
+// the selection. Rejects with a config error when the compose window cannot be read.
+async function _smartbarComposeRead(composeTabId) {
+    try {
+        const details = await browser.compose.getComposeDetails(composeTabId);
+        const read = await browser.tabs.sendMessage(composeTabId, { command: 'smartbarComposeRead' });
+        const addresses = [...(details?.to || []), ...(details?.cc || [])].filter(a => typeof a === 'string');
+        return {
+            subject: String(details?.subject ?? ''),
+            composeType: String(details?.type || 'new'),
+            recipients: addresses,
+            isPlainText: details?.isPlainText === true,
+            typedText: String(read?.typedText ?? ''),
+            quotedText: String(read?.quotedText ?? ''),
+            selection: String(read?.selection ?? ''),
+        };
+    } catch (e) {
+        taLog.error("SmartBar: the compose window " + composeTabId + " cannot be read: " + (e?.message || e));
+        const err = new Error(browser.i18n.getMessage('smartbar_error_compose_closed'));
+        err.isConfigError = true;
+        throw err;
+    }
+}
+
+// Keep a record of a compose window's chat in its list (replaced by id, appended when new).
+function _smartbarComposeRemember(key, record) {
+    const chat = _smartbarChats.get(key);
+    if (!chat || !record) return;
+    const at = chat.records.findIndex(r => r.id === record.id);
+    if (at >= 0) chat.records[at] = record;
+    else chat.records.push(record);
+}
+
+// A record of a compose window's chat, in progress (as in memory) or ended.
+function _smartbarComposeRecord(key, recordId) {
+    return _smartbarFindState(key, recordId)?.record || _smartbarChats.get(key)?.records.find(r => r.id === recordId) || null;
+}
+
+// Open the chat of a compose window, or bring it to front (the popup's entry, the shortcut).
+// Resolves true when the chat is open or opening.
+async function _smartbarComposeChatOpen(composeTabId) {
+    const key = _smartbarComposeKey(composeTabId);
+    const existing = _smartbarChats.get(key);
+    if (existing && !existing.closed) {
+        if (existing.windowId !== null) browser.windows.update(existing.windowId, { focused: true }).catch(() => {});
+        return true;
+    }
+    const config = await _smartbarConfig();
+    if (!config.enabled) return false;
+    try {
+        await browser.compose.getComposeDetails(composeTabId);
+    } catch (e) {
+        return false;
+    }
+    let prefs = await mztaPrefs.getAllPrefs();
+    prefs = checkScreenDimensions(prefs);
+    const chatPrompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_chat') || { id: 'prompt_smartbar_chat' };
+    const llm = getConnectionType(prefs, chatPrompt, 'smartbar_chat');
+    if (!isApiUsableConnection(llm)) {
+        sendTabMessageSafe(composeTabId, { command: "sendAlert", curr_tab_type: 'messageCompose', message: browser.i18n.getMessage('smartbar_error_no_connection') });
+        return false;
+    }
+    // In the map before any wait: a second request meanwhile finds it.
+    const chat = {
+        chatId: '_smartbar_' + generateCallID(), windowId: null, tabId: null, composeTabId: composeTabId,
+        ready: false, closed: false, sessionId: smartbarNewId(), rawContext: null, prefill: '', queue: [], records: [],
+    };
+    _smartbarChats.set(key, chat);
+    const ready = addReadyListener(llm + '_ready_' + chat.chatId, (message, createdTab) => {
+        ready.cleanup();
+        return _smartbarComposeChatReady(key, chat, createdTab);
+    });
+    const win_options = {
+        url: browser.runtime.getURL('api_webchat/index.html?llm=' + llm + '&call_id=' + chat.chatId +
+            '&ph_def_val=' + (prefs.placeholders_use_default_value ? '1' : '0') +
+            '&prompt_id=prompt_smartbar_chat&prompt_name=' + encodeURIComponent(browser.i18n.getMessage('smartbar_feature_name')) +
+            '&smartbar=1&hid=' + encodeURIComponent(key) + '&compose=' + encodeURIComponent(composeTabId)),
+        type: "popup",
+    };
+    applyWindowPositionAndSize(win_options, prefs);
+    try {
+        const win = await ready.openWindow(win_options);
+        if (chat.windowId === null) chat.windowId = win.id;
+    } catch (e) {
+        taLog.error("SmartBar: the chat window of the compose window could not be opened: " + (e?.message || e));
+        if (_smartbarChats.get(key) === chat) _smartbarChats.delete(key);
+        return false;
+    }
+    return true;
+}
+
+// The chat window of a compose window announced itself: it gets its conversation (empty at the
+// first opening), and whether its compose window is already closed.
+async function _smartbarComposeChatReady(key, chat, createdTab) {
+    if (_smartbarChats.get(key) !== chat) return;
+    chat.tabId = createdTab.id;
+    if (createdTab.windowId !== undefined) chat.windowId = createdTab.windowId;
+    chat.ready = true;
+    let subject = '';
+    try {
+        subject = String((await browser.compose.getComposeDetails(chat.composeTabId))?.subject ?? '');
+    } catch (e) {
+        chat.closed = true;
+    }
+    _smartbarSeq++;
+    await _smartbarChatPost(key, {
+        command: 'smartbar_chat_init',
+        seq: _smartbarSeq,
+        sessionId: chat.sessionId,
+        records: chat.records.map(r => _smartbarRecordForChat(_smartbarFindState(key, r.id)?.record || r)),
+        total: chat.records.length,
+        limit: SMARTBAR_CHAT_SESSION_LIMIT,
+        compose: { subject: subject, closed: chat.closed },
+    });
+}
+
+// A message of a compose window's chat: the email read again, a record in memory, then the router
+// with the compose context (and its operations, or the free answer).
+async function _smartbarComposeChatRun({ key, instruction, clientId = null }) {
+    const chat = _smartbarChats.get(key);
+    if (!chat) return { ok: false, error: 'no_chat' };
+    if (chat.closed) return { ok: false, error: 'compose_closed' };
+    const config = await _smartbarConfig();
+    if (!config.enabled) return { ok: false, error: 'disabled' };
+    const text = String(instruction ?? '').trim();
+    if (text === '') return { ok: false, error: 'empty' };
+    let read;
+    try {
+        read = await _smartbarComposeRead(chat.composeTabId);
+    } catch (e) {
+        return { ok: false, error: 'compose_closed' };
+    }
+    const groupId = smartbarNewId();
+    const record = {
+        ...smartbarNewRecord({ messageId: null, metadata: { subject: read.subject }, sessionId: chat.sessionId, groupId, instruction: text, source: 'compose' }),
+        id: 'compose-' + groupId,
+        composeTabId: chat.composeTabId,
+    };
+    const state = {
+        headerMessageId: key, composeTabId: chat.composeTabId, message: null, groupId,
+        hasSelection: read.selection.trim() !== '', selection: read.selection, record,
+        controller: new AbortController(), confirms: new Map(), replaced: false, source: 'compose',
+        clientId: clientId, sessionRecords: [...chat.records], rawContext: '', compose: read,
+    };
+    state.stream = _smartbarChatStreamer(state);
+    _smartbarRegister(state);
+    await _smartbarPublish(state);
+    _smartbarStartJob(state, (entry) => _smartbarProcess(state, entry));
+    return { ok: true, recordId: record.id };
+}
+
+// The free answer of a compose window's chat (claude-spec/10-smartbar-compose.md "The free
+// answer"): the chat's own prompt, with the email being written in place of the received one.
+async function _smartbarComposeAnswer(state, signal) {
+    const prefs = await _smartbarComposePrefs();
+    const chatPrompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_chat');
+    if (!chatPrompt) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_chat_prompt'));
+        err.isConfigError = true;
+        throw err;
+    }
+    const connection = getConnectionType(prefs, chatPrompt, 'smartbar_chat');
+    if (!isApiUsableConnection(connection)) {
+        const err = new Error(browser.i18n.getMessage('smartbar_error_no_connection'));
+        err.isConfigError = true;
+        throw err;
+    }
+    let text = chatPrompt.text;
+    if (text === 'prompt_smartbar_chat_full_text') text = browser.i18n.getMessage('prompt_smartbar_chat_full_text');
+    const read = state.compose;
+    const maxLength = Number.isInteger(prefs.smartbar_max_body_length) && prefs.smartbar_max_body_length > 0 ? prefs.smartbar_max_body_length : 0;
+    const texts = trimComposeTexts({ typed: read.typedText, quoted: read.quotedText }, maxLength);
+    const parts = ['Text written so far:\n' + (texts.typed || '(empty)')];
+    if (texts.quoted) parts.push('Message quoted or forwarded below it:\n' + texts.quoted);
+    if (read.selection.trim() !== '') parts.push('Text selected:\n' + read.selection);
+    const prompt = buildChatPrompt({
+        text: text,
+        email: { subject: read.subject, from: '', to: participantNames(read.recipients), text: parts.join('\n\n') },
+        emailHeader: SMARTBAR_COMPOSE_EMAIL_HEADER,
+        conversation: renderConversation(conversationTurns(state.sessionRecords || [])),
+        message: state.record.instruction,
+    });
+    const cmd = new mzta_specialCommand({
+        processingClient,
+        prompt: prompt,
+        llm: connection,
+        do_debug: prefs.do_debug,
+        config: chatPrompt,
+        signal: signal,
+        onThinking: (t) => state.stream?.thinking('answer', t),
+        onToken: (t) => state.stream?.token(t),
+    });
+    await cmd.initWorker();
+    return String((await cmd.sendPrompt()) ?? '').trim();
+}
+
+// An operation of a compose window (claude-spec/10-smartbar-compose.md "Generation"): the email
+// read again, the special command prompt_smartbar_compose on the smartbar_compose connection, and:
+// a body operation ends 'drafted' with its proposal ({ scope, original, text }), subject with
+// { subject }; select selects the passage the model gave in the editor ('done') or fails.
+async function _smartbarRunComposeEdit(ctx, operation) {
+    const { groupId, compose } = ctx;
+    if (!compose) return { state: 'error', error: browser.i18n.getMessage('smartbar_error_compose_closed'), errorType: 'config' };
+    const entry = taJobRegistry.start('smartbar_compose_edit', compose.key + '|' + groupId + '|' + ctx.index, async (job) => {
+        const stopped = () => job.invalidated || job.abort.signal.aborted || ctx.signal?.aborted === true;
+        try {
+            const read = await _smartbarComposeRead(compose.tabId);
+            let target = null;
+            if (SMARTBAR_BODY_OPERATIONS.includes(operation)) {
+                target = composeTarget(ctx.params.scope, read.typedText, read.selection);
+                if (target.error) {
+                    return { status: 'ok', line: { state: 'error', error: browser.i18n.getMessage('smartbar_error_no_selection'), errorType: 'no_selection' } };
+                }
+            }
+            const prefs = await _smartbarComposePrefs();
+            const composePrompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_smartbar_compose');
+            if (!composePrompt) {
+                const err = new Error(browser.i18n.getMessage('smartbar_error_no_compose_prompt'));
+                err.isConfigError = true;
+                throw err;
+            }
+            const connection = getConnectionType(prefs, composePrompt, 'smartbar_compose');
+            if (!isApiUsableConnection(connection)) {
+                const err = new Error(browser.i18n.getMessage('smartbar_error_no_connection'));
+                err.isConfigError = true;
+                throw err;
+            }
+            let text = composePrompt.text;
+            if (text === 'prompt_smartbar_compose_full_text') text = browser.i18n.getMessage('prompt_smartbar_compose_full_text');
+            const prompt = buildComposePrompt({
+                text: text,
+                operation: operation,
+                params: ctx.params,
+                instruction: ctx.instruction,
+                email: { subject: read.subject, composeType: read.composeType },
+                typedText: read.typedText,
+                quoted: read.quotedText,
+                target: target,
+                conversation: ctx.conversation || '',
+                additionalInstructions: prefs.smartbar_additional_instructions || '',
+                maxLength: Number.isInteger(prefs.smartbar_max_body_length) && prefs.smartbar_max_body_length > 0 ? prefs.smartbar_max_body_length : 0,
+            });
+            const send = async (p) => {
+                const cmd = new mzta_specialCommand({
+                    processingClient,
+                    prompt: p,
+                    llm: connection,
+                    do_debug: prefs.do_debug,
+                    config: composePrompt,
+                    jsonMode: true,
+                    signal: job.abort.signal,
+                });
+                await cmd.initWorker();
+                return await cmd.sendPrompt();
+            };
+            const { answer } = await askComposeOperation(prompt, send, operation);
+            if (stopped()) return { status: 'ok', line: { state: 'cancelled' } };
+            if (operation === 'select') {
+                let found = null;
+                try {
+                    found = await browser.tabs.sendMessage(compose.tabId, { command: 'smartbarComposeSelect', passage: answer.text });
+                } catch (e) {
+                    return { status: 'ok', line: { state: 'error', error: browser.i18n.getMessage('smartbar_error_compose_closed'), errorType: 'config' } };
+                }
+                if (found?.status === 'found') {
+                    return { status: 'ok', line: { state: 'done', result: { passage: capText(answer.text, SMARTBAR_SELECT_SHOWN_CAP) } } };
+                }
+                const ambiguous = found?.status === 'ambiguous';
+                return { status: 'ok', line: {
+                    state: 'error',
+                    error: browser.i18n.getMessage(ambiguous ? 'smartbar_error_select_ambiguous' : 'smartbar_error_select_not_found'),
+                    errorType: ambiguous ? 'select_ambiguous' : 'select_not_found',
+                } };
+            }
+            return { status: 'ok', line: { state: 'drafted', result: composeProposal(operation, answer, target) } };
+        } catch (error) {
+            return { status: 'ok', line: stopped() ? { state: 'cancelled' } : _smartbarComposeError(error) };
+        }
+    }, { groupId: groupId });
+    const outcome = await entry.promise;
+    if (outcome?.line) return outcome.line;
+    return { state: 'error', error: outcome?.errorMessage || 'error', errorType: 'api' };
+}
+
+// A proposal as HTML for the compose window: the HTML the change picker composed (sanitized),
+// else the plain text as paragraphs; a selection of one paragraph stays inline (no <p> splitting
+// the paragraph it sits in).
+function _smartbarProposalHtml(scope, text, html = '') {
+    if (typeof html === 'string' && html.trim() !== '') return sanitizeBlockHtml(html);
+    const t = String(text ?? '').replace(/\r\n/g, '\n').trim();
+    if (scope === 'selection' && !/\n\s*\n/.test(t)) {
+        return t.split('\n').map(line => line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')).join('<br>');
+    }
+    return plainTextToHtml(t);
+}
+
+// Apply a proposal (claude-spec/10-smartbar-compose.md "Proposals and Apply"): a body proposal is
+// written where its target is found again by its text (smartbarComposeReplace), a subject through
+// compose.setComposeDetails(). `text` / `html`: what the change picker composed, when the user
+// opened it (else the whole proposal). Applied, the line is 'done'; the target no longer found,
+// the line stays 'drafted', marked stale. Resolves { ok, status }.
+async function _smartbarComposeApply(key, recordId, index, { text = null, html = null } = {}) {
+    const chat = _smartbarChats.get(key);
+    if (!chat) return { ok: false, error: 'no_chat' };
+    if (chat.closed) return { ok: false, error: 'compose_closed' };
+    const record = _smartbarComposeRecord(key, recordId);
+    const op = (record?.operations || []).find(o => o.index === index);
+    if (!op || op.state !== 'drafted' || !op.result) return { ok: false, error: 'not_found' };
+    let status;
+    try {
+        if (op.id === 'subject') {
+            await browser.compose.setComposeDetails(chat.composeTabId, { subject: op.result.subject });
+            status = 'applied';
+        } else {
+            const details = await browser.compose.getComposeDetails(chat.composeTabId);
+            const isPlainText = details?.isPlainText === true;
+            const plain = typeof text === 'string' && text.trim() !== '' ? text : op.result.text;
+            const reply = await browser.tabs.sendMessage(chat.composeTabId, {
+                command: 'smartbarComposeReplace',
+                scope: op.result.scope,
+                original: op.result.original,
+                text: plain,
+                html: isPlainText ? '' : _smartbarProposalHtml(op.result.scope, plain, html),
+                isPlainText: isPlainText,
+            });
+            status = reply?.status || 'changed';
+        }
+    } catch (e) {
+        taLog.error("SmartBar: the proposal could not be applied: " + (e?.message || e));
+        return { ok: false, error: 'compose_closed' };
+    }
+    const updated = {
+        ...record,
+        operations: record.operations.map(o => o.index !== index ? o : (status === 'applied'
+            ? { ...o, state: 'done', result: { ...o.result, applied: true, stale: false }, finishedAt: Date.now() }
+            : { ...o, result: { ...o.result, stale: true } })),
+    };
+    const saved = smartbarFinishRecord(updated, { keepState: record.state === 'running' });
+    const holder = _smartbarFindState(key, recordId);
+    if (holder) holder.record = saved;
+    _smartbarComposeRemember(key, saved);
+    await _smartbarChatPush(key, saved);
+    return { ok: status === 'applied', status: status };
+}
+
+// Retry in a compose window's chat: the router of an instruction-level error (the same message
+// sent again), or one failed operation (that line alone, in a new group).
+async function _smartbarComposeRetry(key, recordId, index = null, auto = false) {
+    const chat = _smartbarChats.get(key);
+    if (!chat || chat.closed) return { ok: false, error: 'compose_closed' };
+    const record = _smartbarComposeRecord(key, recordId);
+    if (!record) return { ok: false };
+    if (index === null || index === undefined) return _smartbarComposeChatRun({ key, instruction: record.instruction });
+    if (_smartbarFindState(key, recordId)) return { ok: false, error: 'busy' };
+    const op = record.operations.find(o => o.index === index);
+    // An error, or a proposal whose target changed (asked again on the current text).
+    if (!op || !(op.state === 'error' || (op.state === 'drafted' && op.result?.stale === true))) return { ok: false };
+    let read;
+    try {
+        read = await _smartbarComposeRead(chat.composeTabId);
+    } catch (e) {
+        return { ok: false, error: 'compose_closed' };
+    }
+    const groupId = smartbarNewId();
+    const state = {
+        headerMessageId: key, composeTabId: chat.composeTabId, message: null, groupId,
+        hasSelection: read.selection.trim() !== '', selection: read.selection,
+        record: { ...record, groupId: groupId, state: 'running' },
+        controller: new AbortController(), confirms: new Map(), replaced: false, source: 'compose',
+        sessionRecords: chat.records.filter(r => r.id !== recordId && r.createdAt <= record.createdAt), rawContext: '', compose: read,
+    };
+    state.record.operations = record.operations.map(o => o.index === index
+        ? { ...o, state: 'running', result: null, error: null, errorType: null, retryAt: null, autoRetried: o.autoRetried || auto }
+        : o);
+    _smartbarRegister(state);
+    const line = { index: op.index, id: op.id, params: op.params, state: 'queued', dependsOn: [], risk: smartbarRegistry.get(op.id)?.risk || 'direct' };
+    await _smartbarPublish(state);
+    _smartbarStartJob(state, async () => {
+        await _smartbarRunLines(state, [line]);
+        state.record = await _smartbarSave(state.record);
+        return { status: 'ok' };
+    });
+    return { ok: true };
+}
+
+// Dismiss a line of a compose window's record (as _smartbarDismiss(), in memory).
+async function _smartbarComposeDismiss(key, recordId, what) {
+    const record = _smartbarComposeRecord(key, recordId);
+    if (!record) return false;
+    let updated;
+    if (Number.isInteger(what)) {
+        updated = { ...record, operations: record.operations.map(op => op.index === what ? { ...op, dismissed: true } : op) };
+    } else if (['error', 'unrecognized', 'reports'].includes(what)) {
+        updated = { ...record, dismissed: { ...(record.dismissed || {}), [what]: true } };
+    } else {
+        return false;
+    }
+    const holder = _smartbarFindState(key, recordId);
+    if (holder) holder.record = updated;
+    _smartbarComposeRemember(key, updated);
+    await _smartbarChatPush(key, updated);
+    return true;
+}
+
+// New conversation in a compose window's chat: its records are dropped. Refused while a message
+// is being understood or answered.
+function _smartbarComposeNewSession(key) {
+    const chat = _smartbarChats.get(key);
+    if (!chat) return { ok: false };
+    if (_smartbarChatTurnInProgress(key)) return { ok: false, error: 'busy' };
+    chat.sessionId = smartbarNewId();
+    chat.records = [];
+    return { ok: true, sessionId: chat.sessionId };
+}
+
+// Stop everything a compose window's chat runs: its records' running lines end 'cancelled'.
+function _smartbarComposeStopAll(key) {
+    for (const state of [...(_smartbarChatGroups.get(key)?.values() || [])]) _smartbarReplace(state);
+}
+
+// A tab closed: when it is a compose window with a chat, what runs stops and the chat stays open,
+// its input disabled (claude-spec/10-smartbar-compose.md "When the compose window closes").
+function _smartbarComposeClosed(tabId) {
+    const key = _smartbarComposeKey(tabId);
+    const chat = _smartbarChats.get(key);
+    if (!chat || chat.closed) return;
+    chat.closed = true;
+    _smartbarComposeStopAll(key);
+    _smartbarChatPost(key, { command: 'smartbar_chat_compose_closed' });
 }
 
 // The feature turned off: every instruction in progress stops (the bar's and the chat's), the
@@ -3955,7 +4507,10 @@ function _smartbarFromPage(sender) {
 // Every instruction in progress, the bar's and the chat's.
 function _smartbarLiveStates() {
     const out = [..._smartbarActive.values()];
-    for (const groups of _smartbarChatGroups.values()) out.push(...groups.values());
+    // Not the chats of the compose windows: their records are shown in their window only.
+    for (const [key, groups] of _smartbarChatGroups) {
+        if (!_smartbarIsComposeKey(key)) out.push(...groups.values());
+    }
     return out.filter(state => state.record && state.record.id !== undefined && state.record.id !== null);
 }
 

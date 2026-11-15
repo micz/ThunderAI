@@ -748,7 +748,7 @@ One record per instruction in the `smartbar` object store of the per-message dat
   store, a database found new is not rebuilt for it. The history is lost if Thunderbird evicts the
   database (the Options and Activity tabs say so).
 - A record holds `messageId`, `createdAt`, `subject` / `from` / `message_date`, `groupId`,
-  `sessionId`, `source` (`'bar'` or `'chat'`), `instruction`, `state`, `unrecognized`, `routerContext`,
+  `sessionId`, `source` (`'bar'` or `'chat'`; `'compose'` is the chat of a compose window, never stored: [10-smartbar-compose.md](10-smartbar-compose.md)), `instruction`, `state`, `unrecognized`, `routerContext`,
   `reports`, `error`, `errorType`, `rawResponse`, `retryAt`, `operations`, `dismissed`, and
   `answer` (the chat's free answer) / `draft` (`{ type, subject, body, groupId }`, the latest draft its
   compose wrote in the chat), `null` otherwise. `failed` and `size` are computed on write.

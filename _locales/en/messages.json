@@ -5345,6 +5345,26 @@
     "message": "The AI gave an empty answer.",
     "description": "SmartBar chat: the AI answered with no text."
   },
+  "smartbar_error_no_compose_prompt": {
+    "message": "The SmartBar prompt of the compose window is missing.",
+    "description": "SmartBar: error when the special prompt that changes the email being written cannot be found."
+  },
+  "smartbar_error_compose_closed": {
+    "message": "The email window is closed or cannot be reached.",
+    "description": "SmartBar chat of a compose window: the compose window it works on was closed, or does not answer."
+  },
+  "smartbar_error_no_selection": {
+    "message": "No text is selected in the email.",
+    "description": "SmartBar chat of a compose window: the user asked to change the selected text, but nothing is selected."
+  },
+  "smartbar_error_select_not_found": {
+    "message": "The passage was not found in the email.",
+    "description": "SmartBar chat of a compose window: the passage to select could not be found in the text written."
+  },
+  "smartbar_error_select_ambiguous": {
+    "message": "The passage appears more than once in the email.",
+    "description": "SmartBar chat of a compose window: the passage to select is in the text written more than once, so it was not selected."
+  },
   "smartbar_chat_new_conversation": {
     "message": "New conversation",
     "description": "SmartBar chat window: header button that starts a new conversation about the same email."
