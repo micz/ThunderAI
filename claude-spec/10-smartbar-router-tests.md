@@ -30,6 +30,11 @@ Each case has:
 - `source`: `"bar"` (default) or `"chat"`, where the message is typed;
 - `draft`: the chat only, the type of the session's current draft (`draft_exists` / `draft_type` of
   the router's metadata); absent when there is none. `deliver_draft` is available only with one;
+- `context`: `"message"` (default: the email being read, from the bar or its chat) or `"compose"`
+  (the chat of a compose window, [10-smartbar-compose.md](10-smartbar-compose.md)): the operations
+  offered are those of that context only. A compose case has no `source` nor `draft`;
+- `plainText`: a compose case only, whether the compose window is plain text (default `false`):
+  `select` is not available then;
 - `expected`: the router's answer.
 
 Free-text values (a tag name, a language) are written as the user wrote them, in the language of
@@ -354,10 +359,94 @@ whatever their order (its `dependsOn`, also checked). Without a draft the approv
     "source": "chat",
     "draft": "reply",
     "expected": { "operations": [], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "correggi",
+    "context": "compose",
+    "expected": { "operations": [{ "id": "proofread", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "make it shorter",
+    "context": "compose",
+    "expected": { "operations": [{ "id": "rewrite", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "correggila e rendila più formale",
+    "context": "compose",
+    "expected": { "operations": [{ "id": "rewrite", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "riscrivi tutta la mail in modo più cortese",
+    "context": "compose",
+    "hasSelection": true,
+    "expected": { "operations": [{ "id": "rewrite", "params": { "scope": "all" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "scrivi che accetto l'invito e ringrazio",
+    "context": "compose",
+    "expected": { "operations": [{ "id": "rewrite", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "traducila in inglese",
+    "context": "compose",
+    "expected": { "operations": [{ "id": "translate_text", "params": { "language": "inglese" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "translate the selected text into German",
+    "context": "compose",
+    "hasSelection": true,
+    "expected": { "operations": [{ "id": "translate_text", "params": { "language": "German", "scope": "selection" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "correggi e scrivi l'oggetto",
+    "context": "compose",
+    "expected": { "operations": [{ "id": "proofread", "params": {} }, { "id": "subject", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "suggest a short subject",
+    "context": "compose",
+    "expected": { "operations": [{ "id": "subject", "params": {} }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "seleziona l'ultimo paragrafo e traducilo in francese",
+    "context": "compose",
+    "expected": { "operations": [{ "id": "select", "params": { "target": "l'ultimo paragrafo" } }, { "id": "translate_text", "params": { "language": "francese" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "make the sentence about the prices more polite, select it first",
+    "context": "compose",
+    "expected": { "operations": [{ "id": "rewrite", "params": {} }, { "id": "select", "params": { "target": "the sentence about the prices" } }], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "select the greeting",
+    "context": "compose",
+    "plainText": true,
+    "expected": { "operations": [], "context": [], "unrecognized": "select the greeting" }
+  },
+  {
+    "instruction": "cosa mi chiedono nel messaggio citato?",
+    "context": "compose",
+    "expected": { "operations": [], "context": [], "unrecognized": "" }
+  },
+  {
+    "instruction": "rispondi a tutti",
+    "context": "compose",
+    "expected": { "operations": [], "context": [], "unrecognized": "rispondi a tutti" }
   }
 ]
 ```
 
-The last case shows a limit of this version: the summary has no language parameter, so "in
+**The compose window** ([10-smartbar-compose.md](10-smartbar-compose.md) "Router"). The router
+sees the metadata of the email being written, never its text, and gives no `context` (`[]`: the
+later steps get the texts themselves). A change of the text is a `rewrite`, `proofread` or
+`translate_text`, one per instruction: a combination of changes ("correggila e rendila più formale")
+is one `rewrite`. `scope` is given only when the user says what to change against the default (the
+selection when there is one, else the whole text): "the whole email" with a selection is `all`,
+"the selected text" `selection`. `select` takes the passage as the user described it, word for word,
+and a change asked with it runs after it, whatever the user's order (its `dependsOn`, checked). A
+question about the email or the quoted message is nothing at all, as in the chat; an operation of
+the message ("rispondi a tutti") is not offered there and is unrecognized.
+
+The last message case shows a limit of this version: the summary has no language parameter, so "in
 francese" for the summary is not covered by any operation and is reported as unrecognized, while
 the summary itself still runs in the language configured on its own settings page.

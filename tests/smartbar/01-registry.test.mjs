@@ -1,8 +1,16 @@
 // claude-spec/10-smartbar.md "Operation registry" (js/mzta-smartbar-registry.js):
-//  - eleven operations in this version, tag / summarize / translate / delete_summary /
+//  - eleven operations of the message in this version, tag / summarize / translate / delete_summary /
 //    delete_translation / spam_check / delete_spam_report / calendar_event / task / compose /
-//    deliver_draft, each a
-//    valid entry (id, description, params schema, requirements, multiple false, risk, dependsOn, run);
+//    deliver_draft, and five of the compose window (claude-spec/10-smartbar-compose.md), rewrite /
+//    proofread / translate_text / subject / select, each a valid entry (id, context, description,
+//    params schema, requirements, multiple false, risk, dependsOn, run);
+//  - the contexts: listAvailable(env) offers only the operations of env's context ('message' when
+//    absent); planOperations() reports an operation of the other context 'unknown';
+//  - the compose operations: available with the smartbar_compose connection in a compose window,
+//    select not in a plain text one; rewrite / proofread / translate_text are proposals
+//    (deliverInChat) sharing the exclusive group 'body' (a second one is reported 'conflict') and
+//    wait for a select of the same instruction; translate_text needs its language; scope is
+//    'selection' or 'all';
 //  - delete_summary / delete_translation / delete_spam_report need their feature on only (no model
 //    call, no permission); spam_check its feature, permission and connection; calendar_event / task
 //    their feature and connection, never Sparks (checked when the line runs), and run last like
@@ -38,7 +46,7 @@ const reg = R.createSmartbarRegistry();
 
 /** A test operation: a valid entry with the given overrides. */
 const fake = (id, over = {}) => ({
-    id, description: 'test ' + id, params: {}, requirements: () => true, multiple: false,
+    id, context: 'message', description: 'test ' + id, params: {}, requirements: () => true, multiple: false,
     risk: 'direct', dependsOn: () => [], run: async () => ({ state: 'done' }), ...over,
 });
 /** A deferred promise. */
@@ -51,9 +59,14 @@ const tick = () => new Promise(r => setImmediate(r));
 const plan = (ops, ids, routed = ids.map(id => ({ id }))) => R.planOperations(R.createSmartbarRegistry(ops), ids, routed);
 
 const OP_IDS = ['tag', 'summarize', 'translate', 'delete_summary', 'delete_translation', 'spam_check', 'delete_spam_report', 'calendar_event', 'task', 'compose', 'deliver_draft'];
+const COMPOSE_IDS = ['rewrite', 'proofread', 'translate_text', 'subject', 'select'];
+/** An env of a compose window where every compose operation can run. */
+const COMPOSE_ENV = Object.freeze({ ...ALL_AVAILABLE, context: 'compose', source: 'compose', compose: { isPlainText: false } });
 
-k.test('default-ops', 'the eleven operations of this version, valid, single-instance', () => {
-    assert.deepEqual(reg.all().map(op => op.id), OP_IDS);
+k.test('default-ops', 'the eleven operations of the message and the five of the compose window, valid, single-instance', () => {
+    assert.deepEqual(reg.all().map(op => op.id), [...OP_IDS, ...COMPOSE_IDS]);
+    assert.deepEqual(reg.all().filter(op => op.context === 'message').map(op => op.id), OP_IDS);
+    assert.deepEqual(reg.all().filter(op => op.context === 'compose').map(op => op.id), COMPOSE_IDS);
     for (const op of R.DEFAULT_OPERATIONS) {
         assert.deepEqual(R.operationProblems(op), [], op.id);
         assert.equal(op.multiple, false, op.id);
@@ -73,12 +86,13 @@ k.test('default-ops', 'the eleven operations of this version, valid, single-inst
 
 k.test('run-executor', 'an operation runs through the executor of its id', async () => {
     const calls = [];
-    const executors = Object.fromEntries(OP_IDS.map(id => [id, async ctx => {
+    const ids = [...OP_IDS, ...COMPOSE_IDS];
+    const executors = Object.fromEntries(ids.map(id => [id, async ctx => {
         calls.push([id, ctx.params]);
         return { state: 'done' };
     }]));
     for (const op of reg.all()) await op.run({ params: { p: op.id }, executors });
-    assert.deepEqual(calls, OP_IDS.map(id => [id, { p: id }]));
+    assert.deepEqual(calls, ids.map(id => [id, { p: id }]));
 });
 
 k.test('new-ops-availability', 'delete_*: the feature on, no connection nor permission; spam_check: feature, permission, connection; calendar_event / task: feature and connection, never Sparks', () => {
@@ -129,6 +143,79 @@ k.test('invalid-entry', 'an invalid entry or a duplicated id is refused at creat
     assert.throws(() => R.createSmartbarRegistry([fake('a', { runLast: 1 })]), /runLast/);
     assert.throws(() => R.createSmartbarRegistry([fake('a', { deliverInChat: 'yes' })]), /deliverInChat/);
     assert.throws(() => R.createSmartbarRegistry([fake('a', { params: { x: { type: 'string', required: 'yes' } } })]), /required/);
+    assert.throws(() => R.createSmartbarRegistry([fake('a', { context: 'reading' })]), /context/);
+    assert.throws(() => R.createSmartbarRegistry([fake('a', { context: undefined })]), /context/);
+    assert.throws(() => R.createSmartbarRegistry([fake('a', { exclusive: '' })]), /exclusive/);
+});
+
+k.test('contexts', 'listAvailable() offers only the operations of the env\'s context, message when absent', () => {
+    assert.deepEqual([...R.CONTEXTS], ['message', 'compose']);
+    assert.equal(R.envContext({}), 'message');
+    assert.equal(R.envContext(null), 'message');
+    assert.equal(R.envContext({ context: 'other' }), 'message');
+    assert.equal(R.envContext({ context: 'compose' }), 'compose');
+    assert.deepEqual(reg.listAvailable(COMPOSE_ENV).map(op => op.id), COMPOSE_IDS);
+    // The same features, permissions and connections: no operation of the message in a compose window.
+    assert.ok(reg.listAvailable({ ...ALL_AVAILABLE, context: 'message' }).every(op => op.context === 'message'));
+    assert.ok(reg.listAvailable(ALL_AVAILABLE).every(op => op.context === 'message'));
+});
+
+k.test('compose-availability', 'the compose operations: the smartbar_compose connection; select not in a plain text window', () => {
+    const ids = env => reg.listAvailable(env).map(op => op.id);
+    assert.deepEqual(ids({ ...COMPOSE_ENV, usable: { ...ALL_AVAILABLE.usable, smartbar_compose: false } }), []);
+    // Nothing else is needed: no feature switch, no other connection.
+    assert.deepEqual(ids({ context: 'compose', usable: { smartbar_compose: true } }), COMPOSE_IDS);
+    assert.deepEqual(ids({ ...COMPOSE_ENV, compose: { isPlainText: true } }), COMPOSE_IDS.filter(id => id !== 'select'));
+    // Never from a message, even with its connection usable.
+    assert.deepEqual(ids({ usable: { smartbar_compose: true } }), []);
+});
+
+k.test('compose-entries', 'the compose operations: params, proposals, the exclusive body group, select first', () => {
+    for (const id of COMPOSE_IDS) {
+        const op = reg.get(id);
+        assert.equal(op.context, 'compose', id);
+        assert.equal(op.runLast, undefined, id + ': nothing opens a window');
+        assert.equal(op.deliverInChat === true, id !== 'select', id + ': a proposal, but select');
+        assert.equal(op.exclusive, ['rewrite', 'proofread', 'translate_text'].includes(id) ? 'body' : undefined, id);
+    }
+    for (const id of ['rewrite', 'proofread', 'translate_text']) {
+        assert.deepEqual(reg.get(id).params.scope.enum, ['selection', 'all'], id);
+        assert.notEqual(reg.get(id).params.scope.required, true, id);
+    }
+    assert.deepEqual(Object.keys(reg.get('rewrite').params), ['scope']);
+    assert.deepEqual(Object.keys(reg.get('translate_text').params), ['language', 'scope']);
+    assert.equal(reg.get('translate_text').params.language.required, true);
+    assert.deepEqual(reg.get('subject').params, {});
+    assert.deepEqual(Object.keys(reg.get('select').params), ['target']);
+    assert.equal(reg.get('select').params.target.required, true);
+    const v = (id, params) => R.validateParams(reg.get(id), params);
+    assert.deepEqual(v('translate_text', {}), { ok: false, error: '"language" is required' });
+    assert.deepEqual(v('rewrite', { scope: 'quote' }), { ok: false, error: '"scope" must be one of selection, all' });
+    assert.deepEqual(v('select', { target: '  ' }), { ok: false, error: '"target" is required' });
+    assert.deepEqual(v('rewrite', { scope: 'all' }), { ok: true, params: { scope: 'all' } });
+});
+
+k.test('compose-plan', 'a compose plan: one proposal for the body, the others conflict; a change waits for select', () => {
+    const avail = reg.listAvailable(COMPOSE_ENV).map(op => op.id);
+    const planC = routed => R.planOperations(reg, avail, routed, { context: 'compose' });
+    const { lines, reports } = planC([{ id: 'proofread' }, { id: 'subject' }, { id: 'rewrite' }, { id: 'translate_text', params: { language: 'en' } }]);
+    assert.deepEqual(lines.map(l => l.id), ['proofread', 'subject']);
+    assert.deepEqual(reports, [{ kind: 'conflict', id: 'rewrite' }, { kind: 'conflict', id: 'translate_text' }]);
+    // "Translate the last paragraph after selecting it", in either order: select first.
+    for (const routed of [[{ id: 'translate_text', params: { language: 'English' } }, { id: 'select', params: { target: 'the last paragraph' } }],
+        [{ id: 'select', params: { target: 'the last paragraph' } }, { id: 'translate_text', params: { language: 'English' } }]]) {
+        assert.deepEqual(planC(routed).lines.map(l => [l.id, l.dependsOn]), [['select', []], ['translate_text', [0]]], JSON.stringify(routed));
+    }
+    // A conflicting line in error (invalid params) still holds the group: the first one counts.
+    const bad = planC([{ id: 'translate_text' }, { id: 'rewrite' }]);
+    assert.deepEqual([bad.lines.map(l => [l.id, l.errorType]), bad.reports], [[['translate_text', 'params']], [{ kind: 'conflict', id: 'rewrite' }]]);
+});
+
+k.test('plan-context', 'planOperations(): an operation of the other context is unknown', () => {
+    const all = reg.all().map(op => op.id);
+    assert.deepEqual(R.planOperations(reg, all, [{ id: 'rewrite' }, { id: 'summarize' }]).reports, [{ kind: 'unknown', id: 'rewrite' }]);
+    assert.deepEqual(R.planOperations(reg, all, [{ id: 'rewrite' }, { id: 'summarize' }], { context: 'compose' }).reports,
+        [{ kind: 'unknown', id: 'summarize' }]);
 });
 
 k.test('availability', 'listAvailable() keeps only the operations whose requirements hold', () => {

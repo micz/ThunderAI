@@ -1,10 +1,11 @@
 # SmartBar in the compose window
 
-> **Status: design, not implemented.** This file is the agreed design of the SmartBar for the email
-> being written. Nothing of it exists in the code yet: until it is implemented, [10-smartbar.md](10-smartbar.md)
-> describes the SmartBar as it is, and its "Deferred" section keeps "Compose window" with a pointer
-> here. Once implemented, this file describes the behavior (the status line goes) and the tests
-> follow it.
+> **Status: being implemented.** This file is the agreed design of the SmartBar for the email
+> being written. Implemented so far: the registry (`context`, `exclusive`, the five compose
+> operations) and the router (the compose metadata, the reference cases). The rest does not exist
+> yet: until it does, [10-smartbar.md](10-smartbar.md) describes the SmartBar as it is, and its
+> "Deferred" section keeps "Compose window" with a pointer here. Once implemented, this file
+> describes the behavior (the status line goes) and the tests follow it.
 
 The SmartBar of the message display acts on the email being **read**. In a compose window the user
 works on the email being **written**: they correct it, change its tone or length, translate it, ask
@@ -123,6 +124,13 @@ JSON section and the same answer. What the context (`'message'` or `'compose'`) 
    `draft_exists` (there is no separate draft: the email is the draft).
 3. **One context line**, appended by the add-on with the metadata, never part of the editable text:
    "The user is writing an email in a compose window; the operations change that email."
+   (`ROUTER_COMPOSE_CONTEXT`). The metadata block names its fields as the router reads them
+   (`compose_type`, `has_selection`, `typed_text_empty`, `has_quoted_part`); it holds no sender, no
+   tags and nothing of the drafts.
+4. **No placeholders**: `{PLACEHOLDERS}` stands for `ROUTER_COMPOSE_NO_PLACEHOLDERS` ("none in a
+   compose window"), the router's `context` is ignored and `selected_text` is not added: the later
+   steps get the typed text, the quoted part and the selection themselves. A `{%…%}` typed in the
+   instruction stays text.
 
 The rules of each context live in the `description` of its operations, which the router already
 reads: no second prompt to customize, no second text for a policy to enforce. The default text of
@@ -130,9 +138,14 @@ reads: no second prompt to customize, no second text for a policy to enforce. Th
 changes to the text is one `rewrite`, see "Operations"; a question about the email or the quote is
 no operation and nothing unrecognized: the free answer).
 
-[10-smartbar-router-tests.md](10-smartbar-router-tests.md) gains a `context` field per case
-(`"message"` by default, `"compose"`), and compose cases with `hasSelection`; its test checks them
-against the operations of that context.
+[10-smartbar-router-tests.md](10-smartbar-router-tests.md) has a `context` field per case
+(`"message"` by default, `"compose"`) and a `plainText` one for the compose cases, and compose
+cases with `hasSelection`; its test checks them against the operations of that context.
+
+The default text of `prompt_smartbar_router` says the instruction is about the email being read
+or, in a compose window, the one being written, and gives the compose rules that are not about one
+operation (a combination of changes is one `rewrite`; a question about the email or the quoted
+message is no operation).
 
 ## Operation registry
 

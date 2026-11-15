@@ -60,6 +60,16 @@ export const ROUTER_JSON_SECTION = [
 export const ROUTER_CORRECTION =
     'Your previous reply was not a valid JSON object. Reply with the JSON object only, in the format above.';
 
+/**
+ * The context line of a compose window (claude-spec/10-smartbar-compose.md "Router"): appended by
+ * the add-on with the metadata, never part of the editable text.
+ */
+export const ROUTER_COMPOSE_CONTEXT =
+    'The user is writing an email in a compose window; the operations change that email.';
+
+/** What {PLACEHOLDERS} stands for in a compose window: the later steps get the texts themselves. */
+export const ROUTER_COMPOSE_NO_PLACEHOLDERS = '(none in a compose window: give "context": [])';
+
 /** The placeholder ids the router may never pick (claude-spec/10-smartbar.md "Placeholders"). */
 export const ROUTER_EXCLUDED_PLACEHOLDERS = Object.freeze(['empty', 'additional_text', 'mail_typed_text']);
 
@@ -122,7 +132,9 @@ export function participantNames(addresses) {
  *   placeholders  the description of the allow list (describePlaceholders())
  *   instruction   what the user typed
  *   metadata      { subject, author, participants: [names], tags: [names], hasSelection,
- *                 draftExists?, draftType? } (the last two from the chat only)
+ *                 draftExists?, draftType? } (the last two from the chat only); in a compose
+ *                 window { context: 'compose', subject, composeType, recipients: [addresses],
+ *                 hasSelection, typedTextEmpty, hasQuotedPart }: never the texts themselves
  */
 export function buildRouterPrompt({ text, operations, placeholders, instruction, metadata = {} }) {
     const values = {
@@ -137,6 +149,25 @@ export function buildRouterPrompt({ text, operations, placeholders, instruction,
         else missing.push(values[variable]);
     }
     if (missing.length > 0) body += '\n\n' + missing.join('\n\n');
+
+    if (metadata.context === 'compose') {
+        const yesNo = v => (v ? 'yes' : 'no');
+        const meta = [
+            ROUTER_COMPOSE_CONTEXT,
+            'Subject: ' + (metadata.subject || ''),
+            'Kind of email (compose_type): ' + String(metadata.composeType || 'new'),
+            'Recipients: ' + participantNames(metadata.recipients).join(', '),
+            'Text selected in the email (has_selection): ' + yesNo(metadata.hasSelection),
+            'The text written is empty (typed_text_empty): ' + yesNo(metadata.typedTextEmpty),
+            'A quoted or forwarded message is below it (has_quoted_part): ' + yesNo(metadata.hasQuotedPart),
+        ];
+        return [
+            body.trim(),
+            ROUTER_JSON_SECTION,
+            'Instruction:\n' + String(instruction ?? ''),
+            'Email information (the text of the email is not given to you):\n' + meta.join('\n'),
+        ].join('\n\n');
+    }
 
     const meta = [];
     meta.push('Subject: ' + (metadata.subject || ''));

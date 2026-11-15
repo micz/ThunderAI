@@ -221,7 +221,8 @@ prefills the instruction instead, and attaches the unreadable answer to the next
 
 | Field | Meaning |
 |-------|---------|
-| `id` | Stable lowercase identifier |
+| `id` | Stable lowercase identifier, unique across both contexts |
+| `context` | `'message'` (the eleven below) or `'compose'` (the compose window's, [10-smartbar-compose.md](10-smartbar-compose.md)): `listAvailable(env)` offers only the operations of `env.context` (`'message'` when absent), and `planOperations(…, { context })` reports an operation of the other context `unknown` |
 | `description` | For the router (English): what it does and when to pick it |
 | `params` | `{ name: { type: 'string' \| 'string[]' \| 'boolean', enum?, required?, description } }`, optional unless `required` |
 | `requirements(env)` | Whether it can run now: feature on, connection usable, permissions granted; `env.source` (`'bar'` / `'chat'`) and `env.draft` (the chat session's current draft, or `null`) too |
@@ -229,6 +230,7 @@ prefills the instruction instead, and attaches the unreadable answer to the next
 | `risk` | `'direct'`, or `'confirm'` (waits for the user's Confirm) |
 | `runLast` | Optional: runs after every other operation of the instruction has ended (compose, calendar_event, task: the window they open steals the focus) |
 | `deliverInChat` | Optional: in the chat the operation does not deliver when it ends, it ends `drafted` and the user delivers it later (compose) |
+| `exclusive` | Optional: a group name; of the lines of one instruction sharing it, only the first in the user's order is planned, the others reported `conflict` (none of the eleven has one) |
 | `dependsOn(ops, index)` | The other operations of the instruction it waits for: a static rule, never the model's; the plan moves it after them |
 | `run(ctx)` | Resolves `{ state, result, error, errorType, rawResponse, retryAt }`; `state` is `done`, `drafted`, `error` or `cancelled` |
 
@@ -295,8 +297,9 @@ registry, never the model's and never a special case by id:
   one in the user's order, else the first `runLast` one. A cycle keeps the user's order and drops
   the dependencies that would point forward.
 
-A line's `index` is its run order and its `dependsOn` names earlier lines only. An unknown id is
-reported `unknown`, a second instance of a single-instance operation `duplicate`.
+A line's `index` is its run order and its `dependsOn` names earlier lines only. An unknown id (or
+one of the other context) is reported `unknown`, a second instance of a single-instance operation
+`duplicate`, a second line of an `exclusive` group `conflict`.
 
 **Run** (`runPlanned()`): at most `smartbar_parallel_limit` lines at once, first come first served;
 a line waits for its dependencies and is cancelled when one did not end successfully (`done`, or

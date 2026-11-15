@@ -27,12 +27,12 @@ export async function smartbarContext(mockOpts = {}) {
     return { ...ctx, registry, router, execute, chat, store, storage, placeholders };
 }
 
-/** An availability env where every default operation can run. */
+/** An availability env where every default operation can run (those of a compose window with `context: 'compose'`). */
 export const ALL_AVAILABLE = Object.freeze({
     features: { add_tags: true, summarize: true, translate: true, spamfilter: true, get_calendar_event: true, get_task: true },
     permissions: { add_tags: true, spamfilter: true },
     usable: {
         add_tags: true, summarize: true, translate: true, spamfilter: true,
-        get_calendar_event: true, get_task: true, smartbar_execute: true,
+        get_calendar_event: true, get_task: true, smartbar_execute: true, smartbar_compose: true,
     },
 });

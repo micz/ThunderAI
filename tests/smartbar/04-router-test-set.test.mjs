@@ -17,7 +17,12 @@
 //    instruction;
 //  - the deletions: delete_summary / delete_translation / delete_spam_report run before a
 //    summarize / translate / spam_check of the same instruction (their dependsOn), and "cancella la mail" is none of them; calendar_event /
-//    task run last (runLast).
+//    task run last (runLast);
+//  - the compose window (claude-spec/10-smartbar-compose.md "Router"): a case's context decides the
+//    operations offered (plainText takes select away); a combination of changes is one rewrite, at
+//    most one change of the body per instruction (exclusive), a change asked with select runs after
+//    it, a question is nothing at all, an operation of the message is unrecognized, and the
+//    context is always [].
 // The model's actual answers are not tested here (no model at level 1): the file is also a manual
 // check of a router connection.
 
@@ -49,10 +54,17 @@ k.test('one-block', 'the document holds one JSON block, an array of cases', () =
 
 const cases = blocks.length === 1 ? JSON.parse(blocks[0]) : [];
 
-/** The operations available in a case: its own list, else those of its source and draft. */
-const availableIn = c => c.available ?? reg.listAvailable({
-    ...ALL_AVAILABLE, source: c.source ?? 'bar', draft: c.draft ? { type: c.draft } : null,
-}).map(op => op.id);
+/** The context of a case: 'message' unless it says 'compose'. */
+const contextOf = c => c.context ?? 'message';
+
+/** The operations available in a case: its own list, else those of its context, source and draft. */
+const availableIn = c => c.available ?? reg.listAvailable(contextOf(c) === 'compose'
+    ? { ...ALL_AVAILABLE, context: 'compose', source: 'compose', compose: { isPlainText: c.plainText === true } }
+    : { ...ALL_AVAILABLE, source: c.source ?? 'bar', draft: c.draft ? { type: c.draft } : null },
+).map(op => op.id);
+
+/** The plan of a case's expected operations, in its context. */
+const planOf = c => R.planOperations(reg, availableIn(c), c.expected.operations, { context: contextOf(c) });
 
 k.test('well-formed', 'each case has an instruction and the three fields of the locked format', () => {
     for (const c of cases) {
@@ -65,6 +77,9 @@ k.test('well-formed', 'each case has an instruction and the three fields of the 
         if ('available' in c) assert.ok(c.available.every(id => ALL_IDS.includes(id)), c.instruction);
         if ('hasSelection' in c) assert.equal(typeof c.hasSelection, 'boolean', c.instruction);
         if ('source' in c) assert.ok(['bar', 'chat'].includes(c.source), c.instruction);
+        if ('context' in c) assert.ok(['message', 'compose'].includes(c.context), c.instruction);
+        if ('plainText' in c) assert.equal(c.context, 'compose', c.instruction + ': plainText is a compose case\'s');
+        if (c.context === 'compose') assert.ok(!('source' in c) && !('draft' in c), c.instruction + ': no source nor draft in a compose case');
         if ('draft' in c) {
             assert.equal(c.source, 'chat', c.instruction + ': a draft exists in the chat only');
             assert.ok(['reply', 'reply_all', 'forward', 'new'].includes(c.draft), c.instruction);
@@ -74,7 +89,7 @@ k.test('well-formed', 'each case has an instruction and the three fields of the 
 
 k.test('operations-valid', 'every expected operation is known, available, valid and at most once', () => {
     for (const c of cases) {
-        const { lines, reports } = R.planOperations(reg, availableIn(c), c.expected.operations);
+        const { lines, reports } = planOf(c);
         assert.deepEqual(reports, [], c.instruction);
         assert.deepEqual(lines.filter(l => l.state === 'error').map(l => l.error), [], c.instruction);
         assert.equal(lines.length, c.expected.operations.length, c.instruction);
@@ -105,7 +120,10 @@ k.test('unrecognized-words', 'an unrecognized part is taken word for word from t
         }
         // From the bar, nothing recognized is something unrecognized; in the chat a question is
         // neither (the free answer covers it).
-        if (c.expected.operations.length === 0 && c.source !== 'chat') assert.notEqual(c.expected.unrecognized, '', c.instruction);
+        // The chat of a compose window answers a question too.
+        if (c.expected.operations.length === 0 && c.source !== 'chat' && contextOf(c) !== 'compose') {
+            assert.notEqual(c.expected.unrecognized, '', c.instruction);
+        }
     }
 });
 
@@ -140,12 +158,43 @@ k.test('chat-cases', 'the chat: refinements are compose of the draft\'s type, ap
     const both = chat.filter(c => c.expected.operations.length === 2 && c.expected.operations.some(op => op.id === 'deliver_draft'));
     assert.equal(both.length, 2);
     for (const c of both) {
-        const { lines } = R.planOperations(reg, availableIn(c), c.expected.operations);
+        const { lines } = planOf(c);
         assert.deepEqual(lines.map(l => [l.id, l.dependsOn]), [['compose', []], ['deliver_draft', [0]]], c.instruction);
     }
 });
 
 const composeOf = c => c.expected.operations.find(op => op.id === 'compose');
+
+k.test('compose-window', 'the compose window: one change of the body, select first, questions answered, the message\'s operations unrecognized', () => {
+    const compose = cases.filter(c => contextOf(c) === 'compose');
+    const ids = instruction => compose.find(c => c.instruction === instruction).expected.operations.map(op => op.id);
+    assert.ok(compose.length >= 10);
+    for (const c of compose) {
+        assert.deepEqual(c.expected.context, [], c.instruction + ': no context in a compose window');
+        const body = c.expected.operations.filter(op => reg.get(op.id).exclusive === 'body');
+        assert.ok(body.length <= 1, c.instruction + ': one change of the body');
+    }
+    assert.deepEqual(ids('correggila e rendila più formale'), ['rewrite'], 'a combination is one rewrite');
+    assert.deepEqual(ids('correggi'), ['proofread']);
+    // A change asked with select runs after it, whatever the user's order.
+    const withSelect = compose.filter(c => c.expected.operations.length > 1 && c.expected.operations.some(op => op.id === 'select'));
+    assert.ok(withSelect.some(c => c.expected.operations[0].id !== 'select'), 'one case where the user asks the change first');
+    for (const c of withSelect) {
+        const { lines } = planOf(c);
+        assert.equal(lines[0].id, 'select', c.instruction);
+        assert.ok(lines.slice(1).every(l => l.dependsOn.includes(0)), c.instruction);
+    }
+    // The scope against the default: the whole email with a selection, the selection named.
+    const scopes = compose.flatMap(c => c.expected.operations).map(op => op.params.scope).filter(Boolean);
+    assert.deepEqual([...new Set(scopes)].sort(), ['all', 'selection']);
+    // A plain text window has no select; a question is nothing; the message's operations are not offered.
+    assert.ok(compose.some(c => c.plainText === true && c.expected.unrecognized !== ''));
+    const question = compose.find(c => c.instruction === 'cosa mi chiedono nel messaggio citato?');
+    assert.deepEqual([question.expected.operations, question.expected.unrecognized], [[], '']);
+    const reply = compose.find(c => c.instruction === 'rispondi a tutti');
+    assert.deepEqual([reply.expected.operations, reply.expected.unrecognized], [[], 'rispondi a tutti']);
+    assert.ok(!availableIn(reply).includes('compose'));
+});
 
 k.test('compose-types', 'compose: every type, reply vs reply to all, a forward naming a recipient, a new email', () => {
     const types = new Set(cases.map(composeOf).filter(Boolean).map(op => op.params.type));
@@ -168,7 +217,7 @@ k.test('compose-last', 'in every mixed case the plan runs compose last, whatever
     assert.ok(mixed.length >= 2);
     assert.ok(mixed.some(c => c.expected.operations[0].id === 'compose'), 'one case where the user asks compose first');
     for (const c of mixed) {
-        const { lines } = R.planOperations(reg, availableIn(c), c.expected.operations);
+        const { lines } = planOf(c);
         // Last, but for the lines that wait for it (deliver_draft).
         const at = lines.findIndex(l => l.id === 'compose');
         assert.ok(lines.slice(at + 1).every(l => l.dependsOn.includes(at)), c.instruction);
@@ -183,7 +232,7 @@ k.test('delete-first', 'a deletion asked with a new summary, translation or spam
         const both = cases.filter(c => [del, gen].every(id => c.expected.operations.some(op => op.id === id)));
         assert.ok(both.length >= 1, del);
         for (const c of both) {
-            const { lines } = R.planOperations(reg, availableIn(c), c.expected.operations);
+            const { lines } = planOf(c);
             const d = lines.findIndex(l => l.id === del);
             const g = lines.findIndex(l => l.id === gen);
             assert.ok(d < g && lines[g].dependsOn.includes(d), c.instruction);
@@ -200,7 +249,7 @@ k.test('sparks-last', 'calendar_event / task run after the other lines, whatever
     const sparks = cases.filter(c => c.expected.operations.length > 1 && c.expected.operations.some(op => ['calendar_event', 'task'].includes(op.id)));
     assert.ok(sparks.some(c => ['calendar_event', 'task'].includes(c.expected.operations[0].id)), 'one case where the user asks it first');
     for (const c of sparks) {
-        const { lines } = R.planOperations(reg, availableIn(c), c.expected.operations);
+        const { lines } = planOf(c);
         const first = lines.findIndex(l => l.runLast);
         assert.ok(lines.slice(first).every(l => l.runLast), c.instruction);
     }

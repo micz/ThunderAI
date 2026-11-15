@@ -7,10 +7,11 @@ mechanism are in the general [`tests/README.md`](../README.md). Paths below are 
 
 The modules under test:
 
-- `js/mzta-smartbar-registry.js`: the eleven operations (`deliver_draft`, the three deletions, the spam check and the Sparks ones among them), their availability, the
-  parameter checks, the plan of an instruction (runLast, the dependency sort) and how its lines run
+- `js/mzta-smartbar-registry.js`: the eleven operations of the message (`deliver_draft`, the three deletions, the spam check and the Sparks ones among them) and the five of the
+  compose window (claude-spec/10-smartbar-compose.md), the two contexts, their availability, the
+  parameter checks, the plan of an instruction (runLast, the dependency sort, the exclusive group) and how its lines run
   (limit, dependencies, confirmation, abort, a drafted outcome);
-- `js/mzta-smartbar-router.js`: the router prompt (never the email body), the placeholder allow list,
+- `js/mzta-smartbar-router.js`: the router prompt (never the email body; the compose window's metadata), the placeholder allow list,
   the context, the reading of the answer and the one correction attempt;
 - `js/mzta-smartbar-execute.js`: the prompt of the compose operation (the email delimited as data,
   the fixed order of its sections), the email cut to the length limit (quoted part first), the typed
