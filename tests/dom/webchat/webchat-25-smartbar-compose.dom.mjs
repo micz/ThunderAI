@@ -141,6 +141,20 @@ k.test('stale', S_APPLY, 'the target changed: the block\'s Apply disabled, the l
     applyAnswer = { ok: true, status: 'applied' };
 });
 
+k.test('apply-again', S_APPLY, 'Apply refused for another reason than a changed email: said, and Apply can be clicked again', async () => {
+    // The compose window did not answer for a moment (still open: this window was not told).
+    applyAnswer = { ok: false, error: 'compose_closed' };
+    await update(rec({ id: 'compose-8', instruction: 'retry me', operations: [op(0, 'rewrite', 'drafted', { result: { ...REWRITE } })] }));
+    const block = proposals(botTurns(ctx).at(-1))[0];
+    await ctx.click(block.querySelector('.apply_btn'));
+    assert.equal(block.querySelector('.apply_btn').disabled, false, 'Apply usable again');
+    assert.equal(block.querySelector('.sb-draft-status').textContent, msg('smartbar_chat_apply_failed', [msg('smartbar_error_compose_closed')]));
+    applyAnswer = { ok: true, status: 'applied' };
+    const before = applies().length;
+    await ctx.click(block.querySelector('.apply_btn'));
+    assert.equal(applies().length, before + 1);
+});
+
 k.test('subject', S_APPLY, 'a subject proposal: its label and text, Apply and Copy, no Show differences', async () => {
     await update(rec({ id: 'compose-4', instruction: 'subject', operations: [op(0, 'subject', 'drafted', { result: { subject: 'New offer' } })] }));
     const block = proposals(botTurns(ctx).at(-1))[0];

@@ -41,9 +41,7 @@
 
 import {
     askJsonObject,
-    capText,
-    RouterJsonError,
-    RAW_RESPONSE_CAP
+    RouterJsonError
 } from './mzta-smartbar-router.js';
 import {
     CONVERSATION_START,
@@ -93,9 +91,6 @@ export const COMPOSE_JSON_SECTION = [
 /** Appended to the prompt for the one correction attempt after an answer that is not usable. */
 export const COMPOSE_CORRECTION =
     'Your previous reply was not a valid JSON object with the field this operation needs. Reply with the JSON object only, in the format above.';
-
-/** The longest proposed text kept in a record's result (the same cap as a raw answer). */
-export const RESULT_TEXT_CAP = RAW_RESPONSE_CAP;
 
 /** A delimiter inside a value, defused so the value cannot close its section early. */
 export function defuseCompose(text) {
@@ -232,16 +227,17 @@ export function readComposeAnswer(parsed, operation) {
 }
 
 /**
- * The proposal as a record keeps it (the result of a drafted line), capped: { scope, original,
- * text } for a body operation (`original`: the target's text the proposal was made from, which
- * Apply looks for), { subject } for subject.
+ * The proposal as a record keeps it (the result of a drafted line): { scope, original, text } for a
+ * body operation (`original`: the target's text the proposal was made from, which Apply looks
+ * for), { subject } for subject. Never cut: Apply writes the text in place of the whole target, so
+ * a cut text would delete the end of the email; and a compose window's record is never stored.
  */
 export function composeProposal(operation, answer, target = null) {
-    if (operation === 'subject') return { subject: capText(answer.subject, RESULT_TEXT_CAP) ?? '' };
+    if (operation === 'subject') return { subject: String(answer.subject ?? '') };
     return {
         scope: target?.scope ?? 'all',
         original: target?.text ?? '',
-        text: capText(answer.text, RESULT_TEXT_CAP) ?? '',
+        text: String(answer.text ?? ''),
     };
 }
 

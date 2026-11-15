@@ -544,10 +544,15 @@ class SmartbarChannel {
             const composed = p && !isSubject ? { text: p.composeResultText(), html: p.composeResultHTML() } : {};
             const res = await this._command('smartbar_chat_apply', { recordId: record.id, index: op.index, ...composed });
             if (!res?.ok) {
-                const why = ['changed', 'ambiguous'].includes(res?.status)
+                const stale = ['changed', 'ambiguous'].includes(res?.status);
+                const why = stale
                     ? msg('smartbar_line_proposal_stale', [L.opLabel(op.id, op.params)])
                     : refusalText(res?.error);
                 status.textContent = msg('smartbar_chat_apply_failed', [why]);
+                // A stale proposal is drawn again disabled (with Retry on its line); any other
+                // failure (the compose window not answering for a moment) can be tried again,
+                // unless that window is closed (smartbar_chat_compose_closed tells this window).
+                if (!stale && !this.composeClosed) apply.disabled = false;
             }
         };
         apply.addEventListener('click', doApply);

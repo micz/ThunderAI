@@ -60,7 +60,7 @@ const k = caseTests('48-smartbar-compose');
 
 const instructionOf = prompt => (/Instruction:\n([^\n]*)/.exec(prompt) || [])[1];
 const operationOf = prompt => (/\nOperation: ([a-z_]+) \(/.exec(prompt) || [])[1];
-ctx.workers.respond = answering((prompt) => {
+const answerAll = answering((prompt) => {
     const p = String(prompt);
     if (p.includes(COMPOSE_MARK)) {
         editPrompts.push(p);
@@ -78,6 +78,19 @@ ctx.workers.respond = answering((prompt) => {
     }
     throw new Error('48-smartbar-compose: unexpected prompt ' + p.slice(0, 80));
 });
+// The operations a test holds: their call waits until the test releases it.
+const holdOps = new Set();
+const held = [];            // { op, release() }
+ctx.workers.respond = (w, prompt) => {
+    const p = String(prompt);
+    const o = operationOf(p);
+    if (p.includes(COMPOSE_MARK) && holdOps.has(o)) {
+        editPrompts.push(p);
+        held.push({ op: o, release: () => answering(() => edits[o])(w, prompt) });
+        return;
+    }
+    answerAll(w, prompt);
+};
 
 // The compose windows, and what their compose script answers.
 const TYPED = 'hi bob, ok for me';
@@ -94,7 +107,8 @@ ctx.m.tabAnswer = (tabId, message) => {
     switch (message.command) {
         case 'smartbarComposeRead': return { typedText: doc.typedText, quotedText: doc.quotedText, selection: doc.selection };
         case 'smartbarComposeSelect': return { status: doc.select };
-        case 'smartbarComposeReplace': return { status: doc.replace };
+        // `onReplace`: what happens in the background while the compose window is written.
+        case 'smartbarComposeReplace': return (doc.onReplace ? doc.onReplace() : Promise.resolve()).then(() => ({ status: doc.replace }));
         default: return true;
     }
 };
@@ -352,6 +366,79 @@ k.test('shortcut', 'the SmartBar shortcut: in a compose tab its chat opens (once
     await press({ id: 7, type: 'mail', windowId: 1 });
     assert.equal(ctx.m.sentTo(7, 'smartbar_focus').length, 1);
     assert.equal(ctx.m.windows.length, before + 1);
+});
+
+// The review's fixes: two lines of one message running at once, Apply while the other ends, a
+// New conversation while a line runs, the picker's HTML for a selection.
+let chat35;
+k.test('stop-one-line', 'Stop of one line stops that line only, though the compose operations share their job kind', async () => {
+    addCompose(35);
+    chat35 = await openChat(35);
+    route('rewrite it and write the subject', [op('rewrite'), op('subject')]);
+    edits.rewrite = json({ text: 'Rewritten.', subject: '' });
+    edits.subject = json({ text: '', subject: 'Subject.' });
+    holdOps.add('rewrite');
+    holdOps.add('subject');
+    await send(chat35, 'rewrite it and write the subject');
+    assert.deepEqual(held.map(h => h.op).sort(), ['rewrite', 'subject']);
+    const r = lastRecord(chat35);
+    assert.deepEqual(await fromChat(chat35, 'smartbar_chat_stop', { recordId: r.id, index: 1 }), { ok: true });
+    held.find(h => h.op === 'rewrite').release();
+    await turns();
+    const ops = lastRecord(chat35).operations;
+    assert.deepEqual(ops.map(o => [o.id, o.state]), [['rewrite', 'drafted'], ['subject', 'cancelled']]);
+    held.length = 0;
+    holdOps.clear();
+});
+
+k.test('apply-meanwhile', 'Apply while another line of the message ends meanwhile: both kept, nothing put back running', async () => {
+    route('rewrite and subject again', [op('rewrite'), op('subject')]);
+    holdOps.add('subject');
+    await send(chat35, 'rewrite and subject again');
+    const r = lastRecord(chat35);
+    assert.deepEqual(r.operations.map(o => o.state), ['drafted', 'running']);
+    // The subject ends while the compose window is being written.
+    docs.get(35).onReplace = async () => { held.pop().release(); await turns(); };
+    assert.deepEqual(await fromChat(chat35, 'smartbar_chat_apply', { recordId: r.id, index: 0 }), { ok: true, status: 'applied' });
+    docs.get(35).onReplace = null;
+    holdOps.clear();
+    await turns();
+    const ops = lastRecord(chat35).operations;
+    assert.deepEqual(ops.map(o => [o.id, o.state]), [['rewrite', 'done'], ['subject', 'drafted']]);
+    assert.deepEqual(ops[1].result, { subject: 'Subject.' });
+    assert.equal(lastRecord(chat35).state, 'done');
+});
+
+k.test('new-session-meanwhile', 'a line still running at New conversation never comes back into the new conversation', async () => {
+    route('rewrite slowly', [op('rewrite')]);
+    holdOps.add('rewrite');
+    await send(chat35, 'rewrite slowly');
+    assert.equal((await fromChat(chat35, 'smartbar_chat_new_session')).ok, true);
+    held.pop().release();
+    holdOps.clear();
+    await turns();
+    route('rewrite now', [op('rewrite')]);
+    await send(chat35, 'rewrite now');
+    const p = editPrompts.at(-1);
+    assert.ok(!p.includes('rewrite slowly'), 'the old message is not in the new conversation');
+    assert.ok(!p.includes('<<<CONVERSATION START>>>'), 'no conversation at all yet');
+});
+
+k.test('picker-selection-inline', 'the picker\'s HTML for a selection of one paragraph is written inline; several paragraphs stay blocks', async () => {
+    docs.get(35).selection = 'ok for me';
+    route('fix the selection', [op('proofread')]);
+    edits.proofread = json({ text: 'OK for me', subject: '' });
+    await send(chat35, 'fix the selection');
+    let r = lastRecord(chat35);
+    assert.equal(r.operations[0].result.scope, 'selection');
+    await fromChat(chat35, 'smartbar_chat_apply', { recordId: r.id, index: 0, text: 'OK for me', html: '<p>OK for me</p>' });
+    assert.equal(sentToCompose(35, 'smartbarComposeReplace').at(-1).html, 'OK for me');
+    route('fix the selection again', [op('proofread')]);
+    await send(chat35, 'fix the selection again');
+    r = lastRecord(chat35);
+    await fromChat(chat35, 'smartbar_chat_apply', { recordId: r.id, index: 0, text: 'A\n\nB', html: '<p>A</p><p>B</p>' });
+    assert.match(sentToCompose(35, 'smartbarComposeReplace').at(-1).html, /<p>A<\/p><p>B<\/p>/);
+    docs.get(35).selection = '';
 });
 
 k.test('feature-off', 'the feature off: the chat of a compose window does not open', async () => {

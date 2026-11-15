@@ -8,7 +8,11 @@
 
 import { after } from 'node:test';
 import assert from 'node:assert/strict';
-import { openPage, assertHarnessClean, msg } from '../../helpers/core/dom-harness.mjs';
+import {
+    openPage,
+    assertHarnessClean,
+    msg
+} from '../../helpers/core/dom-harness.mjs';
 import { uiTests } from '../../helpers/known-issues/ui.mjs';
 
 const PROMPTS = [

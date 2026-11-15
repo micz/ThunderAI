@@ -3067,14 +3067,18 @@ async function _smartbarContextValues(keys, message, body_text, msg_text, select
 // The email as the compose operation and the chat's free answer carry it: only the current one,
 // its quoted part told apart so smartbar_max_body_length cuts it first. Also the body as plain
 // text and the parts, for the placeholders of the context.
+// smartbar_max_body_length as the prompts use it: a positive integer, else 0 (no limit).
+function _smartbarMaxLength(prefs) {
+    return Number.isInteger(prefs?.smartbar_max_body_length) && prefs.smartbar_max_body_length > 0 ? prefs.smartbar_max_body_length : 0;
+}
+
 async function _smartbarEmailForPrompt(message, prefs) {
     const msg_text = await getMailInlineTextParts(message.id);
     let split = msg_text.html ? splitQuotedHtml(msg_text.html) : null;
     if (!split || (split.own === '' && split.quoted === '')) split = splitQuotedText(cleanupNewlines(msg_text.text || ''));
     let body_text = htmlBodyToPlainText(msg_text.html || '');
     if (body_text.length === 0) body_text = cleanupNewlines(msg_text.text || '');
-    const maxLength = Number.isInteger(prefs.smartbar_max_body_length) && prefs.smartbar_max_body_length > 0
-        ? prefs.smartbar_max_body_length : 0;
+    const maxLength = _smartbarMaxLength(prefs);
     return {
         email: {
             subject: message.subject || '',
@@ -3754,8 +3758,11 @@ async function _smartbarStop(headerMessageId, index = null, recordId = null) {
     const op = state.record.operations.find(o => o.index === index);
     const kind = SMARTBAR_OPERATION_JOB_KIND[op?.id];
     // The job of that operation in this instruction's group only (another message of the chat
-    // may run a job of the same kind on the message).
-    const entry = kind ? taJobRegistry.getGroup(state.groupId).find(e => e.kind === kind) : null;
+    // may run a job of the same kind on the message). The operations of a compose window share
+    // their kind (two of them may run at once): their job is told apart by the line's index,
+    // which ends its id (_smartbarRunComposeEdit()).
+    const entry = kind ? taJobRegistry.getGroup(state.groupId).find(e => e.kind === kind &&
+        (kind !== 'smartbar_compose_edit' || String(e.id).endsWith('|' + index))) : null;
     if (entry) {
         entry.invalidated = true;
         entry.abort.abort();
@@ -4027,6 +4034,9 @@ async function _smartbarComposeRead(composeTabId) {
 function _smartbarComposeRemember(key, record) {
     const chat = _smartbarChats.get(key);
     if (!chat || !record) return;
+    // A message still running when the user started a New conversation belongs to the old one:
+    // it never comes back into the new conversation (its turns, the prompts' conversation).
+    if (record.sessionId !== chat.sessionId) return;
     const at = chat.records.findIndex(r => r.id === record.id);
     if (at >= 0) chat.records[at] = record;
     else chat.records.push(record);
@@ -4169,7 +4179,7 @@ async function _smartbarComposeAnswer(state, signal) {
     let text = chatPrompt.text;
     if (text === 'prompt_smartbar_chat_full_text') text = browser.i18n.getMessage('prompt_smartbar_chat_full_text');
     const read = state.compose;
-    const maxLength = Number.isInteger(prefs.smartbar_max_body_length) && prefs.smartbar_max_body_length > 0 ? prefs.smartbar_max_body_length : 0;
+    const maxLength = _smartbarMaxLength(prefs);
     const texts = trimComposeTexts({ typed: read.typedText, quoted: read.quotedText }, maxLength);
     const parts = ['Text written so far:\n' + (texts.typed || '(empty)')];
     if (texts.quoted) parts.push('Message quoted or forwarded below it:\n' + texts.quoted);
@@ -4239,7 +4249,7 @@ async function _smartbarRunComposeEdit(ctx, operation) {
                 target: target,
                 conversation: ctx.conversation || '',
                 additionalInstructions: prefs.smartbar_additional_instructions || '',
-                maxLength: Number.isInteger(prefs.smartbar_max_body_length) && prefs.smartbar_max_body_length > 0 ? prefs.smartbar_max_body_length : 0,
+                maxLength: _smartbarMaxLength(prefs),
             });
             const send = async (p) => {
                 const cmd = new mzta_specialCommand({
@@ -4287,7 +4297,16 @@ async function _smartbarRunComposeEdit(ctx, operation) {
 // else the plain text as paragraphs; a selection of one paragraph stays inline (no <p> splitting
 // the paragraph it sits in).
 function _smartbarProposalHtml(scope, text, html = '') {
-    if (typeof html === 'string' && html.trim() !== '') return sanitizeBlockHtml(html);
+    if (typeof html === 'string' && html.trim() !== '') {
+        const clean = sanitizeBlockHtml(html);
+        // The change picker gives block HTML (a <p> per block): for a selection, one block is
+        // written without its <p>, so it splits no paragraph, as the plain text path below.
+        if (scope === 'selection') {
+            const one = /^\s*(?:<!--[\s\S]*?-->\s*)*<p(?:\s[^>]*)?>([\s\S]*)<\/p>\s*$/i.exec(clean);
+            if (one && !/<\/?p[\s>]/i.test(one[1])) return one[1];
+        }
+        return clean;
+    }
     const t = String(text ?? '').replace(/\r\n/g, '\n').trim();
     if (scope === 'selection' && !/\n\s*\n/.test(t)) {
         return t.split('\n').map(line => line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')).join('<br>');
@@ -4330,14 +4349,18 @@ async function _smartbarComposeApply(key, recordId, index, { text = null, html =
         taLog.error("SmartBar: the proposal could not be applied: " + (e?.message || e));
         return { ok: false, error: 'compose_closed' };
     }
+    // The record as it is NOW: while the compose window was written, another line of the same
+    // message may have ended, and the version read before the awaits would put it back running.
+    const current = _smartbarComposeRecord(key, recordId) || record;
     const updated = {
-        ...record,
-        operations: record.operations.map(o => o.index !== index ? o : (status === 'applied'
+        ...current,
+        operations: current.operations.map(o => o.index !== index ? o : (status === 'applied'
             ? { ...o, state: 'done', result: { ...o.result, applied: true, stale: false }, finishedAt: Date.now() }
             : { ...o, result: { ...o.result, stale: true } })),
     };
-    const saved = smartbarFinishRecord(updated, { keepState: record.state === 'running' });
     const holder = _smartbarFindState(key, recordId);
+    // Still in progress: the state stays the background's (running); else derived as usual.
+    const saved = smartbarFinishRecord(updated, { keepState: !!holder });
     if (holder) holder.record = saved;
     _smartbarComposeRemember(key, saved);
     await _smartbarChatPush(key, saved);

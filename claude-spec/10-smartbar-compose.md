@@ -228,8 +228,9 @@ required).
 ### Proposals and Apply
 
 A generative operation ends `drafted`; its result keeps `{ scope, original, text }` (`original`: the
-target's text the proposal was made from) or `{ subject }`, in memory with its record. The turn
-shows it:
+target's text the proposal was made from) or `{ subject }`, in memory with its record, **never cut**
+(`composeProposal()`): Apply writes the text in place of the whole target, so a cut text would
+delete the end of the email. The turn shows it:
 
 - body: the proposed text, with **Show differences** (the change picker, its baseline the
   `original` and its HTML twin as for a proofreading prompt in a compose window, spec 07 "Where the
@@ -310,19 +311,27 @@ of the background:
   window, the group and the line): the email read again, the target (`composeTarget()`), the
   prompt, the special command, then the line's outcome: `drafted` with the proposal, `done` for a
   passage selected, an `error` (`no_selection`, `select_not_found`, `select_ambiguous`, or the
-  call's). A Stop of the line or of the message ends it `cancelled`.
+  call's). A Stop of the line or of the message ends it `cancelled`. The five operations share
+  their job kind and two of them may run at once (a change of the body and the subject): a Stop
+  of one line finds its job by the line's index, which ends the job's id (`_smartbarStop()`).
 - **Apply** (`smartbar_chat_apply { recordId, index, text?, html? }`, `_smartbarComposeApply()`):
   `text` / `html` are what the change picker composed, when the user opened it; else the whole
   proposal. The HTML is the picker's through `sanitizeBlockHtml()`, else the text as paragraphs
-  (`plainTextToHtml()`), but a one-paragraph proposal for a selection stays inline (escaped, `<br>`
-  per line), so it splits no paragraph. A plain text window gets the text. Answers
-  `{ ok, status }`: `applied` (the line `done`, `result.applied`), else `changed` / `ambiguous` (the
-  line stays `drafted`, `result.stale`). Only a `drafted` line is applied.
+  (`plainTextToHtml()`); for a selection, a proposal of one paragraph stays inline, so it splits
+  no paragraph: the picker's single `<p>` is unwrapped, the text escaped with a `<br>` per line
+  (`_smartbarProposalHtml()`). A plain text window gets the text. Answers `{ ok, status }`:
+  `applied` (the line `done`, `result.applied`), else `changed` / `ambiguous` (the line stays
+  `drafted`, `result.stale`). Only a `drafted` line is applied. The record is updated from its
+  version **after** the compose window was written: another line of the same message that ended
+  meanwhile keeps its outcome.
 - **Retry** (`smartbar_chat_retry`): an instruction-level error sends the message again; a failed
   line, or a proposal marked stale, runs that line alone again in a new group, on the email as it
   is now.
-- **Dismiss**, **New conversation** (the records dropped; refused while a message is understood or
-  answered) and **Stop** as in the chat of a message, in memory.
+- **Dismiss**, **New conversation** (the records dropped, a new `sessionId`; refused while a message
+  is understood or answered) and **Stop** as in the chat of a message, in memory. A line still
+  running at a New conversation ends in the old session: its record is never kept again
+  (`_smartbarComposeRemember()` keeps the current session's only), so it comes back neither in the
+  turns nor in the conversation the prompts carry.
 
 ## The window
 
@@ -342,9 +351,10 @@ URL to the channel):
     Disabled once opened;
   - **Apply** (`smartbar_chat_apply`): `smartbar_chat_apply { recordId, index }`, plus `text` /
     `html` (`composeResultText()` / `composeResultHTML()`) once the picker is open. Refused, the
-    block says why (`smartbar_chat_apply_failed`: the target changed, or the background's refusal).
-    Applied, it reads "Applied" (`smartbar_chat_applied`), disabled; a stale proposal or a closed
-    compose window disable it;
+    block says why (`smartbar_chat_apply_failed`: the target changed, or the background's refusal);
+    for any other reason than a changed email it can be clicked again (the compose window may not
+    have answered for a moment). Applied, it reads "Applied" (`smartbar_chat_applied`), disabled; a
+    stale proposal or a closed compose window disable it;
   - **Copy**: the proposal (the picker's result once open), or the subject.
 - **The lines**: a proposal waiting has no line (its block speaks); applied, "<operation>: applied to
   the email" (`smartbar_result_applied`); stale, "<operation>: the email changed since this proposal,
@@ -402,6 +412,15 @@ the other special prompts and per-feature connections (spec 08), with nothing to
   operation as the input of another.
 - Text inserted at the cursor: adding a paragraph is a `rewrite` of the typed text.
 - History: nothing stored, nothing resumed.
+
+**Known limit: a reply written below the quote.** The typed text is the region of
+`{%mail_typed_text%}` (`typedRegion()`): from the top to the first quote (`.moz-cite-prefix`),
+forwarded content or signature. With Thunderbird set to start the reply below the quote, the
+user's own text is after that point: the SmartBar sees an empty typed text (`typed_text_empty` for
+the router), a selection in that text counts as none (`no_selection`), and Apply with `all` writes
+above the quote while the user's text stays as it is. The same limit holds for
+`{%mail_typed_text%}` today; lifting it means defining the typed text as everything but the quote,
+the forwarded content and the signature, for both at once.
 
 ## Tests
 

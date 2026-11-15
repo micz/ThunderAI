@@ -10,7 +10,7 @@
 //    written; "selection" without one is no_selection; never the quoted part;
 //  - the length limit: the quoted part cut first, then the text written, never the target;
 //  - the answer: "text" (or "subject" for subject), one correction attempt, then the json error
-//    with the raw answer; the proposal keeps the target's original text, capped.
+//    with the raw answer; the proposal keeps the target's original text, and is never cut.
 
 import assert from 'node:assert/strict';
 import { smartbarContext } from './context.mjs';
@@ -123,10 +123,12 @@ k.test('answer', 'the answer: "text", or "subject" for subject, normalized; a mi
     await assert.rejects(C.askComposeOperation('P', async () => 'not json', 'subject'), e => e.errorType === 'json' && e.rawResponse === 'not json');
 });
 
-k.test('proposal', 'the proposal keeps the scope and the original text of the target, capped', () => {
+k.test('proposal', 'the proposal keeps the scope and the original text of the target, never cut', () => {
     assert.deepEqual(C.composeProposal('rewrite', { text: 'new' }, { scope: 'selection', text: 'old' }), { scope: 'selection', original: 'old', text: 'new' });
     assert.deepEqual(C.composeProposal('subject', { subject: 'S' }), { subject: 'S' });
-    assert.equal(C.composeProposal('rewrite', { text: 'x'.repeat(C.RESULT_TEXT_CAP + 5) }, { scope: 'all', text: '' }).text.length, C.RESULT_TEXT_CAP);
+    // Never cut: Apply writes it in place of the whole target, a cut would delete the end of the email.
+    assert.equal(C.composeProposal('rewrite', { text: 'x'.repeat(50000) }, { scope: 'all', text: '' }).text.length, 50000);
+    assert.equal(C.composeProposal('subject', { subject: 's'.repeat(9000) }).subject.length, 9000);
 });
 
 k.test('no-instruction-in-data', 'the instruction stays out of the data sections', () => {
