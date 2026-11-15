@@ -25,6 +25,7 @@ Files:
 | `js/mzta-smartbar-registry.js` | The operation registry, parameter checks, plan and run of an instruction |
 | `js/mzta-smartbar-router.js` | The router prompt and the checks of its answer; `askJsonObject()`, the correction attempt shared with execute |
 | `js/mzta-smartbar-execute.js` | The prompt of the compose operation and the checks of its answer; the email and data sections shared with the chat |
+| `js/mzta-smartbar-compose.js` | The prompt of the operations on the email being written and the checks of their answer ([10-smartbar-compose.md](10-smartbar-compose.md)) |
 | `js/mzta-smartbar-chat.js` | The chat: the conversation of a session as the prompts carry it, the prompt of the free answer |
 | `js/lib/mzta-smartbar-lines.js` | The texts of the result lines (a classic script, global `mztaSmartbarLines`), shared by the bar and the chat |
 | `api_webchat/smartbarChat.js` | The chat window in SmartBar mode: the channel to the background, the turns it draws |
@@ -75,7 +76,7 @@ page shows the current shortcut (`commands.getAll()`).
 
 ### Special prompts and their connections
 
-Three special prompts, all hidden from the prompt lists (`show_in: "none"`), each with its own
+Four special prompts, all hidden from the prompt lists (`show_in: "none"`), each with its own
 per-feature connection (`special_prompts_with_integration`, spec 02 / 05):
 
 | Prompt | Connection prefix | Used for |
@@ -83,11 +84,12 @@ per-feature connection (`special_prompts_with_integration`, spec 02 / 05):
 | `prompt_smartbar_router` | `smartbar_router` | The router call |
 | `prompt_smartbar_execute` | `smartbar_execute` | The compose operation: the generative operations that have no prompt of their own (see "Compose") |
 | `prompt_smartbar_chat` | `smartbar_chat` | The chat: the window it opens on, and the free answer of a message no operation covers (see "Chat") |
+| `prompt_smartbar_compose` | `smartbar_compose` | The operations on the email being written, in the chat of a compose window ([10-smartbar-compose.md](10-smartbar-compose.md) "Generation") |
 
-The Actions tab of the feature page shows the three connection panels, each in a card of its own,
+The Actions tab of the feature page shows the four connection panels, each in a card of its own,
 the first of the sub-tab of its action, before the prompt, built by
 `initializeSpecificIntegrationUI({ root, anchorId })` scoped to that section
-(`pages/_lib/connection-ui.js`): the same panel as the other feature pages, three times on one
+(`pages/_lib/connection-ui.js`): the same panel as the other feature pages, four times on one
 page. The router's switch recommends a small, fast model. Execute's sub-tab also holds, before its
 prompt, the execute settings section ("Writing settings": what is sent, recipients never filled
 in, the three compose settings).
@@ -647,18 +649,18 @@ other (`openTab()`'s exact URL match would miss a page whose hash changed).
 
 - **Options**: the settings of "Feature toggle and settings", the keyboard shortcut, the
   retention rules (spec 05 "SmartBar Settings Page").
-- **Actions**: one sub-tab per action (router, execute, chat; the first shown at load, not in the
+- **Actions**: one sub-tab per action (router, execute, chat, compose window; the first shown at load, not in the
   hash), each a card with a colour of its own (border only when unselected; the selected card is
   filled with its tint and joins its panel, framed in the same colour). Execute's sub-tab starts with the three compose settings ("Writing settings"). Each
   sub-tab holds the text of its special prompt (`prompt_smartbar_router`,
-  `prompt_smartbar_execute`, `prompt_smartbar_chat`), preceded by its connection panel ("Use specific Model and API" and
+  `prompt_smartbar_execute`, `prompt_smartbar_chat`, `prompt_smartbar_compose`), preceded by its connection panel ("Use specific Model and API" and
   the provider rows), each with the feature pages' editor (`bindSpecialPromptEditor()`: Save,
   Restore default, the unsaved-changes guard, the policy lock of an enforced text). Under the
-  router's and execute's text, their JSON section (`ROUTER_JSON_SECTION`, `EXECUTE_JSON_SECTION`)
-  shown read-only: the add-on appends it at call time, it is never in the textarea nor saved. On
+  router's, execute's and compose's text, their JSON section (`ROUTER_JSON_SECTION`,
+  `EXECUTE_JSON_SECTION`, `COMPOSE_JSON_SECTION`) shown read-only: the add-on appends it at call time, it is never in the textarea nor saved. On
   Save the router's text must hold `{OPERATIONS}`, `{PLACEHOLDERS}` and `{LANGUAGE_RULE}`
   (`ROUTER_VARIABLES`): a text without one is not saved, and the message under the editor names
-  the missing ones (it follows the text until it is complete). Execute and chat have no
+  the missing ones (it follows the text until it is complete). Execute, chat and compose have no
   variable. A policy text is not checked against them (at call time a missing variable has its
   content appended, see "Router"). A release that changes a default text a user customized shows
   the update notice with the change picker (spec 02 "Default text updates").

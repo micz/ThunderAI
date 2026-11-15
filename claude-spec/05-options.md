@@ -106,7 +106,7 @@ Existing installs are unaffected — the empty default only applies to users who
 
 ### Special Prompt Integration Overrides
 
-The prefixes of `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`, and the SmartBar's three: `smartbar_router`, `smartbar_execute`, `smartbar_chat`, all on the SmartBar page) each get their own `use_specific_integration` and `connection_type` keys:
+The prefixes of `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`, and the SmartBar's four: `smartbar_router`, `smartbar_execute`, `smartbar_chat`, `smartbar_compose`, all on the SmartBar page) each get their own `use_specific_integration` and `connection_type` keys:
 
 ```
 {prefix}_use_specific_integration   (default: false)
@@ -853,7 +853,8 @@ The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the manage
   In a narrow window the labels shrink with an ellipsis, the strip never wraps.
 - **Sub-tabs** of the Actions tab (`#smartbar_subtabs`, `role="tablist"`): one card per action
   (icon, the prompt title, a one-line description `smartbar_subtab_<key>_desc`) in a grid that
-  wraps: router (`#subtab_router`), execute (`#subtab_execute`), chat (`#subtab_chat`). The selected
+  wraps: router (`#subtab_router`), execute (`#subtab_execute`), chat (`#subtab_chat`), compose
+  window (`#subtab_compose`, [10-smartbar-compose.md](10-smartbar-compose.md)). The selected
   card is accent-tinted (`--accent`; `--code`/`--codeBg` in dark mode). Not in the hash: the first
   (router) is shown at load, a click shows the panel of its button (`bindSubtabs()`). Above the
   cards, the one-sentence intro `smartbar_actions_intro`; that the JSON format is ThunderAI's and
@@ -869,26 +870,27 @@ The feature-page shell (`body.mzta_feature_page`, `mzta-design.css`), the manage
 - **Execute settings** (`#smartbar_execute_settings`, "Writing settings", execute's sub-tab of the
   Actions tab, after its connection card and before its prompt section): `smartbar_max_body_length`,
   `smartbar_additional_instructions`, `smartbar_signature`.
-- **Three connection panels**, in the Actions tab, each in a card of its own (no title), the first
+- **Four connection panels**, in the Actions tab, each in a card of its own (no title), the first
   card of the sub-tab of its action, before the prompt section: router (`#smartbar_conn_router_section`),
-  execute (`#smartbar_conn_execute_section`) and chat (`#smartbar_conn_chat_section`, the connection
-  of the chat window and of its free answers).
+  execute (`#smartbar_conn_execute_section`), chat (`#smartbar_conn_chat_section`, the connection
+  of the chat window and of its free answers) and compose window (`#smartbar_conn_compose_section`,
+  the changes to the email being written).
   Each is the
   same panel as on the other feature pages (`{prefix}_use_specific_integration`, the provider rows,
   the advanced options, the test strip, the tint), built by
   `initializeSpecificIntegrationUI({ prefix, promptId, root: section, anchorId: prefix + '_connection_ui_anchor' })`:
   the shared structural ids (`#mzta_conn_panel`, `#connection_ui_table`...) repeat in each section,
   and every lookup of the panel is scoped to its section (`pages/_lib/connection-ui.js`
-  `scopedFinder()`, `bindConnPanelTint(prefix, root)`), so the three never touch each other. Each
+  `scopedFinder()`, `bindConnPanelTint(prefix, root)`), so the four never touch each other. Each
   connection is persisted to its special prompt like on the other feature pages
   (`persistPromptConnectionToPrefs()`, `resolveFeatureConnectionPrefs()`).
 - **History** (`#smartbar_retention`): the three retention rules, `smartbar_retention_info` (no
   backup: the history may be lost when Thunderbird deletes the add-on's IndexedDB).
 - **Actions tab** (`#tab_prompts`): one section per special prompt (`#smartbar_prompt_{router,
-  execute,chat}_section`, titled "Model and prompt", `smartbar_prompt_section_title`), each in the
+  execute,chat,compose}_section`, titled "Model and prompt", `smartbar_prompt_section_title`), each in the
   sub-tab of its action: the connection panel first (above), then the textarea `#smartbar_prompt_<key>_text`, `#btn_save_smartbar_<key>` /
   `#btn_reset_smartbar_<key>` (the `btn_save` prefix is what the unsaved-changes guard reads), the
-  unsaved marker, the read-only JSON section `#smartbar_prompt_<key>_locked` (router, execute), the
+  unsaved marker, the read-only JSON section `#smartbar_prompt_<key>_locked` (router, execute, compose), the
   refusal message `#smartbar_prompt_<key>_error` (router variables), the update notice
   `#smartbar_prompt_<key>_update` (Compare / Keep my text). Wired by `bindSpecialPromptEditor()`
   with `beforeSave` (the variable check) and `updateNotice` (spec 02 "Default text updates"),

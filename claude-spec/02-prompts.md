@@ -374,7 +374,7 @@ The factory `show_in` of each special prompt is declared once, in the `specialPr
 | `prompt_spamfilter` | `"context"` |
 | `prompt_summarize`, `prompt_translate_this` | `"both"` |
 | `prompt_summarize_email_template`, `prompt_summarize_email_separator` | `"none"` (text fragments, never in a menu) |
-| `prompt_smartbar_router`, `prompt_smartbar_execute`, `prompt_smartbar_chat` | `"none"` (the SmartBar's own calls, never in a menu, see [10-smartbar.md](10-smartbar.md)) |
+| `prompt_smartbar_router`, `prompt_smartbar_execute`, `prompt_smartbar_chat`, `prompt_smartbar_compose` | `"none"` (the SmartBar's own calls, never in a menu, see [10-smartbar.md](10-smartbar.md)) |
 
 A value already saved in `_special_prompts` is never migrated to a new shipped one: a saved
 `"context"` may be the user's choice in the Menu Order page and cannot be told apart from a default
@@ -385,13 +385,13 @@ These special prompts can have their own dedicated API integration settings (con
 `getSpecialPromptPrefix(id)` (`js/mzta-prompts.js`) maps a special prompt id to the feature prefix
 whose connection it runs with — both calendar prompts to `get_calendar_event`, `prompt_translate_this`
 to `translate`, and so on — for `openChatGPT()` in `mzta-background.js`, the one caller, which
-resolves the connection of the prompt it runs. The three SmartBar prompts map to their own
-prefixes (`smartbar_router`, `smartbar_execute`, `smartbar_chat`). Any other id gives `null`, and so do
+resolves the connection of the prompt it runs. The four SmartBar prompts map to their own
+prefixes (`smartbar_router`, `smartbar_execute`, `smartbar_chat`, `smartbar_compose`). Any other id gives `null`, and so do
 `prompt_summarize_email_template` and `prompt_summarize_email_separator`: they are text fragments
 that `buildSummaryPrompt()` pastes into `prompt_summarize`, never run as prompts of their own, so
 they have no connection to resolve.
 
-### SmartBar prompts: router, execute and chat
+### SmartBar prompts: router, execute, chat and compose
 
 The SmartBar's prompts are run by the add-on as special commands, never from a menu, and their
 editable text is only the first part of what is sent ([10-smartbar.md](10-smartbar.md)):
@@ -418,22 +418,31 @@ editable text is only the first part of what is sent ([10-smartbar.md](10-smartb
   appends the email between delimiters and the conversation so far (both as data), an attached
   unreadable answer when there is one, the user's new message and the language rule
   (`buildChatPrompt()`, `js/mzta-smartbar-chat.js`).
+- **`prompt_smartbar_compose`** (default `prompt_smartbar_compose_full_text`): the prompt of the
+  operations on the email being written, in the chat of a compose window
+  ([10-smartbar-compose.md](10-smartbar-compose.md) "Generation"): `rewrite`, `proofread`,
+  `translate_text`, `subject`, `select`. Its text holds the rules only (the texts are data, only
+  the new version of the target, keep what is not asked to change, the quote is context and never
+  rewritten, no invented fact and `[...]` for what is missing, a correction changes spelling,
+  grammar and punctuation only, a passage to select copied exactly) and **no variable**. The
+  add-on appends its locked JSON section (`COMPOSE_JSON_SECTION`) and the message it builds
+  (`buildComposePrompt()`, `js/mzta-smartbar-compose.js`).
 
 None of them has a response format of its own in the prompt checks (`{}` in the table of
 `js/mzta-prompts.js`): the JSON sections are the add-on's.
 
 **Editing** (the Actions tab of the SmartBar page, [10-smartbar.md](10-smartbar.md) "Feature
-page"): the three texts are edited like the other special prompts (`bindSpecialPromptEditor()`:
+page"): the four texts are edited like the other special prompts (`bindSpecialPromptEditor()`:
 Save, Restore default, the policy lock), with these rules:
 
-- the **JSON section** of the router and of execute (`ROUTER_JSON_SECTION`,
-  `EXECUTE_JSON_SECTION`) is shown read-only under the text: appended by the add-on at call time,
-  never in the textarea, never saved. The chat has none;
+- the **JSON section** of the router, of execute and of compose (`ROUTER_JSON_SECTION`,
+  `EXECUTE_JSON_SECTION`, `COMPOSE_JSON_SECTION`) is shown read-only under the text: appended by
+  the add-on at call time, never in the textarea, never saved. The chat has none;
 - **variables**: the router's text must hold `{OPERATIONS}`, `{PLACEHOLDERS}` and
   `{LANGUAGE_RULE}` (`ROUTER_VARIABLES`, written exactly). A Save of a text without one is
   refused (nothing written, the text stays an unsaved change) with
   `smartbar_prompt_missing_variables` naming the missing ones, which follows the text until it is
-  complete. Execute and chat have no variable. The check is the page's only: a text enforced by
+  complete. Execute, chat and compose have no variable. The check is the page's only: a text enforced by
   the policy is not checked (at call time a variable the text lacks has its content appended);
 - the **update notice** of a changed default (below, "Default text updates").
 
@@ -808,7 +817,7 @@ Each prompt requires **two** conditions: its feature flag is on, **and** its fea
 
 The preference read feeding it **must** include `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`. Without those keys `getConnectionType()` reads `use_specific_integration` as `undefined` and silently falls back to the global connection — the failure is invisible at the call site, which still looks correct.
 
-The three SmartBar prompts are active with `smartbar_enabled` and their own prefix's connection
+The four SmartBar prompts are active with `smartbar_enabled` and their own prefix's connection
 (`getActiveSpecialPromptsIDs(..., smartbar)`): they are never in a menu (`show_in: "none"`), so this
 only matters to the lists that take the active ids.
 

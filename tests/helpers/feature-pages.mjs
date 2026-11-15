@@ -58,6 +58,11 @@ export const FEATURE_PAGES = {
         textarea: 'smartbar_prompt_chat_text', save: 'btn_save_smartbar_chat',
         text: 'Chat.',
     },
+    smartbar_compose: {
+        page: 'smartbar', promptId: 'prompt_smartbar_compose', root: 'smartbar_conn_compose_section',
+        textarea: 'smartbar_prompt_compose_text', save: 'btn_save_smartbar_compose',
+        text: 'Compose.',
+    },
 };
 
 /** The feature prefixes a FEATURE_PAGES page hosts, in map order. */

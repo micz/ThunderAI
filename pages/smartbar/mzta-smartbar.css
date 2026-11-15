@@ -130,7 +130,7 @@ body.mzta_feature_page #mzta_body.smartbar_tabbed_body > .smartbar_tabpanel {
 }
 
 /* The sub-tabs of the Actions tab, one per action: descriptive cards (icon,
-   title, one-line description), three columns that never wrap (the selected
+   title, one-line description), four columns that never wrap (the selected
    card joins the panel below it, which a second row would cover). Each action
    has a colour of its own (--sbAct), set on its card and on its panel: an
    unselected card shows it on the border only, the selected one also on its
@@ -147,6 +147,10 @@ body.mzta_feature_page #mzta_body.smartbar_tabbed_body > .smartbar_tabpanel {
 #subtab_btn_chat,
 #subtab_chat {
     --sbAct: var(--accent);
+}
+#subtab_btn_compose,
+#subtab_compose {
+    --sbAct: #b8620a;
 }
 /* --sbActBg is declared where --sbAct is (each card, each panel): a custom
    property's var() resolves on the element that declares it, so declared on
@@ -172,6 +176,10 @@ body.mzta_feature_page #mzta_body.smartbar_tabbed_body > .smartbar_tabpanel {
     #subtab_chat {
         --sbAct: var(--code);
     }
+    #subtab_btn_compose,
+    #subtab_compose {
+        --sbAct: #f0a35e;
+    }
     .smartbar_subtab,
     .smartbar_subpanel {
         --sbActBg: color-mix(in srgb, var(--sbAct) 13%, var(--panel));
@@ -179,7 +187,7 @@ body.mzta_feature_page #mzta_body.smartbar_tabbed_body > .smartbar_tabpanel {
 }
 .smartbar_subtabs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
     margin: 0;
 }
@@ -262,7 +270,7 @@ body.mzta_feature_page #mzta_body.smartbar_tabbed_body > .smartbar_tabpanel {
 #tab_prompts > #subtab_router {
     border-top-left-radius: 0;
 }
-#tab_prompts > #subtab_chat {
+#tab_prompts > #subtab_compose {
     border-top-right-radius: 0;
 }
 

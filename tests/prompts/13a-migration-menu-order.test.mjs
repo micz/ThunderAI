@@ -19,7 +19,7 @@ const k = caseTests('13a-migration-menu-order');
 
 // The special prompts with show_in 'none' in their shipped definition (spec 02 "Alphabetic-to-Position
 // Migration"): the summarize fragments and the three SmartBar prompts.
-const HIDDEN = ['prompt_summarize_email_template', 'prompt_summarize_email_separator', 'prompt_smartbar_router', 'prompt_smartbar_execute', 'prompt_smartbar_chat'];
+const HIDDEN = ['prompt_summarize_email_template', 'prompt_summarize_email_separator', 'prompt_smartbar_router', 'prompt_smartbar_execute', 'prompt_smartbar_chat', 'prompt_smartbar_compose'];
 
 // An older profile: hand-set positions, a custom prompt hidden from every menu, overrides, a user
 // text on a special prompt, and a hidden special prompt that already carries a position.
@@ -134,7 +134,7 @@ k.test('special-texts-kept', 'a special prompt keeps the user text and icon', ()
     assert.equal(spam.text, 'My spam text {%mail_text_body%} spamValue explanation');
     assert.equal(spam.custom_icon, 'shield.png');
     assert.equal(spam.show_in, 'context');
-    assert.equal(local('_special_prompts').length, 12, 'every special prompt is stored');
+    assert.equal(local('_special_prompts').length, 13, 'every special prompt is stored');
 });
 
 k.test('menus-follow', 'getPrompts() reads the new positions back', async () => {

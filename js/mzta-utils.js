@@ -1173,7 +1173,7 @@ export function getActiveSpecialPromptsIDs(args = {}) {
     output.push('prompt_translate_this');
   }
   if (smartbar) {
-    for (const part of ['router', 'execute', 'chat']) {
+    for (const part of ['router', 'execute', 'chat', 'compose']) {
       if (usable('smartbar_' + part)) output.push('prompt_smartbar_' + part);
     }
   }

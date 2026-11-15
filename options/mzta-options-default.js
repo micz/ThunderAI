@@ -16,10 +16,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// The SmartBar has three special prompts, each with its own connection (claude-spec/10-smartbar.md):
-// the router (which operations an instruction asks for), execute and chat (data only until the
-// phases that use them).
-export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate', 'smartbar_router', 'smartbar_execute', 'smartbar_chat'];
+// The SmartBar has four special prompts, each with its own connection (claude-spec/10-smartbar.md):
+// the router (which operations an instruction asks for), execute (the emails it writes), chat (its
+// free answers) and compose (the changes to the email being written,
+// claude-spec/10-smartbar-compose.md).
+export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate', 'smartbar_router', 'smartbar_execute', 'smartbar_chat', 'smartbar_compose'];
 
 // The Ollama reasoning levels offered when the server does not report which ones the
 // selected model accepts (buildOllamaThinkOptions() in pages/_lib/connection-ui.js), also

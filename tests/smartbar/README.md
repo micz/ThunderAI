@@ -17,6 +17,9 @@ The modules under test:
   the fixed order of its sections), the email cut to the length limit (quoted part first), the typed
   placeholders as references, the language rule, the reading of the answer with its correction
   attempt, the signature the add-on adds, the body as HTML;
+- `js/mzta-smartbar-compose.js`: the prompt of the operations on the email being written (the text
+  written, the quoted part and the target delimited as data, the fixed order of its sections), the
+  target, the length limit that never cuts it, the reading of the answer and the proposal kept;
 - `js/mzta-smartbar-store.js` with the `smartbar` store of `js/mzta-storage.js`: the record, its
   derived state, the caps, the non-mirrored store, the startup interruption, the three retention rules,
   a session's records and the current draft of the chat;
@@ -60,6 +63,7 @@ tests/
     ├── 05-execute.test.mjs             the compose prompt, the email cut, the answer, the signature
     ├── 06-chat.test.mjs                the conversation of a chat session, the free answer's prompt
     ├── 07-activity.test.mjs            the Activity tab's store queries, the badge counts, the default filter
+    ├── 08-compose-prompt.test.mjs      the prompt of the compose window's operations, the target, the answer
     └── 99-harness-known-issues.test.mjs   the known-issue entries themselves
 ```
 

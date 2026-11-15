@@ -419,11 +419,13 @@ const specialPrompts = [
         allow_multi: true,
         show_in: "both",
     },
-    // The three prompts of the SmartBar (claude-spec/10-smartbar.md). Never in a menu: the bar
+    // The four prompts of the SmartBar (claude-spec/10-smartbar.md). Never in a menu: the bar
     // runs them. The router decides which operations an instruction asks for; its JSON format is
     // appended by the add-on (js/mzta-smartbar-router.js), never part of this text. execute writes
     // the emails of the compose operation (js/mzta-smartbar-execute.js: its JSON section and the
-    // email are appended by the add-on too); chat is data only until the chat mode.
+    // email are appended by the add-on too); chat gives the chat's free answers; compose proposes
+    // the changes to the email being written (js/mzta-smartbar-compose.js,
+    // claude-spec/10-smartbar-compose.md).
     {
         id: 'prompt_smartbar_router',
         name: "__MSG_prompt_smartbar_router__",
@@ -460,6 +462,22 @@ const specialPrompts = [
         id: 'prompt_smartbar_chat',
         name: "__MSG_prompt_smartbar_chat__",
         text: "prompt_smartbar_chat_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        api_type: '',
+        is_default: "1",
+        is_special: "1",
+        show_in: "none",
+    },
+    {
+        id: 'prompt_smartbar_compose',
+        name: "__MSG_prompt_smartbar_compose__",
+        text: "prompt_smartbar_compose_full_text",
         type: "1",
         action: "0",
         need_selected: "0",
@@ -620,12 +638,14 @@ const SPECIAL_PROMPT_TEXT_CONTRACT = {
         responseKeys: ['subject', 'body', 'status'],
         contentPlaceholders: ['mail_html_body', 'mail_text_body'],
         requiredPlaceholders: ['thunderai_translate_lang'] },
-    // The SmartBar prompts carry no response format of their own: the router's and execute's
-    // JSON sections are appended by the add-on (js/mzta-smartbar-router.js,
-    // js/mzta-smartbar-execute.js), and so is the message execute receives, after the text.
+    // The SmartBar prompts carry no response format of their own: the router's, execute's and
+    // compose's JSON sections are appended by the add-on (js/mzta-smartbar-router.js,
+    // js/mzta-smartbar-execute.js, js/mzta-smartbar-compose.js), and so is the message they
+    // receive, after the text.
     prompt_smartbar_router: {},
     prompt_smartbar_execute: {},
     prompt_smartbar_chat: {},
+    prompt_smartbar_compose: {},
 };
 
 function textHasPlaceholder(text, id) {

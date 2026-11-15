@@ -2,9 +2,9 @@
 // no policy.
 //
 // Spec 05 "SmartBar Settings Page (`pages/smartbar/`)": the tab named by the hash shown.
-// Spec 02 "SmartBar prompts: router, execute and chat": the three texts shown, each with its
-// editor (Save, Restore default, the unsaved-changes guard); the JSON format sections of the router
-// and of execute shown read-only under the text, never in the textarea and never saved; the
+// Spec 02 "SmartBar prompts: router, execute, chat and compose": the four texts shown, each with its
+// editor (Save, Restore default, the unsaved-changes guard); the JSON format sections of the router,
+// of execute and of compose shown read-only under the text, never in the textarea and never saved; the
 // router's variables required on Save (a text without one is not saved, the message names the
 // missing ones and follows the text). Spec 02 "Default text updates": Save stores the fingerprint
 // of the default the text was written against; no notice with nothing customized.
@@ -29,9 +29,9 @@ after(() => ctx.close());
 const k = uiTests('smartbar', '02');
 const $ = ctx.$;
 const S_PAGE = 'spec 05 "SmartBar Settings Page (`pages/smartbar/`)"';
-const S_PROMPTS = 'spec 02 "SmartBar prompts: router, execute and chat"';
+const S_PROMPTS = 'spec 02 "SmartBar prompts: router, execute, chat and compose"';
 const S_UPDATE = 'spec 02 "Default text updates"';
-const KEYS = { router: 'prompt_smartbar_router', execute: 'prompt_smartbar_execute', chat: 'prompt_smartbar_chat' };
+const KEYS = { router: 'prompt_smartbar_router', execute: 'prompt_smartbar_execute', chat: 'prompt_smartbar_chat', compose: 'prompt_smartbar_compose' };
 const ta = key => $('#smartbar_prompt_' + key + '_text');
 
 k.test('tab-from-hash', S_PAGE, 'the page opened on #prompts shows the Actions tab', () => {
@@ -45,13 +45,15 @@ k.test('texts', S_PROMPTS, 'each textarea shows its shipped text', () => {
     for (const [key, id] of Object.entries(KEYS)) assert.equal(ta(key).value, enText(id + '_full_text'), key);
 });
 
-k.test('locked-shown', S_PROMPTS, 'the JSON sections of the router and of execute are shown read-only under the text, the chat has none', () => {
+k.test('locked-shown', S_PROMPTS, 'the JSON sections of the router, execute and compose are shown read-only under the text, the chat has none', () => {
     const routerLocked = $('#smartbar_prompt_router_locked');
     const executeLocked = $('#smartbar_prompt_execute_locked');
-    assert.ok(routerLocked && executeLocked);
+    const composeLocked = $('#smartbar_prompt_compose_locked');
+    assert.ok(routerLocked && executeLocked && composeLocked);
     assert.equal(routerLocked.tagName, 'PRE', 'not a read-only block');
     assert.match(routerLocked.textContent, /\{"operations": \[\{"id"/);
     assert.match(executeLocked.textContent, /\{"subject": "", "body": ""/);
+    assert.match(composeLocked.textContent, /\{"text": "", "subject": ""\}/);
     assert.equal($('#smartbar_prompt_chat_locked'), null);
     for (const key of Object.keys(KEYS)) {
         assert.equal(ta(key).value.includes('Reply with one JSON object'), false, key + ': the JSON section is in the editable text');
@@ -110,8 +112,8 @@ k.test('missing-follows', S_PROMPTS, 'the message follows the text, and the comp
     assert.equal(storedPrompt(ctx, KEYS.router)?.text, complete);
 });
 
-k.test('no-variables-elsewhere', S_PROMPTS, 'execute and chat require no variable: any text is saved', async () => {
-    for (const key of ['execute', 'chat']) {
+k.test('no-variables-elsewhere', S_PROMPTS, 'execute, chat and compose require no variable: any text is saved', async () => {
+    for (const key of ['execute', 'chat', 'compose']) {
         ta(key).value = 'Just my own words.';
         await ctx.fire(ta(key), 'input');
         await ctx.click($('#btn_save_smartbar_' + key));

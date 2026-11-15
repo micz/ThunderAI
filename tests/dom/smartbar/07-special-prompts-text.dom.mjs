@@ -1,5 +1,5 @@
 // Spec 08 "Enforced special prompt texts (_special_prompts_text)" -> "UI", on the SmartBar page
-// (its Actions tab, the three prompts of the feature): see helpers/dom-prompt-text.mjs.
+// (its Actions tab, the four prompts of the feature): see helpers/dom-prompt-text.mjs.
 // Spec 02 "Default text updates": a text the policy enforces gets no update notice, and its
 // locked JSON section is still shown under it.
 
@@ -11,12 +11,14 @@ const ctx = await enforcedTextScenario('smartbar', 'dom-special-prompts-text-sma
     { id: 'smartbar_prompt_router_text', promptIds: ['prompt_smartbar_router'], save: 'btn_save_smartbar_router', reset: 'btn_reset_smartbar_router' },
     { id: 'smartbar_prompt_execute_text', promptIds: ['prompt_smartbar_execute'], save: 'btn_save_smartbar_execute', reset: 'btn_reset_smartbar_execute' },
     { id: 'smartbar_prompt_chat_text', promptIds: ['prompt_smartbar_chat'], save: 'btn_save_smartbar_chat', reset: 'btn_reset_smartbar_chat' },
+    { id: 'smartbar_prompt_compose_text', promptIds: ['prompt_smartbar_compose'], save: 'btn_save_smartbar_compose', reset: 'btn_reset_smartbar_compose' },
 ]);
 
 test('no update notice on an enforced text; the locked JSON sections are still shown', () => {
-    for (const key of ['router', 'execute', 'chat']) {
+    for (const key of ['router', 'execute', 'chat', 'compose']) {
         assert.equal(ctx.$('#smartbar_prompt_' + key + '_update').hidden, true, key);
     }
     assert.match(ctx.$('#smartbar_prompt_router_locked').textContent, /"operations"/);
     assert.match(ctx.$('#smartbar_prompt_execute_locked').textContent, /"body"/);
+    assert.match(ctx.$('#smartbar_prompt_compose_locked').textContent, /"text"/);
 });

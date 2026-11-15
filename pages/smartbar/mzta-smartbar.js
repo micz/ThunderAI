@@ -62,11 +62,12 @@ import {
 
 const taLog = new taLogger('mzta-smartbar-page', true);
 
-/** The three panels: feature prefix, special prompt, section (its own card, first in its sub-tab of the Actions tab). */
+/** The four panels: feature prefix, special prompt, section (its own card, first in its sub-tab of the Actions tab). */
 export const SMARTBAR_PANELS = [
     { prefix: 'smartbar_router', promptId: 'prompt_smartbar_router', section: 'smartbar_conn_router_section' },
     { prefix: 'smartbar_execute', promptId: 'prompt_smartbar_execute', section: 'smartbar_conn_execute_section' },
     { prefix: 'smartbar_chat', promptId: 'prompt_smartbar_chat', section: 'smartbar_conn_chat_section' },
+    { prefix: 'smartbar_compose', promptId: 'prompt_smartbar_compose', section: 'smartbar_conn_compose_section' },
 ];
 
 // The number preferences of the page, and the smallest value each accepts.

@@ -59,8 +59,8 @@ is stopped by the per-key write guard of `setPrefs()`, as before.
 This key lets the administrator set the connection of a feature that supports a specific
 integration: every prefix of `special_prompts_with_integration` (`add_tags`, `spamfilter`,
 `summarize`, `get_calendar_event`, `get_task`, `translate`, and the SmartBar's `smartbar_router`,
-`smartbar_execute`, `smartbar_chat`). The prefix is the same one
-`{prefix}_use_specific_integration` uses. The SmartBar page shows the three panels of its prefixes
+`smartbar_execute`, `smartbar_chat`, `smartbar_compose`). The prefix is the same one
+`{prefix}_use_specific_integration` uses. The SmartBar page shows the four panels of its prefixes
 on one page, each scoped to its own section ([05-options.md](05-options.md) "SmartBar Settings
 Page"): the policy is presented on each panel as on a page with one, and the managed area's
 generated files test each prefix of that page (`tests/dom/smartbar/1N-*-<prefix>.dom.mjs`).

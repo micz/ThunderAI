@@ -2,7 +2,9 @@
 
 > **Status: being implemented.** This file is the agreed design of the SmartBar for the email
 > being written. Implemented so far: the registry (`context`, `exclusive`, the five compose
-> operations) and the router (the compose metadata, the reference cases). The rest does not exist
+> operations), the router (the compose metadata, the reference cases), and the special prompt
+> `prompt_smartbar_compose` with its connection, its prompt module (`js/mzta-smartbar-compose.js`)
+> and its sub-tab of the feature page. The rest does not exist
 > yet: until it does, [10-smartbar.md](10-smartbar.md) describes the SmartBar as it is, and its
 > "Deferred" section keeps "Compose window" with a pointer here. Once implemented, this file
 > describes the behavior (the status line goes) and the tests follow it.
@@ -200,10 +202,14 @@ The prompt (`buildComposePrompt()`, `js/mzta-smartbar-compose.js`), in this orde
 2. the JSON section, **locked**;
 3. the message, **built by the add-on, not editable**: the typed text, the quoted part (as context
    only: "never rewritten"), each between its delimiters as data and defused as in execute; the
-   target (the selection, when it is the target) between its own delimiters; the conversation so
-   far, as data; the instruction; the operation and its params; `smartbar_additional_instructions`
-   when set; the language rule (`rewrite`, `proofread`: the language of the target, unless the
-   instruction asks for another; `translate_text`: `language`).
+   target (the selection between its own delimiters, or "the whole text written", named and not
+   repeated); the conversation so far, as data; the instruction; the operation and its params;
+   `smartbar_additional_instructions` when set, for `rewrite`, `translate_text` and `subject` only
+   (a correction changes nothing else, a passage is copied); the language rule (`rewrite`,
+   `proofread`: the language of the target, unless the instruction asks for another;
+   `translate_text`: `language`; `subject`: the language of the text written; none for `select`).
+   The delimiters are `<<<TEXT …>>>`, `<<<QUOTED …>>>` and `<<<TARGET …>>>`; any delimiter of the
+   SmartBar written inside a value is defused (`defuseCompose()`).
 
 `smartbar_max_body_length` cuts the quoted part first, then the typed text, never the target.
 

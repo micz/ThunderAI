@@ -39,7 +39,7 @@ after(() => ctx.close());
 const k = uiTests('smartbar', '01');
 const $ = ctx.$;
 const S_PAGE = 'spec 05 "SmartBar Settings Page (`pages/smartbar/`)"';
-const PANELS = ['smartbar_router', 'smartbar_execute', 'smartbar_chat'];
+const PANELS = ['smartbar_router', 'smartbar_execute', 'smartbar_chat', 'smartbar_compose'];
 
 k.test('tabs', S_PAGE, 'three tabs, Options selected with no hash, its panel alone shown', () => {
     const tabs = [...ctx.document.querySelectorAll('#smartbar_tabs [role="tab"]')];
@@ -102,15 +102,17 @@ k.test('write-textarea', S_PAGE, 'a textarea is stored as typed', async () => {
 k.test('subtabs', S_PAGE, 'the Actions tab has one sub-tab per action, the first shown at load, a click shows its panel alone', async () => {
     const subtabs = () => [...ctx.document.querySelectorAll('#tab_prompts #smartbar_subtabs [role="tab"]')];
     const shown = () => subtabs().map(t => !ctx.document.getElementById(t.getAttribute('aria-controls')).hidden);
-    assert.deepEqual(subtabs().map(t => t.dataset.subtab), ['router', 'execute', 'chat']);
-    assert.deepEqual(subtabs().map(t => t.getAttribute('aria-selected')), ['true', 'false', 'false']);
-    assert.deepEqual(shown(), [true, false, false]);
+    assert.deepEqual(subtabs().map(t => t.dataset.subtab), ['router', 'execute', 'chat', 'compose']);
+    assert.deepEqual(subtabs().map(t => t.getAttribute('aria-selected')), ['true', 'false', 'false', 'false']);
+    assert.deepEqual(shown(), [true, false, false, false]);
     await ctx.click($('#subtab_btn_execute'));
-    assert.deepEqual(subtabs().map(t => t.getAttribute('aria-selected')), ['false', 'true', 'false']);
-    assert.deepEqual(shown(), [false, true, false]);
+    assert.deepEqual(subtabs().map(t => t.getAttribute('aria-selected')), ['false', 'true', 'false', 'false']);
+    assert.deepEqual(shown(), [false, true, false, false]);
+    await ctx.click($('#subtab_btn_compose'));
+    assert.deepEqual(shown(), [false, false, false, true]);
     assert.equal(ctx.window.location.hash, '#options', 'a sub-tab is not in the hash');
     await ctx.click($('#subtab_btn_router'));
-    assert.deepEqual(shown(), [true, false, false]);
+    assert.deepEqual(shown(), [true, false, false, false]);
 });
 
 k.test('tabs-keyboard', S_PAGE, 'both tablists: only the selected tab is in the tab order; arrows (wrapping), Home and End select and focus a tab', async () => {
@@ -118,19 +120,19 @@ k.test('tabs-keyboard', S_PAGE, 'both tablists: only the selected tab is in the 
     const order = sel => ctx.$$(sel + ' [role="tab"]').map(t => t.tabIndex);
     // The sub-tabs: their selection never touches the hash.
     await ctx.click($('#subtab_btn_router'));
-    assert.deepEqual(order('#smartbar_subtabs'), [0, -1, -1]);
+    assert.deepEqual(order('#smartbar_subtabs'), [0, -1, -1, -1]);
     await key($('#subtab_btn_router'), 'ArrowRight');
     assert.equal($('#subtab_btn_execute').getAttribute('aria-selected'), 'true');
     assert.equal(ctx.document.activeElement, $('#subtab_btn_execute'));
-    assert.deepEqual(order('#smartbar_subtabs'), [-1, 0, -1]);
+    assert.deepEqual(order('#smartbar_subtabs'), [-1, 0, -1, -1]);
     assert.equal($('#subtab_execute').hidden, false);
     await key($('#subtab_btn_execute'), 'End');
-    assert.equal($('#subtab_btn_chat').getAttribute('aria-selected'), 'true');
-    await key($('#subtab_btn_chat'), 'ArrowRight');
+    assert.equal($('#subtab_btn_compose').getAttribute('aria-selected'), 'true');
+    await key($('#subtab_btn_compose'), 'ArrowRight');
     assert.equal($('#subtab_btn_router').getAttribute('aria-selected'), 'true', 'Right wraps to the first');
     await key($('#subtab_btn_router'), 'ArrowLeft');
-    assert.equal($('#subtab_btn_chat').getAttribute('aria-selected'), 'true', 'Left wraps to the last');
-    await key($('#subtab_btn_chat'), 'Home');
+    assert.equal($('#subtab_btn_compose').getAttribute('aria-selected'), 'true', 'Left wraps to the last');
+    await key($('#subtab_btn_compose'), 'Home');
     assert.equal($('#subtab_btn_router').getAttribute('aria-selected'), 'true');
     // The tabs: the hash follows.
     assert.deepEqual(order('#smartbar_tabs'), [0, -1, -1]);
@@ -144,7 +146,7 @@ k.test('tabs-keyboard', S_PAGE, 'both tablists: only the selected tab is in the 
 });
 
 k.test('subtab-cards', S_PAGE, 'each sub-tab is a card with its title and a one-line description', () => {
-    for (const key of ['router', 'execute', 'chat']) {
+    for (const key of ['router', 'execute', 'chat', 'compose']) {
         const card = $('#subtab_btn_' + key);
         assert.ok(card.querySelector('.smartbar_subtab_title').textContent.trim(), key + ' title');
         assert.ok(card.querySelector('.smartbar_subtab_desc').textContent.trim(), key + ' description');

@@ -2247,6 +2247,7 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-smartbar-registry.js` | The SmartBar's operation registry: availability, parameter checks, plan and run of an instruction |
 | `js/mzta-smartbar-router.js` | The SmartBar router: its prompt (never the email body) and the checks of its answer |
 | `js/mzta-smartbar-execute.js` | The SmartBar's compose operation: its prompt (the email delimited as data, cut to the length limit), the checks of its answer, its signature and HTML |
+| `js/mzta-smartbar-compose.js` | The SmartBar's operations on the email being written ([10-smartbar-compose.md](10-smartbar-compose.md)): their prompt (the text written, the quoted part and the target delimited as data), the checks of their answer, the proposal kept |
 | `js/mzta-smartbar-store.js` | The SmartBar records (one per instruction) and their states, over the `smartbar` store of `taStorage`; the current draft of a chat session |
 | `js/mzta-smartbar-chat.js` | The SmartBar chat: the conversation of a session as the prompts carry it, the prompt of the free answer |
 | `js/lib/mzta-smartbar-lines.js` | The texts of the SmartBar's result lines (classic script, global `mztaSmartbarLines`), shared by the bar and the chat window |
@@ -2297,7 +2298,7 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 | `get-calendar-event/` | Calendar event extraction settings |
 | `get-task/` | Task creation settings |
 | `menu_order/` | Drag-and-drop reordering and visibility control for popup and context menus |
-| `smartbar/` | SmartBar settings: the bar's options, the three connection panels (router, execute, chat), the history rules (tabs-ready: one Options tab today), see [10-smartbar.md](10-smartbar.md) |
+| `smartbar/` | SmartBar settings: the bar's options, the four connection panels (router, execute, chat, compose window), the history rules (tabs-ready: one Options tab today), see [10-smartbar.md](10-smartbar.md) |
 | `spamfilter/` | Spam filter settings |
 | `storage/` | Storage management: the saved spam reports, summaries and translations, their retention rules and cleanup ([#956](https://github.com/micz/ThunderAI/issues/956), see [Per-Message Data Storage](#per-message-data-storage) and [05-options.md](05-options.md)) |
 | `summarize/` | Email summarization settings |

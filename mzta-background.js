@@ -2436,6 +2436,8 @@ async function _smartbarEnv(chat = {}) {
         get_calendar_event: isApiUsableConnection(getConnectionType(prefs, specialPrompt('prompt_get_calendar_event'), 'get_calendar_event')),
         get_task: isApiUsableConnection(getConnectionType(prefs, specialPrompt('prompt_get_task'), 'get_task')),
         smartbar_execute: isApiUsableConnection(getConnectionType(prefs, specialPrompt('prompt_smartbar_execute'), 'smartbar_execute')),
+        // The operations of a compose window (claude-spec/10-smartbar-compose.md).
+        smartbar_compose: isApiUsableConnection(getConnectionType(prefs, specialPrompt('prompt_smartbar_compose'), 'smartbar_compose')),
     };
     return {
         features: {

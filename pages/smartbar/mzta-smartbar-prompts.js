@@ -31,14 +31,16 @@
 
 import { ROUTER_VARIABLES, ROUTER_JSON_SECTION } from '../../js/mzta-smartbar-router.js';
 import { EXECUTE_JSON_SECTION } from '../../js/mzta-smartbar-execute.js';
+import { COMPOSE_JSON_SECTION } from '../../js/mzta-smartbar-compose.js';
 import { bindSpecialPromptEditor } from '../_lib/feature-page.js';
 import { openDefaultCompare } from '../_lib/prompt-update.js';
 
-/** The three prompts of the tab: the key of their elements, the variables their text needs. */
+/** The four prompts of the tab: the key of their elements, the variables their text needs. */
 export const SMARTBAR_PROMPTS = Object.freeze([
     { key: 'router', promptId: 'prompt_smartbar_router', defaultMsgKey: 'prompt_smartbar_router_full_text', variables: ROUTER_VARIABLES, locked: ROUTER_JSON_SECTION },
     { key: 'execute', promptId: 'prompt_smartbar_execute', defaultMsgKey: 'prompt_smartbar_execute_full_text', variables: [], locked: EXECUTE_JSON_SECTION },
     { key: 'chat', promptId: 'prompt_smartbar_chat', defaultMsgKey: 'prompt_smartbar_chat_full_text', variables: [], locked: null },
+    { key: 'compose', promptId: 'prompt_smartbar_compose', defaultMsgKey: 'prompt_smartbar_compose_full_text', variables: [], locked: COMPOSE_JSON_SECTION },
 ]);
 
 /** The variables of `variables` the text lacks (each written exactly, braces included). */
