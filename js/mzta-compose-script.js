@@ -134,10 +134,14 @@ function typingFont() {
 }
 
 // The elements an inline run stops at. Anything else (text, <b>, <a>, <code>, <br>...) is inline.
-const MZTA_BLOCK_TAGS = new Set(['ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'DD', 'DETAILS', 'DIV',
-  'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'FORM', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
-  'HEADER', 'HR', 'LI', 'MAIN', 'NAV', 'OL', 'P', 'PRE', 'SECTION', 'TABLE', 'TBODY', 'TD', 'TFOOT',
-  'TH', 'THEAD', 'TR', 'UL']);
+// The structural children of a table, a <details> and a <fieldset> (CAPTION, COLGROUP, SUMMARY,
+// LEGEND) are here too: a <font> directly inside a <table> is moved out of it by the HTML parser
+// (foster parenting), and one before a <summary> or a <legend> takes its place as first child.
+const MZTA_BLOCK_TAGS = new Set(['ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'CAPTION', 'CENTER',
+  'COLGROUP', 'DD', 'DETAILS', 'DIR', 'DIV', 'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER',
+  'FORM', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'HGROUP', 'HR', 'LEGEND', 'LI', 'MAIN', 'MENU',
+  'NAV', 'OL', 'P', 'PRE', 'SECTION', 'SUMMARY', 'TABLE', 'TBODY', 'TD', 'TFOOT', 'TH', 'THEAD', 'TR',
+  'UL']);
 const MZTA_HEADING_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
 
 // The answer's HTML with the typing font applied as Thunderbird applies it to typed text: each run
@@ -145,9 +149,11 @@ const MZTA_HEADING_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
 // <font size>. A <font> cannot wrap a block, hence one per run. Left alone: runs with no text (a
 // lone <br> spacer), the content of a <pre> (it keeps its own fixed-width font) and, for the size,
 // the content of a heading (it keeps its own size).
+// Always the serialization of the parsed body's children (never a nested <body>), font or not:
+// the markup insertIntoEditor() hands to insertHTML, parsed once.
 function applyTypingFont(html, font) {
-  if (!font) return html;
   const doc = new DOMParser().parseFromString(html, 'text/html');
+  if (!font) return doc.body.innerHTML;
   const wrap = (nodes, withSize) => {
     if (!nodes.some(n => n.textContent.trim() !== '')) return;
     let outer = null, inner = null;
@@ -186,10 +192,14 @@ function applyTypingFont(html, font) {
 // from the background, issue #34 - stopped working in Thunderbird 143 (bug 1975127): there
 // every setComposeDetails({body}) clears the undo history. So nothing may write the body
 // through the compose API after this, or the undo entry just created is gone.
-function insertIntoEditor(range, text, isPlainText) {
+//
+// `font` (HTML only): the typing font to apply, read by the caller where the font belongs to
+// another moment (insertAtCaret: the caret saved by saveCaret), or null when the caller has
+// already applied it (insertReply, whose <br> spacer stays outside it). Omitted: read here.
+function insertIntoEditor(range, text, isPlainText, font) {
   // Read before the focus and the selection change below: the editor drops its pending style
   // as soon as the selection moves. [#1048]
-  if (!isPlainText) text = applyTypingFont(text, typingFont());
+  if (!isPlainText) text = applyTypingFont(text, font === undefined ? typingFont() : font);
   try {
     // From the AI chat or the ChatGPT window the compose window is not focused, and an
     // editor command can then do nothing. Focus it first, then set the selection: focusing
@@ -201,10 +211,8 @@ function insertIntoEditor(range, text, isPlainText) {
     // Plain text: insertText, never a parse - in HTML a bare \n is collapsible whitespace,
     // which is how the whole message ended up as one line [#855]. One call for the whole
     // text, so it is one undo step; the plain text editor turns each \n into a line break.
-    // HTML: the serialization of the parsed body's children, never a nested <body>.
-    const ok = isPlainText
-      ? document.execCommand('insertText', false, text)
-      : document.execCommand('insertHTML', false, new DOMParser().parseFromString(text, 'text/html').body.innerHTML);
+    // HTML: the serialization of the parsed body's children (applyTypingFont), never a nested <body>.
+    const ok = document.execCommand(isPlainText ? 'insertText' : 'insertHTML', false, text);
     if (ok) return;
     console.error("[ThunderAI] Compose insertion: the editor refused the insertion, inserting it directly (not undoable)");
   } catch (e) {
@@ -252,6 +260,8 @@ function startOfBodyRange() {
 // {%mail_typed_text%} autoselects the typed text when it starts (getOnlyTypedText), which takes
 // the caret away. A clone of the selection's range is a live Range: it follows the edits made
 // to the body in the meantime. One per compose window, so the latest prompt's wins.
+// {range, font}: the font is typingFont() at that moment, before the autoselect drops the
+// editor's pending style - it goes with the range, and is used only with it. [#1048]
 let _mztaSavedCaret = null;
 
 // The range itself when it is a usable place to insert at: inside the body (not, say, at the
@@ -751,7 +761,7 @@ switch (message.command) {
 
   case "saveCaret": {
     const sel = window.getSelection();
-    _mztaSavedCaret = (sel && sel.rangeCount) ? sel.getRangeAt(0).cloneRange() : null;
+    _mztaSavedCaret = (sel && sel.rangeCount) ? { range: sel.getRangeAt(0).cloneRange(), font: typingFont() } : null;
     return Promise.resolve(true);
   }
 
@@ -761,7 +771,9 @@ switch (message.command) {
     // one, and with neither (an editor never clicked into) the start of the email, which is
     // above any quote or signature. A selection is not replaced: the answer goes at its end.
     const sel = window.getSelection();
-    const saved = usableCaret(_mztaSavedCaret);
+    const saved = usableCaret(_mztaSavedCaret?.range);
+    // The saved caret's font goes with it; with any other range, insertIntoEditor() reads it now.
+    const font = saved ? _mztaSavedCaret.font : undefined;
     _mztaSavedCaret = null;
     const current = saved ? null : usableCaret((sel && sel.rangeCount) ? sel.getRangeAt(0) : null);
     let r;
@@ -779,7 +791,7 @@ switch (message.command) {
     } else {
       r = startOfBodyRange();
     }
-    insertIntoEditor(r, message.text, message.isPlainText === true);
+    insertIntoEditor(r, message.text, message.isPlainText === true, font);
     return Promise.resolve(true);
   }
 
@@ -808,7 +820,8 @@ switch (message.command) {
       if (block) r.setEndBefore(block);
       const following = block || first;
       const spacer = following && !startsWithBreak(following) ? '<br>' : '';
-      insertIntoEditor(r, new DOMParser().parseFromString(message.text, 'text/html').body.innerHTML + spacer, false);
+      // The font on the answer only, so the <br> spacer stays outside it. [#1048]
+      insertIntoEditor(r, applyTypingFont(message.text, typingFont()) + spacer, false, null);
     }
     return Promise.resolve(true);
   }

@@ -1727,18 +1727,37 @@ window, `insertIntoEditor()` (all three commands: Replace, Insert at cursor, the
   **first** — before `window.focus()` and the selection change, since Gecko drops the pending style
   as soon as the selection moves. The value is the pending style, or the font of the text around
   the selection. No face and no size (or the default size `"3"`) changes nothing; a missing
-  `queryCommandValue` or a throw neither;
+  `queryCommandValue` or a throw neither. **Where it is read:** at the current selection, except
+  for Insert at cursor at the caret saved by `saveCaret`, which uses the font `saveCaret` read
+  with that caret (see *Inserting at the cursor in a compose window*);
 - wraps the answer (`applyTypingFont()`) as Thunderbird wraps typed text: each **run of inline
   content of each block** (a `<font>` cannot wrap a block) in a `<tt>` for the face `tt`, else a
-  `<font face>`, and a `<font size>` (inside the `<tt>`, or on the same `<font>`). Left alone: a run
-  with no text (the reply's `<br>` spacer), the content of a `<pre>` (its own fixed-width font),
-  and, for the size only, the content of a heading (its own size);
-- inserts that markup by the editor path or the fallback alike. A plain text window is never
-  wrapped. When the user's text around a selection already carries the font, the wrapper is
-  redundant, not harmful.
+  `<font face>`, and a `<font size>` (inside the `<tt>`, or on the same `<font>`). The structural
+  children of a table, a `<details>` and a `<fieldset>` (`<caption>`, `<colgroup>`, `<summary>`,
+  `<legend>`) count as blocks: a `<font>` directly inside a `<table>` would be moved out of it by
+  the HTML parser (foster parenting) when the editor parses the markup, and one before a
+  `<summary>` / `<legend>` would take its place as first child. Left alone: a run with no text, the
+  content of a `<pre>` (its own fixed-width font), and, for the size only, the content of a heading
+  (its own size). The reply's `<br>` spacer is added **after** the wrapping (`insertReply` applies
+  the font itself, and passes `null` to `insertIntoEditor()`), so it stays outside the wrapper
+  even when the answer has no block;
+- inserts that markup by the editor path or the fallback alike. `applyTypingFont()` always
+  returns the serialization of the parsed body's children, font or not: it is the markup
+  `insertHTML` receives, parsed once. A plain text window is never wrapped. When the user's text
+  around a selection already carries the font, the wrapper is redundant, not harmful.
 
-The background's `replaceBody()` fallback of the reply (no compose script) cannot read the editor,
-so it inserts the answer without the font.
+Limits:
+
+- A confirmed Replace with no selection inserts at the start of the email, but the font is the one
+  of the current caret, wherever it is: Gecko reports the font of the selection only, and moving
+  the selection there to read it would drop the pending style. In a new message the caret is at
+  the start of the email anyway.
+- The values `queryCommandValue` returns (`""` / `"tt"` for the face, `""` / `"3"` for the default
+  size, the pending style included) are Gecko's, modelled by the tests' stub: they are checked by
+  hand in Thunderbird (default font, Fixed Width, a face with a size, the caret inside a quote).
+  A relative size of the surrounding text (`<font size="+1">`) is passed through as it is.
+- The background's `replaceBody()` fallback of the reply (no compose script) cannot read the
+  editor, so it inserts the answer without the font.
 
 **Why not the compose API: `setComposeDetails()` and the undo history.** Until v5.1.0 the content
 script mutated the DOM directly (`deleteContents()` + `insertNode()`), which bypasses the editor's
@@ -1777,7 +1796,12 @@ insertion is `insertIntoEditor()`, the same editor path, focus handling and fall
   `do_autoselect`), which replaces a collapsed caret with a selection. So `getMailBody()`
   (`js/mzta-menus.js`) sends `saveCaret` to a compose tab first, before any other read, when the
   prompt's action is `"3"`; the compose script keeps a clone of the selection's range in
-  `_mztaSavedCaret`. A clone is a live `Range`: it follows the edits made in the meantime. There is
+  `_mztaSavedCaret` (`{range, font}`), with the compose font read at that moment (`typingFont()`,
+  see *The compose font*): the autoselect, or a click, drops the editor's pending style, so the
+  font is read with the caret and used only with it — when the saved caret is not usable, the
+  font of the range actually used is read at insertion. A clone is a live `Range`: it follows the
+  edits made in the meantime; the font is a snapshot, so a font changed from the toolbar in the
+  meantime is not seen. There is
   one per compose window, so of two Insert prompts running at once from the same window, both
   insert where the latest one started. A click in the compose window while the chat is open does
   not move it: the saved caret wins.

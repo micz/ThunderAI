@@ -6,8 +6,11 @@
 // with queryCommandValue('fontName' / 'fontSize') BEFORE it focuses the window and moves the
 // selection (either drops it), and wraps each run of inline content of each block in a <tt>
 // ('tt', "Fixed Width") or a <font face>, plus <font size> unless it is the default "3". Left
-// alone: runs with no text (the reply's <br> spacer), a <pre>'s content, a heading's size; the
-// default font changes nothing; plain text is never wrapped. The fallback inserts the same markup.
+// alone: runs with no text, a <pre>'s content, a heading's size, the reply's <br> spacer; a
+// table's caption and a <details>' summary are blocks, so the wrapper never sits between them and
+// their parent; the default font changes nothing, nor does a queryCommandValue missing or
+// throwing; plain text is never wrapped. insertAtCaret uses the font read by saveCaret with the
+// caret it saved. The fallback inserts the same markup.
 // The editor and its pending style are modelled (stubEditor): how Gecko renders it is the manual
 // test in Thunderbird.
 
@@ -34,6 +37,7 @@ const S_FONT = 'spec 01 "The compose font"';
 
 const CITE = '<div class="moz-cite-prefix">On 05/11/2024 08:27, Mario wrote:<br></div>';
 const QUOTE = '<blockquote type="cite"><p>The question</p></blockquote>';
+const CONTAINER = '<div id="mzta-container"><div class="mzta_dialog">panel</div></div>';
 
 // The body, a selection on `word`, then the editor's pending style (setting the selection drops it).
 const open = (body, word, font) => {
@@ -42,15 +46,33 @@ const open = (body, word, font) => {
     editor.font = { fontName: '', fontSize: '', ...font };
 };
 const replace = (text, isPlainText = false) => send(ctx, { command: 'replaceSelectedText', text, isPlainText, tabId: 3 });
+const insertAtCaret = text => send(ctx, { command: 'insertAtCaret', text, isPlainText: false, tabId: 3 });
+const saveCaret = () => send(ctx, { command: 'saveCaret' });
+// A reply just opened: the caret at the start of its empty first line, then the pending style.
+const openReply = font => {
+    ctx.document.body.innerHTML = '<p><br></p>' + CITE + QUOTE;
+    const range = ctx.document.createRange();
+    range.setStart(ctx.document.body.firstChild, 0);
+    const sel = ctx.window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    editor.font = { fontName: '', fontSize: '', ...font };
+};
+const reply = text => send(ctx, { command: 'insertReply', text, isPlainText: false });
+// document.queryCommandValue replaced by `fn` while `body` runs.
+const withQuery = async (fn, body) => {
+    const orig = ctx.document.queryCommandValue;
+    ctx.document.queryCommandValue = fn;
+    try { await body(); } finally { ctx.document.queryCommandValue = orig; }
+};
 const lastCall = () => editor.calls.at(-1);
 
-k.test('face-paragraphs', S_FONT, 'a configured face wraps the content of each paragraph in a <font face>, inside the block, its markup kept', async () => {
+k.test('face-paragraphs', S_FONT, 'a configured face wraps the content of each paragraph in a <font face>, inside the block, its markup kept; read before the focus and the selection change', async () => {
     open('<p>old text</p>', 'old', { fontName: 'monospace' });
     assert.equal(await replace('<p>One</p><p>Two <b>bold</b></p>'), true);
     assert.equal(lastCall().value, '<p><font face="monospace">One</font></p><p><font face="monospace">Two <b>bold</b></font></p>');
-});
-
-k.test('read-before-selection', S_FONT, 'the font is read before the window is focused and the selection moved (either drops the pending style)', () => {
+    // Read before the window is focused and the selection moved (either drops the pending style):
+    // read after, the face would have been '' and the answer left bare.
     assert.deepEqual(editor.queries.slice(-2), [
         { command: 'fontName', value: 'monospace' },
         { command: 'fontSize', value: '' },
@@ -91,24 +113,71 @@ k.test('inline-and-nested', S_FONT, 'top-level inline content is one run; lists 
         + '<table><tbody><tr><td><font face="monospace">x</font></td></tr></tbody></table><br>');
 });
 
+k.test('table-caption-summary', S_FONT, 'a table\'s caption and a <details>\' summary are blocks: the wrapper goes inside them, never between them and their parent', async () => {
+    open('<p>old text</p>', 'old', { fontName: 'monospace' });
+    assert.equal(await replace('<table><caption>Cap</caption><colgroup><col></colgroup><tbody><tr><td>x</td></tr></tbody></table><details><summary>Sum</summary>more</details>'), true);
+    assert.equal(lastCall().value,
+        '<table><caption><font face="monospace">Cap</font></caption><colgroup><col></colgroup><tbody><tr><td><font face="monospace">x</font></td></tr></tbody></table>'
+        + '<details><summary><font face="monospace">Sum</font></summary><font face="monospace">more</font></details>');
+});
+
+k.test('query-missing', S_FONT, 'no queryCommandValue: the answer is inserted as it is', async () => {
+    open('<p>old text</p>', 'old', { fontName: 'monospace' });
+    await withQuery(undefined, async () => {
+        assert.equal(await replace('<p>One</p>'), true);
+    });
+    assert.equal(lastCall().value, '<p>One</p>');
+});
+
+k.test('query-throws', S_FONT, 'queryCommandValue throws: the answer is inserted as it is', async () => {
+    open('<p>old text</p>', 'old', { fontName: 'monospace' });
+    await withQuery(() => { throw new Error('unsupported'); }, async () => {
+        assert.equal(await replace('<p>One</p>'), true);
+    });
+    assert.equal(lastCall().value, '<p>One</p>');
+});
+
 k.test('insert-at-caret', S_FONT, 'insertAtCaret: the answer takes the font too', async () => {
     ctx.document.body.innerHTML = '<p>typed here</p>';
     caretAfter(ctx, 'typed');
     editor.font = { fontName: 'monospace', fontSize: '' };
-    assert.equal(await send(ctx, { command: 'insertAtCaret', text: '<p>Ins</p>', isPlainText: false, tabId: 3 }), true);
+    assert.equal(await insertAtCaret('<p>Ins</p>'), true);
     assert.equal(lastCall().value, '<p><font face="monospace">Ins</font></p>');
 });
 
-k.test('reply', S_FONT, 'insertReply: the answer takes the font of the new reply\'s caret, the <br> spacer stays bare', async () => {
-    ctx.document.body.innerHTML = '<p><br></p>' + CITE + QUOTE;
-    const range = ctx.document.createRange();
-    range.setStart(ctx.document.body.firstChild, 0);
-    const sel = ctx.window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+k.test('saved-caret-font', S_FONT, 'insertAtCaret at the caret saved by saveCaret: the font read with it, not the one of the selection when the answer arrives', async () => {
+    ctx.document.body.innerHTML = '<p>typed here</p>';
+    caretAfter(ctx, 'typed');
     editor.font = { fontName: 'tt', fontSize: '' };
-    assert.equal(await send(ctx, { command: 'insertReply', text: '<p>Answer</p>', isPlainText: false }), true);
+    assert.equal(await saveCaret(), true);
+    // The autoselect of {%mail_typed_text%} (or a click) moves the selection: the pending style is gone.
+    select(ctx, 'here');
+    editor.font = { fontName: 'Arial', fontSize: '' };
+    assert.equal(await insertAtCaret('<p>Ins</p>'), true);
+    assert.equal(lastCall().value, '<p><tt>Ins</tt></p>');
+});
+
+k.test('saved-caret-unusable-font', S_FONT, 'a saved caret not usable: its font is dropped with it, the current one is read', async () => {
+    ctx.document.body.innerHTML = CONTAINER + '<p>typed here</p>';
+    caretAfter(ctx, 'pan');
+    editor.font = { fontName: 'tt', fontSize: '' };
+    await saveCaret();
+    caretAfter(ctx, 'typed');
+    editor.font = { fontName: 'Arial', fontSize: '' };
+    assert.equal(await insertAtCaret('<p>Ins</p>'), true);
+    assert.equal(lastCall().value, '<p><font face="Arial">Ins</font></p>');
+});
+
+k.test('reply', S_FONT, 'insertReply: the answer takes the font of the new reply\'s caret, the <br> spacer stays bare', async () => {
+    openReply({ fontName: 'tt' });
+    assert.equal(await reply('<p>Answer</p>'), true);
     assert.equal(lastCall().value, '<p><tt>Answer</tt></p><br>');
+});
+
+k.test('reply-inline', S_FONT, 'insertReply with an answer of inline content only: the <br> spacer stays outside the wrapper', async () => {
+    openReply({ fontName: 'tt' });
+    assert.equal(await reply('Answer <b>now</b>'), true);
+    assert.equal(lastCall().value, '<tt>Answer <b>now</b></tt><br>');
 });
 
 k.test('plain-text-untouched', S_FONT, 'a plain text window: the answer is inserted as text, never wrapped', async () => {
