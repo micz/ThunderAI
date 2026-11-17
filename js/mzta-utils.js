@@ -1385,6 +1385,63 @@ export function applyPromptConnection(prefs, prompt) {
     return out;
 }
 
+const SPARKS_TIMED_OUT = Symbol("timeout");
+
+// Older Sparks listeners may keep the response channel open forever for unknown actions,
+// so every newer request is bounded to two seconds.
+async function askSparks(action) {
+  let timer;
+  try {
+    return await Promise.race([
+      browser.runtime.sendMessage('thunderai-sparks@micz.it', {action}),
+      new Promise(resolve => { timer = setTimeout(() => resolve(SPARKS_TIMED_OUT), 2000); })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Capability discovery is independent of the legacy version-string handshake. The calendar
+// event action asks once per extraction and reuses the answer for the prompt and for the reply.
+export async function getSparksCapabilities() {
+  // The reason only: a reply can hold category names, and an error anything.
+  const unavailable = reason => {
+    console.warn("[ThunderAI] Sparks calendar capabilities unavailable (" + reason + "): native categories are disabled.");
+    return { calendarEventFields: [], calendarCategories: [] };
+  };
+  try {
+    const response = await askSparks("getCapabilities");
+    if (response === SPARKS_TIMED_OUT) return unavailable("timeout");
+    if (!response || typeof response !== "object" || Array.isArray(response) ||
+        !Array.isArray(response.calendarEventFields) || !Array.isArray(response.calendarCategories) ||
+        !Array.from(response.calendarEventFields).every(value => typeof value === "string" && value.length > 0) ||
+        !Array.from(response.calendarCategories).every(value => typeof value === "string")) return unavailable("invalid reply");
+    return {
+      calendarEventFields: [...new Set(response.calendarEventFields)],
+      // An empty name can sit in Thunderbird's catalogue ("a,,b"): skipped, not fatal.
+      calendarCategories: [...new Set(response.calendarCategories.filter(value => value.length > 0))]
+    };
+  } catch (e) {
+    return unavailable("no reply");
+  }
+}
+
+// Keeps the categories of an answer that exist in Thunderbird, each once; an empty list is a
+// valid answer. Without the capability (an older Sparks) the field is dropped and the event
+// opens as before.
+export function normalizeCalendarCategories(data, capabilities, logger) {
+  if (!("categories" in data)) return data;
+  const original = data.categories;
+  const values = Array.isArray(original)
+    ? [...new Set(original.filter(value => typeof value === "string" && capabilities.calendarCategories.includes(value)))]
+    : [];
+  const ignored = Array.isArray(original) ? original.length - values.length : 1;
+  if (ignored) logger?.log("Calendar categories ignored: " + ignored);
+  if (Array.isArray(original) && capabilities.calendarEventFields.includes("categories")) data.categories = values;
+  else delete data.categories;
+  return data;
+}
+
 export async function checkSparksPresence() {
   try {
     let sparks_current = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"});

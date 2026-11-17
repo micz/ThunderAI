@@ -51,6 +51,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_bod
 | `current_datetime` | Current date and time | 0 | |
 | `account_email_address` | Email address of the current account/identity | 0 | |
 | `tags_current_email` | Tags currently on the email | 0 | |
+| `calendar_categories` | Native Thunderbird calendar category names as a JSON array; `[]` when unavailable | 0 | |
 | `tags_full_list` | All available tags in Thunderbird | 0 | |
 | `thunderai_def_sign` | Default signature name (`default_sign_name` pref) | 0 | |
 | `thunderai_def_lang` | Default response language (`default_chatgpt_lang` pref) | 0 | |
@@ -327,6 +328,7 @@ chain of `replacePlaceholders()` (see *Placeholder Resolution Order*).
 | `mail_headers:<name>` | the value of header `<name>` from `browser.messages.getFull()`, the name matched **case-insensitively**; a multi-valued header joined with `", "`. Header absent: `""` |
 | `mail_full_headers` | every header as `<name>: <value>` (multi-valued joined with `", "`), one per line (`\n`), names as Thunderbird returns them |
 | `tags_full_list` | the names of every Thunderbird tag joined with `", "` — the first element of the `getTagsList()` pair, the caller's when it supplies one, otherwise read by `getPlaceholdersValues()` itself |
+| `calendar_categories` | `JSON.stringify()` of the category names Sparks advertises: `msg_text.calendar_capabilities` when the calendar event action has already asked, else one `getSparksCapabilities()` per resolution; `[]` when Sparks is unavailable or its reply is invalid |
 | `tags_current_email` | the **names** (not the keys) of the tags on the email, looked up by key in the second element of that pair, joined with `", "`. A key not in the list (a tag deleted from Thunderbird) is kept as its raw key (e.g. `$label5`), with a console warning — legible in the prompt, where a silent omission would hide the tag [#911]; an email with no tags, or a ComposeDetails (no `tags` field: the compose window), gives `""`. Never an error: a failure here would fail the whole prompt |
 | `mail_datetime` | `curr_message.date` converted to a string (for a `Date`, its `toString()`) |
 | `current_datetime` | `new Date().toString()` at resolution time |
@@ -778,3 +780,14 @@ Three things bite when adding one:
   `/{%\s*(.*?)\s*%}/` literal and *do* accept spaces. That mismatch let a guard substitute a token
   whose value was never gathered (fixed for all four call sites: the `mail_plain_text_part` fetch
   in `js/mzta-menus.js`, `mail_typed_text` ×2, and `additional_text`).
+
+## Native calendar categories
+
+`{%calendar_categories%}` is a type-0 built-in offered by autocomplete. Its value is
+`JSON.stringify()` of the category names Sparks advertises. The calendar event action asks Sparks
+once per extraction and passes the answer in `msg_text.calendar_capabilities`; elsewhere the
+placeholder calls `getSparksCapabilities()` itself, only when present. Multiple occurrences,
+including spaced forms, share a single read per resolution. Unavailable or invalid capabilities
+become `[]`, even when placeholder default substitution is off. The value is read at send time, not
+stored in a prompt or preference, and no native category is created or renamed. See
+[02-prompts.md](02-prompts.md#calendar-event-native-categories).

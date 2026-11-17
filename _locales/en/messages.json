@@ -4890,5 +4890,13 @@
   "prefs_insecure_origins_remove": {
     "message": "Remove",
     "description": "Options page, advanced section: button next to an allowed unencrypted server, which withdraws the permission."
+  },
+  "placeholder_calendar_categories": {
+    "message": "Existing Thunderbird calendar categories (JSON array; [] when Sparks is unavailable)",
+    "description": "Name of the calendar_categories placeholder in autocomplete; its value is a JSON array of native calendar category names provided by Sparks."
+  },
+  "prompt_calendar_categories_format": {
+    "message": "In addition to the fields described above, add to the JSON object a field \"categories\": an array with the names, taken exactly from this JSON list of existing calendar categories, that fit this event: {%calendar_categories%}. Never invent a name; use [] if none fits.",
+    "description": "Instruction appended to the calendar event prompt when the prompt asks for categories without giving their list. Keep the {%calendar_categories%} placeholder, the field name \"categories\" and [] as they are."
   }
 }
