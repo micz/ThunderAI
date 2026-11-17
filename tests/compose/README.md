@@ -40,6 +40,7 @@ node --test tests/compose/99-harness-known-issues.test.mjs   # level 1: the know
 | `compose-18-reply-insert` | a reply just opened: HTML bodies written per test, then the live plain text one of 04 | **B**: `insertReply` (`chatgpt_replyMessage`): one `insertHTML` replacing what precedes the first quote / forward / signature, the `<br>` spacer rule (#849), empty body, whole-document answer, ThunderAI's elements above it; plain text: one `insertText` with the blank line; the fallbacks; nothing sent to the background |
 | `compose-19-display-foreign-panels` | the live display of 15, with another add-on's banner above the mail and a footer below it | **A**: with `display`, only the top-level part containers are read (text and HTML), nested ones once, several in order; without it, or with no container, the whole body, as before |
 | `compose-20-insert-at-caret` | HTML bodies written per test (a reply with quote and signature, a new message with a signature, ThunderAI's container), then the live plain text one of 04 | **B**: `insertAtCaret` (action "3"): at the caret, a selection kept (the answer at its end), no caret → the start of the email above quote and signature, after ThunderAI's elements, the caret saved by `saveCaret` winning over the `{%mail_typed_text%}` autoselect, used once, following edits, unusable inside ThunderAI's elements; never a confirmation; the caret left after the answer (fallback too); plain text: one `insertText`; nothing sent to the background |
+| `compose-21-typing-font` | HTML bodies written per test | **B**: the compose font (#1048): the editor's pending style read before the focus and the selection change, each inline run wrapped in `<tt>` / `<font face>` / `<font size>` (not the `<br>` spacer, a `<pre>`, a heading's size), the default font unchanged; Replace, Insert at cursor and the reply; plain text never wrapped; the fallback too |
 
 `99-harness-known-issues.test.mjs` (level 1) checks the known-issue file itself.
 
@@ -162,7 +163,9 @@ What the area found was fixed, and the spec updated where it described the old b
 - **The compose API**: what `replaceBody()` (the reply's fallback), `insertHtml()` and `isPlainTextCompose()` do with the
   body (`plainTextBody` vs `body`).
 - **The editor itself**: `document.execCommand()` is modelled (`stubEditor()` in `compose-doc.mjs`:
-  `insertHTML` / `insertText` on the current selection, or a refusal, or a throw). What Gecko's plain
+  `insertHTML` / `insertText` on the current selection, or a refusal, or a throw; `queryCommandValue`
+  for `fontName` / `fontSize`, the pending style, dropped on every focus or selection change). What
+  Gecko renders of the font, what Gecko's plain
   text editor makes of a `
 `, the undo / redo stack and the focus are tested by hand in Thunderbird
   (spec 01 "Replacing text in a compose window").

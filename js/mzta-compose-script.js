@@ -114,6 +114,71 @@ function keepOutOfInjected(range) {
   }
 }
 
+// The font the editor gives typed text at the current selection: {face, size}, or null when it is
+// the default one. Thunderbird applies the compose font of its settings (msgcompose.font_face /
+// font_size) as the editor's pending style (cmd_fontFace / fontSize on a collapsed selection), so
+// typed text gets a <font face> / <tt> / <font size> - but execCommand('insertHTML') ignores that
+// style, and an answer made of <p> blocks came out in the proportional default font [#1048].
+// queryCommandValue() reports the pending style as well as the font of the text around the
+// selection. 'tt' is the editor's own value for "Fixed Width"; size "3" is the default size.
+function typingFont() {
+  try {
+    if (typeof document.queryCommandValue !== 'function') return null;
+    const face = String(document.queryCommandValue('fontName') ?? '').trim();
+    let size = String(document.queryCommandValue('fontSize') ?? '').trim();
+    if (size === '3') size = '';
+    return (face || size) ? { face, size } : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// The elements an inline run stops at. Anything else (text, <b>, <a>, <code>, <br>...) is inline.
+const MZTA_BLOCK_TAGS = new Set(['ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'DD', 'DETAILS', 'DIV',
+  'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'FORM', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+  'HEADER', 'HR', 'LI', 'MAIN', 'NAV', 'OL', 'P', 'PRE', 'SECTION', 'TABLE', 'TBODY', 'TD', 'TFOOT',
+  'TH', 'THEAD', 'TR', 'UL']);
+const MZTA_HEADING_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
+
+// The answer's HTML with the typing font applied as Thunderbird applies it to typed text: each run
+// of inline content inside each block wrapped in a <tt> (face 'tt') or <font face>, and a
+// <font size>. A <font> cannot wrap a block, hence one per run. Left alone: runs with no text (a
+// lone <br> spacer), the content of a <pre> (it keeps its own fixed-width font) and, for the size,
+// the content of a heading (it keeps its own size).
+function applyTypingFont(html, font) {
+  if (!font) return html;
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const wrap = (nodes, withSize) => {
+    if (!nodes.some(n => n.textContent.trim() !== '')) return;
+    let outer = null, inner = null;
+    const add = el => { if (inner) inner.appendChild(el); else outer = el; inner = el; };
+    if (font.face === 'tt') add(doc.createElement('tt'));
+    const fontEl = doc.createElement('font');
+    if (font.face && font.face !== 'tt') fontEl.setAttribute('face', font.face);
+    if (font.size && withSize) fontEl.setAttribute('size', font.size);
+    if (fontEl.attributes.length) add(fontEl);
+    if (!outer) return;
+    nodes[0].before(outer);
+    nodes.forEach(n => inner.appendChild(n));
+  };
+  const walk = (container, withSize) => {
+    let run = [];
+    for (const node of Array.from(container.childNodes)) {
+      // nodeType, not instanceof: a DOMParser document has no window (defaultView is null).
+      if (node.nodeType === 1 && MZTA_BLOCK_TAGS.has(node.tagName)) {
+        wrap(run, withSize);
+        run = [];
+        if (node.tagName !== 'PRE') walk(node, withSize && !MZTA_HEADING_TAGS.has(node.tagName));
+      } else {
+        run.push(node);
+      }
+    }
+    wrap(run, withSize);
+  };
+  walk(doc.body, true);
+  return doc.body.innerHTML;
+}
+
 // The insertion of replaceSelectedText, insertAtCaret and insertReply. It goes through the editor
 // (document.execCommand), so it is one transaction of the editor's undo stack: one Ctrl+Z
 // restores the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it. A DOM mutation bypasses the transaction
@@ -122,6 +187,9 @@ function keepOutOfInjected(range) {
 // every setComposeDetails({body}) clears the undo history. So nothing may write the body
 // through the compose API after this, or the undo entry just created is gone.
 function insertIntoEditor(range, text, isPlainText) {
+  // Read before the focus and the selection change below: the editor drops its pending style
+  // as soon as the selection moves. [#1048]
+  if (!isPlainText) text = applyTypingFont(text, typingFont());
   try {
     // From the AI chat or the ChatGPT window the compose window is not focused, and an
     // editor command can then do nothing. Focus it first, then set the selection: focusing

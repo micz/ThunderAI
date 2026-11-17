@@ -1710,7 +1710,35 @@ the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it.
   `Array.from(doc.body.childNodes)` because `childNodes` is a **live** NodeList — `appendChild`
   removes each node from the list being walked, so iterating it directly would skip every other
   node.
+- **The compose font** ([#1048](https://github.com/micz/ThunderAI/issues/1048)): see *The compose
+  font* below; an HTML answer is wrapped in it before either path.
 - The command resolves `true` once the answer is inserted, by either path.
+
+#### The compose font
+
+Thunderbird applies the compose font of its settings (`msgcompose.font_face`, `msgcompose.font_size`;
+`loadHTMLMsgPrefs()` in `MsgComposeCommands.js`) as the editor's **pending style** — `cmd_fontFace`
+and `fontSize` on the collapsed selection — so only *typed* text gets a `<tt>` ("Fixed Width"), a
+`<font face>` or a `<font size>`. `execCommand('insertHTML')` ignores that style, so an answer of
+`<p>` blocks came out in the proportional default font, whatever the setting. Hence, on an HTML
+window, `insertIntoEditor()` (all three commands: Replace, Insert at cursor, the reply):
+
+- reads the font with `document.queryCommandValue('fontName')` / `('fontSize')` (`typingFont()`),
+  **first** — before `window.focus()` and the selection change, since Gecko drops the pending style
+  as soon as the selection moves. The value is the pending style, or the font of the text around
+  the selection. No face and no size (or the default size `"3"`) changes nothing; a missing
+  `queryCommandValue` or a throw neither;
+- wraps the answer (`applyTypingFont()`) as Thunderbird wraps typed text: each **run of inline
+  content of each block** (a `<font>` cannot wrap a block) in a `<tt>` for the face `tt`, else a
+  `<font face>`, and a `<font size>` (inside the `<tt>`, or on the same `<font>`). Left alone: a run
+  with no text (the reply's `<br>` spacer), the content of a `<pre>` (its own fixed-width font),
+  and, for the size only, the content of a heading (its own size);
+- inserts that markup by the editor path or the fallback alike. A plain text window is never
+  wrapped. When the user's text around a selection already carries the font, the wrapper is
+  redundant, not harmful.
+
+The background's `replaceBody()` fallback of the reply (no compose script) cannot read the editor,
+so it inserts the answer without the font.
 
 **Why not the compose API: `setComposeDetails()` and the undo history.** Until v5.1.0 the content
 script mutated the DOM directly (`deleteContents()` + `insertNode()`), which bypasses the editor's
