@@ -37,12 +37,15 @@
 
 import {
     getQNoteNoteFor,
+    isQNoteEnabled,
     prefetchQNoteNotes
 } from './mzta-qnote.js';
 
 // Every integration:
 //   key            its key in ext_integration_data
 //   placeholders   the ids of the placeholders it resolves
+//   enabled()      whether the user turned it on: the autocomplete offers its placeholders only
+//                  then (withoutDisabledExtPlaceholders()). May reject: that is "off".
 //   read(headerMessageId, data)
 //                  the message's data, read at most once per getPlaceholdersValues() call whatever
 //                  the number of its tokens in the prompt; data is ext_integration_data[key]
@@ -60,6 +63,7 @@ export const EXT_INTEGRATIONS = [
     {
         key: 'qnote',
         placeholders: ['qnote_text', 'qnote_datetime'],
+        enabled: () => isQNoteEnabled(),
         read: (headerMessageId, data) => getQNoteNoteFor(headerMessageId, data?.notes),
         value(placeholderId, note) {
             if (placeholderId === 'qnote_text') return note?.text;
@@ -77,6 +81,26 @@ export const EXT_INTEGRATIONS = [
 /** The integration that resolves the placeholder with this id, or undefined. */
 export function findExtIntegration(placeholderId) {
     return EXT_INTEGRATIONS.find(integration => integration.placeholders.includes(placeholderId));
+}
+
+/**
+ * The placeholders an autocomplete offers: the list without those of an integration switched off
+ * (read when called, so a page offers what was on when it loaded). Only the suggestions: the
+ * highlighting and the validation keep the full list, a token of an integration switched off is
+ * still a valid placeholder (it resolves to '').
+ */
+export async function withoutDisabledExtPlaceholders(placeholders) {
+    const off = new Set();
+    for (const integration of EXT_INTEGRATIONS) {
+        let on = false;
+        try {
+            on = (await integration.enabled()) === true;
+        } catch (e) {
+            console.warn('[ThunderAI] Could not tell whether ' + integration.key + ' is on: ' + e);
+        }
+        if (!on) integration.placeholders.forEach(id => off.add(id));
+    }
+    return placeholders.filter(p => !off.has(p.id));
 }
 
 /**

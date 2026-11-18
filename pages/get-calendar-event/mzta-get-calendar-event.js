@@ -26,7 +26,8 @@ import {
 import {
   getPlaceholders,
   mapPlaceholderToSuggestion,
-  placeholdersUtils
+  placeholdersUtils,
+  withoutDisabledExtPlaceholders
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import {
@@ -184,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // suggestions: {%additional_text%} is a real placeholder that this page simply
     // does not offer, so the editor must not flag it as unknown.
     activePlaceholders = await getPlaceholders(true);
-    autocompleteSuggestions = activePlaceholders.filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    autocompleteSuggestions = (await withoutDisabledExtPlaceholders(activePlaceholders)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
     const get_calendar_event_textarea_hl = attachEditorHighlight(get_calendar_event_textarea);
     // Flags unknown and unterminated tokens. Type 1 ("reading"),
     // matching the type_value passed to textareaAutocomplete below.

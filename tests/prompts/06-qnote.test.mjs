@@ -6,7 +6,7 @@
 // requestAccess on the placeholder path. Also "Batches": createExtBatch(), the lazy batch prefetch
 // of ext_integration_data.batch that buildSummaryPrompt() and processEmails() use, and the registry
 // js/mzta-ext-integrations.js the placeholders resolve through (a leaf module: it never imports
-// js/mzta-placeholders.js).
+// js/mzta-placeholders.js), with withoutDisabledExtPlaceholders(), the autocomplete's list.
 //
 // QNote is the other end of the two-argument runtime.sendMessage(QNOTE_ID, message), answered by
 // startPage({external}) with `qnote` below, which a test replaces. Every message sent to it is in
@@ -289,6 +289,18 @@ k.test('ext-registry-ids', 'every placeholder of an integration is a built-in wh
         assert.ok(p, id + ' is a built-in');
         assert.equal(p.empty_is_value, '1', id);
     }
+});
+
+k.test('ext-autocomplete', 'withoutDisabledExtPlaceholders(): the QNote placeholders are offered only with qnote_integration on, every other one always, and QNote is never asked', async () => {
+    const placeholders = await import(new URL('js/mzta-placeholders.js', REPO).href);
+    assert.equal(placeholders.withoutDisabledExtPlaceholders, ext.withoutDisabledExtPlaceholders);
+    const all = await placeholders.getPlaceholders(true);
+    const ids = list => list.map(p => p.id);
+    assert.deepEqual(ids(await ext.withoutDisabledExtPlaceholders(all)), ids(all));
+    await ctx.ctl.browser.storage.local.set({ qnote_integration: false });
+    const off = ids(await ext.withoutDisabledExtPlaceholders(all));
+    assert.deepEqual(off, ids(all).filter(id => id !== 'qnote_text' && id !== 'qnote_datetime'));
+    assert.deepEqual(sent, []);
 });
 
 k.test('ext-resolver', 'createExtPlaceholderResolver(): undefined for an id no integration owns, one read per integration, null when the read rejects or the value throws', async () => {

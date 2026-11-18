@@ -73,6 +73,8 @@ import {
     createExtPlaceholderResolver,
     findExtIntegration
 } from './mzta-ext-integrations.js';
+// For the pages' autocomplete, which import the placeholders from here.
+export { withoutDisabledExtPlaceholders } from './mzta-ext-integrations.js';
 
 const defaultPlaceholders = [
     {

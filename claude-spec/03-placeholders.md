@@ -369,10 +369,12 @@ Missing or `{}` means nothing supplied: each integration reads what it needs its
 
 **The integration registry** (`js/mzta-ext-integrations.js`). `EXT_INTEGRATIONS` lists every
 integration: `key` (its key in `ext_integration_data`), `placeholders` (the ids it resolves),
-`read(headerMessageId, data)` (the message's data, `data` being `ext_integration_data[key]`),
+`enabled()` (whether the user turned it on, `isQNoteEnabled()` for QNote: only then does the
+autocomplete offer its placeholders, see *Placeholder Autocomplete*), `read(headerMessageId, data)` (the message's data, `data` being `ext_integration_data[key]`),
 `value(placeholderId, read)` (a placeholder's value from what `read()` gave, `null` for `''`) and
 `prefetch(headerMessageIds)` (its data for a batch, in the shape of `ext_integration_data[key]`, or
-`null`). Next to it, `findExtIntegration(placeholderId)`, `createExtBatch(headerMessageIds)` (see
+`null`). Next to it, `findExtIntegration(placeholderId)`, `withoutDisabledExtPlaceholders(placeholders)`
+(the autocomplete's list), `createExtBatch(headerMessageIds)` (see
 *Batches*) and `createExtPlaceholderResolver(headerMessageId, ext_integration_data)`: the resolver of
 one `getPlaceholdersValues()` call, which reads each integration's data at most once, only when asked
 (the data under its key, else the batch's when the message is in it, else its own read), and never
@@ -539,7 +541,16 @@ The tokens are shown only when `need_custom_text` is `"1"`: the Custom Prompts e
 `textareaAutocomplete()` in `js/mzta-placeholders-autocomplete.js` provides the `{%…` autocomplete
 dropdown, and is shared by **8 pages**: customprompts, customdataplaceholders, translate, summarize,
 addtags, spamfilter, get-task, get-calendar-event. Suggestions are built from
-`getPlaceholders(true)` mapped through `mapPlaceholderToSuggestion()`.
+`getPlaceholders(true)` passed through `withoutDisabledExtPlaceholders()` and mapped through
+`mapPlaceholderToSuggestion()`.
+
+**External integrations switched off are not suggested.** `withoutDisabledExtPlaceholders()`
+(`js/mzta-ext-integrations.js`, re-exported by `js/mzta-placeholders.js`) drops the placeholders of
+every registry integration whose `enabled()` is not `true` (a rejection counts as off): with
+`qnote_integration` off, `{%qnote_text%}` and `{%qnote_datetime%}` are not offered. Read once when the
+page loads, so turning the option on shows them from the next opening of the page. **Only the
+suggestions**: the highlighting and the validation keep the full `activePlaceholders`, so a token of an
+integration switched off typed by hand, or already in a prompt, is still valid (it resolves to `''`).
 
 **Matching.** Case-insensitive **substring** match on the placeholder **id**, not a prefix match on
 the whole token. Prefix matches are listed first, in `suggestions` order, followed by the substring

@@ -70,7 +70,8 @@ import { taLogger } from "../../js/mzta-logger.js";
 import {
     getPlaceholders,
     placeholdersUtils,
-    mapPlaceholderToSuggestion
+    mapPlaceholderToSuggestion,
+    withoutDisabledExtPlaceholders
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import {
@@ -178,7 +179,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Kept as the raw list too: the highlight backdrop validates tokens against it on
     // every keystroke and needs the placeholder objects, not the mapped suggestions.
     activePlaceholders = await getPlaceholders(true);
-    autocompleteSuggestions = activePlaceholders.map(mapPlaceholderToSuggestion);
+    // The suggestions leave out the placeholders of an external integration switched off
+    // (QNote); the highlight still accepts them.
+    autocompleteSuggestions = (await withoutDisabledExtPlaceholders(activePlaceholders)).map(mapPlaceholderToSuggestion);
 
     // The first render ran before the placeholder list was in, so it could not tell a
     // valid token from an invalid one. Repaint now so unknown placeholders turn red.
