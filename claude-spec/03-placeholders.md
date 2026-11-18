@@ -351,7 +351,8 @@ value supplied at all still follows the chain.
 already passes a MessageHeader as `curr_message` (menus and popup, spam filter, add tags, the
 summary's per-mail template), so they need nothing more. `buildTranslationPrompt()` passes no
 `curr_message`, so it takes an `ext_integration_data` as its third argument and hands it on;
-`_generateTranslationForMessage()` passes `{ header_message_id }`.
+`_runTranslationJob()` (the job `_generateTranslationForMessage()` starts) passes
+`{ header_message_id }`, with the batch of `processEmails()` when there is one.
 
 **`ext_integration_data`, one argument for every external integration.** `getPlaceholdersValues()`,
 `preparePrompt()` and `buildTranslationPrompt()` take the data of the add-on integrations in one
@@ -361,7 +362,8 @@ not a parameter to every signature on the path:
 | Key | Meaning |
 |---|---|
 | `header_message_id` | generic: the message the integrations look up when there is no `curr_message` (default `curr_message.headerMessageId`) |
-| `qnote` | `{ notes }`: the QNote notes a batch prefetched (`{ [headerMessageId]: note or null }`) |
+| `batch` | generic: `createExtBatch()` of the messages processed together, whose data each integration reads in one go the first time one of them needs it (see *Batches*) |
+| `qnote` | `{ notes }`: QNote notes already read (`{ [headerMessageId]: note or null }`); wins over `batch` |
 
 Missing or `{}` means nothing supplied: each integration reads what it needs itself.
 
@@ -369,33 +371,44 @@ Missing or `{}` means nothing supplied: each integration reads what it needs its
 integration: `key` (its key in `ext_integration_data`), `placeholders` (the ids it resolves),
 `read(headerMessageId, data)` (the message's data, `data` being `ext_integration_data[key]`),
 `value(placeholderId, read)` (a placeholder's value from what `read()` gave, `null` for `''`) and
-`prefetch(headerMessageIds)` (its data for a batch, or `null`). Next to it,
-`findExtIntegration(placeholderId)` and `createExtPlaceholderResolver(headerMessageId,
-ext_integration_data)`: the resolver of one `getPlaceholdersValues()` call, which reads each
-integration's data at most once, only when asked, and never rejects (a rejected `read()` or a
-throwing `value()` is `null`, so `''`). The module is a **leaf**: it imports only the integrations'
+`prefetch(headerMessageIds)` (its data for a batch, in the shape of `ext_integration_data[key]`, or
+`null`). Next to it, `findExtIntegration(placeholderId)`, `createExtBatch(headerMessageIds)` (see
+*Batches*) and `createExtPlaceholderResolver(headerMessageId, ext_integration_data)`: the resolver of
+one `getPlaceholdersValues()` call, which reads each integration's data at most once, only when asked
+(the data under its key, else the batch's when the message is in it, else its own read), and never
+rejects (a rejected `read()` or a throwing `value()` is `null`, so `''`). The module is a **leaf**: it imports only the integrations'
 own clients (`js/mzta-qnote.js`), never `js/mzta-placeholders.js`, which imports it. That keeps the
 graph `mzta-utils-prompt.js` → `mzta-placeholders.js` → `mzta-ext-integrations.js` →
 `mzta-qnote.js` free of cycles; a test checks the module's imports. A new integration adds its entry
 there, its key to the table above, and its placeholders to `defaultPlaceholders` (still the source of
 the ids, with `empty_is_value: "1"` when `''` is a value).
 
-**Batches.** `buildSummaryPrompt()` builds one prompt from many messages: it asks
-`placeholdersUtils.prefetchExtIntegrationData(templateText, headerMessageIds)` for the
-`ext_integration_data` of the batch and passes it to each `preparePrompt()`. That generic function
-knows the integrations through its `EXT_INTEGRATIONS` list (key, placeholders, `prefetch()`), so the
-prompt builders name none: for each integration whose placeholders the template uses (custom
-placeholders expanded first, as `preparePrompt()` will), it stores the result of its `prefetch()`
-under its key, and leaves the key out when that resolves to `null` or throws; `{}` when the template
-uses none. For QNote the entry is `prefetchQNoteNotes()`, which reads every note with **one**
-`getNotes` (chunked by 1000), so the data is `ext_integration_data.qnote.notes`. The map holds every id, `null` after a failure too, so a hanging QNote costs one
-time-out, not one per message; with the integration off every id is `null` and QNote is not asked,
-so the preference is read once for the batch, not again by each message. The
-automatic batch of `processEmails()` is **not** prefetched: each message runs in its own pipeline
-and job (shared with the context menu and the popup, which join a running job), and each feature
-resolves its own prompt there, so a prefetch would have to be threaded through those jobs for a
-call QNote answers locally at once. It costs one `getNotes` per message and per feature that uses
-the placeholders.
+**Batches.** Messages processed together share one read per integration, through
+`ext_integration_data.batch = createExtBatch(headerMessageIds)` (`js/mzta-ext-integrations.js`):
+
+- `buildSummaryPrompt(messageDataArray, ext_integration_data)` builds one prompt from many messages
+  and creates the batch of its messages, unless the caller hands one on;
+- `processEmails()` creates the batch of its targets (every message of the run, after the gating)
+  and hands it to every feature of every pipeline: the spam filter, add tags, the summary and the
+  translation (`options.extIntegrationData` of `_generateSpamReportForMessage()`,
+  `_generateSummaryForMessage()`, `_generateTranslationForMessage()`; `runAddTagsJob()` reads it
+  directly). A job another caller started, which the run joins, keeps its own data.
+
+The batch is **lazy**: the first time the resolver of a message of the batch needs an
+integration's data that was not supplied under its key, `batch.dataFor(integration)` runs that
+integration's `prefetch()` for **all** the batch's ids, once, and every other message (concurrent
+pipelines wait for the same promise) reads from it. So an integration no prompt of the batch uses is
+never asked (no prompt to scan beforehand: the add tags prompt can differ by account, custom
+placeholders can hide a token), and when one is used the batch costs one call. A message outside the
+batch reads its own data; a rejected `prefetch()` is `null`, and each message then reads its own.
+
+For QNote the `prefetch()` is `prefetchQNoteNotes()`, which reads every note with **one** `getNotes`
+(chunked by 1000) and maps **every** id to its note or `null`, `null` after a failure too: a hanging
+QNote costs one time-out (`QNOTE_TIMEOUT_MS`, 3 s) per batch, not one per message and per feature,
+and a missing one a single try. With the integration off every id is `null` and QNote is not asked,
+so the preference is read once for the batch, not again by each message. The notes are read when the
+first message needs them and reused for the whole run, however long it lasts: a note edited during
+the run is seen by the next run.
 
 ### The address placeholders in the compose window
 

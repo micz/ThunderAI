@@ -6,11 +6,13 @@
 // message's headerMessageId); it never asks QNote's status and never calls requestAccess, whose
 // dialog is modal and would open at a random moment; a QNote that is missing, refuses or answers
 // nothing is no note, and the prompt is sent all the same. Spec 01 "Per-message pipelines in
-// processEmails()": each feature resolves the placeholders of its own message.
+// processEmails()": each feature resolves the placeholders of its own message, and the run reads the
+// notes of all its messages with ONE getNotes (ext_integration_data.batch, createExtBatch()), the
+// first time a feature needs one: a hanging QNote costs one time-out per run, not one per message.
 //
 // QNote is the `external` answer of bgContext() for its id; `qnote` below is replaced by a test.
 // The summary on receive is not here: buildSummaryPrompt() is a stand-in in this area (its body
-// read needs a DOM), and its prefetch is tested in the prompts area.
+// read needs a DOM); the batch prefetch itself is tested in the prompts area (06-qnote).
 
 import assert from 'node:assert/strict';
 import { bgContext, flush } from './context.mjs';
@@ -99,13 +101,8 @@ k.test('no-note', 'a message with no note: the placeholders are empty, never the
     }
 });
 
-k.test('only-getnotes', 'the background only reads notes: getNotes by headerMessageId, never getStatus nor requestAccess', () => {
-    assert.ok(toQNote.length > 0, 'QNote was asked');
-    assert.deepEqual([...new Set(toQNote.map(m => m.command))], ['getNotes']);
-    for (const m of toQNote) {
-        assert.equal(m.headerMessageIds.length, 1);
-        assert.ok(['q1@x', 'q2@x'].includes(m.headerMessageIds[0]), m.headerMessageIds[0]);
-    }
+k.test('only-getnotes', 'the background only reads notes, once for the run: one getNotes with every message of the batch, never getStatus nor requestAccess', () => {
+    assert.deepEqual(toQNote, [{ command: 'getNotes', headerMessageIds: ['q1@x', 'q2@x'] }]);
 });
 
 k.test('qnote-missing', 'QNote missing: the prompts are still sent, with empty placeholders, and nothing but getNotes is tried', async () => {
@@ -116,7 +113,7 @@ k.test('qnote-missing', 'QNote missing: the prompts are still sent, with empty p
     const p = promptsFor('Subject three');
     assert.deepEqual(Object.keys(p).sort(), ['add_tags', 'spam', 'translation']);
     for (const prompt of Object.values(p)) assert.match(prompt, /Note: \[\]/);
-    assert.deepEqual([...new Set(toQNote.map(m => m.command))], ['getNotes']);
+    assert.deepEqual(toQNote, [{ command: 'getNotes', headerMessageIds: ['q3@x'] }], 'one try for the run, not one per feature');
 });
 
 k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {

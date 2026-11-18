@@ -49,7 +49,9 @@ tests/
     │                                      apiVersion, error replies, access-denied, chunks of 1000, the
     │                                      prefetch) and the two placeholders (one getNotes, no getStatus,
     │                                      '' on every failure, the preference, compose, prefetched notes);
-    │                                      the generic batch prefetch, placeholdersUtils.prefetchExtIntegrationData(),
+    │                                      the lazy batch prefetch, createExtBatch() (one getNotes per batch,
+    │                                      shared by concurrent messages, one time-out when QNote hangs,
+    │                                      never asked when no prompt uses it, a message outside the batch),
     │                                      and the registry js/mzta-ext-integrations.js (a leaf module,
     │                                      its placeholders, the per-call resolver)
     ├── 10-prompt-flags.test.mjs           spec 02 "The five boolean flags are normalized on read",

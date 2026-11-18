@@ -6,8 +6,8 @@
 // the switch is on; only a user action calls requestAccess: switching the toggle on and "Check
 // access", never the page load (getStatus); "waiting" with the button disabled while QNote's dialog
 // is open; the status for every answer (granted, denied, not granted yet, QNote without the API, an
-// error reply); the preference stays on whatever the answer; switching off calls nothing, and an
-// answer arriving after it is ignored.
+// error reply); the preference stays on whatever the answer; switching off calls nothing, and the
+// answer to a requestAccess a newer one replaced is ignored.
 //
 // QNote is `otherAddons` below (the ui plugin). `answer` is what it replies to the next
 // requestAccess; `hold()` keeps the next one pending until the test releases it. The tests run in

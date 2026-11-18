@@ -488,9 +488,11 @@ function renderPrivacyCompanion(downloadError = null){
 let qnoteState = null;
 // A requestAccess waiting for the user's answer in QNote's dialog.
 let qnoteWaiting = false;
-// Bumped by every requestAccess and by switching the toggle off: an answer arriving for an
-// older number is ignored.
+// Bumped by every requestAccess: the answer to an older one is ignored (a newer one is coming).
 let qnoteRequestSeq = 0;
+// Bumped each time a requestAccess answer is applied: the load's getStatus, answered after it,
+// is older and must not overwrite it.
+let qnoteAnswerSeq = 0;
 
 function qnoteStatusText(){
   if (qnoteWaiting) return browser.i18n.getMessage('prefs_qnote_status_waiting');
@@ -524,9 +526,9 @@ function renderQNote(){
 }
 
 async function updateQNote(){
-  const seq = qnoteRequestSeq;
+  const answered = qnoteAnswerSeq;
   const result = await getQNoteStatus();
-  if (seq !== qnoteRequestSeq) return;   // a requestAccess answer is newer
+  if (answered !== qnoteAnswerSeq) return;   // a requestAccess answer arrived meanwhile: it is newer
   qnoteState = result;
   renderQNote();
 }
@@ -538,9 +540,12 @@ async function askQNoteAccess(){
   qnoteWaiting = true;
   renderQNote();
   const result = await requestQNoteAccess();
-  if (seq !== qnoteRequestSeq) return;   // switched off, or asked again, in the meantime
+  if (seq !== qnoteRequestSeq) return;   // asked again in the meantime: that answer counts
+  // Applied even when the switch was turned off while the dialog was open: it is QNote's
+  // current state, which the row's visibility follows (the status line stays hidden while off).
   qnoteWaiting = false;
   qnoteState = result;
+  qnoteAnswerSeq++;
   renderQNote();
 }
 
@@ -550,7 +555,8 @@ function onQNoteToggle(event){
   if (event.target.checked) {
     askQNoteAccess();
   } else {
-    qnoteRequestSeq++;
+    // No sequence bump: neither the load's getStatus nor an open dialog's answer is stale for
+    // being answered after the switch went off (dropping them hid a row QNote can use).
     qnoteWaiting = false;
     renderQNote();
   }

@@ -791,8 +791,9 @@ The summarize feature uses two distinct prompt pathways:
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
 - The data of the external integrations the per-mail template uses (today the QNote notes) is
-  read once for all the messages with `placeholdersUtils.prefetchExtIntegrationData()`
-  and handed to each `preparePrompt()` as `ext_integration_data` (see
+  read once for all the messages: `buildSummaryPrompt(messageDataArray, ext_integration_data)`
+  hands each `preparePrompt()` an `ext_integration_data` whose `batch` (`createExtBatch()`) covers
+  its messages, or the caller's (a `processEmails()` run hands its own on) (see
   [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders), *Batches*)
 - Language: `taPromptUtils.getSummaryLang(prompt_summarize)` returns `{ chatgpt_lang, force_lang_statement }`.
   - `chatgpt_lang` is passed to every `preparePrompt()` call (main prompt, separator, each email block), as before. With `summarize_force_lang` off it is `getDefaultLang(prompt_summarize)` (normally `''`, since `define_response_lang` is `"0"`), so the prompt is byte-identical to the pre-option one. With the flag on it is `''`, so it can't contradict the forced language.
@@ -826,8 +827,9 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
   `message` as well as `fullMessage`.
 - `ext_integration_data` (optional) is the data of the external add-on integrations, handed on to
   `getPlaceholdersValues()` (see [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders)).
-  This path passes no `curr_message`, so `_generateTranslationForMessage()` passes
-  `{ header_message_id }`, the message the QNote placeholders look up; without it they resolve to `""`.
+  This path passes no `curr_message`, so `_runTranslationJob()` passes `{ header_message_id }`, the
+  message the QNote placeholders look up (with the batch of `processEmails()`, when the run hands one
+  on); without it they resolve to `""`.
 - Retrieves the `prompt_translate_this` special prompt text
 - When the text holds `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` (with or without
   the `:N` limit), reads the text body as `buildSummaryPrompt()` does (`htmlBodyToPlainText()` of

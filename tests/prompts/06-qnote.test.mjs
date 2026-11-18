@@ -3,9 +3,10 @@
 // getPlaceholdersValues(): read only with qnote_integration on, by the message's headerMessageId,
 // once per message even with both tokens, never with no token, '' on every failure (never the
 // literal token, whatever placeholders_use_default_value says), and never a getStatus or a
-// requestAccess on the placeholder path. Also "Batches": placeholdersUtils.prefetchExtIntegrationData(),
-// the generic prefetch buildSummaryPrompt() calls, and the registry js/mzta-ext-integrations.js the
-// placeholders resolve through (a leaf module: it never imports js/mzta-placeholders.js).
+// requestAccess on the placeholder path. Also "Batches": createExtBatch(), the lazy batch prefetch
+// of ext_integration_data.batch that buildSummaryPrompt() and processEmails() use, and the registry
+// js/mzta-ext-integrations.js the placeholders resolve through (a leaf module: it never imports
+// js/mzta-placeholders.js).
 //
 // QNote is the other end of the two-argument runtime.sendMessage(QNOTE_ID, message), answered by
 // startPage({external}) with `qnote` below, which a test replaces. Every message sent to it is in
@@ -186,49 +187,88 @@ k.test('prefetch', 'prefetchQNoteNotes(): one call for the batch, every id prese
     assert.deepEqual(sent, []);
 });
 
-// --- The generic batch prefetch -------------------------------------------------------------
+// --- The batch prefetch (ext_integration_data.batch) ----------------------------------------
 
-k.test('ext-prefetch', 'prefetchExtIntegrationData(): the template uses QNote, one getNotes for all the messages, under the qnote key', async () => {
-    assert.deepEqual(await ph.prefetchExtIntegrationData('Mail: {%mail_subject%} {%qnote_datetime%}', ['a@x', 'b@x']), {
-        qnote: { notes: { 'a@x': { text: 'Call Bob back', ts: TS }, 'b@x': null } },
-    });
+k.test('batch-one-call', 'createExtBatch(): the first message that needs a note reads the notes of the whole batch, the others reuse them', async () => {
+    const ext_integration_data = { batch: ext.createExtBatch(['a@x', 'b@x', 'a@x', '', undefined]) };
+    assert.deepEqual(ext_integration_data.batch.headerMessageIds, ['a@x', 'b@x']);
+    assert.equal(await resolve('{%qnote_text%} {%qnote_datetime%}', { curr_message: message('a@x'), ext_integration_data }),
+        `Call Bob back ${new Date(TS).toString()}`);
+    assert.equal(await resolve('[{%qnote_text%}]', { curr_message: message('b@x'), ext_integration_data }), '[]');
     assert.deepEqual(sent, [{ command: 'getNotes', headerMessageIds: ['a@x', 'b@x'] }]);
 });
 
-k.test('ext-prefetch-none', 'a template with no integration placeholder: {} and no call', async () => {
-    assert.deepEqual(await ph.prefetchExtIntegrationData('Mail: {%mail_subject%}', ['a@x']), {});
-    assert.deepEqual(await ph.prefetchExtIntegrationData(undefined, ['a@x']), {});
+k.test('batch-concurrent', 'messages of the batch resolved at the same time share one getNotes', async () => {
+    const ext_integration_data = { batch: ext.createExtBatch(['a@x', 'b@x']) };
+    const [a, b] = await Promise.all([
+        resolve('{%qnote_text%}', { curr_message: message('a@x'), ext_integration_data }),
+        resolve('[{%qnote_text%}]', { curr_message: message('b@x'), ext_integration_data }),
+    ]);
+    assert.deepEqual([a, b], ['Call Bob back', '[]']);
+    assert.equal(sent.length, 1);
+});
+
+k.test('batch-lazy', 'no prompt of the batch uses QNote: QNote is never asked', async () => {
+    const ext_integration_data = { batch: ext.createExtBatch(['a@x', 'b@x']) };
+    assert.equal(await resolve('{%mail_subject%}', { curr_message: message('a@x'), mail_subject: 'S', ext_integration_data }), 'S');
     assert.deepEqual(sent, []);
 });
 
-k.test('ext-prefetch-custom', 'a QNote token inside a custom placeholder counts: the customs are expanded first', async () => {
-    await ctx.ctl.browser.storage.local.set({ _custom_placeholder: [
-        { id: 'thunderai_custom_note', name: 'Note', text: 'Note: {%qnote_text%}', type: '0', enabled: 1, is_default: '0', is_dynamic: '0' },
-    ] });
-    try {
-        const data = await ph.prefetchExtIntegrationData('{%thunderai_custom_note%}', ['a@x']);
-        assert.deepEqual(Object.keys(data), ['qnote']);
-        assert.equal(sent.length, 1);
-    } finally {
-        await ctx.ctl.browser.storage.local.remove('_custom_placeholder');
+k.test('batch-hanging', 'a QNote that never answers costs one time-out for the whole batch, not one per message', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    qnote = hanging;
+    const ext_integration_data = { batch: ext.createExtBatch(['a@x', 'b@x', 'c@x']) };
+    const results = [];
+    for (const id of ['a@x', 'b@x', 'c@x']) {
+        resolve('[{%qnote_text%}]', { curr_message: message(id), ext_integration_data }).then(r => results.push(r));
     }
+    for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
+    t.mock.timers.tick(q.QNOTE_TIMEOUT_MS);
+    for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
+    assert.deepEqual(results, ['[]', '[]', '[]']);
+    assert.equal(sent.length, 1, 'one getNotes for the three messages');
+    // And a later message of the same batch does not ask again.
+    assert.equal(await resolve('[{%qnote_text%}]', { curr_message: message('a@x'), ext_integration_data }), '[]');
+    assert.equal(sent.length, 1);
 });
 
-k.test('ext-prefetch-off-or-missing', 'integration off or QNote missing: every id null (off: with no call), so no message asks again nor rereads the preference', async () => {
-    qnote = NOT_THERE;
-    assert.deepEqual(await ph.prefetchExtIntegrationData('{%qnote_text%}', ['a@x', 'b@x']), { qnote: { notes: { 'a@x': null, 'b@x': null } } });
+k.test('batch-off', 'integration off: no call, and the preference is read once for the batch', async () => {
     await ctx.ctl.browser.storage.local.set({ qnote_integration: false });
-    sent.length = 0;
-    assert.deepEqual(await ph.prefetchExtIntegrationData('{%qnote_text%}', ['a@x']), { qnote: { notes: { 'a@x': null } } });
+    const ext_integration_data = { batch: ext.createExtBatch(['a@x', 'b@x']) };
+    assert.equal(await resolve('[{%qnote_text%}]', { curr_message: message('a@x'), ext_integration_data }), '[]');
+    await ctx.ctl.browser.storage.local.set({ qnote_integration: true });
+    assert.equal(await resolve('[{%qnote_text%}]', { curr_message: message('b@x'), ext_integration_data }), '[]',
+        'the batch already knows the integration was off');
     assert.deepEqual(sent, []);
 });
 
-k.test('ext-prefetch-used', 'what it returns is what the placeholders read: no call per message', async () => {
-    const ext_integration_data = await ph.prefetchExtIntegrationData('{%qnote_text%}', ['a@x', 'b@x']);
-    sent.length = 0;
+k.test('batch-outside', 'a message not in the batch reads its own note; data supplied under the qnote key wins over the batch', async () => {
+    const ext_integration_data = { batch: ext.createExtBatch(['b@x']) };
     assert.equal(await resolve('{%qnote_text%}', { curr_message: message('a@x'), ext_integration_data }), 'Call Bob back');
-    assert.equal(await resolve('[{%qnote_text%}]', { curr_message: message('b@x'), ext_integration_data }), '[]');
+    assert.deepEqual(sent, [{ command: 'getNotes', headerMessageIds: ['a@x'] }]);
+    sent.length = 0;
+    assert.equal(await resolve('{%qnote_text%}', {
+        curr_message: message('b@x'),
+        ext_integration_data: { ...ext_integration_data, qnote: { notes: { 'b@x': { text: 'Given', ts: TS } } } },
+    }), 'Given');
     assert.deepEqual(sent, []);
+});
+
+k.test('batch-prefetch-fails', 'a prefetch that rejects is null: each message then reads its own', async () => {
+    const fake = {
+        key: 'fake', placeholders: ['fake_ok'],
+        read: async (id, data) => ({ v: data ? 'batch' : 'own:' + id }),
+        value: (placeholderId, read) => read?.v,
+        prefetch: async () => { throw new Error('boom'); },
+    };
+    ext.EXT_INTEGRATIONS.push(fake);
+    try {
+        const batch = ext.createExtBatch(['m@x']);
+        const resolveExt = ext.createExtPlaceholderResolver('m@x', { batch });
+        assert.equal(await resolveExt('fake_ok'), 'own:m@x');
+    } finally {
+        ext.EXT_INTEGRATIONS.splice(ext.EXT_INTEGRATIONS.indexOf(fake), 1);
+    }
 });
 
 // --- The registry -----------------------------------------------------------------------------

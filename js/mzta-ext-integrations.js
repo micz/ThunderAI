@@ -20,14 +20,16 @@
  *  The registry of the external add-on integrations: what the placeholders need to know about each
  *  one, so that js/mzta-placeholders.js and the prompt builders name none of them. A LEAF module:
  *  it imports only the integrations' own clients, never js/mzta-placeholders.js, which imports it
- *  (getPlaceholdersValues() resolves through createExtPlaceholderResolver(), and
- *  placeholdersUtils.prefetchExtIntegrationData() runs the batch prefetch over EXT_INTEGRATIONS).
+ *  (getPlaceholdersValues() resolves through createExtPlaceholderResolver()).
  *
  *  Each integration's data travels in ext_integration_data, one object for all of them (see
  *  getPlaceholdersValues() and claude-spec/03-placeholders.md, "ext_integration_data"):
  *
  *    header_message_id   generic: the message the integrations look up when there is no curr_message
- *    qnote               { notes }: the QNote notes prefetched for a batch (js/mzta-qnote.js)
+ *    batch               generic: createExtBatch() of the messages processed together (a summary of
+ *                        several messages, a processEmails() run), so each integration reads the
+ *                        data of all of them in one go, the first time a message needs it
+ *    qnote               { notes }: QNote notes already read ({ [headerMessageId]: note | null })
  *
  *  A new integration adds its entry to EXT_INTEGRATIONS below, its key to that object, and its
  *  placeholders to defaultPlaceholders in js/mzta-placeholders.js (still the source of the ids).
@@ -49,9 +51,11 @@ import {
 //                  the placeholder's value from what read() resolved to (null with no data), or
 //                  null for '' (failSafePlaceholders() applies)
 //   prefetch(headerMessageIds)
-//                  its data for a batch, read in one go, or null when there is nothing to hand on.
-//                  QNote never resolves to null: with the integration off it maps every id to
-//                  null, so no message of the batch reads the preference again.
+//                  its data for a batch (createExtBatch()), read in one go, in the shape of
+//                  ext_integration_data[key], or null when there is nothing to hand on (each
+//                  message then reads its own). QNote never resolves to null: with the integration
+//                  off it maps every id to null, so no message of the batch reads the preference
+//                  again.
 export const EXT_INTEGRATIONS = [
     {
         key: 'qnote',
@@ -76,10 +80,39 @@ export function findExtIntegration(placeholderId) {
 }
 
 /**
+ * The messages processed together, for ext_integration_data.batch: the first message whose prompt
+ * needs an integration's data has it read for ALL of them, with one prefetch() per integration
+ * shared by the whole batch (concurrent messages wait for the same one), so a hanging add-on costs
+ * one time-out per batch, not one per message. Lazy: an integration no prompt of the batch uses is
+ * never asked. Never rejects: a failed prefetch is null, and each message then reads its own.
+ */
+export function createExtBatch(headerMessageIds) {
+    const ids = [...new Set((Array.isArray(headerMessageIds) ? headerMessageIds : [])
+        .filter(id => typeof id === 'string' && id !== ''))];
+    const prefetched = new Map();
+    return {
+        headerMessageIds: ids,
+        has: headerMessageId => ids.includes(headerMessageId),
+        dataFor(integration) {
+            if (!prefetched.has(integration.key)) {
+                prefetched.set(integration.key, Promise.resolve()
+                    .then(() => integration.prefetch(ids))
+                    .catch(e => {
+                        console.warn('[ThunderAI] Could not prefetch the ' + integration.key + ' data: ' + e);
+                        return null;
+                    }));
+            }
+            return prefetched.get(integration.key);
+        },
+    };
+}
+
+/**
  * A resolver for one getPlaceholdersValues() call: resolve(placeholderId) gives the value of an
  * integration placeholder (undefined for an id no integration owns), reading each integration's
- * data at most once and only when one of its placeholders is asked. Never rejects: any failure
- * is "no data", so the value is null.
+ * data at most once and only when one of its placeholders is asked: the data supplied under its
+ * key, else the batch's prefetch when the message is in ext_integration_data.batch, else its own
+ * read. Never rejects: any failure is "no data", so the value is null.
  */
 export function createExtPlaceholderResolver(headerMessageId, ext_integration_data = {}) {
     const ext_data = ext_integration_data || {};
@@ -88,9 +121,13 @@ export function createExtPlaceholderResolver(headerMessageId, ext_integration_da
         const integration = findExtIntegration(placeholderId);
         if (!integration) return undefined;
         if (!reads.has(integration.key)) {
-            reads.set(integration.key, Promise.resolve()
-                .then(() => integration.read(headerMessageId, ext_data[integration.key]))
-                .catch(() => null));
+            reads.set(integration.key, (async () => {
+                let data = ext_data[integration.key];
+                if (data === undefined && ext_data.batch?.has?.(headerMessageId)) {
+                    data = (await ext_data.batch.dataFor(integration)) ?? undefined;
+                }
+                return integration.read(headerMessageId, data);
+            })().catch(() => null));
         }
         try {
             return integration.value(placeholderId, await reads.get(integration.key)) ?? null;

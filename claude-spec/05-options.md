@@ -1527,10 +1527,15 @@ also works as a refresh (after allowing ThunderAI in QNote's options, for instan
 stays as the user set it whatever QNote answers: only the status line follows the answer. Switching
 the toggle **off** stores `false` and calls nothing.
 
-**A late answer is ignored.** `requestAccess` has no time-out (it waits for the user), so the switch
-can be turned off, or "Check access" pressed again, while it is pending. Each request takes a number
-from `qnoteRequestSeq`, which switching off also bumps; an answer for an older number is dropped. The
-load's `getStatus` checks the same number, so it never overwrites a newer `requestAccess` answer.
+**Which answer counts.** `requestAccess` has no time-out (it waits for the user), so "Check access"
+can be pressed again, or the switch turned off and on, while it is pending. Each request takes a
+number from `qnoteRequestSeq`; the answer to a request a newer one replaced is dropped. Switching
+**off** bumps nothing: an open dialog's answer arriving afterwards is still applied (it is QNote's
+current state; the status line stays hidden while off, but the row's visibility follows it), and so
+is the load's `getStatus`. Each applied `requestAccess` answer bumps `qnoteAnswerSeq`, which the
+load's `getStatus` checks, so a `getStatus` answered later never overwrites a newer `requestAccess`
+answer. (Switching off used to bump `qnoteRequestSeq` too, which dropped a `getStatus` still
+pending at that moment and hid a row QNote could use until the page was reloaded.)
 
 **Why it is outside the connection logic.** The placeholders work with every integration, ChatGPT
 Web included, and need no AI connection to be configured, so the row is never greyed out:

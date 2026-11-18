@@ -26,6 +26,7 @@ import {
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { mztaPrefs } from './mzta-prefs.js';
+import { createExtBatch } from './mzta-ext-integrations.js';
 
 // Per-feature settings of the AI reminder [#887]: same logic for calendar events
 // and tasks, only the prefs and the format instruction (reference date) differ.
@@ -252,7 +253,9 @@ export const taPromptUtils = {
         return { chatgpt_lang: '', force_lang_statement: browser.i18n.getMessage("prompt_summarize_force_lang") + " " + lang + "." };
     },
 
-    async buildSummaryPrompt(messageDataArray) {
+    // ext_integration_data: the caller's, when the messages belong to a larger batch (a
+    // processEmails() run hands its own on); otherwise these messages are the batch.
+    async buildSummaryPrompt(messageDataArray, ext_integration_data = null) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_summarize');
         const prompt_email = specialPrompts.find(p => p.id === 'prompt_summarize_email_template');
@@ -270,9 +273,10 @@ export const taPromptUtils = {
         });
 
         // The data of the external integrations the per-mail template uses, read once for all
-        // the messages instead of once per message ({} when it uses none).
-        const ext_integration_data = await placeholdersUtils.prefetchExtIntegrationData(prompt_email?.text,
-            messageDataArray.map(entry => entry?.message?.headerMessageId));
+        // the messages instead of once per message, and only if the template uses one.
+        if (!ext_integration_data) {
+            ext_integration_data = { batch: createExtBatch(messageDataArray.map(entry => entry?.message?.headerMessageId)) };
+        }
 
         const messages_list = [];
         for (let entry of messageDataArray) {

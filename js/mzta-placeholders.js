@@ -70,7 +70,6 @@ import {
 } from './mzta-utils.js';
 import { mztaPrefs } from './mzta-prefs.js';
 import {
-    EXT_INTEGRATIONS,
     createExtPlaceholderResolver,
     findExtIntegration
 } from './mzta-ext-integrations.js';
@@ -724,7 +723,9 @@ export const placeholdersUtils = {
             // in js/mzta-ext-integrations.js):
             //   header_message_id  the message they look up, when there is no curr_message (default:
             //                      curr_message.headerMessageId, which a ComposeDetails does not have)
-            //   qnote              { notes }: the QNote notes a batch prefetched
+            //   batch              createExtBatch() of the messages processed together: their data
+            //                      read in one go, the first time one of them needs it
+            //   qnote              { notes }: QNote notes already read
             //                      ({headerMessageId: note | null}, prefetchQNoteNotes())
             ext_integration_data = {}
         } = args || {};
@@ -907,31 +908,6 @@ export const placeholdersUtils = {
         }
         // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
         return finalSubs;
-    },
-
-    /**
-     * The ext_integration_data of a batch: for every integration of EXT_INTEGRATIONS
-     * (js/mzta-ext-integrations.js) whose placeholders the prompt text uses (custom placeholders
-     * expanded first, as preparePrompt() will), its data for all the messages, read once. {} when
-     * the prompt needs none: each message then reads its own, if any. Never throws: an
-     * integration that fails is simply left out.
-     */
-    async prefetchExtIntegrationData(promptText, headerMessageIds) {
-        const data = {};
-        let text = String(promptText ?? '');
-        if (placeholdersUtils.hasCustomPlaceholder(text)) {
-            text = await placeholdersUtils.replaceCustomPlaceholders(text);
-        }
-        for (const integration of EXT_INTEGRATIONS) {
-            if (!integration.placeholders.some(id => placeholdersUtils.hasPlaceholder(text, id))) continue;
-            try {
-                const value = await integration.prefetch(headerMessageIds);
-                if (value) data[integration.key] = value;
-            } catch (e) {
-                console.warn('[ThunderAI] Could not prefetch the ' + integration.key + ' data: ' + e);
-            }
-        }
-        return data;
     },
 
     failSafePlaceholders(element){
