@@ -240,15 +240,15 @@ k.test('ph-compose', 'no headerMessageId (a compose window\'s ComposeDetails): "
     assert.deepEqual(sent, []);
 });
 
-k.test('ph-header-message-id', 'header_message_id names the message when there is no curr_message (translation)', async () => {
-    assert.equal(await resolve('{%qnote_text%}', { header_message_id: 'a@x' }), 'Call Bob back');
+k.test('ph-header-message-id', 'ext_integration_data.header_message_id names the message when there is no curr_message (translation)', async () => {
+    assert.equal(await resolve('{%qnote_text%}', { ext_integration_data: { header_message_id: 'a@x' } }), 'Call Bob back');
     assert.deepEqual(sent, [{ command: 'getNotes', headerMessageIds: ['a@x'] }]);
 });
 
-k.test('ph-prefetched', 'with the notes a batch prefetched, no call: the map is used, a null in it included', async () => {
-    const qnote_notes = { 'a@x': { text: 'From the batch', ts: TS }, 'b@x': null };
-    assert.equal(await resolve('{%qnote_text%}', { curr_message: message('a@x'), qnote_notes }), 'From the batch');
-    assert.equal(await resolve('[{%qnote_text%}]', { curr_message: message('b@x'), qnote_notes }), '[]');
+k.test('ph-prefetched', 'with the notes a batch prefetched (ext_integration_data.qnote.notes), no call: the map is used, a null in it included', async () => {
+    const ext_integration_data = { qnote: { notes: { 'a@x': { text: 'From the batch', ts: TS }, 'b@x': null } } };
+    assert.equal(await resolve('{%qnote_text%}', { curr_message: message('a@x'), ext_integration_data }), 'From the batch');
+    assert.equal(await resolve('[{%qnote_text%}]', { curr_message: message('b@x'), ext_integration_data }), '[]');
     assert.deepEqual(sent, []);
 });
 

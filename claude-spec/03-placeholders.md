@@ -323,11 +323,11 @@ tokens present (a memoized `qnoteNote()`), and only when one of them is in the p
 demand-driven `extractPlaceholders()` loop, so a prompt without them never reaches QNote).
 `getQNoteNoteFor(headerMessageId, prefetched)` decides:
 
-1. no `headerMessageId`: `null`. The id is the `header_message_id` argument, else
+1. no `headerMessageId`: `null`. The id is `ext_integration_data.header_message_id`, else
    `curr_message.headerMessageId`. A compose window's ComposeDetails has none, so there is no compose
    support, on top of `type: 1` keeping them out of the compose autocomplete: QNote only keys notes
    on existing messages;
-2. the id is in `prefetched` (the `qnote_notes` argument): that entry, a `null` included, with no
+2. the id is in `prefetched` (`ext_integration_data.qnote.notes`): that entry, a `null` included, with no
    call;
 3. `qnote_integration` off: `null`, with no call;
 4. otherwise `getNotes([id])`: its note, or `null` on any failure.
@@ -345,13 +345,25 @@ value supplied at all still follows the chain.
 **Who supplies the id.** Every path that resolves placeholders on a received or selected message
 already passes a MessageHeader as `curr_message` (menus and popup, spam filter, add tags, the
 summary's per-mail template), so they need nothing more. `buildTranslationPrompt()` passes no
-`curr_message`, so it takes the id as a third argument (`headerMessageId`) and hands it on as
-`header_message_id`.
+`curr_message`, so it takes an `ext_integration_data` as its third argument and hands it on;
+`_generateTranslationForMessage()` passes `{ header_message_id }`.
+
+**`ext_integration_data`, one argument for every external integration.** `getPlaceholdersValues()`,
+`preparePrompt()` and `buildTranslationPrompt()` take the data of the add-on integrations in one
+object rather than one parameter per integration and per value, so a new integration adds a key,
+not a parameter to every signature on the path:
+
+| Key | Meaning |
+|---|---|
+| `header_message_id` | generic: the message the integrations look up when there is no `curr_message` (default `curr_message.headerMessageId`) |
+| `qnote` | `{ notes }`: the QNote notes a batch prefetched (`{ [headerMessageId]: note or null }`) |
+
+Missing or `{}` means nothing supplied: each integration reads what it needs itself.
 
 **Batches.** `buildSummaryPrompt()` builds one prompt from many messages: when its per-mail template
 (custom placeholders expanded) uses a QNote placeholder, it reads every note with **one**
 `prefetchQNoteNotes()` (chunked by 1000) and passes the map to each `preparePrompt()` as
-`qnote_notes`. The map holds every id, `null` after a failure too, so a hanging QNote costs one
+`ext_integration_data.qnote.notes`. The map holds every id, `null` after a failure too, so a hanging QNote costs one
 time-out, not one per message; with the integration off it is `null` and nothing is read. The
 automatic batch of `processEmails()` is **not** prefetched: each message runs in its own pipeline
 and job (shared with the context menu and the popup, which join a running job), and each feature
@@ -817,7 +829,7 @@ source field on the path in question:
 | Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same plus `tags_full_list` |
 | Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
 | Summarize, header + separator prompts | `js/mzta-utils-prompt.js` → `preparePrompt` | only `curr_prompt`/`chatgpt_lang` — every mail placeholder resolves empty |
-| Translation (popup and context menu included: `prompt_translate_this` never reaches `preparePrompt`) | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject`, `header_message_id` (the QNote placeholders), and `body_text` read as in Summarize, only when `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` is in the prompt (no selection: the latter is the body) |
+| Translation (popup and context menu included: `prompt_translate_this` never reaches `preparePrompt`) | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject`, `ext_integration_data.header_message_id` (the QNote placeholders), and `body_text` read as in Summarize, only when `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` is in the prompt (no selection: the latter is the body) |
 | `additional_text` late fill | `api_webchat/controller.js` → `replacePlaceholders` | the deferred half of `skip_additional_text: true` |
 
 **The tag lists are the exception: no path leaves them empty.** When the caller supplies no

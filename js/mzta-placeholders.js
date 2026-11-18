@@ -713,19 +713,21 @@ export const placeholdersUtils = {
             selection_text = "",
             selection_html = "",
             tags_full_list = ["", []],
-            // The QNote placeholders: the message's headerMessageId (default: curr_message's, which
-            // a compose window's ComposeDetails does not have), and the notes a batch prefetched
-            // ({headerMessageId: note | null}, prefetchQNoteNotes()), if any.
-            header_message_id = undefined,
-            qnote_notes = null
+            // The data of the external add-on integrations, one object for all of them:
+            //   header_message_id  the message they look up, when there is no curr_message (default:
+            //                      curr_message.headerMessageId, which a ComposeDetails does not have)
+            //   qnote              { notes }: the QNote notes a batch prefetched
+            //                      ({headerMessageId: note | null}, prefetchQNoteNotes())
+            ext_integration_data = {}
         } = args || {};
+        const ext_data = ext_integration_data || {};
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // The note, read at most once per call even with both QNote placeholders in the prompt,
         // and only when one of them is there. Never throws: any failure is "no note".
         let qnoteRead = null;
         const qnoteNote = () => {
             if (!qnoteRead) {
-                qnoteRead = getQNoteNoteFor(header_message_id ?? curr_message?.headerMessageId, qnote_notes)
+                qnoteRead = getQNoteNoteFor(ext_data.header_message_id ?? curr_message?.headerMessageId, ext_data.qnote?.notes)
                     .catch(() => null);
             }
             return qnoteRead;

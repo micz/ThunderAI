@@ -2045,7 +2045,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg, metadata));
         }
         taLog.log("[ThunderAI] Translation: building the prompt for " + usedMessage?.headerMessageId + " (folder: " + usedMessage?.folder?.path + ")");
-        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId, usedMessage?.headerMessageId ?? headerMessageId);
+        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId, { header_message_id: usedMessage?.headerMessageId ?? headerMessageId });
 
         const cmd = new mzta_specialCommand({
             processingClient,
