@@ -19,6 +19,7 @@ Example in a prompt: `"Summarize this email: {%mail_text_body_or_selected%}"`
 | `is_default` | string | `"1"` = built-in (not editable/deletable), `"0"` = custom |
 | `is_dynamic` | string | `"0"` = fixed value, `"1"` = dynamic (takes a parameter after `:`) |
 | `param_optional` | string | Dynamic placeholders only, absent = `"0"`. `"1"` = the parameter may be left out (`{%mail_text_body%}` and `{%mail_text_body:2000%}` are both valid), so the autocomplete offers the plain token instead of `{%id:%}` |
+| `empty_is_value` | string | Absent = `"0"`. `"1"` = an empty value supplied for the token is used as it is (`''` means "nothing here"), never treated as unresolved: `replacePlaceholders()` does not fall back to `default_value` or the literal token. A token with no value supplied at all still follows the `||` chain. Set on `additional_text`, `qnote_text` and `qnote_datetime` |
 | `enabled` | number | `0` = disabled, `1` = enabled |
 | `text` | string | Content for custom placeholders only |
 
@@ -265,7 +266,8 @@ a `||` chain, so an empty string is indistinguishable from "unresolved": with
 literal text `{%mail_plain_text_part%}` survives into the prompt. Not fixed deliberately — that
 chain is shared by the built-ins and widening it would change every one of them, a `junk_score`
 of `0` included, at the same time. `{%empty%}` is an exception: `replacePlaceholders()` returns
-`''` for it before the chain, so it is never the literal token. So are the two QNote placeholders,
+`''` for it before the chain, so it is never the literal token. So are, when a value is supplied,
+the placeholders with `empty_is_value: "1"` (`additional_text` and the two QNote placeholders),
 whose `''` is a value (see *The QNote placeholders*).
 
 **Known limitation — documented, not fixed.** The `text/plain` alternative is *not* reliable in
@@ -338,7 +340,7 @@ demand-driven `extractPlaceholders()` loop, so a prompt without them never reach
 **`''` is a value here.** No note, integration off, QNote missing, access not granted, a time-out:
 all resolve to `''`. Through the `||` chain that would become the literal `{%qnote_text%}` with
 `placeholders_use_default_value` off, so `replacePlaceholders()` returns the supplied value as it is
-for the ids in `EMPTY_IS_A_VALUE` (`qnote_text`, `qnote_datetime`) **when the replacements hold the
+for the placeholders with `empty_is_value: "1"` (`qnote_text`, `qnote_datetime`) **when the replacements hold the
 key**, which `getPlaceholdersValues()` always does for a token in the prompt. A QNote token with no
 value supplied at all still follows the chain.
 
@@ -371,7 +373,8 @@ placeholders expanded first, as `preparePrompt()` will), it stores the result of
 under its key, and leaves the key out when that resolves to `null` or throws; `{}` when the template
 uses none. For QNote the entry is `prefetchQNoteNotes()`, which reads every note with **one**
 `getNotes` (chunked by 1000), so the data is `ext_integration_data.qnote.notes`. The map holds every id, `null` after a failure too, so a hanging QNote costs one
-time-out, not one per message; with the integration off it is `null` and nothing is read. The
+time-out, not one per message; with the integration off every id is `null` and QNote is not asked,
+so the preference is read once for the batch, not again by each message. The
 automatic batch of `processEmails()` is **not** prefetched: each message runs in its own pipeline
 and job (shared with the context menu and the popup, which join a running job), and each feature
 resolves its own prompt there, so a prefetch would have to be threaded through those jobs for a
@@ -483,7 +486,7 @@ prepared, in the chat window. They are the deferred half of `skip_additional_tex
 4. **The late fill** (`api_webchat/controller.js`) replaces each token with its text through
    `replacePlaceholders()`, keyed by the token's inner text (`additional_text:tone`). An answer the
    user **gave** is used as it is, an **empty** one included: it becomes `""`, never the literal
-   token, whatever `placeholders_use_default_value` says (the user saw the field and left it blank).
+   token, whatever `placeholders_use_default_value` says (the user saw the field and left it blank: `additional_text` carries `empty_is_value: "1"`).
    Only a token with no answer at all follows the `||` chain of *Placeholder Resolution Order*.
 
    **The legacy string form.** Before 4.0.0 `api_send_custom_text` carried `custom_text` as a single
@@ -870,8 +873,8 @@ Three things bite when adding one:
 
 - **An empty string cannot be expressed.** `replacePlaceholders()`' `||` chain treats `''` as
   unresolved and falls through to `default_value` or the literal token. `{%empty%}` is
-  special-cased to `''`, and the QNote placeholders are in `EMPTY_IS_A_VALUE`; a new placeholder
-  that must be able to resolve to nothing needs the same.
+  special-cased to `''`, and `additional_text` and the QNote placeholders carry `empty_is_value: "1"`;
+  a new placeholder that must be able to resolve to nothing needs the same flag.
 - **Escape `\s` as `\\s` in the two template-string regexes.** `hasPlaceholder()` and
   `hasCustomPlaceholder()` build their pattern with `` new RegExp(`{%\\s*${placeholder}…`) ``. The
   doubled backslash is required: in a template string a single `\s` is eaten, leaving the pattern

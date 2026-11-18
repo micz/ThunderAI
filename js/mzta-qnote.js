@@ -187,11 +187,11 @@ export async function isQNoteEnabled() {
  * The notes of many messages in as few getNotes calls as possible, for a batch that resolves the
  * QNote placeholders of each: { [headerMessageId]: note | null } with EVERY valid id present, so
  * getQNoteNoteFor() never asks again, not even after a failure (a hanging QNote would otherwise
- * cost one time-out per message). null when the integration is off: nothing to prefetch.
+ * cost one time-out per message). With the integration off every id maps to null and QNote is not
+ * asked: the preference is read once for the batch, not once more per message.
  */
 export async function prefetchQNoteNotes(headerMessageIds) {
-    if (!await isQNoteEnabled()) return null;
-    const result = await getQNoteNotes(headerMessageIds);
+    const result = await isQNoteEnabled() ? await getQNoteNotes(headerMessageIds) : { notes: {} };
     const out = {};
     for (const id of headerMessageIds || []) {
         if (typeof id === 'string' && id !== '') out[id] = result.notes?.[id] ?? null;

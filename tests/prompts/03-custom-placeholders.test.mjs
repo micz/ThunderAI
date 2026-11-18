@@ -31,6 +31,9 @@ const DYNAMIC_IDS = ['mail_headers', 'additional_text', 'mail_text_body', 'mail_
 // Spec 03 "Optional length limit on the body placeholders": the dynamic ones whose parameter may be
 // left out (param_optional "1"), so the autocomplete offers the plain token.
 const PARAM_OPTIONAL_IDS = ['mail_text_body', 'mail_text_body_or_selected'];
+// Spec 03 "Placeholder Properties": the ones whose '' is a value (empty_is_value "1"), never left
+// as the literal token when one is supplied.
+const EMPTY_IS_VALUE_IDS = ['additional_text', 'qnote_text', 'qnote_datetime'];
 // The Type column of the same table: every id not listed here is type 0.
 const TYPE_1 = ['mail_folder_name', 'mail_folder_path', 'mail_headers', 'mail_full_headers', 'junk_score',
     'mail_datetime', 'mail_attachments_info', 'mail_plain_text_part', 'qnote_text', 'qnote_datetime'];
@@ -84,6 +87,7 @@ k.test('built-ins-properties', 'every built-in has is_default "1", its table typ
         assert.equal(Number(p.type), type, p.id + ' type');
         assert.equal(p.is_dynamic, DYNAMIC_IDS.includes(p.id) ? '1' : '0', p.id + ' is_dynamic');
         assert.equal(p.param_optional == 1, PARAM_OPTIONAL_IDS.includes(p.id), p.id + ' param_optional');
+        assert.equal(p.empty_is_value == 1, EMPTY_IS_VALUE_IDS.includes(p.id), p.id + ' empty_is_value');
         assert.equal(typeof p.default_value, 'string', p.id + ' default_value');
     }
 });

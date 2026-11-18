@@ -48,6 +48,11 @@ import {
     1: the parameter may be left out ({%mail_text_body%} and {%mail_text_body:2000%} are both valid),
        so the autocomplete completes to the plain token instead of '{%id:%}'
 
+    empty_is_value attribute (absent means "0"):
+    1: an empty value supplied for the token is used as it is ('' means "nothing here"), never
+       treated as unresolved, so replacePlaceholders() does not fall back to default_value or the
+       literal token. A token with no value supplied at all still does.
+
     ================ USER PROPERTIES
     enabled attribute:
     0: Disabled
@@ -170,12 +175,15 @@ const defaultPlaceholders = [
         enabled: 1,
     },
     {
+        // An answer the user gave is used as it is, an empty one included: the user saw the
+        // field and left it blank, which means "nothing here".
         id: 'additional_text',
         name: "__MSG_placeholder_additional_text__",
         default_value: "",
         type: 0,
         is_default: "1",
         is_dynamic: "1",
+        empty_is_value: "1",
         enabled: 1,
     },
     {
@@ -346,13 +354,15 @@ const defaultPlaceholders = [
     },
     {
         // The QNote note of the message [#980] (js/mzta-qnote.js). Reading only: QNote keys its
-        // notes by headerMessageId, which a message being composed does not have.
+        // notes by headerMessageId, which a message being composed does not have. '' is a value
+        // here (no note, or QNote missing, or access not granted), hence empty_is_value.
         id: 'qnote_text',
         name: "__MSG_placeholder_qnote_text__",
         default_value: "",
         type: 1,
         is_default: "1",
         is_dynamic: "0",
+        empty_is_value: "1",
         enabled: 1,
     },
     {
@@ -362,13 +372,10 @@ const defaultPlaceholders = [
         type: 1,
         is_default: "1",
         is_dynamic: "0",
+        empty_is_value: "1",
         enabled: 1,
     }
 ];
-
-// Placeholders whose resolved value is used as it is, an empty one included: '' means "nothing
-// here" (no note), never "unresolved", so it must not fall back to the literal token.
-const EMPTY_IS_A_VALUE = new Set(['qnote_text', 'qnote_datetime']);
 
 
 export async function getPlaceholders(onlyEnabled = false){
@@ -613,14 +620,10 @@ export const placeholdersUtils = {
             if (currPlaceholder.id === 'empty') {
                 return '';
             }
-            // An answer the user gave to an additional_text field is used as it is, an empty one
-            // included: the user saw the field and left it blank, which means "nothing here".
-            if (currPlaceholder.id === 'additional_text' && Object.prototype.hasOwnProperty.call(subs, key)) {
-                return String(subs[key] ?? '');
-            }
-            // The QNote placeholders resolve to '' with no note (or QNote missing, or access not
-            // granted): that is their value, not a failure to resolve them.
-            if (EMPTY_IS_A_VALUE.has(currPlaceholder.id) && Object.prototype.hasOwnProperty.call(subs, key)) {
+            // A placeholder whose '' means "nothing here" (empty_is_value: an additional_text field
+            // left blank, no QNote note) uses the value supplied for its token as it is, an empty
+            // one included: that is its value, not a failure to resolve it.
+            if (currPlaceholder.empty_is_value == 1 && Object.prototype.hasOwnProperty.call(subs, key)) {
                 return String(subs[key] ?? '');
             }
             // Replace if found, otherwise keep the original or substitute with default value

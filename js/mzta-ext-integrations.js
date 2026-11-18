@@ -33,7 +33,8 @@ import { prefetchQNoteNotes } from './mzta-qnote.js';
 
 // Every integration whose data a batch can read in one go: its key in ext_integration_data, the
 // placeholders that need it, and prefetch(headerMessageIds) resolving to its data, or null when
-// there is nothing to hand on (integration off).
+// there is nothing to hand on (QNote never does: with the integration off it maps every id to null,
+// so no message reads the preference again).
 const EXT_INTEGRATIONS = [
     {
         key: 'qnote',

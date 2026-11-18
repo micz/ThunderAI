@@ -173,14 +173,14 @@ k.test('notes-chunked', 'more than 1000 ids: one getNotes per 1000, duplicates s
     assert.equal(Object.keys(result.notes).length, 2001);
 });
 
-k.test('prefetch', 'prefetchQNoteNotes(): one call for the batch, every id present even after a failure, null with the integration off', async () => {
+k.test('prefetch', 'prefetchQNoteNotes(): one call for the batch, every id present even after a failure, every id null with no call with the integration off', async () => {
     assert.deepEqual(await q.prefetchQNoteNotes(['a@x', 'b@x']), { 'a@x': { text: 'Call Bob back', ts: TS }, 'b@x': null });
     assert.equal(sent.length, 1);
     qnote = NOT_THERE;
     assert.deepEqual(await q.prefetchQNoteNotes(['a@x', 'b@x']), { 'a@x': null, 'b@x': null });
     await ctx.ctl.browser.storage.local.set({ qnote_integration: false });
     sent.length = 0;
-    assert.equal(await q.prefetchQNoteNotes(['a@x']), null);
+    assert.deepEqual(await q.prefetchQNoteNotes(['a@x', 'b@x']), { 'a@x': null, 'b@x': null });
     assert.deepEqual(sent, []);
 });
 
@@ -212,12 +212,12 @@ k.test('ext-prefetch-custom', 'a QNote token inside a custom placeholder counts:
     }
 });
 
-k.test('ext-prefetch-off-or-missing', 'integration off: {} with no call; QNote missing: every id null, so no message asks again', async () => {
+k.test('ext-prefetch-off-or-missing', 'integration off or QNote missing: every id null (off: with no call), so no message asks again nor rereads the preference', async () => {
     qnote = NOT_THERE;
     assert.deepEqual(await ext.prefetchExtIntegrationData('{%qnote_text%}', ['a@x', 'b@x']), { qnote: { notes: { 'a@x': null, 'b@x': null } } });
     await ctx.ctl.browser.storage.local.set({ qnote_integration: false });
     sent.length = 0;
-    assert.deepEqual(await ext.prefetchExtIntegrationData('{%qnote_text%}', ['a@x']), {});
+    assert.deepEqual(await ext.prefetchExtIntegrationData('{%qnote_text%}', ['a@x']), { qnote: { notes: { 'a@x': null } } });
     assert.deepEqual(sent, []);
 });
 
@@ -306,12 +306,13 @@ k.test('ph-type', 'both are reading-only built-ins (type 1), with no default val
         assert.equal(Number(p.type), 1, id);
         assert.equal(p.is_default, '1', id);
         assert.equal(p.is_dynamic, '0', id);
+        assert.equal(p.empty_is_value, '1', id);
         assert.equal(p.default_value, '', id);
         assert.equal(p.name, '__MSG_placeholder_' + id + '__', id);
     }
 });
 
-k.test('ph-no-empty-elsewhere', 'the empty-is-a-value rule is the QNote placeholders\' only: an empty subject still follows the || chain', async () => {
+k.test('ph-no-empty-elsewhere', 'empty_is_value is not every placeholder\'s: an empty subject still follows the || chain', async () => {
     assert.equal(ph.replacePlaceholders({ text: '{%mail_subject%}', replacements: { mail_subject: '' } }), '{%mail_subject%}');
     assert.equal(ph.replacePlaceholders({ text: '{%qnote_text%}', replacements: {} }), '{%qnote_text%}',
         'a QNote token with no value supplied at all is still left as written');
