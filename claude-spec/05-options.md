@@ -1520,6 +1520,13 @@ hidden. A QNote without the API (`unsupported`) counts as missing for this rule.
 | `"denied"` | `prefs_qnote_status_denied` (allow ThunderAI in QNote options, "Access from other add-ons", then press "Check access") |
 | `"granted"` | `prefs_qnote_status_granted` |
 
+**Status colour.** `renderQNote()` sets `data-state` on `#qnote_status` (`qnoteStatusState()`):
+`granted` for `"granted"` (green), `not_granted` for `"unknown"` / `"pending"` / `"denied"` (red). It
+is removed while waiting for QNote's dialog, before the first answer, for `not_reachable` /
+`unsupported` / `error`, and with the switch off: those lines keep the neutral description colour.
+The colours are in `mzta-options.css`, with lighter values under `prefers-color-scheme: dark`
+(light `#1f8a5b` / `#b3261e`, dark `#6fd6a0` / `#f2837c`).
+
 **Only a user action calls `requestAccess`**, whose dialog is modal: switching the toggle **on**
 (after `saveOptions()` stored `true`) and "Check access". The page load calls `getStatus` alone. With
 the access already decided, `requestAccess` returns the state without a dialog, so "Check access"

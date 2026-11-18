@@ -6,8 +6,9 @@
 // the switch is on; only a user action calls requestAccess: switching the toggle on and "Check
 // access", never the page load (getStatus); "waiting" with the button disabled while QNote's dialog
 // is open; the status for every answer (granted, denied, not granted yet, QNote without the API, an
-// error reply); the preference stays on whatever the answer; switching off calls nothing, and the
-// answer to a requestAccess a newer one replaced is ignored.
+// error reply), green when granted and red when not, neutral otherwise; the preference stays on
+// whatever the answer; switching off calls nothing, and the answer to a requestAccess a newer one
+// replaced is ignored.
 //
 // QNote is `otherAddons` below (the ui plugin). `answer` is what it replies to the next
 // requestAccess; `hold()` keeps the next one pending until the test releases it. The tests run in
@@ -47,6 +48,8 @@ const S_ROWS = 'spec 05 "Feature Rows — Disabled vs. API-Needed"';
 
 const toggle = () => $('#qnote_integration');
 const status = () => $('#qnote_status').textContent;
+/** The colour state of the status line (data-state): 'granted' green, 'not_granted' red, else none. */
+const tone = () => $('#qnote_status').dataset.state;
 const commands = () => toQNote.map(m => m.command);
 /** The next requestAccess (one per call of hold()) stays pending: returns release(reply). */
 const hold = () => {
@@ -87,11 +90,13 @@ k.test('switch-on', S_ROW, 'switching on stores true and calls requestAccess; "w
     await spinUntil(() => commands().includes('requestAccess'), 'requestAccess sent');
     await spinUntil(() => status() === msg('prefs_qnote_status_waiting'), 'the waiting status');
     assert.equal($('#btnQNoteCheckAccess').disabled, true);
+    assert.equal(tone(), undefined, 'waiting: neutral');
     release({ apiVersion: 1, access: 'granted' });
     await ctx.settle();
     assert.strictEqual(ctx.ctl.localData().qnote_integration, true);
     assert.deepEqual(commands(), ['getStatus', 'requestAccess']);
     assert.equal(status(), msg('prefs_qnote_status_granted'));
+    assert.equal(tone(), 'granted');
     assert.equal($('#btnQNoteCheckAccess').disabled, false);
 });
 
@@ -100,6 +105,7 @@ k.test('check-denied', S_ROW, 'Check access calls requestAccess; denied: the den
     await ctx.click($('#btnQNoteCheckAccess'));
     assert.deepEqual(commands(), ['getStatus', 'requestAccess', 'requestAccess']);
     assert.equal(status(), msg('prefs_qnote_status_denied'));
+    assert.equal(tone(), 'not_granted');
     assert.strictEqual(ctx.ctl.localData().qnote_integration, true);
     assert.equal(toggle().checked, true);
 });
@@ -109,6 +115,7 @@ k.test('check-not-granted', S_ROW, 'unknown or pending: the "not granted yet" st
         answer = { apiVersion: 1, access };
         await ctx.click($('#btnQNoteCheckAccess'));
         assert.equal(status(), msg('prefs_qnote_status_not_granted'), access);
+        assert.equal(tone(), 'not_granted', access);
     }
 });
 
@@ -117,6 +124,7 @@ k.test('check-unsupported', S_ROW, 'a reply with no apiVersion, or below 1: the 
         answer = reply;
         await ctx.click($('#btnQNoteCheckAccess'));
         assert.equal(status(), msg('prefs_qnote_status_unsupported'), JSON.stringify(reply));
+        assert.equal(tone(), undefined, JSON.stringify(reply));
     }
     assert.equal(toggle().checked, true);
 });
@@ -125,6 +133,7 @@ k.test('check-error', S_ROW, 'an error reply: the error status', async () => {
     answer = { apiVersion: 1, error: 'invalid-request' };
     await ctx.click($('#btnQNoteCheckAccess'));
     assert.equal(status(), msg('prefs_qnote_status_error'));
+    assert.equal(tone(), undefined);
 });
 
 k.test('late-ignored', S_ROW, "switched off while QNote's dialog is open: false is stored, nothing is called, and the late answer is ignored", async () => {
@@ -136,6 +145,7 @@ k.test('late-ignored', S_ROW, "switched off while QNote's dialog is open: false 
     await spinUntil(() => ctx.ctl.localData().qnote_integration === false, 'false stored');
     assert.equal(toQNote.length, sentBefore, 'switching off calls nothing');
     assert.equal(shown($('#qnote_status')), false);
+    assert.equal(tone(), undefined, 'switched off: neutral');
     // On again: a new dialog, still open when the first one's answer finally arrives.
     const releaseNew = hold();
     toggle().click();

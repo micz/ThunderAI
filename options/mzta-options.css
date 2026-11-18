@@ -41,6 +41,15 @@
 /* Shown by updateQNote() once QNote has answered (or while the switch is on): no flash before. */
 #qnote_tr { display: none; }
 #qnote_status { margin-top: 5px; }
+/* Status line colour, set by renderQNote() (data-state): green when ThunderAI may read the notes,
+   red when QNote says it may not. Same values as --success / --jsonError in mzta-design.css, with
+   lighter dark-theme variants (--success has none there, too dark on a dark panel). */
+#qnote_status[data-state="granted"] { color: #1f8a5b; }
+#qnote_status[data-state="not_granted"] { color: #b3261e; }
+@media (prefers-color-scheme: dark) {
+    #qnote_status[data-state="granted"] { color: #6fd6a0; }
+    #qnote_status[data-state="not_granted"] { color: #f2837c; }
+}
 
 #no_sparks, #no_privacy {
     display: none;

@@ -511,6 +511,14 @@ function qnoteStatusText(){
   }
 }
 
+// The colour of the status line (data-state, see mzta-options.css): green once access is granted,
+// red while QNote answers that it is not (denied, unknown, pending). Neutral otherwise: waiting for
+// QNote's dialog, no answer yet, or QNote missing/old/in error.
+function qnoteStatusState(){
+  if (qnoteWaiting || !qnoteState?.ok) return '';
+  return qnoteState.access === 'granted' ? 'granted' : 'not_granted';
+}
+
 // The row shows once QNote answered with its API, or while the switch is on (with QNote gone,
 // switching it off here is the way out). Explicit 'flex' because the CSS hides it by default.
 function renderQNote(){
@@ -520,6 +528,9 @@ function renderQNote(){
   const status = document.getElementById('qnote_status');
   status.style.display = toggle.checked ? '' : 'none';
   status.textContent = toggle.checked ? qnoteStatusText() : '';
+  const state = toggle.checked ? qnoteStatusState() : '';
+  if (state) status.dataset.state = state;
+  else delete status.dataset.state;
   const btn = document.getElementById('btnQNoteCheckAccess');
   btn.style.display = toggle.checked ? '' : 'none';
   btn.disabled = qnoteWaiting;
