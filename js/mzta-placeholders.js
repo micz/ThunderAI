@@ -64,6 +64,7 @@ import {
     normalizePlainTextPart
 } from './mzta-utils.js';
 import { mztaPrefs } from './mzta-prefs.js';
+import { getQNoteNoteFor } from './mzta-qnote.js';
 
 const defaultPlaceholders = [
     {
@@ -342,8 +343,32 @@ const defaultPlaceholders = [
         is_default: "1",
         is_dynamic: "0",
         enabled: 1,
+    },
+    {
+        // The QNote note of the message [#980] (js/mzta-qnote.js). Reading only: QNote keys its
+        // notes by headerMessageId, which a message being composed does not have.
+        id: 'qnote_text',
+        name: "__MSG_placeholder_qnote_text__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        id: 'qnote_datetime',
+        name: "__MSG_placeholder_qnote_datetime__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
     }
 ];
+
+// Placeholders whose resolved value is used as it is, an empty one included: '' means "nothing
+// here" (no note), never "unresolved", so it must not fall back to the literal token.
+const EMPTY_IS_A_VALUE = new Set(['qnote_text', 'qnote_datetime']);
 
 
 export async function getPlaceholders(onlyEnabled = false){
@@ -593,6 +618,11 @@ export const placeholdersUtils = {
             if (currPlaceholder.id === 'additional_text' && Object.prototype.hasOwnProperty.call(subs, key)) {
                 return String(subs[key] ?? '');
             }
+            // The QNote placeholders resolve to '' with no note (or QNote missing, or access not
+            // granted): that is their value, not a failure to resolve them.
+            if (EMPTY_IS_A_VALUE.has(currPlaceholder.id) && Object.prototype.hasOwnProperty.call(subs, key)) {
+                return String(subs[key] ?? '');
+            }
             // Replace if found, otherwise keep the original or substitute with default value
             return subs[key] || subs[currPlaceholder.id] || (use_default_value ? currPlaceholder.default_value : match);
         });
@@ -682,9 +712,24 @@ export const placeholdersUtils = {
             only_quoted_text = "",
             selection_text = "",
             selection_html = "",
-            tags_full_list = ["", []]
+            tags_full_list = ["", []],
+            // The QNote placeholders: the message's headerMessageId (default: curr_message's, which
+            // a compose window's ComposeDetails does not have), and the notes a batch prefetched
+            // ({headerMessageId: note | null}, prefetchQNoteNotes()), if any.
+            header_message_id = undefined,
+            qnote_notes = null
         } = args || {};
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
+        // The note, read at most once per call even with both QNote placeholders in the prompt,
+        // and only when one of them is there. Never throws: any failure is "no note".
+        let qnoteRead = null;
+        const qnoteNote = () => {
+            if (!qnoteRead) {
+                qnoteRead = getQNoteNoteFor(header_message_id ?? curr_message?.headerMessageId, qnote_notes)
+                    .catch(() => null);
+            }
+            return qnoteRead;
+        };
         // The [names, {key: tag}] pair of getTagsList(). When the caller does not supply it
         // (e.g. translation, compose) it is read here, once, and only when a tag placeholder is
         // actually in the prompt.
@@ -846,6 +891,16 @@ export const placeholdersUtils = {
                 case 'empty':
                     finalSubs['empty'] = '';
                     break;
+                case 'qnote_text':
+                    finalSubs['qnote_text'] = placeholdersUtils.failSafePlaceholders((await qnoteNote())?.text);
+                    break;
+                case 'qnote_datetime': {
+                    // As {%mail_datetime%}: the Date's toString().
+                    const ts = (await qnoteNote())?.ts;
+                    finalSubs['qnote_datetime'] = placeholdersUtils.failSafePlaceholders(
+                        Number.isFinite(ts) ? new Date(ts).toString() : null);
+                    break;
+                }
                 default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                     break;
             }

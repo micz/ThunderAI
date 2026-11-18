@@ -61,6 +61,8 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_bod
 | `mail_text_body_or_selected` | Plain text body, or selected text if any; `{%mail_text_body_or_selected:N%}` cuts it to N characters | 0 | ✓ |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
 | `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
+| `qnote_text` | Text of the QNote note attached to the email (see *The QNote placeholders*) | 1 | |
+| `qnote_datetime` | Date and time of that note, formatted like `mail_datetime` | 1 | |
 
 The newline contracts below are what the model receives: the API chat window posts the prompt to
 its worker as it comes, line breaks as `\n` and no `<br>` added, both for the prompt the background
@@ -261,9 +263,10 @@ reason the output looks different. When the part is missing the value is the emp
 a `||` chain, so an empty string is indistinguishable from "unresolved": with
 `placeholders_use_default_value` on the token becomes `default_value` (`""`), and with it off the
 literal text `{%mail_plain_text_part%}` survives into the prompt. Not fixed deliberately — that
-chain is shared by all 30 built-ins and widening it would change every one of them, a `junk_score`
-of `0` included, at the same time. `{%empty%}` is the one exception: `replacePlaceholders()` returns
-`''` for it before the chain, so it is never the literal token.
+chain is shared by the built-ins and widening it would change every one of them, a `junk_score`
+of `0` included, at the same time. `{%empty%}` is an exception: `replacePlaceholders()` returns
+`''` for it before the chain, so it is never the literal token. So are the two QNote placeholders,
+whose `''` is a value (see *The QNote placeholders*).
 
 **Known limitation — documented, not fixed.** The `text/plain` alternative is *not* reliable in
 general: newsletters often ship a stub ("view this message in your browser"), a URL-only body, an
@@ -276,6 +279,85 @@ attachments and forwarded `message/rfc822` parts: those are excluded by
 `listInlineTextParts()` itself, which returns only what `listAttachments()` does not. Before this,
 an attached `.txt` file landed verbatim in the value — see
 [01-architecture.md](01-architecture.md) → *Where the body comes from*.
+
+### The QNote placeholders
+
+`qnote_text` and `qnote_datetime` [#980] carry the note the **QNote** add-on (`qnote@dqdp.net`)
+attached to the message, read through QNote's read-only external API with
+`browser.runtime.sendMessage(QNOTE_ID, ...)`. The client is `js/mzta-qnote.js`; the opt-in is the
+`qnote_integration` preference and its row on the options page (see
+[05-options.md](05-options.md#qnote-integration-row)).
+
+**The API, as `js/mzta-qnote.js` uses it.** Three commands, each reply carrying `apiVersion`:
+
+| Command | Prompts the user? | Reply | Time-out |
+|---|---|---|---|
+| `getStatus` | never | `{ access }`: `"unknown"`, `"pending"`, `"granted"` or `"denied"` | `QNOTE_TIMEOUT_MS` (3 s) |
+| `requestAccess` | QNote's **modal** dialog, only while not decided yet | the same states (`"pending"` while a dialog is already open, or when it fails) | **none**: it resolves when the user answers |
+| `getNotes` (at most 1000 `headerMessageIds`) | never | `{ notes: { [headerMessageId]: { text, ts } or null } }`, `ts` in ms; `{ error: "access-denied" }` unless granted | `QNOTE_TIMEOUT_MS` |
+
+A failure is `{ apiVersion, error }` (`"access-denied"`, `"invalid-request"`, `"unknown-command"`);
+a QNote that is missing, disabled or too old makes `sendMessage` reject. The three functions
+(`getQNoteStatus()`, `requestQNoteAccess()`, `getQNoteNotes(ids)`) **never throw**: they resolve to
+`{ ok: true, ... }` or `{ ok: false, reason }`, `reason` one of `QNOTE_REASONS`:
+
+| `reason` | When |
+|---|---|
+| `not_reachable` | `sendMessage` rejected (not installed, disabled, no API listener) or the time-out expired |
+| `unsupported` | no reply object, or `apiVersion` missing or below `QNOTE_API_VERSION` (1) |
+| `access_not_granted` | `getNotes` answered `error: "access-denied"` |
+| `error` | any other error reply, an unknown access state, a `notes` that is not an object |
+
+`getQNoteNotes()` drops the ids that are not non-empty strings, sends each id once, chunks by
+`QNOTE_MAX_IDS` (1000), and maps **every** requested id to `{ text, ts }` or `null`. Logging goes
+through the `mzta-qnote` logger: `error` replies are warnings, the normal states of a setup (QNote
+missing or old, access not granted) are debug lines only.
+
+**Only the options page may call `requestAccess`**, and only from a user action (the toggle,
+"Check access"). Its dialog is modal: from the background or an automatic path it would pop up at a
+random moment. Resolving the placeholders calls `getNotes` alone, with no `getStatus` before it, and
+`access_not_granted` simply means no note.
+
+**Resolution** (`getPlaceholdersValues()`): the note is read **once per call**, even with both
+tokens present (a memoized `qnoteNote()`), and only when one of them is in the prompt (the
+demand-driven `extractPlaceholders()` loop, so a prompt without them never reaches QNote).
+`getQNoteNoteFor(headerMessageId, prefetched)` decides:
+
+1. no `headerMessageId`: `null`. The id is the `header_message_id` argument, else
+   `curr_message.headerMessageId`. A compose window's ComposeDetails has none, so there is no compose
+   support, on top of `type: 1` keeping them out of the compose autocomplete: QNote only keys notes
+   on existing messages;
+2. the id is in `prefetched` (the `qnote_notes` argument): that entry, a `null` included, with no
+   call;
+3. `qnote_integration` off: `null`, with no call;
+4. otherwise `getNotes([id])`: its note, or `null` on any failure.
+
+`qnote_text` is the note's `text`; `qnote_datetime` is `new Date(ts).toString()`, the same format
+`mail_datetime` gets from a `Date`. Both go through `failSafePlaceholders()`.
+
+**`''` is a value here.** No note, integration off, QNote missing, access not granted, a time-out:
+all resolve to `''`. Through the `||` chain that would become the literal `{%qnote_text%}` with
+`placeholders_use_default_value` off, so `replacePlaceholders()` returns the supplied value as it is
+for the ids in `EMPTY_IS_A_VALUE` (`qnote_text`, `qnote_datetime`) **when the replacements hold the
+key**, which `getPlaceholdersValues()` always does for a token in the prompt. A QNote token with no
+value supplied at all still follows the chain.
+
+**Who supplies the id.** Every path that resolves placeholders on a received or selected message
+already passes a MessageHeader as `curr_message` (menus and popup, spam filter, add tags, the
+summary's per-mail template), so they need nothing more. `buildTranslationPrompt()` passes no
+`curr_message`, so it takes the id as a third argument (`headerMessageId`) and hands it on as
+`header_message_id`.
+
+**Batches.** `buildSummaryPrompt()` builds one prompt from many messages: when its per-mail template
+(custom placeholders expanded) uses a QNote placeholder, it reads every note with **one**
+`prefetchQNoteNotes()` (chunked by 1000) and passes the map to each `preparePrompt()` as
+`qnote_notes`. The map holds every id, `null` after a failure too, so a hanging QNote costs one
+time-out, not one per message; with the integration off it is `null` and nothing is read. The
+automatic batch of `processEmails()` is **not** prefetched: each message runs in its own pipeline
+and job (shared with the context menu and the popup, which join a running job), and each feature
+resolves its own prompt there, so a prefetch would have to be threaded through those jobs for a
+call QNote answers locally at once. It costs one `getNotes` per message and per feature that uses
+the placeholders.
 
 ### The address placeholders in the compose window
 
@@ -735,7 +817,7 @@ source field on the path in question:
 | Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same plus `tags_full_list` |
 | Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
 | Summarize, header + separator prompts | `js/mzta-utils-prompt.js` → `preparePrompt` | only `curr_prompt`/`chatgpt_lang` — every mail placeholder resolves empty |
-| Translation (popup and context menu included: `prompt_translate_this` never reaches `preparePrompt`) | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject`, and `body_text` read as in Summarize, only when `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` is in the prompt (no selection: the latter is the body) |
+| Translation (popup and context menu included: `prompt_translate_this` never reaches `preparePrompt`) | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject`, `header_message_id` (the QNote placeholders), and `body_text` read as in Summarize, only when `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` is in the prompt (no selection: the latter is the body) |
 | `additional_text` late fill | `api_webchat/controller.js` → `replacePlaceholders` | the deferred half of `skip_additional_text: true` |
 
 **The tag lists are the exception: no path leaves them empty.** When the caller supplies no
@@ -768,8 +850,9 @@ Three things bite when adding one:
   *`mail_text_body` vs `mail_plain_text_part`*.
 
 - **An empty string cannot be expressed.** `replacePlaceholders()`' `||` chain treats `''` as
-  unresolved and falls through to `default_value` or the literal token. Only `{%empty%}` is
-  special-cased to `''`; a new placeholder that must be able to resolve to nothing needs the same.
+  unresolved and falls through to `default_value` or the literal token. `{%empty%}` is
+  special-cased to `''`, and the QNote placeholders are in `EMPTY_IS_A_VALUE`; a new placeholder
+  that must be able to resolve to nothing needs the same.
 - **Escape `\s` as `\\s` in the two template-string regexes.** `hasPlaceholder()` and
   `hasCustomPlaceholder()` build their pattern with `` new RegExp(`{%\\s*${placeholder}…`) ``. The
   doubled backslash is required: in a template string a single `\s` is eaten, leaving the pattern

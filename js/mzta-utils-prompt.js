@@ -26,6 +26,7 @@ import {
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { mztaPrefs } from './mzta-prefs.js';
+import { prefetchQNoteNotes } from './mzta-qnote.js';
 
 // Per-feature settings of the AI reminder [#887]: same logic for calendar events
 // and tasks, only the prefs and the format instruction (reference date) differ.
@@ -74,7 +75,8 @@ export const taPromptUtils = {
             msg_text = {},
             only_typed_text = '',
             only_quoted_text = '',
-            tags_full_list = ["", []]
+            tags_full_list = ["", []],
+            qnote_notes = null
         } = args || {};
 
         let fullPrompt = '';
@@ -109,7 +111,8 @@ export const taPromptUtils = {
                 only_quoted_text: only_quoted_text,
                 selection_text: selection_text,
                 selection_html: selection_html,
-                tags_full_list: tags_full_list
+                tags_full_list: tags_full_list,
+                qnote_notes: qnote_notes
             });
             let prefs_ph = await mztaPrefs.getPrefs(['placeholders_use_default_value']);
             fullPrompt = (placeholdersUtils.replacePlaceholders({
@@ -267,6 +270,18 @@ export const taPromptUtils = {
             chatgpt_lang: chatgpt_lang,
         });
 
+        // The QNote notes of all the messages in one getNotes call (chunked by 1000), instead of
+        // one call per message: only when the per-mail template uses a QNote placeholder, its
+        // custom placeholders expanded first as preparePrompt() will. null = per message.
+        let qnote_notes = null;
+        const email_text = placeholdersUtils.hasCustomPlaceholder(prompt_email?.text)
+            ? await placeholdersUtils.replaceCustomPlaceholders(prompt_email.text)
+            : prompt_email?.text;
+        if (placeholdersUtils.hasPlaceholder(email_text, 'qnote_text')
+            || placeholdersUtils.hasPlaceholder(email_text, 'qnote_datetime')) {
+            qnote_notes = await prefetchQNoteNotes(messageDataArray.map(entry => entry?.message?.headerMessageId));
+        }
+
         const messages_list = [];
         for (let entry of messageDataArray) {
             // entry.message is REQUIRED: its .id is what reads the body now that
@@ -294,6 +309,7 @@ export const taPromptUtils = {
                 body_text: bodyText,
                 subject_text: entry.fullMessage.headers.subject,
                 msg_text: bodyHtml,
+                qnote_notes: qnote_notes,
             }));
         }
 
@@ -308,7 +324,8 @@ export const taPromptUtils = {
 
     // messageId is needed for the body: getMailInlineTextParts() asks the API for
     // the inline text parts directly. fullMessage stays for the subject header.
-    async buildTranslationPrompt(fullMessage, messageId) {
+    // headerMessageId is for the QNote placeholders only (no curr_message is passed here).
+    async buildTranslationPrompt(fullMessage, messageId, headerMessageId = undefined) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_translate_this');
 
@@ -351,6 +368,7 @@ export const taPromptUtils = {
             body_text: bodyText,
             msg_text: { html: bodyHtml.html, text: bodyHtml.text },
             mail_subject: mailSubject,
+            header_message_id: headerMessageId,
         });
 
         // Always the default values (all "" for these placeholders), whatever
