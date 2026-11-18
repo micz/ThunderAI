@@ -3,8 +3,9 @@
 // getPlaceholdersValues(): read only with qnote_integration on, by the message's headerMessageId,
 // once per message even with both tokens, never with no token, '' on every failure (never the
 // literal token, whatever placeholders_use_default_value says), and never a getStatus or a
-// requestAccess on the placeholder path. Also "Batches": prefetchExtIntegrationData()
-// (js/mzta-ext-integrations.js), the generic prefetch buildSummaryPrompt() calls.
+// requestAccess on the placeholder path. Also "Batches": placeholdersUtils.prefetchExtIntegrationData(),
+// the generic prefetch buildSummaryPrompt() calls, and the registry js/mzta-ext-integrations.js the
+// placeholders resolve through (a leaf module: it never imports js/mzta-placeholders.js).
 //
 // QNote is the other end of the two-argument runtime.sendMessage(QNOTE_ID, message), answered by
 // startPage({external}) with `qnote` below, which a test replaces. Every message sent to it is in
@@ -15,6 +16,7 @@ import {
     beforeEach,
 } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { REPO, startPage } from '../helpers/core/load.mjs';
 import { SENDERS } from '../helpers/core/browser-mock.mjs';
 import { caseTests } from '../helpers/known-issues/prompts.mjs';
@@ -187,15 +189,15 @@ k.test('prefetch', 'prefetchQNoteNotes(): one call for the batch, every id prese
 // --- The generic batch prefetch -------------------------------------------------------------
 
 k.test('ext-prefetch', 'prefetchExtIntegrationData(): the template uses QNote, one getNotes for all the messages, under the qnote key', async () => {
-    assert.deepEqual(await ext.prefetchExtIntegrationData('Mail: {%mail_subject%} {%qnote_datetime%}', ['a@x', 'b@x']), {
+    assert.deepEqual(await ph.prefetchExtIntegrationData('Mail: {%mail_subject%} {%qnote_datetime%}', ['a@x', 'b@x']), {
         qnote: { notes: { 'a@x': { text: 'Call Bob back', ts: TS }, 'b@x': null } },
     });
     assert.deepEqual(sent, [{ command: 'getNotes', headerMessageIds: ['a@x', 'b@x'] }]);
 });
 
 k.test('ext-prefetch-none', 'a template with no integration placeholder: {} and no call', async () => {
-    assert.deepEqual(await ext.prefetchExtIntegrationData('Mail: {%mail_subject%}', ['a@x']), {});
-    assert.deepEqual(await ext.prefetchExtIntegrationData(undefined, ['a@x']), {});
+    assert.deepEqual(await ph.prefetchExtIntegrationData('Mail: {%mail_subject%}', ['a@x']), {});
+    assert.deepEqual(await ph.prefetchExtIntegrationData(undefined, ['a@x']), {});
     assert.deepEqual(sent, []);
 });
 
@@ -204,7 +206,7 @@ k.test('ext-prefetch-custom', 'a QNote token inside a custom placeholder counts:
         { id: 'thunderai_custom_note', name: 'Note', text: 'Note: {%qnote_text%}', type: '0', enabled: 1, is_default: '0', is_dynamic: '0' },
     ] });
     try {
-        const data = await ext.prefetchExtIntegrationData('{%thunderai_custom_note%}', ['a@x']);
+        const data = await ph.prefetchExtIntegrationData('{%thunderai_custom_note%}', ['a@x']);
         assert.deepEqual(Object.keys(data), ['qnote']);
         assert.equal(sent.length, 1);
     } finally {
@@ -214,19 +216,63 @@ k.test('ext-prefetch-custom', 'a QNote token inside a custom placeholder counts:
 
 k.test('ext-prefetch-off-or-missing', 'integration off or QNote missing: every id null (off: with no call), so no message asks again nor rereads the preference', async () => {
     qnote = NOT_THERE;
-    assert.deepEqual(await ext.prefetchExtIntegrationData('{%qnote_text%}', ['a@x', 'b@x']), { qnote: { notes: { 'a@x': null, 'b@x': null } } });
+    assert.deepEqual(await ph.prefetchExtIntegrationData('{%qnote_text%}', ['a@x', 'b@x']), { qnote: { notes: { 'a@x': null, 'b@x': null } } });
     await ctx.ctl.browser.storage.local.set({ qnote_integration: false });
     sent.length = 0;
-    assert.deepEqual(await ext.prefetchExtIntegrationData('{%qnote_text%}', ['a@x']), { qnote: { notes: { 'a@x': null } } });
+    assert.deepEqual(await ph.prefetchExtIntegrationData('{%qnote_text%}', ['a@x']), { qnote: { notes: { 'a@x': null } } });
     assert.deepEqual(sent, []);
 });
 
 k.test('ext-prefetch-used', 'what it returns is what the placeholders read: no call per message', async () => {
-    const ext_integration_data = await ext.prefetchExtIntegrationData('{%qnote_text%}', ['a@x', 'b@x']);
+    const ext_integration_data = await ph.prefetchExtIntegrationData('{%qnote_text%}', ['a@x', 'b@x']);
     sent.length = 0;
     assert.equal(await resolve('{%qnote_text%}', { curr_message: message('a@x'), ext_integration_data }), 'Call Bob back');
     assert.equal(await resolve('[{%qnote_text%}]', { curr_message: message('b@x'), ext_integration_data }), '[]');
     assert.deepEqual(sent, []);
+});
+
+// --- The registry -----------------------------------------------------------------------------
+
+k.test('ext-registry-leaf', 'js/mzta-ext-integrations.js imports no prompt module: js/mzta-placeholders.js imports it, never the other way round', async () => {
+    const source = await readFile(new URL('js/mzta-ext-integrations.js', REPO), 'utf8');
+    const imported = [...source.matchAll(/from\s+['"]([^'"]+)['"]/g)].map(m => m[1]);
+    assert.deepEqual(imported, ['./mzta-qnote.js']);
+});
+
+k.test('ext-registry-ids', 'every placeholder of an integration is a built-in whose empty string is a value (empty_is_value "1")', async () => {
+    const { getPlaceholders } = await import(new URL('js/mzta-placeholders.js', REPO).href);
+    const builtIns = (await getPlaceholders(true)).filter(p => p.is_default === '1');
+    const ids = ext.EXT_INTEGRATIONS.flatMap(integration => integration.placeholders);
+    assert.deepEqual(ids, ['qnote_text', 'qnote_datetime']);
+    for (const id of ids) {
+        const p = builtIns.find(x => x.id === id);
+        assert.ok(p, id + ' is a built-in');
+        assert.equal(p.empty_is_value, '1', id);
+    }
+});
+
+k.test('ext-resolver', 'createExtPlaceholderResolver(): undefined for an id no integration owns, one read per integration, null when the read rejects or the value throws', async () => {
+    let reads = 0;
+    const fake = {
+        key: 'fake',
+        placeholders: ['fake_ok', 'fake_throws'],
+        read: async (id, data) => { reads++; if (data?.reject) throw new Error('boom'); return { v: id }; },
+        value: (placeholderId, read) => { if (placeholderId === 'fake_throws') throw new Error('bad'); return read?.v; },
+        prefetch: async () => null,
+    };
+    ext.EXT_INTEGRATIONS.push(fake);
+    try {
+        let resolveExt = ext.createExtPlaceholderResolver('m@x', {});
+        assert.equal(await resolveExt('mail_subject'), undefined);
+        assert.equal(await resolveExt('fake_ok'), 'm@x');
+        assert.equal(await resolveExt('fake_ok'), 'm@x');
+        assert.equal(await resolveExt('fake_throws'), null);
+        assert.equal(reads, 1);
+        resolveExt = ext.createExtPlaceholderResolver('m@x', { fake: { reject: true } });
+        assert.equal(await resolveExt('fake_ok'), null);
+    } finally {
+        ext.EXT_INTEGRATIONS.splice(ext.EXT_INTEGRATIONS.indexOf(fake), 1);
+    }
 });
 
 // --- The placeholders -------------------------------------------------------------------------

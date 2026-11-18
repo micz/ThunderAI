@@ -17,28 +17,52 @@
  */
 
 /*
- *  The external add-on integrations seen from the prompt builders: what they need to know without
- *  naming any integration. Each integration's data travels in ext_integration_data, one object
- *  for all of them (see getPlaceholdersValues() in js/mzta-placeholders.js and
- *  claude-spec/03-placeholders.md, "ext_integration_data"):
+ *  The registry of the external add-on integrations: what the placeholders need to know about each
+ *  one, so that js/mzta-placeholders.js and the prompt builders name none of them. A LEAF module:
+ *  it imports only the integrations' own clients, never js/mzta-placeholders.js, which imports it
+ *  (getPlaceholdersValues() resolves through createExtPlaceholderResolver(), and
+ *  placeholdersUtils.prefetchExtIntegrationData() runs the batch prefetch over EXT_INTEGRATIONS).
+ *
+ *  Each integration's data travels in ext_integration_data, one object for all of them (see
+ *  getPlaceholdersValues() and claude-spec/03-placeholders.md, "ext_integration_data"):
  *
  *    header_message_id   generic: the message the integrations look up when there is no curr_message
  *    qnote               { notes }: the QNote notes prefetched for a batch (js/mzta-qnote.js)
  *
- *  A new integration adds its entry to EXT_INTEGRATIONS below and its key to that object.
+ *  A new integration adds its entry to EXT_INTEGRATIONS below, its key to that object, and its
+ *  placeholders to defaultPlaceholders in js/mzta-placeholders.js (still the source of the ids).
  */
 
-import { placeholdersUtils } from './mzta-placeholders.js';
-import { prefetchQNoteNotes } from './mzta-qnote.js';
+import {
+    getQNoteNoteFor,
+    prefetchQNoteNotes
+} from './mzta-qnote.js';
 
-// Every integration whose data a batch can read in one go: its key in ext_integration_data, the
-// placeholders that need it, and prefetch(headerMessageIds) resolving to its data, or null when
-// there is nothing to hand on (QNote never does: with the integration off it maps every id to null,
-// so no message reads the preference again).
-const EXT_INTEGRATIONS = [
+// Every integration:
+//   key            its key in ext_integration_data
+//   placeholders   the ids of the placeholders it resolves
+//   read(headerMessageId, data)
+//                  the message's data, read at most once per getPlaceholdersValues() call whatever
+//                  the number of its tokens in the prompt; data is ext_integration_data[key]
+//                  (undefined when nothing was supplied). May reject: that is "no data".
+//   value(placeholderId, read)
+//                  the placeholder's value from what read() resolved to (null with no data), or
+//                  null for '' (failSafePlaceholders() applies)
+//   prefetch(headerMessageIds)
+//                  its data for a batch, read in one go, or null when there is nothing to hand on.
+//                  QNote never resolves to null: with the integration off it maps every id to
+//                  null, so no message of the batch reads the preference again.
+export const EXT_INTEGRATIONS = [
     {
         key: 'qnote',
         placeholders: ['qnote_text', 'qnote_datetime'],
+        read: (headerMessageId, data) => getQNoteNoteFor(headerMessageId, data?.notes),
+        value(placeholderId, note) {
+            if (placeholderId === 'qnote_text') return note?.text;
+            // As {%mail_datetime%}: the Date's toString().
+            const ts = note?.ts;
+            return Number.isFinite(ts) ? new Date(ts).toString() : null;
+        },
         async prefetch(headerMessageIds) {
             const notes = await prefetchQNoteNotes(headerMessageIds);
             return notes ? { notes } : null;
@@ -46,26 +70,33 @@ const EXT_INTEGRATIONS = [
     },
 ];
 
+/** The integration that resolves the placeholder with this id, or undefined. */
+export function findExtIntegration(placeholderId) {
+    return EXT_INTEGRATIONS.find(integration => integration.placeholders.includes(placeholderId));
+}
+
 /**
- * The ext_integration_data of a batch: for every integration whose placeholders the prompt text
- * uses (custom placeholders expanded first, as preparePrompt() will), its data for all the
- * messages, read once. {} when the prompt needs none: each message then reads its own, if any.
- * Never throws: an integration that fails is simply left out.
+ * A resolver for one getPlaceholdersValues() call: resolve(placeholderId) gives the value of an
+ * integration placeholder (undefined for an id no integration owns), reading each integration's
+ * data at most once and only when one of its placeholders is asked. Never rejects: any failure
+ * is "no data", so the value is null.
  */
-export async function prefetchExtIntegrationData(promptText, headerMessageIds) {
-    const data = {};
-    let text = String(promptText ?? '');
-    if (placeholdersUtils.hasCustomPlaceholder(text)) {
-        text = await placeholdersUtils.replaceCustomPlaceholders(text);
-    }
-    for (const integration of EXT_INTEGRATIONS) {
-        if (!integration.placeholders.some(id => placeholdersUtils.hasPlaceholder(text, id))) continue;
-        try {
-            const value = await integration.prefetch(headerMessageIds);
-            if (value) data[integration.key] = value;
-        } catch (e) {
-            console.warn('[ThunderAI] Could not prefetch the ' + integration.key + ' data: ' + e);
+export function createExtPlaceholderResolver(headerMessageId, ext_integration_data = {}) {
+    const ext_data = ext_integration_data || {};
+    const reads = new Map();
+    return async (placeholderId) => {
+        const integration = findExtIntegration(placeholderId);
+        if (!integration) return undefined;
+        if (!reads.has(integration.key)) {
+            reads.set(integration.key, Promise.resolve()
+                .then(() => integration.read(headerMessageId, ext_data[integration.key]))
+                .catch(() => null));
         }
-    }
-    return data;
+        try {
+            return integration.value(placeholderId, await reads.get(integration.key)) ?? null;
+        } catch (e) {
+            console.warn('[ThunderAI] Could not resolve {%' + placeholderId + '%}: ' + e);
+            return null;
+        }
+    };
 }

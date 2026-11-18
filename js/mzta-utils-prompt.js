@@ -26,7 +26,6 @@ import {
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { mztaPrefs } from './mzta-prefs.js';
-import { prefetchExtIntegrationData } from './mzta-ext-integrations.js';
 
 // Per-feature settings of the AI reminder [#887]: same logic for calendar events
 // and tasks, only the prefs and the format instruction (reference date) differ.
@@ -272,7 +271,7 @@ export const taPromptUtils = {
 
         // The data of the external integrations the per-mail template uses, read once for all
         // the messages instead of once per message ({} when it uses none).
-        const ext_integration_data = await prefetchExtIntegrationData(prompt_email?.text,
+        const ext_integration_data = await placeholdersUtils.prefetchExtIntegrationData(prompt_email?.text,
             messageDataArray.map(entry => entry?.message?.headerMessageId));
 
         const messages_list = [];

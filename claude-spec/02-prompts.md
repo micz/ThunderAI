@@ -791,7 +791,7 @@ The summarize feature uses two distinct prompt pathways:
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
 - The data of the external integrations the per-mail template uses (today the QNote notes) is
-  read once for all the messages with `prefetchExtIntegrationData()` (`js/mzta-ext-integrations.js`)
+  read once for all the messages with `placeholdersUtils.prefetchExtIntegrationData()`
   and handed to each `preparePrompt()` as `ext_integration_data` (see
   [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders), *Batches*)
 - Language: `taPromptUtils.getSummaryLang(prompt_summarize)` returns `{ chatgpt_lang, force_lang_statement }`.

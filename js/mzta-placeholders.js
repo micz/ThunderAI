@@ -69,7 +69,11 @@ import {
     normalizePlainTextPart
 } from './mzta-utils.js';
 import { mztaPrefs } from './mzta-prefs.js';
-import { getQNoteNoteFor } from './mzta-qnote.js';
+import {
+    EXT_INTEGRATIONS,
+    createExtPlaceholderResolver,
+    findExtIntegration
+} from './mzta-ext-integrations.js';
 
 const defaultPlaceholders = [
     {
@@ -716,7 +720,8 @@ export const placeholdersUtils = {
             selection_text = "",
             selection_html = "",
             tags_full_list = ["", []],
-            // The data of the external add-on integrations, one object for all of them:
+            // The data of the external add-on integrations, one object for all of them (its keys
+            // in js/mzta-ext-integrations.js):
             //   header_message_id  the message they look up, when there is no curr_message (default:
             //                      curr_message.headerMessageId, which a ComposeDetails does not have)
             //   qnote              { notes }: the QNote notes a batch prefetched
@@ -725,16 +730,11 @@ export const placeholdersUtils = {
         } = args || {};
         const ext_data = ext_integration_data || {};
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
-        // The note, read at most once per call even with both QNote placeholders in the prompt,
-        // and only when one of them is there. Never throws: any failure is "no note".
-        let qnoteRead = null;
-        const qnoteNote = () => {
-            if (!qnoteRead) {
-                qnoteRead = getQNoteNoteFor(ext_data.header_message_id ?? curr_message?.headerMessageId, ext_data.qnote?.notes)
-                    .catch(() => null);
-            }
-            return qnoteRead;
-        };
+        // The placeholders of the external integrations (QNote), resolved through their registry:
+        // each integration's data read at most once per call, and only when one of its
+        // placeholders is in the prompt. Never throws: any failure is "no data".
+        const extPlaceholder = createExtPlaceholderResolver(
+            ext_data.header_message_id ?? curr_message?.headerMessageId, ext_data);
         // The [names, {key: tag}] pair of getTagsList(). When the caller does not supply it
         // (e.g. translation, compose) it is read here, once, and only when a tag placeholder is
         // actually in the prompt.
@@ -896,22 +896,42 @@ export const placeholdersUtils = {
                 case 'empty':
                     finalSubs['empty'] = '';
                     break;
-                case 'qnote_text':
-                    finalSubs['qnote_text'] = placeholdersUtils.failSafePlaceholders((await qnoteNote())?.text);
-                    break;
-                case 'qnote_datetime': {
-                    // As {%mail_datetime%}: the Date's toString().
-                    const ts = (await qnoteNote())?.ts;
-                    finalSubs['qnote_datetime'] = placeholdersUtils.failSafePlaceholders(
-                        Number.isFinite(ts) ? new Date(ts).toString() : null);
-                    break;
-                }
-                default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
+                default:
+                    // The placeholders of an external integration (js/mzta-ext-integrations.js).
+                    if (findExtIntegration(currPH.id)) {
+                        finalSubs[currPH.id] = placeholdersUtils.failSafePlaceholders(await extPlaceholder(currPH.id));
+                    }
+                    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                     break;
             }
         }
         // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
         return finalSubs;
+    },
+
+    /**
+     * The ext_integration_data of a batch: for every integration of EXT_INTEGRATIONS
+     * (js/mzta-ext-integrations.js) whose placeholders the prompt text uses (custom placeholders
+     * expanded first, as preparePrompt() will), its data for all the messages, read once. {} when
+     * the prompt needs none: each message then reads its own, if any. Never throws: an
+     * integration that fails is simply left out.
+     */
+    async prefetchExtIntegrationData(promptText, headerMessageIds) {
+        const data = {};
+        let text = String(promptText ?? '');
+        if (placeholdersUtils.hasCustomPlaceholder(text)) {
+            text = await placeholdersUtils.replaceCustomPlaceholders(text);
+        }
+        for (const integration of EXT_INTEGRATIONS) {
+            if (!integration.placeholders.some(id => placeholdersUtils.hasPlaceholder(text, id))) continue;
+            try {
+                const value = await integration.prefetch(headerMessageIds);
+                if (value) data[integration.key] = value;
+            } catch (e) {
+                console.warn('[ThunderAI] Could not prefetch the ' + integration.key + ' data: ' + e);
+            }
+        }
+        return data;
     },
 
     failSafePlaceholders(element){

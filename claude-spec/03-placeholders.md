@@ -320,10 +320,13 @@ missing or old, access not granted) are debug lines only.
 random moment. Resolving the placeholders calls `getNotes` alone, with no `getStatus` before it, and
 `access_not_granted` simply means no note.
 
-**Resolution** (`getPlaceholdersValues()`): the note is read **once per call**, even with both
-tokens present (a memoized `qnoteNote()`), and only when one of them is in the prompt (the
-demand-driven `extractPlaceholders()` loop, so a prompt without them never reaches QNote).
-`getQNoteNoteFor(headerMessageId, prefetched)` decides:
+**Resolution** (`getPlaceholdersValues()`): `mzta-placeholders.js` names no integration. Its
+`default` arm hands every id of an integration of the registry (`findExtIntegration()`, see
+*The integration registry* below) to the resolver of the call, `createExtPlaceholderResolver()`,
+so the note is read **once per call**, even with both tokens present, and only when one of them is
+in the prompt (the demand-driven `extractPlaceholders()` loop, so a prompt without them never
+reaches QNote). The QNote entry reads it with `getQNoteNoteFor(headerMessageId, prefetched)`, which
+decides:
 
 1. no `headerMessageId`: `null`. The id is `ext_integration_data.header_message_id`, else
    `curr_message.headerMessageId`. A compose window's ComposeDetails has none, so there is no compose
@@ -360,12 +363,25 @@ not a parameter to every signature on the path:
 | `header_message_id` | generic: the message the integrations look up when there is no `curr_message` (default `curr_message.headerMessageId`) |
 | `qnote` | `{ notes }`: the QNote notes a batch prefetched (`{ [headerMessageId]: note or null }`) |
 
-Missing or `{}` means nothing supplied: each integration reads what it needs itself. A new
-integration adds its key here and its entry to `EXT_INTEGRATIONS` in `js/mzta-ext-integrations.js`
-if a batch can read its data in one go.
+Missing or `{}` means nothing supplied: each integration reads what it needs itself.
+
+**The integration registry** (`js/mzta-ext-integrations.js`). `EXT_INTEGRATIONS` lists every
+integration: `key` (its key in `ext_integration_data`), `placeholders` (the ids it resolves),
+`read(headerMessageId, data)` (the message's data, `data` being `ext_integration_data[key]`),
+`value(placeholderId, read)` (a placeholder's value from what `read()` gave, `null` for `''`) and
+`prefetch(headerMessageIds)` (its data for a batch, or `null`). Next to it,
+`findExtIntegration(placeholderId)` and `createExtPlaceholderResolver(headerMessageId,
+ext_integration_data)`: the resolver of one `getPlaceholdersValues()` call, which reads each
+integration's data at most once, only when asked, and never rejects (a rejected `read()` or a
+throwing `value()` is `null`, so `''`). The module is a **leaf**: it imports only the integrations'
+own clients (`js/mzta-qnote.js`), never `js/mzta-placeholders.js`, which imports it. That keeps the
+graph `mzta-utils-prompt.js` → `mzta-placeholders.js` → `mzta-ext-integrations.js` →
+`mzta-qnote.js` free of cycles; a test checks the module's imports. A new integration adds its entry
+there, its key to the table above, and its placeholders to `defaultPlaceholders` (still the source of
+the ids, with `empty_is_value: "1"` when `''` is a value).
 
 **Batches.** `buildSummaryPrompt()` builds one prompt from many messages: it asks
-`prefetchExtIntegrationData(templateText, headerMessageIds)` (`js/mzta-ext-integrations.js`) for the
+`placeholdersUtils.prefetchExtIntegrationData(templateText, headerMessageIds)` for the
 `ext_integration_data` of the batch and passes it to each `preparePrompt()`. That generic function
 knows the integrations through its `EXT_INTEGRATIONS` list (key, placeholders, `prefetch()`), so the
 prompt builders name none: for each integration whose placeholders the template uses (custom
