@@ -3,7 +3,8 @@
 // getPlaceholdersValues(): read only with qnote_integration on, by the message's headerMessageId,
 // once per message even with both tokens, never with no token, '' on every failure (never the
 // literal token, whatever placeholders_use_default_value says), and never a getStatus or a
-// requestAccess on the placeholder path.
+// requestAccess on the placeholder path. Also "Batches": prefetchExtIntegrationData()
+// (js/mzta-ext-integrations.js), the generic prefetch buildSummaryPrompt() calls.
 //
 // QNote is the other end of the two-argument runtime.sendMessage(QNOTE_ID, message), answered by
 // startPage({external}) with `qnote` below, which a test replaces. Every message sent to it is in
@@ -40,7 +41,7 @@ const granted = (message) => {
 
 let qnote = granted;
 const sent = [];
-let ctx, q, ph;
+let ctx, q, ph, ext;
 
 before(async () => {
     ctx = await startPage({
@@ -54,6 +55,7 @@ before(async () => {
         },
     });
     q = await import(new URL('js/mzta-qnote.js', REPO).href);
+    ext = await import(new URL('js/mzta-ext-integrations.js', REPO).href);
     ph = (await import(new URL('js/mzta-placeholders.js', REPO).href)).placeholdersUtils;
 });
 
@@ -179,6 +181,51 @@ k.test('prefetch', 'prefetchQNoteNotes(): one call for the batch, every id prese
     await ctx.ctl.browser.storage.local.set({ qnote_integration: false });
     sent.length = 0;
     assert.equal(await q.prefetchQNoteNotes(['a@x']), null);
+    assert.deepEqual(sent, []);
+});
+
+// --- The generic batch prefetch -------------------------------------------------------------
+
+k.test('ext-prefetch', 'prefetchExtIntegrationData(): the template uses QNote, one getNotes for all the messages, under the qnote key', async () => {
+    assert.deepEqual(await ext.prefetchExtIntegrationData('Mail: {%mail_subject%} {%qnote_datetime%}', ['a@x', 'b@x']), {
+        qnote: { notes: { 'a@x': { text: 'Call Bob back', ts: TS }, 'b@x': null } },
+    });
+    assert.deepEqual(sent, [{ command: 'getNotes', headerMessageIds: ['a@x', 'b@x'] }]);
+});
+
+k.test('ext-prefetch-none', 'a template with no integration placeholder: {} and no call', async () => {
+    assert.deepEqual(await ext.prefetchExtIntegrationData('Mail: {%mail_subject%}', ['a@x']), {});
+    assert.deepEqual(await ext.prefetchExtIntegrationData(undefined, ['a@x']), {});
+    assert.deepEqual(sent, []);
+});
+
+k.test('ext-prefetch-custom', 'a QNote token inside a custom placeholder counts: the customs are expanded first', async () => {
+    await ctx.ctl.browser.storage.local.set({ _custom_placeholder: [
+        { id: 'thunderai_custom_note', name: 'Note', text: 'Note: {%qnote_text%}', type: '0', enabled: 1, is_default: '0', is_dynamic: '0' },
+    ] });
+    try {
+        const data = await ext.prefetchExtIntegrationData('{%thunderai_custom_note%}', ['a@x']);
+        assert.deepEqual(Object.keys(data), ['qnote']);
+        assert.equal(sent.length, 1);
+    } finally {
+        await ctx.ctl.browser.storage.local.remove('_custom_placeholder');
+    }
+});
+
+k.test('ext-prefetch-off-or-missing', 'integration off: {} with no call; QNote missing: every id null, so no message asks again', async () => {
+    qnote = NOT_THERE;
+    assert.deepEqual(await ext.prefetchExtIntegrationData('{%qnote_text%}', ['a@x', 'b@x']), { qnote: { notes: { 'a@x': null, 'b@x': null } } });
+    await ctx.ctl.browser.storage.local.set({ qnote_integration: false });
+    sent.length = 0;
+    assert.deepEqual(await ext.prefetchExtIntegrationData('{%qnote_text%}', ['a@x']), {});
+    assert.deepEqual(sent, []);
+});
+
+k.test('ext-prefetch-used', 'what it returns is what the placeholders read: no call per message', async () => {
+    const ext_integration_data = await ext.prefetchExtIntegrationData('{%qnote_text%}', ['a@x', 'b@x']);
+    sent.length = 0;
+    assert.equal(await resolve('{%qnote_text%}', { curr_message: message('a@x'), ext_integration_data }), 'Call Bob back');
+    assert.equal(await resolve('[{%qnote_text%}]', { curr_message: message('b@x'), ext_integration_data }), '[]');
     assert.deepEqual(sent, []);
 });
 

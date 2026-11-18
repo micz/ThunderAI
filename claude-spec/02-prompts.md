@@ -790,9 +790,9 @@ The summarize feature uses two distinct prompt pathways:
 - All summary paths (inline, webchat single, webchat multi) use this single method
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
-- When the per-mail template (its custom placeholders expanded) uses `{%qnote_text%}` or
-  `{%qnote_datetime%}`, the QNote notes of all the messages are read once with
-  `prefetchQNoteNotes()` and handed to each `preparePrompt()` as `ext_integration_data.qnote.notes` (see
+- The data of the external integrations the per-mail template uses (today the QNote notes) is
+  read once for all the messages with `prefetchExtIntegrationData()` (`js/mzta-ext-integrations.js`)
+  and handed to each `preparePrompt()` as `ext_integration_data` (see
   [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders), *Batches*)
 - Language: `taPromptUtils.getSummaryLang(prompt_summarize)` returns `{ chatgpt_lang, force_lang_statement }`.
   - `chatgpt_lang` is passed to every `preparePrompt()` call (main prompt, separator, each email block), as before. With `summarize_force_lang` off it is `getDefaultLang(prompt_summarize)` (normally `''`, since `define_response_lang` is `"0"`), so the prompt is byte-identical to the pre-option one. With the flag on it is `''`, so it can't contradict the forced language.

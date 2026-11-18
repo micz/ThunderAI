@@ -26,7 +26,7 @@ import {
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { mztaPrefs } from './mzta-prefs.js';
-import { prefetchQNoteNotes } from './mzta-qnote.js';
+import { prefetchExtIntegrationData } from './mzta-ext-integrations.js';
 
 // Per-feature settings of the AI reminder [#887]: same logic for calendar events
 // and tasks, only the prefs and the format instruction (reference date) differ.
@@ -270,18 +270,10 @@ export const taPromptUtils = {
             chatgpt_lang: chatgpt_lang,
         });
 
-        // The QNote notes of all the messages in one getNotes call (chunked by 1000), instead of
-        // one call per message: only when the per-mail template uses a QNote placeholder, its
-        // custom placeholders expanded first as preparePrompt() will. Without it, per message.
-        const ext_integration_data = {};
-        const email_text = placeholdersUtils.hasCustomPlaceholder(prompt_email?.text)
-            ? await placeholdersUtils.replaceCustomPlaceholders(prompt_email.text)
-            : prompt_email?.text;
-        if (placeholdersUtils.hasPlaceholder(email_text, 'qnote_text')
-            || placeholdersUtils.hasPlaceholder(email_text, 'qnote_datetime')) {
-            const notes = await prefetchQNoteNotes(messageDataArray.map(entry => entry?.message?.headerMessageId));
-            if (notes) ext_integration_data.qnote = { notes };
-        }
+        // The data of the external integrations the per-mail template uses, read once for all
+        // the messages instead of once per message ({} when it uses none).
+        const ext_integration_data = await prefetchExtIntegrationData(prompt_email?.text,
+            messageDataArray.map(entry => entry?.message?.headerMessageId));
 
         const messages_list = [];
         for (let entry of messageDataArray) {

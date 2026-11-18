@@ -358,12 +358,19 @@ not a parameter to every signature on the path:
 | `header_message_id` | generic: the message the integrations look up when there is no `curr_message` (default `curr_message.headerMessageId`) |
 | `qnote` | `{ notes }`: the QNote notes a batch prefetched (`{ [headerMessageId]: note or null }`) |
 
-Missing or `{}` means nothing supplied: each integration reads what it needs itself.
+Missing or `{}` means nothing supplied: each integration reads what it needs itself. A new
+integration adds its key here and its entry to `EXT_INTEGRATIONS` in `js/mzta-ext-integrations.js`
+if a batch can read its data in one go.
 
-**Batches.** `buildSummaryPrompt()` builds one prompt from many messages: when its per-mail template
-(custom placeholders expanded) uses a QNote placeholder, it reads every note with **one**
-`prefetchQNoteNotes()` (chunked by 1000) and passes the map to each `preparePrompt()` as
-`ext_integration_data.qnote.notes`. The map holds every id, `null` after a failure too, so a hanging QNote costs one
+**Batches.** `buildSummaryPrompt()` builds one prompt from many messages: it asks
+`prefetchExtIntegrationData(templateText, headerMessageIds)` (`js/mzta-ext-integrations.js`) for the
+`ext_integration_data` of the batch and passes it to each `preparePrompt()`. That generic function
+knows the integrations through its `EXT_INTEGRATIONS` list (key, placeholders, `prefetch()`), so the
+prompt builders name none: for each integration whose placeholders the template uses (custom
+placeholders expanded first, as `preparePrompt()` will), it stores the result of its `prefetch()`
+under its key, and leaves the key out when that resolves to `null` or throws; `{}` when the template
+uses none. For QNote the entry is `prefetchQNoteNotes()`, which reads every note with **one**
+`getNotes` (chunked by 1000), so the data is `ext_integration_data.qnote.notes`. The map holds every id, `null` after a failure too, so a hanging QNote costs one
 time-out, not one per message; with the integration off it is `null` and nothing is read. The
 automatic batch of `processEmails()` is **not** prefetched: each message runs in its own pipeline
 and job (shared with the context menu and the popup, which join a running job), and each feature

@@ -48,7 +48,8 @@ tests/
     │                                      (every access state, not installed, time-outs, unsupported
     │                                      apiVersion, error replies, access-denied, chunks of 1000, the
     │                                      prefetch) and the two placeholders (one getNotes, no getStatus,
-    │                                      '' on every failure, the preference, compose, prefetched notes)
+    │                                      '' on every failure, the preference, compose, prefetched notes);
+    │                                      the generic batch prefetch, prefetchExtIntegrationData()
     ├── 10-prompt-flags.test.mjs           spec 02 "The five boolean flags are normalized on read",
     │                                      normalizePromptFields(), normalizeEnabledToShowIn()
     ├── 11-prompt-views.test.mjs           spec 02 the three getters, "Reachability", "User Properties",
