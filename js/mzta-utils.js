@@ -1385,6 +1385,40 @@ export function applyPromptConnection(prefs, prompt) {
     return out;
 }
 
+const SPARKS_TIMED_OUT = Symbol("timeout");
+
+// Older Sparks listeners may keep the response channel open forever for unknown actions,
+// so every newer request is bounded to two seconds.
+async function askSparks(action) {
+  let timer;
+  try {
+    return await Promise.race([
+      browser.runtime.sendMessage('thunderai-sparks@micz.it', {action}),
+      new Promise(resolve => { timer = setTimeout(() => resolve(SPARKS_TIMED_OUT), 2000); })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// The calendars that can receive a new event, as [{id, name, type}]. Only Sparks can read
+// them. null when it cannot say: an older Sparks, or none at all.
+export async function getSparksCalendars() {
+  try {
+    const response = await askSparks("listWritableCalendars");
+    if (!Array.isArray(response)) return null;
+    // Array.from(): every() and map() skip the holes of a sparse array, which would then reach
+    // the page as undefined entries.
+    const list = Array.from(response);
+    if (!list.every(calendar => calendar && typeof calendar === "object" &&
+        typeof calendar.id === "string" && calendar.id.length > 0 &&
+        typeof calendar.name === "string" && typeof calendar.type === "string")) return null;
+    return list.map(({id, name, type}) => ({id, name, type}));
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function checkSparksPresence() {
   try {
     let sparks_current = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"});
