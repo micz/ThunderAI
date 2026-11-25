@@ -45,7 +45,6 @@ ctx.workers.respond=answering(() => JSON.stringify(modelAnswer));
 const modelEvent=(fields={}) => ({startDate:'2026-11-04T14:00:00',endDate:'2026-11-04T15:00:00',summary:'Synthetic seminar',
     description:'Synthetic agenda',location:'Room',forceAllDay:false,attendees:[],reminderMinutes:20,
     categories:['Séminaire','unknown'],...fields});
-const RULE='a field "categories"';
 
 async function run(id='prompt_get_calendar_event', answer=modelEvent()) {
     modelAnswer=answer;
@@ -71,7 +70,6 @@ k.test('email-to-companion', 'the shipped prompt asks Sparks once, sends the lis
     const {result,data,prompt,requests}=await run();
     assert.deepEqual(result,{ok:'1'});
     assert.equal(requests,1,'one capability request per extraction');
-    assert.ok(prompt.includes(RULE) && prompt.includes('use [] if none fits'));
     assert.equal(prompt.split(JSON.stringify(categories)).length,2,'the list is given once');
     assert.equal(prompt.includes('{%calendar_categories%}'),false);
     assert.deepEqual(data.categories,['Séminaire']);
@@ -119,35 +117,38 @@ k.test('old-or-absent-sparks', 'an older or absent Sparks costs one request, dro
     mode='new';
 });
 
-k.test('not-asked', 'an edited prompt that does not name categories behaves as before: no request, no rule, field dropped', async t => {
+k.test('not-asked', 'an edited prompt without the placeholder behaves as before: no request, no list, field dropped', async t => {
     await savePrompt(t,'Event JSON. {%mail_text_body_or_selected%}');
     mode='new';
     const {result,data,prompt,requests}=await run();
     assert.deepEqual(result,{ok:'1'});
     assert.equal(requests,0);
-    assert.equal(prompt.includes(RULE),false);
     assert.equal(prompt.includes(JSON.stringify(categories)),false);
     assert.equal('categories' in data,false);
 });
 
-k.test('own-words', 'a prompt holding the placeholder gets the list once and no added rule', async t => {
+k.test('own-words', 'a prompt holding the placeholder gets the list once, in its own words', async t => {
     await savePrompt(t,'Always choose one category from {%calendar_categories%}. {%mail_text_body_or_selected%}');
     mode='new';
     const {data,prompt,requests}=await run();
     assert.equal(requests,1);
     assert.ok(prompt.includes('Always choose one category from '+JSON.stringify(categories)));
     assert.equal(prompt.split(JSON.stringify(categories)).length,2);
-    assert.equal(prompt.includes(RULE),false);
     assert.deepEqual(data.categories,['Séminaire']);
 });
 
-k.test('field-named', 'a prompt naming the JSON field without the placeholder gets the rule with the list', async t => {
-    await savePrompt(t,'Answer with {"summary": "", "categories": []}. {%mail_text_body_or_selected%}');
+k.test('placeholder-removed', 'the shipped text without its categories line asks for none, even naming the field', async t => {
+    const shipped=ctx.ctl.browser.i18n.getMessage('prompt_get_calendar_event_full_text');
+    const edited=shipped.split('\n').filter(line => !line.includes('{%calendar_categories%}')).join('\n');
+    assert.ok(edited.includes('"categories"') && !edited.includes('calendar_categories'));
+    await savePrompt(t,edited);
     mode='new';
-    const {data,prompt,requests}=await run();
-    assert.equal(requests,1);
-    assert.ok(prompt.includes(RULE) && prompt.includes(JSON.stringify(categories)));
-    assert.deepEqual(data.categories,['Séminaire']);
+    const {result,data,prompt,requests}=await run();
+    assert.deepEqual(result,{ok:'1'});
+    assert.equal(requests,0);
+    assert.equal(prompt.includes(JSON.stringify(categories)),false);
+    assert.equal('categories' in data,false);
+    assert.deepEqual(data.attendees,[]);
 });
 
 k.test('shipped-copy', 'a saved copy of the shipped text, as any save of a special prompt writes, still asks', async t => {

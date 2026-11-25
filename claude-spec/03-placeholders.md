@@ -783,7 +783,9 @@ Three things bite when adding one:
 
 ## Native calendar categories
 
-`{%calendar_categories%}` is a type-0 built-in offered by autocomplete. Its value is
+`{%calendar_categories%}` is a type-0 built-in offered by autocomplete, used by the shipped calendar
+event prompt. In a calendar event prompt its presence is also the switch that asks for categories
+(`calendarCategoriesAsked()`). Its value is
 `JSON.stringify()` of the category names Sparks advertises. The calendar event action asks Sparks
 once per extraction and passes the answer in `msg_text.calendar_capabilities`; elsewhere the
 placeholder calls `getSparksCapabilities()` itself, only when present. Multiple occurrences,

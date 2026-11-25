@@ -124,46 +124,22 @@ k.test('invalid-or-old-sparks', 'an invalid field, or a Sparks without the field
     assert.deepEqual(ctx.utils.normalizeCalendarCategories({summary:'S',categories:['Séminaire']},NONE),{summary:'S'});
 });
 
-k.test('prompt-asks', 'the shipped text asks for categories, an edited prompt only by naming them', () => {
+k.test('prompt-asks', 'a prompt asks for categories only by holding the placeholder', () => {
     const asked=text => promptUtils.calendarCategoriesAsked(text);
     const shipped=msg('prompt_get_calendar_event_full_text');
     assert.equal(asked(shipped),true);
-    assert.equal(asked('  '+shipped+'\n'),true,'a saved copy of the shipped text');
-    assert.equal(asked(shipped+' Be brief.'),false,'edited');
+    assert.equal(asked(shipped+' Be brief.'),true,'edited, the placeholder kept');
     assert.equal(asked('Mine: {%calendar_categories%}'),true);
     assert.equal(asked('Mine: {% calendar_categories %}'),true);
-    assert.equal(asked('{"summary": "", "categories": []}'),true);
+    assert.equal(asked(shipped.replace('{%calendar_categories%}','')),false,'the placeholder removed');
+    assert.equal(asked('{"summary": "", "categories": []}'),false,'the field alone does not ask');
     for (const plain of ['A saved prompt','categories','',undefined]) assert.equal(asked(plain),false);
 });
 
-k.test('statement', 'the rule is added when categories are asked without the list, and says [] is allowed', () => {
-    const rule=msg('prompt_calendar_categories_format');
-    assert.ok(rule.includes('{%calendar_categories%}') && rule.includes('"categories"'));
-    assert.ok(rule.includes('use [] if none fits'));
-    const statement=text => promptUtils.getCalendarCategoriesStatement(text);
-    assert.equal(statement(msg('prompt_get_calendar_event_full_text')),rule);
-    assert.equal(statement('JSON: "categories": []'),rule);
-    assert.equal(statement('A saved prompt'),'');
-    // A prompt giving the list says in its own words what to do with it.
-    assert.equal(statement('Mine: {% calendar_categories %}'),'');
-});
-
-k.test('statement-resolved', 'the added instruction is resolved like a prompt, once, and leaves no token', async () => {
-    response=CAPS;
-    const shipped=msg('prompt_get_calendar_event_full_text');
-    assert.equal(await promptUtils.appendCalendarCategoriesStatement('Base','Base',{}),'Base');
-    const before=requests;
-    const full=await promptUtils.appendCalendarCategoriesStatement('Base',shipped,{msg_text:{calendar_capabilities:CAPS}});
-    assert.equal(requests,before,'the capabilities of the extraction are reused');
-    assert.ok(full.startsWith('Base \n'));
-    assert.ok(full.includes(JSON.stringify(CATEGORIES)));
-    assert.equal(full.includes('{%'),false);
-});
-
-k.test('shipped-prompt', 'the shipped event prompt text stays as it is: the code asks for categories', () => {
+k.test('shipped-prompt', 'the shipped event prompt shows the request: the placeholder and the "categories" key', () => {
     const text=msg('prompt_get_calendar_event_full_text');
-    assert.equal(text.includes('calendar_categories'),false);
-    assert.equal(text.includes('"categories"'),false);
+    assert.equal(text.split('{%calendar_categories%}').length,2,'the list is given once');
+    assert.ok(text.includes('"categories": ['));
 });
 
 k.test('stored-prompts', 'saved and custom prompt texts are preserved without automatic replacement', async () => {

@@ -625,12 +625,13 @@ export class mzta_Menus {
                         *   "description": "Detailed event description including agenda, action items, and relevant notes from the email.",
                         *   "forceAllDay": false,
                         *   "location": "YourLocation",
-                        *   "attendees": ["attendee1@example.com", "attendee2@example.com", "attendee3@example.com"]
-                        *  } 
+                        *   "attendees": ["attendee1@example.com", "attendee2@example.com", "attendee3@example.com"],
+                        *   "categories": ["category1", "category2"]
+                        *  }
+                        *  "categories" only when the prompt holds {%calendar_categories%} (see normalizeCalendarCategories())
                         *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
-                        fullPrompt = await taPromptUtils.appendCalendarCategoriesStatement(fullPrompt, curr_prompt.text, { msg_text, selection_html });
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand({
                             processingClient: this.processingClient,
@@ -667,7 +668,7 @@ export class mzta_Menus {
                         }
                         // Reminder: the checkbox is the single switch (off = field always removed) [#887]
                         normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
-                        // Categories: only when the prompt asked for them, as for attendees.
+                        // Categories: only when the prompt holds {%calendar_categories%} (see calendarCategoriesAsked()).
                         if (msg_text.calendar_capabilities) {
                             normalizeCalendarCategories(calendar_event_data_obj, msg_text.calendar_capabilities, this.logger);
                         } else {

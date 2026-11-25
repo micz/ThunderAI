@@ -68,7 +68,7 @@ tests/
     │                                      of the feature pages (specialPromptNeedsJson(), checkPromptTextJson())
     ├── 25-calendar-categories.test.mjs    spec 02 "Calendar event: native categories", spec 03 "Native
     │                                      calendar categories": the placeholder, getSparksCapabilities(),
-    │                                      normalizeCalendarCategories(), the appended rule
+    │                                      normalizeCalendarCategories(), the placeholder as the switch
     └── 99-harness-known-issues.test.mjs   the known-issue shape
 ```
 
