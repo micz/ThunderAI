@@ -290,6 +290,14 @@ once for all its features.
   pipeline stops quietly when it is gone. Each later feature also skips, in auto mode, a header now
   in an auto-skipped folder (`add_tags_auto_include_sent` for add_tags). Nothing is written to
   `taSummaryStore` / `translationStore` for a skipped message, so the cache is not poisoned.
+- **The external integrations read the run at once.** After the loop the run creates
+  `ext_integration_data = { batch: createExtBatch(targets' headerMessageIds) }` and hands it to every
+  feature (`options.extIntegrationData` of the three `_generate*ForMessage()`, directly in
+  `runAddTagsJob()`): the first feature whose prompt uses an integration's placeholders (QNote) reads
+  that integration's data for every target in one call, and every other pipeline reuses it. A hanging
+  QNote costs one time-out per run instead of one per message and per feature; a run whose prompts
+  use none never asks it. See [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders),
+  *Batches*.
 - **Targets hold only the MessageHeader.** The full message and the body are fetched by the
   pipeline (`ensureFull()` / `ensureBody()`, per pipeline and lazy), once for all its features, so
   memory is bounded by the cap, not by the batch size. A fetch failure skips only the feature that
@@ -1710,7 +1718,54 @@ the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it.
   `Array.from(doc.body.childNodes)` because `childNodes` is a **live** NodeList — `appendChild`
   removes each node from the list being walked, so iterating it directly would skip every other
   node.
+- **The compose font** ([#1048](https://github.com/micz/ThunderAI/issues/1048)): see *The compose
+  font* below; an HTML answer is wrapped in it before either path.
 - The command resolves `true` once the answer is inserted, by either path.
+
+#### The compose font
+
+Thunderbird applies the compose font of its settings (`msgcompose.font_face`, `msgcompose.font_size`;
+`loadHTMLMsgPrefs()` in `MsgComposeCommands.js`) as the editor's **pending style** — `cmd_fontFace`
+and `fontSize` on the collapsed selection — so only *typed* text gets a `<tt>` ("Fixed Width"), a
+`<font face>` or a `<font size>`. `execCommand('insertHTML')` ignores that style, so an answer of
+`<p>` blocks came out in the proportional default font, whatever the setting. Hence, on an HTML
+window, `insertIntoEditor()` (all three commands: Replace, Insert at cursor, the reply):
+
+- reads the font with `document.queryCommandValue('fontName')` / `('fontSize')` (`typingFont()`),
+  **first** — before `window.focus()` and the selection change, since Gecko drops the pending style
+  as soon as the selection moves. The value is the pending style, or the font of the text around
+  the selection. No face and no size (or the default size `"3"`) changes nothing; a missing
+  `queryCommandValue` or a throw neither. **Where it is read:** at the current selection, except
+  for Insert at cursor at the caret saved by `saveCaret`, which uses the font `saveCaret` read
+  with that caret (see *Inserting at the cursor in a compose window*);
+- wraps the answer (`applyTypingFont()`) as Thunderbird wraps typed text: each **run of inline
+  content of each block** (a `<font>` cannot wrap a block) in a `<tt>` for the face `tt`, else a
+  `<font face>`, and a `<font size>` (inside the `<tt>`, or on the same `<font>`). The structural
+  children of a table, a `<details>` and a `<fieldset>` (`<caption>`, `<colgroup>`, `<summary>`,
+  `<legend>`) count as blocks: a `<font>` directly inside a `<table>` would be moved out of it by
+  the HTML parser (foster parenting) when the editor parses the markup, and one before a
+  `<summary>` / `<legend>` would take its place as first child. Left alone: a run with no text, the
+  content of a `<pre>` (its own fixed-width font), and, for the size only, the content of a heading
+  (its own size). The reply's `<br>` spacer is added **after** the wrapping (`insertReply` applies
+  the font itself, and passes `null` to `insertIntoEditor()`), so it stays outside the wrapper
+  even when the answer has no block;
+- inserts that markup by the editor path or the fallback alike. `applyTypingFont()` always
+  returns the serialization of the parsed body's children, font or not: it is the markup
+  `insertHTML` receives, parsed once. A plain text window is never wrapped. When the user's text
+  around a selection already carries the font, the wrapper is redundant, not harmful.
+
+Limits:
+
+- A confirmed Replace with no selection inserts at the start of the email, but the font is the one
+  of the current caret, wherever it is: Gecko reports the font of the selection only, and moving
+  the selection there to read it would drop the pending style. In a new message the caret is at
+  the start of the email anyway.
+- The values `queryCommandValue` returns (`""` / `"tt"` for the face, `""` / `"3"` for the default
+  size, the pending style included) are Gecko's, modelled by the tests' stub: they are checked by
+  hand in Thunderbird (default font, Fixed Width, a face with a size, the caret inside a quote).
+  A relative size of the surrounding text (`<font size="+1">`) is passed through as it is.
+- The background's `replaceBody()` fallback of the reply (no compose script) cannot read the
+  editor, so it inserts the answer without the font.
 
 **Why not the compose API: `setComposeDetails()` and the undo history.** Until v5.1.0 the content
 script mutated the DOM directly (`deleteContents()` + `insertNode()`), which bypasses the editor's
@@ -1749,7 +1804,12 @@ insertion is `insertIntoEditor()`, the same editor path, focus handling and fall
   `do_autoselect`), which replaces a collapsed caret with a selection. So `getMailBody()`
   (`js/mzta-menus.js`) sends `saveCaret` to a compose tab first, before any other read, when the
   prompt's action is `"3"`; the compose script keeps a clone of the selection's range in
-  `_mztaSavedCaret`. A clone is a live `Range`: it follows the edits made in the meantime. There is
+  `_mztaSavedCaret` (`{range, font}`), with the compose font read at that moment (`typingFont()`,
+  see *The compose font*): the autoselect, or a click, drops the editor's pending style, so the
+  font is read with the caret and used only with it — when the saved caret is not usable, the
+  font of the range actually used is read at insertion. A clone is a live `Range`: it follows the
+  edits made in the meantime; the font is a snapshot, so a font changed from the toolbar in the
+  meantime is not seen. There is
   one per compose window, so of two Insert prompts running at once from the same window, both
   insert where the latest one started. A click in the compose window while the chat is open does
   not move it: the saved caret wins.
@@ -2184,8 +2244,10 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-menus.js` | Context menu creation and management |
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
+| `js/mzta-ext-integrations.js` | The registry of the external add-on integrations (today QNote): `EXT_INTEGRATIONS` (key, placeholders, `read()`, `value()`, `prefetch()`), `findExtIntegration()`, `createExtPlaceholderResolver()`, through which `getPlaceholdersValues()` resolves their placeholders, and `createExtBatch()`, the lazy batch read (`ext_integration_data.batch`) that `buildSummaryPrompt()` and `processEmails()` use, so neither `mzta-placeholders.js` nor the prompt builders name an integration. A leaf module: it never imports `mzta-placeholders.js`, which imports it. See [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders) |
+| `js/mzta-qnote.js` | The QNote client [#980]: `getQNoteStatus()`, `requestQNoteAccess()`, `getQNoteNotes()` (cross-extension messages to `qnote@dqdp.net`, short time-out but on `requestAccess`, never throwing), `prefetchQNoteNotes()` / `getQNoteNoteFor()` for the `{%qnote_text%}` / `{%qnote_datetime%}` placeholders. The background and the automatic paths only ever read notes (`getNotes`); `requestAccess` (QNote's modal dialog) is called from a user action in the options page only. See [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders) |
 | `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities; prefers the `<...>` part of the header, keeps RFC 5322 local parts such as `user+tag` / `o'brien` and Unicode addresses whole, returns `''` for non-string input), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list); `sendTabMessageSafe()` (tabs.sendMessage guarded against tabs with no reachable message browser — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) |
-| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
+| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly (with one `createExtBatch()` for all its messages, or the caller's), `buildTranslationPrompt()` for translation prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary button, translation button, in that order) and content panels (generic error, generic info, translation, summary, in that order) in message display via `#mzta-container` — see [The message-display panels and dialogs](#the-message-display-panels-and-dialogs-jsmzta-compose-scriptjs) |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |

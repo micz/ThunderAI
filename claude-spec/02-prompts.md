@@ -790,6 +790,11 @@ The summarize feature uses two distinct prompt pathways:
 - All summary paths (inline, webchat single, webchat multi) use this single method
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
+- The data of the external integrations the per-mail template uses (today the QNote notes) is
+  read once for all the messages: `buildSummaryPrompt(messageDataArray, ext_integration_data)`
+  hands each `preparePrompt()` an `ext_integration_data` whose `batch` (`createExtBatch()`) covers
+  its messages, or the caller's (a `processEmails()` run hands its own on) (see
+  [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders), *Batches*)
 - Language: `taPromptUtils.getSummaryLang(prompt_summarize)` returns `{ chatgpt_lang, force_lang_statement }`.
   - `chatgpt_lang` is passed to every `preparePrompt()` call (main prompt, separator, each email block), as before. With `summarize_force_lang` off it is `getDefaultLang(prompt_summarize)` (normally `''`, since `define_response_lang` is `"0"`), so the prompt is byte-identical to the pre-option one. With the flag on it is `''`, so it can't contradict the forced language.
   - `force_lang_statement` is `prompt_summarize_force_lang + " " + (summarize_lang || default_chatgpt_lang) + "."` when the flag is on, `''` otherwise or when both languages are empty (never `reply_same_lang`). It is appended **once**, at the very end of the whole prompt after the last email, preceded by `\n\n`. Deliberately **not** after each email: `preparePrompt()` joins `chatgpt_lang` to the email body with a single space, so there it reads as part of the email text.
@@ -815,11 +820,16 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
 - Saved per message via `taTranslationStore` / `taStorage` (IndexedDB, with its durable `storage.local` mirror), one per message whatever the language, with the message's subject, sender and date; kept until the scheduled cleanup removes it under the `translate_storage_*` limits, none by default (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 - The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
 
-**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, messageId)`:
+**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, messageId, ext_integration_data)`:
 - `messageId` feeds the body read (`getMailInlineTextParts()`); `fullMessage` supplies the subject
   header. Callers must pass both — `_generateTranslationForMessage()` therefore carries the id
   alongside `fullMessage` on **both** of its branches, and its `options.messageData` now requires
   `message` as well as `fullMessage`.
+- `ext_integration_data` (optional) is the data of the external add-on integrations, handed on to
+  `getPlaceholdersValues()` (see [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders)).
+  This path passes no `curr_message`, so `_runTranslationJob()` passes `{ header_message_id }`, the
+  message the QNote placeholders look up (with the batch of `processEmails()`, when the run hands one
+  on); without it they resolve to `""`.
 - Retrieves the `prompt_translate_this` special prompt text
 - When the text holds `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` (with or without
   the `:N` limit), reads the text body as `buildSummaryPrompt()` does (`htmlBodyToPlainText()` of

@@ -7,7 +7,7 @@ import { API, assertClean } from './flows.mjs';
 import { answering } from './fake-worker.mjs';
 import { caseTests } from '../helpers/known-issues/background.mjs';
 
-const k=caseTests('44-calendar-categories');
+const k=caseTests('45-calendar-categories');
 const categories=['Séminaire','Name, "quoted"'];
 const outgoing=[];
 let mode='new', modelAnswer, capabilityRequests=0;

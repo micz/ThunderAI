@@ -67,6 +67,7 @@ import {
     getSavedWindowPosition,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
+import { createExtBatch } from './js/mzta-ext-integrations.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import {
     getSpamFilterPrompt,
@@ -1698,6 +1699,8 @@ async function _summarizeConnectionMissing() {
 //   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
 // options.manual: an explicit user action; it may revive a job invalidated by a delete.
 // options.refresh: regenerate; the job drops the stored summary first and skips the cache.
+// options.extIntegrationData: the ext_integration_data of the processEmails() run the message
+//   belongs to (its batch), so the external integrations (QNote) read the whole run in one go.
 //
 // At most one summary job per message is in flight (taJobRegistry). A caller that finds
 // one running JOINS it (_joinSummaryJob) instead of calling the API again or giving up:
@@ -1857,7 +1860,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         }
 
         taLog.log("[ThunderAI] Summary: building the prompt for " + message.headerMessageId + " (folder: " + message.folder?.path + ")");
-        const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }]);
+        const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }], options.extIntegrationData ?? null);
 
         const cmd = new mzta_specialCommand({
             processingClient,
@@ -1904,7 +1907,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
 // options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying.
 //   `message` is required: its .id feeds the body read (getMailInlineTextParts).
 // options.messageId / options.resolvedMessage: see _resolveMessage()
-// options.manual / options.refresh: see _generateSummaryForMessage().
+// options.manual / options.refresh / options.extIntegrationData: see _generateSummaryForMessage().
 async function _generateTranslationForMessage(headerMessageId, tabId = null, options = {}) {
     // Before any job or store write: an empty id would key the store on undefined.
     if (!headerMessageId) {
@@ -2045,7 +2048,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg, metadata));
         }
         taLog.log("[ThunderAI] Translation: building the prompt for " + usedMessage?.headerMessageId + " (folder: " + usedMessage?.folder?.path + ")");
-        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
+        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId, { ...(options.extIntegrationData || {}), header_message_id: usedMessage?.headerMessageId ?? headerMessageId });
 
         const cmd = new mzta_specialCommand({
             processingClient,
@@ -2113,6 +2116,7 @@ function _enqueueJunkMove(fn) {
 // options.autoMove: if true, move spam messages to junk folder (default: false)
 // options.permissionNotices: the Set of missing-permission notices already given in this run
 //   (processEmails()), so the address book one is not repeated per message
+// options.extIntegrationData: see _generateSummaryForMessage()
 //
 // One spam analysis per message is in flight (taJobRegistry, kind 'spam'): the batch, the
 // context menu and the panel's Refresh can reach the same message together, and a second
@@ -2369,7 +2373,8 @@ async function _runSpamJob(entry, headerMessageId, options) {
             chatgpt_lang: chatgpt_lang,
             body_text: body_text,
             subject_text: curr_fullMessage.headers.subject,
-            msg_text: msg_text
+            msg_text: msg_text,
+            ext_integration_data: options.extIntegrationData ?? {}
         });
         taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
 
@@ -3657,6 +3662,12 @@ async function processEmails(args) {
         // taken (runWithConcurrency) and between the features of a message.
         const batchStopped = () => taBatchController.isCancelled(batch);
 
+        // The external integrations (QNote) of the run: the first feature whose prompt uses
+        // their placeholders reads the data of EVERY target in one go (createExtBatch()), and the
+        // other pipelines, concurrent or later, reuse it. So a hanging add-on costs one time-out
+        // per run, not one per message, and a run whose prompts use none never asks it.
+        const ext_integration_data = { batch: createExtBatch(targets.map(t => t.message?.headerMessageId)) };
+
         // The manual Translate action delivers the result to the tab it was started from
         // (only for the message that tab displays, through _sendIfCurrent()); every tab
         // displaying a message also follows its job through the job's own broadcast
@@ -3726,7 +3737,8 @@ async function processEmails(args) {
                 body_text: body.body_text,
                 subject_text: fullMessage.headers.subject,
                 msg_text: body.msg_text,
-                tags_full_list: tags_full_list
+                tags_full_list: tags_full_list,
+                ext_integration_data: ext_integration_data
             });
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_msg.add_tags_maxnum, prefs_msg.add_tags_force_lang, prefs_msg.default_chatgpt_lang, prefs_msg.add_tags_auto_uselist, prefs_msg.add_tags_auto_uselist_list, prefs_msg.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
@@ -3838,7 +3850,8 @@ async function processEmails(args) {
                                 skip_addresses: spamfilter_skip_addresses,
                                 block_addresses: spamfilter_block_addresses,
                                 skip_addressbook: spamfilter_skip_addressbook,
-                                permissionNotices: permission_notices
+                                permissionNotices: permission_notices,
+                                extIntegrationData: ext_integration_data
                             });
                         if (spamResult?.rateLimited) {
                             stopForRateLimit('Spam filter', spamResult.retryAfterMs);
@@ -3902,7 +3915,8 @@ async function processEmails(args) {
                         if (summaryReady) {
                             taLog.log("[ThunderAI] Pre-caching summary on receive for: " + curr.headerMessageId + (target.bySender ? " (sender in the auto-summarize list)" : ""));
                             const summaryResult = await _generateSummaryForMessage(curr.headerMessageId, null, {
-                                messageData: { message: curr, fullMessage }
+                                messageData: { message: curr, fullMessage },
+                                extIntegrationData: ext_integration_data
                             });
                             if (summaryResult?.rateLimited) {
                                 stopForRateLimit('Summarize', summaryResult.retryAfterMs);
@@ -3935,7 +3949,8 @@ async function processEmails(args) {
                     // user invalidated by deleting the translation.
                     const translateResult = await _generateTranslationForMessage(curr.headerMessageId, translateTabId, {
                         messageData: { message: curr, fullMessage },
-                        manual: !isAutoMode
+                        manual: !isAutoMode,
+                        extIntegrationData: ext_integration_data
                     });
                     if (translateResult?.rateLimited) {
                         stopForRateLimit('Translate', translateResult.retryAfterMs);

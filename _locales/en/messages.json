@@ -1395,6 +1395,14 @@
     "message": "Original plain text part of the mail, without any conversion from the HTML part (best for business and automated mail; may be empty or a stub on newsletters)",
     "description": "Display name and explanation of the {%mail_plain_text_part%} data placeholder, shown in placeholder suggestions while editing prompts; 'plain text part' refers to the email's MIME part."
   },
+  "placeholder_qnote_text": {
+    "message": "Text of the QNote note attached to the mail (empty if there is none, or if QNote access is not enabled in ThunderAI options)",
+    "description": "Display name and explanation of the {%qnote_text%} data placeholder, shown in placeholder suggestions while editing prompts; 'QNote' is the name of another Thunderbird add-on."
+  },
+  "placeholder_qnote_datetime": {
+    "message": "Date and time of the QNote note attached to the mail (empty if there is none)",
+    "description": "Display name of the {%qnote_datetime%} data placeholder, shown in placeholder suggestions while editing prompts; 'QNote' is the name of another Thunderbird add-on."
+  },
   "prefs_OptionText_placeholders_use_default_value": {
     "message": "Placeholders: use default value",
     "description": "Options page, advanced section: name of the option that fills empty data placeholders with their default values."
@@ -2119,6 +2127,46 @@
   "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
     "message": "To use the calendar event and task features, please install an updated version of ThunderAI Sparks addon.",
     "description": "Options page: notice shown when the installed ThunderAI Sparks add-on is too old; 'ThunderAI Sparks' is a product name."
+  },
+  "prefs_OptionText_qnote_integration": {
+    "message": "QNote notes",
+    "description": "Options page, Features section: name of the option that lets prompts read the notes of the QNote add-on; 'QNote' is the name of another Thunderbird add-on."
+  },
+  "prefs_OptionText_qnote_integration_Info": {
+    "message": "Read the QNote note of a message through the {%qnote_text%} and {%qnote_datetime%} placeholders. When a prompt uses them, the note text is sent to the configured AI provider. QNote asks you to allow ThunderAI the first time.",
+    "description": "Options page: help text under the QNote notes option; keep the {%qnote_text%} and {%qnote_datetime%} placeholder tokens unchanged; 'QNote' is the name of another Thunderbird add-on."
+  },
+  "prefs_OptionText_qnote_check_access": {
+    "message": "Check access",
+    "description": "Options page, QNote notes option: button that asks QNote whether ThunderAI may read the notes, showing QNote's confirmation dialog if the user has not answered yet."
+  },
+  "prefs_qnote_status_not_reachable": {
+    "message": "QNote is not installed or not reachable.",
+    "description": "Options page, QNote notes option: status line shown when the QNote add-on does not answer; 'QNote' is the name of another Thunderbird add-on."
+  },
+  "prefs_qnote_status_unsupported": {
+    "message": "This QNote version cannot share its notes with other add-ons. Please update QNote.",
+    "description": "Options page, QNote notes option: status line shown when the installed QNote add-on is too old to offer access to other add-ons."
+  },
+  "prefs_qnote_status_error": {
+    "message": "QNote returned an unexpected answer.",
+    "description": "Options page, QNote notes option: status line shown when the QNote add-on answers with an error."
+  },
+  "prefs_qnote_status_not_granted": {
+    "message": "ThunderAI cannot read the notes yet: press \"Check access\" and answer in QNote's dialog.",
+    "description": "Options page, QNote notes option: status line shown while the user has not allowed ThunderAI in QNote yet; \"Check access\" is the label of the button next to it (prefs_OptionText_qnote_check_access) and must match its translation."
+  },
+  "prefs_qnote_status_denied": {
+    "message": "Access was denied. Allow ThunderAI in QNote options, under \"Access from other add-ons\", then press \"Check access\".",
+    "description": "Options page, QNote notes option: status line shown when the user refused ThunderAI's access in QNote; \"Access from other add-ons\" is the name of a section of QNote's own options (keep it as QNote shows it), \"Check access\" is the label of the button next to it (prefs_OptionText_qnote_check_access)."
+  },
+  "prefs_qnote_status_granted": {
+    "message": "Access granted: prompts can use the QNote placeholders.",
+    "description": "Options page, QNote notes option: status line shown when ThunderAI may read the QNote notes."
+  },
+  "prefs_qnote_status_waiting": {
+    "message": "Waiting for your answer in QNote's dialog…",
+    "description": "Options page, QNote notes option: status line shown while QNote's confirmation dialog is open."
   },
   "GetTask_PageTitle": {
     "message": "Manage Tasks Settings",

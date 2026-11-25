@@ -49,6 +49,11 @@ import {
     1: the parameter may be left out ({%mail_text_body%} and {%mail_text_body:2000%} are both valid),
        so the autocomplete completes to the plain token instead of '{%id:%}'
 
+    empty_is_value attribute (absent means "0"):
+    1: an empty value supplied for the token is used as it is ('' means "nothing here"), never
+       treated as unresolved, so replacePlaceholders() does not fall back to default_value or the
+       literal token. A token with no value supplied at all still does.
+
     ================ USER PROPERTIES
     enabled attribute:
     0: Disabled
@@ -65,6 +70,12 @@ import {
     normalizePlainTextPart
 } from './mzta-utils.js';
 import { mztaPrefs } from './mzta-prefs.js';
+import {
+    createExtPlaceholderResolver,
+    findExtIntegration
+} from './mzta-ext-integrations.js';
+// For the pages' autocomplete, which import the placeholders from here.
+export { withoutDisabledExtPlaceholders } from './mzta-ext-integrations.js';
 
 const defaultPlaceholders = [
     {
@@ -170,12 +181,15 @@ const defaultPlaceholders = [
         enabled: 1,
     },
     {
+        // An answer the user gave is used as it is, an empty one included: the user saw the
+        // field and left it blank, which means "nothing here".
         id: 'additional_text',
         name: "__MSG_placeholder_additional_text__",
         default_value: "",
         type: 0,
         is_default: "1",
         is_dynamic: "1",
+        empty_is_value: "1",
         enabled: 1,
     },
     {
@@ -351,6 +365,29 @@ const defaultPlaceholders = [
         type: 1,
         is_default: "1",
         is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        // The QNote note of the message [#980] (js/mzta-qnote.js). Reading only: QNote keys its
+        // notes by headerMessageId, which a message being composed does not have. '' is a value
+        // here (no note, or QNote missing, or access not granted), hence empty_is_value.
+        id: 'qnote_text',
+        name: "__MSG_placeholder_qnote_text__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        is_dynamic: "0",
+        empty_is_value: "1",
+        enabled: 1,
+    },
+    {
+        id: 'qnote_datetime',
+        name: "__MSG_placeholder_qnote_datetime__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        is_dynamic: "0",
+        empty_is_value: "1",
         enabled: 1,
     }
 ];
@@ -598,9 +635,10 @@ export const placeholdersUtils = {
             if (currPlaceholder.id === 'empty') {
                 return '';
             }
-            // An answer the user gave to an additional_text field is used as it is, an empty one
-            // included: the user saw the field and left it blank, which means "nothing here".
-            if (currPlaceholder.id === 'additional_text' && Object.prototype.hasOwnProperty.call(subs, key)) {
+            // A placeholder whose '' means "nothing here" (empty_is_value: an additional_text field
+            // left blank, no QNote note) uses the value supplied for its token as it is, an empty
+            // one included: that is its value, not a failure to resolve it.
+            if (currPlaceholder.empty_is_value == 1 && Object.prototype.hasOwnProperty.call(subs, key)) {
                 return String(subs[key] ?? '');
             }
             // Replace if found, otherwise keep the original or substitute with default value
@@ -692,9 +730,24 @@ export const placeholdersUtils = {
             only_quoted_text = "",
             selection_text = "",
             selection_html = "",
-            tags_full_list = ["", []]
+            tags_full_list = ["", []],
+            // The data of the external add-on integrations, one object for all of them (its keys
+            // in js/mzta-ext-integrations.js):
+            //   header_message_id  the message they look up, when there is no curr_message (default:
+            //                      curr_message.headerMessageId, which a ComposeDetails does not have)
+            //   batch              createExtBatch() of the messages processed together: their data
+            //                      read in one go, the first time one of them needs it
+            //   qnote              { notes }: QNote notes already read
+            //                      ({headerMessageId: note | null}, prefetchQNoteNotes())
+            ext_integration_data = {}
         } = args || {};
+        const ext_data = ext_integration_data || {};
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
+        // The placeholders of the external integrations (QNote), resolved through their registry:
+        // each integration's data read at most once per call, and only when one of its
+        // placeholders is in the prompt. Never throws: any failure is "no data".
+        const extPlaceholder = createExtPlaceholderResolver(
+            ext_data.header_message_id ?? curr_message?.headerMessageId, ext_data);
         // The [names, {key: tag}] pair of getTagsList(). When the caller does not supply it
         // (e.g. translation, compose) it is read here, once, and only when a tag placeholder is
         // actually in the prompt.
@@ -863,7 +916,12 @@ export const placeholdersUtils = {
                 case 'empty':
                     finalSubs['empty'] = '';
                     break;
-                default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
+                default:
+                    // The placeholders of an external integration (js/mzta-ext-integrations.js).
+                    if (findExtIntegration(currPH.id)) {
+                        finalSubs[currPH.id] = placeholdersUtils.failSafePlaceholders(await extPlaceholder(currPH.id));
+                    }
+                    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                     break;
             }
         }

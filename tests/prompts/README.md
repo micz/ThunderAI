@@ -44,6 +44,16 @@ tests/
     │                                      contracts, "Selection twins", "mail_text_body vs
     │                                      mail_plain_text_part", "The address placeholders..."
     ├── 05-attachments-headers.test.mjs    spec 03 "Built-in Placeholders", "Dynamic Placeholders"
+    ├── 06-qnote.test.mjs                  spec 03 "The QNote placeholders" (#980): js/mzta-qnote.js
+    │                                      (every access state, not installed, time-outs, unsupported
+    │                                      apiVersion, error replies, access-denied, chunks of 1000, the
+    │                                      prefetch) and the two placeholders (one getNotes, no getStatus,
+    │                                      '' on every failure, the preference, compose, prefetched notes);
+    │                                      the lazy batch prefetch, createExtBatch() (one getNotes per batch,
+    │                                      shared by concurrent messages, one time-out when QNote hangs,
+    │                                      never asked when no prompt uses it, a message outside the batch),
+    │                                      and the registry js/mzta-ext-integrations.js (a leaf module,
+    │                                      its placeholders, the per-call resolver)
     ├── 10-prompt-flags.test.mjs           spec 02 "The five boolean flags are normalized on read",
     │                                      normalizePromptFields(), normalizeEnabledToShowIn()
     ├── 11-prompt-views.test.mjs           spec 02 the three getters, "Reachability", "User Properties",

@@ -169,10 +169,28 @@ function stubDialogs(window) {
  * per call - `range` the selection's range as it was at the call (null with none: a snapshot,
  * see below), `focusCalls` how many window.focus() calls came before it. `editor.focusCalls`: the
  * running count.
+ *
+ * document.queryCommandValue() too, for 'fontName' / 'fontSize': `editor.font` ({fontName,
+ * fontSize}, changeable between tests, '' by default) is the font Gecko's editor reports for the
+ * current selection - the pending style Thunderbird sets from its compose font settings (#1048).
+ * It is reset ('') on every focus() and selection change made through the window's Selection,
+ * as Gecko drops the pending style when the selection moves: so a value read after the script
+ * moved the selection is lost, as in Thunderbird. `editor.queries`: one {command, value} per call.
  */
-export function stubEditor(ctx, { mode = 'ok' } = {}) {
-    const editor = { mode, calls: [], focusCalls: 0 };
-    ctx.window.focus = () => { editor.focusCalls++; };
+export function stubEditor(ctx, { mode = 'ok', font = {} } = {}) {
+    const editor = { mode, calls: [], focusCalls: 0, queries: [], font: { fontName: '', fontSize: '', ...font } };
+    const dropPending = () => { editor.font = { fontName: '', fontSize: '' }; };
+    ctx.window.focus = () => { editor.focusCalls++; dropPending(); };
+    const sel = ctx.window.getSelection();
+    for (const name of ['addRange', 'removeAllRanges']) {
+        const orig = sel[name].bind(sel);
+        sel[name] = (...args) => { dropPending(); return orig(...args); };
+    }
+    ctx.document.queryCommandValue = command => {
+        const value = editor.font[command] ?? '';
+        editor.queries.push({ command, value });
+        return value;
+    };
     ctx.document.execCommand = (command, showUI, value) => {
         const sel = ctx.window.getSelection();
         const range = sel.rangeCount ? sel.getRangeAt(0) : null;
