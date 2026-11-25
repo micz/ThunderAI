@@ -26,6 +26,7 @@ import {
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { mztaPrefs } from './mzta-prefs.js';
+import { createExtBatch } from './mzta-ext-integrations.js';
 
 // Per-feature settings of the AI reminder [#887]: same logic for calendar events
 // and tasks, only the prefs and the format instruction (reference date) differ.
@@ -74,7 +75,8 @@ export const taPromptUtils = {
             msg_text = {},
             only_typed_text = '',
             only_quoted_text = '',
-            tags_full_list = ["", []]
+            tags_full_list = ["", []],
+            ext_integration_data = {}   // see getPlaceholdersValues()
         } = args || {};
 
         let fullPrompt = '';
@@ -109,7 +111,8 @@ export const taPromptUtils = {
                 only_quoted_text: only_quoted_text,
                 selection_text: selection_text,
                 selection_html: selection_html,
-                tags_full_list: tags_full_list
+                tags_full_list: tags_full_list,
+                ext_integration_data: ext_integration_data
             });
             let prefs_ph = await mztaPrefs.getPrefs(['placeholders_use_default_value']);
             fullPrompt = (placeholdersUtils.replacePlaceholders({
@@ -250,7 +253,9 @@ export const taPromptUtils = {
         return { chatgpt_lang: '', force_lang_statement: browser.i18n.getMessage("prompt_summarize_force_lang") + " " + lang + "." };
     },
 
-    async buildSummaryPrompt(messageDataArray) {
+    // ext_integration_data: the caller's, when the messages belong to a larger batch (a
+    // processEmails() run hands its own on); otherwise these messages are the batch.
+    async buildSummaryPrompt(messageDataArray, ext_integration_data = null) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_summarize');
         const prompt_email = specialPrompts.find(p => p.id === 'prompt_summarize_email_template');
@@ -266,6 +271,12 @@ export const taPromptUtils = {
             curr_prompt: prompt_email_separator,
             chatgpt_lang: chatgpt_lang,
         });
+
+        // The data of the external integrations the per-mail template uses, read once for all
+        // the messages instead of once per message, and only if the template uses one.
+        if (!ext_integration_data) {
+            ext_integration_data = { batch: createExtBatch(messageDataArray.map(entry => entry?.message?.headerMessageId)) };
+        }
 
         const messages_list = [];
         for (let entry of messageDataArray) {
@@ -294,6 +305,7 @@ export const taPromptUtils = {
                 body_text: bodyText,
                 subject_text: entry.fullMessage.headers.subject,
                 msg_text: bodyHtml,
+                ext_integration_data: ext_integration_data,
             }));
         }
 
@@ -308,7 +320,9 @@ export const taPromptUtils = {
 
     // messageId is needed for the body: getMailInlineTextParts() asks the API for
     // the inline text parts directly. fullMessage stays for the subject header.
-    async buildTranslationPrompt(fullMessage, messageId) {
+    // ext_integration_data is handed on to getPlaceholdersValues(): no curr_message is passed
+    // here, so its header_message_id is what the external integrations (QNote) look up.
+    async buildTranslationPrompt(fullMessage, messageId, ext_integration_data = {}) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_translate_this');
 
@@ -351,6 +365,7 @@ export const taPromptUtils = {
             body_text: bodyText,
             msg_text: { html: bodyHtml.html, text: bodyHtml.text },
             mail_subject: mailSubject,
+            ext_integration_data: ext_integration_data,
         });
 
         // Always the default values (all "" for these placeholders), whatever

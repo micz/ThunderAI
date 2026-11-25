@@ -248,6 +248,9 @@ export const prefs_default = {
     // ask it to download the model (once per start of either add-on). Off by default:
     // the model is a large download from Hugging Face, made by every machine.
     ai_processing_model_autodownload: false,
+    // Read the QNote note of a message for the {%qnote_text%} / {%qnote_datetime%} placeholders
+    // (js/mzta-qnote.js, #980). Off by default: the note then reaches the AI provider.
+    qnote_integration: false,
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,

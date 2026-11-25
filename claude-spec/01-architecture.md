@@ -290,6 +290,14 @@ once for all its features.
   pipeline stops quietly when it is gone. Each later feature also skips, in auto mode, a header now
   in an auto-skipped folder (`add_tags_auto_include_sent` for add_tags). Nothing is written to
   `taSummaryStore` / `translationStore` for a skipped message, so the cache is not poisoned.
+- **The external integrations read the run at once.** After the loop the run creates
+  `ext_integration_data = { batch: createExtBatch(targets' headerMessageIds) }` and hands it to every
+  feature (`options.extIntegrationData` of the three `_generate*ForMessage()`, directly in
+  `runAddTagsJob()`): the first feature whose prompt uses an integration's placeholders (QNote) reads
+  that integration's data for every target in one call, and every other pipeline reuses it. A hanging
+  QNote costs one time-out per run instead of one per message and per feature; a run whose prompts
+  use none never asks it. See [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders),
+  *Batches*.
 - **Targets hold only the MessageHeader.** The full message and the body are fetched by the
   pipeline (`ensureFull()` / `ensureBody()`, per pipeline and lazy), once for all its features, so
   memory is bounded by the cap, not by the batch size. A fetch failure skips only the feature that
@@ -2236,8 +2244,10 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-menus.js` | Context menu creation and management |
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
+| `js/mzta-ext-integrations.js` | The registry of the external add-on integrations (today QNote): `EXT_INTEGRATIONS` (key, placeholders, `read()`, `value()`, `prefetch()`), `findExtIntegration()`, `createExtPlaceholderResolver()`, through which `getPlaceholdersValues()` resolves their placeholders, and `createExtBatch()`, the lazy batch read (`ext_integration_data.batch`) that `buildSummaryPrompt()` and `processEmails()` use, so neither `mzta-placeholders.js` nor the prompt builders name an integration. A leaf module: it never imports `mzta-placeholders.js`, which imports it. See [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders) |
+| `js/mzta-qnote.js` | The QNote client [#980]: `getQNoteStatus()`, `requestQNoteAccess()`, `getQNoteNotes()` (cross-extension messages to `qnote@dqdp.net`, short time-out but on `requestAccess`, never throwing), `prefetchQNoteNotes()` / `getQNoteNoteFor()` for the `{%qnote_text%}` / `{%qnote_datetime%}` placeholders. The background and the automatic paths only ever read notes (`getNotes`); `requestAccess` (QNote's modal dialog) is called from a user action in the options page only. See [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders) |
 | `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities; prefers the `<...>` part of the header, keeps RFC 5322 local parts such as `user+tag` / `o'brien` and Unicode addresses whole, returns `''` for non-string input), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list); `sendTabMessageSafe()` (tabs.sendMessage guarded against tabs with no reachable message browser — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) |
-| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
+| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly (with one `createExtBatch()` for all its messages, or the caller's), `buildTranslationPrompt()` for translation prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary button, translation button, in that order) and content panels (generic error, generic info, translation, summary, in that order) in message display via `#mzta-container` — see [The message-display panels and dialogs](#the-message-display-panels-and-dialogs-jsmzta-compose-scriptjs) |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
