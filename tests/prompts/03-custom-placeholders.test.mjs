@@ -21,7 +21,7 @@ const BUILT_IN_IDS = [
     'mail_folder_name', 'mail_folder_path', 'mail_headers', 'mail_full_headers', 'selected_text',
     'selected_html', 'additional_text', 'junk_score', 'recipients', 'cc_list', 'author',
     'mail_datetime', 'current_datetime', 'account_email_address', 'tags_current_email',
-    'tags_full_list', 'thunderai_def_sign', 'thunderai_def_lang', 'thunderai_translate_lang',
+    'calendar_categories', 'tags_full_list', 'thunderai_def_sign', 'thunderai_def_lang', 'thunderai_translate_lang',
     'thunderai_translate_exclude_lang', 'empty', 'mail_attachments_info',
     'mail_text_body_or_selected', 'mail_html_body_or_selected', 'mail_plain_text_part',
     'qnote_text', 'qnote_datetime',
@@ -73,14 +73,14 @@ k.test('prefix-round-trips', 'add then strip, and strip then add, give back the 
 
 // --- The built-ins ------------------------------------------------------------------------------
 
-k.test('built-ins-in-source-order', 'getPlaceholders(true) lists the 32 built-ins in declaration order, first', async () => {
+k.test('built-ins-in-source-order', 'getPlaceholders(true) lists the 33 built-ins in declaration order, first', async () => {
     const list = await m.getPlaceholders(true);
     assert.deepEqual(list.slice(0, BUILT_IN_IDS.length).map(p => p.id), BUILT_IN_IDS);
 });
 
 k.test('built-ins-properties', 'every built-in has is_default "1", its table type and its Dyn flag', async () => {
     const list = (await m.getPlaceholders(true)).filter(p => BUILT_IN_IDS.includes(p.id));
-    assert.equal(list.length, 32);
+    assert.equal(list.length, 33);
     for (const p of list) {
         assert.equal(p.is_default, '1', p.id);
         const type = TYPE_1.includes(p.id) ? 1 : TYPE_2.includes(p.id) ? 2 : 0;
@@ -109,7 +109,7 @@ k.test('suggestion-command', 'spec 03 "Placeholder Autocomplete": a dynamic plac
 
 k.test('none-stored', 'with nothing stored there are no custom placeholders', async () => {
     assert.deepEqual(await m.getCustomPlaceholders(), []);
-    assert.equal((await m.getPlaceholders()).length, 32);
+    assert.equal((await m.getPlaceholders()).length, 33);
 });
 
 k.test('set-stores', 'setCustomPlaceholders() stores under _custom_placeholder, prefixed, is_default "0"', async () => {
@@ -134,7 +134,7 @@ k.test('get-reads-back', 'getCustomPlaceholders() reads back what was stored', a
 
 k.test('merged-sorted', 'getPlaceholders() merges built-ins and customs, sorted by id', async () => {
     const ids = (await m.getPlaceholders()).map(p => p.id);
-    assert.equal(ids.length, 34);
+    assert.equal(ids.length, 35);
     assert.deepEqual(ids, [...ids].sort((a, b) => a.localeCompare(b)));
     assert.ok(ids.includes('thunderai_custom_sig') && ids.includes('thunderai_custom_team'));
 });

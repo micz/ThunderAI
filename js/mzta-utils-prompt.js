@@ -162,6 +162,13 @@ export const taPromptUtils = {
         return taPromptUtils.appendReminderStatements(fullPrompt, 'calendar', promptTemplate, reminder_enabled, reminder_rules);
     },
 
+    // Whether a calendar prompt asks for categories. The prompt decides, as it does for
+    // attendees: it asks by holding the {%calendar_categories%} placeholder, which gives the
+    // model the list to choose from. promptTemplate is the prompt as saved, NOT the resolved one.
+    calendarCategoriesAsked(promptTemplate){
+        return placeholdersUtils.hasPlaceholder(String(promptTemplate ?? ''), 'calendar_categories');
+    },
+
     finalizePrompt_get_task(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
         return taPromptUtils.appendReminderStatements(fullPrompt, 'task', promptTemplate, reminder_enabled, reminder_rules);
     },

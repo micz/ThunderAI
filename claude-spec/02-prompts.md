@@ -879,3 +879,31 @@ action not forced to `"2"` from a compose window; the ChatGPT web window has the
 ## Custom Prompts
 
 Custom prompts are stored in `browser.storage.local` and managed via `pages/customprompts/`. They follow the same property structure as built-in prompts but are created/edited/deleted by the user through the UI. Custom placeholders can also be referenced in custom prompt text. Their id may not be a shipped one, and a new one may not start with `prompt_` (see "Prompt ids").
+
+## Calendar event: native categories
+
+The prompt asks for them, as it does for attendees; there is no option and nothing is appended by
+code. `calendarCategoriesAsked()` reads the saved template (not the resolved prompt) and is true
+only when it holds `{%calendar_categories%}`. The shipped `prompt_get_calendar_event_full_text` has
+a line giving the list through the placeholder (choose the fitting names exactly, an empty list
+when none fits) and a `"categories"` array in its JSON example, next to `"attendees"`, so the
+settings textarea shows the whole request. Removing the placeholder turns categories off; a saved
+prompt without it (any prompt saved before this feature, which is never rewritten) asks for none
+until the user adds the line or resets the prompt.
+
+Sparks is asked once per extraction. When the template asks for categories, the email and clipboard
+menu actions call `getSparksCapabilities()` before preparing the prompt and keep the answer in
+`msg_text.calendar_capabilities`, which `{%calendar_categories%}` and
+`normalizeCalendarCategories()` reuse. The request is separate from the unchanged version check and
+bounded to two seconds, because an older Sparks never answers an unknown action; the reason is
+logged without any reply content. `normalizeCalendarCategories()` keeps the advertised names that
+match exactly, each once, and keeps an empty list. Anything else, or a Sparks without the
+`categories` field, drops the field and the event opens as before. A template without the placeholder
+gets the field deleted from the answer, and Sparks is not asked. Participant and reminder
+rules are unchanged, the debug logs of the event data are kept, and the native review dialog remains
+mandatory. Sparks reads the catalogue again when it builds the event and applies the calendar's
+category limit.
+
+It needs ThunderAI Sparks 3.2.0 or later (`getCapabilities`). `sparks_min` is unchanged: an older
+Sparks only drops the field. On Thunderbird 159 with a Google calendar over CalDAV, `CATEGORIES`
+survived the save and a later edit on the Google site, for one synthetic event.
