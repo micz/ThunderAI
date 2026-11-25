@@ -7,9 +7,12 @@
 //  - "Error messages": findErrorMessage() / extractErrorMessage() look in error.message (or error
 //    as a string), then message (which may hold the detail list), then detail[].msg (joined) or
 //    detail as a string; extractErrorMessage() falls back to the raw body;
-//  - isStreamErrorFrame(): {"error": ...} or {"object": "error"} sent inside a stream.
-// Inputs: the shapes documented at https://docs.mistral.ai/inference/conversations/reasoning.
-// Realm: no browser.
+//  - isStreamErrorFrame(): {"error": ...} or {"object": "error"} sent inside a stream;
+//  - "Show only chat models": filterChatModels() drops completion_chat === false and past
+//    deprecation dates, keeps models without those fields, puts the "-latest" aliases first and
+//    keeps the order otherwise.
+// Inputs: the shapes documented at https://docs.mistral.ai/inference/conversations/reasoning and
+// the /v1/models fields of Mistral (capabilities.completion_chat, deprecation). Realm: no browser.
 
 import assert from 'node:assert/strict';
 import { areaFile } from './harness.mjs';
@@ -17,6 +20,7 @@ import { areaFile } from './harness.mjs';
 const { k } = areaFile('14-openai-comp-content');
 const {
     extractErrorMessage,
+    filterChatModels,
     findErrorMessage,
     isStreamErrorFrame,
     normalizeChatContent
@@ -104,6 +108,36 @@ k.test('stream-error-frame', 'an error frame is {"error": ...} or {"object": "er
     assert.equal(isStreamErrorFrame({ object: 'chat.completion.chunk', choices: [] }), false);
     assert.equal(isStreamErrorFrame({ error: null, choices: [] }), false);
     assert.equal(isStreamErrorFrame(null), false);
+});
+
+const NOW = Date.parse('2026-06-01T00:00:00Z');
+
+k.test('models-filter', 'non-chat and deprecated models dropped, models without the fields kept', () => {
+    const models = [
+        { id: 'mistral-embed', capabilities: { completion_chat: false } },
+        { id: 'mistral-small-2603', capabilities: { completion_chat: true }, deprecation: null },
+        { id: 'open-mistral-7b', capabilities: { completion_chat: true }, deprecation: '2025-03-30T12:00:00Z' },
+        { id: 'mistral-large-4', capabilities: { completion_chat: true }, deprecation: '2027-01-01T00:00:00Z' },
+        { id: 'local-model' },
+        { id: 'odd-date', deprecation: 'not a date' },
+    ];
+    assert.deepEqual(filterChatModels(models, NOW).map(m => m.id), ['mistral-small-2603', 'mistral-large-4', 'local-model', 'odd-date']);
+});
+
+k.test('models-latest-first', 'the "-latest" aliases first, the order kept otherwise', () => {
+    const ids = ['b-2603', 'mistral-large-latest', 'a-2601', 'mistral-small-latest', 'c'];
+    assert.deepEqual(filterChatModels(ids.map(id => ({ id })), NOW).map(m => m.id),
+        ['mistral-large-latest', 'mistral-small-latest', 'b-2603', 'a-2601', 'c']);
+});
+
+k.test('models-epoch', 'a deprecation given as a number (seconds or ms) is read too', () => {
+    const past = NOW / 1000 - 3600;
+    assert.deepEqual(filterChatModels([{ id: 's', deprecation: past }, { id: 'ms', deprecation: past * 1000 }, { id: 'ok' }], NOW).map(m => m.id), ['ok']);
+});
+
+k.test('models-not-array', 'not a list: an empty list, never a throw', () => {
+    assert.deepEqual(filterChatModels(undefined), []);
+    assert.deepEqual(filterChatModels([null, 'x', { id: 'm' }], NOW).map(m => m.id), ['m']);
 });
 
 k.coverage();

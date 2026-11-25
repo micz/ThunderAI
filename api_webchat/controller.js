@@ -349,6 +349,7 @@ if (worker) {
             ],
             openai_comp: [
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
+                { key: 'reasoning_effort', labelKey: 'prefs_OptionText_openai_comp_reasoning_effort', type: 'string' },
                 { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' },
                 { key: 'extra_headers', labelKey: 'prefs_api_extra_headers', type: 'headers' }
             ],

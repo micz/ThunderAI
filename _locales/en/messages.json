@@ -1587,6 +1587,26 @@
         }
     }
   },
+  "prefs_OptionText_openai_comp_reasoning_effort": {
+    "message": "Reasoning effort",
+    "description": "Connection panel (OpenAI Compatible API, advanced) and AI chat window settings summary: label of the reasoning effort selector; 'effort' is a noun. Keep short."
+  },
+  "prefs_OptionText_openai_comp_reasoning_effort_Info": {
+    "message": "How much effort a reasoning model spends thinking before answering, sent as the \"reasoning_effort\" parameter. Leave it not set for services and models that don't support it, or they may reject the request. Other values, like \"max\", can be sent through the extra body data, which takes precedence over this option: {\"reasoning_effort\": \"max\"}.",
+    "description": "Connection panel (OpenAI Compatible API, advanced): help text under the reasoning effort selector. Keep 'reasoning_effort', 'max' and the JSON example unchanged. 'extra body data' refers to the field of that name further down the panel."
+  },
+  "prefs_openai_comp_reasoning_effort_not_set": {
+    "message": "Not set",
+    "description": "Connection panel (OpenAI Compatible API, advanced): empty option of the reasoning effort selector, meaning the parameter is not sent at all."
+  },
+  "prefs_OptionText_openai_comp_chat_models_only": {
+    "message": "Show only chat models",
+    "description": "Connection panel (OpenAI Compatible API, advanced): label of the checkbox that filters the fetched model list. Keep short."
+  },
+  "prefs_OptionText_openai_comp_chat_models_only_Info": {
+    "message": "When updating the model list, leave out the models the service marks as not usable for chat (like embedding models) or as deprecated, and list the \"-latest\" aliases first. Models without this information are always listed.",
+    "description": "Connection panel (OpenAI Compatible API, advanced): text next to the 'Show only chat models' checkbox. Keep '-latest' unchanged."
+  },
   "prefs_OptionText_openai_comp_use_v1" : {
     "message": "Keep the \"v1\" compatibility",
     "description": "Connection panel (OpenAI Compatible API, advanced): label of the checkbox that keeps the 'v1' segment in API URLs. Keep 'v1' unchanged."

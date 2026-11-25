@@ -201,6 +201,44 @@ export function isStreamErrorFrame(parsed) {
   return parsed.object === 'error';
 }
 
+// A deprecation date as a timestamp in ms, or null when there is none or it cannot
+// be read. A number is taken as seconds when it is too small to be milliseconds.
+function deprecationTime(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value < 1e12 ? value * 1000 : value;
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const t = Date.parse(value);
+    return Number.isNaN(t) ? null : t;
+  }
+  return null;
+}
+
+/**
+ * The model list of the "Show only chat models" option [#1044]: the models a chat
+ * cannot use are dropped, and the "-latest" aliases come first.
+ *  - a model whose capabilities.completion_chat is false is dropped;
+ *  - a model whose deprecation date (Mistral's `deprecation`) is in the past is dropped;
+ *  - a model without these fields (any other server) stays;
+ *  - the ids ending in "-latest" are moved to the top, the order is kept otherwise.
+ *
+ * @param {Array} models the list fetchModels() returned
+ * @param {number} [now] the current time in ms
+ * @returns {Array} a new array
+ */
+export function filterChatModels(models, now = Date.now()) {
+  if (!Array.isArray(models)) return [];
+  const kept = models.filter(model => {
+    if (model === null || typeof model !== 'object') return false;
+    if (model.capabilities && typeof model.capabilities === 'object' && model.capabilities.completion_chat === false) return false;
+    const deprecated = deprecationTime(model.deprecation);
+    if (deprecated !== null && deprecated <= now) return false;
+    return true;
+  });
+  const isLatest = model => typeof model.id === 'string' && model.id.endsWith('-latest');
+  return [...kept.filter(isLatest), ...kept.filter(model => !isLatest(model))];
+}
+
 
 export class OpenAIComp {
 
@@ -210,6 +248,8 @@ export class OpenAIComp {
   use_v1 = true;
   stream = false;
   temperature = '';
+  // '' (not sent) or the value of the reasoning_effort parameter [#1044].
+  reasoning_effort = '';
   extra_body = '';
   extra_headers = '';
   approved_insecure_origins = [];
@@ -226,6 +266,7 @@ export class OpenAIComp {
     stream = false,
     use_v1 = true,
     temperature = '',
+    reasoning_effort = '',
     extra_body = '',
     extra_headers = '',
     approved_insecure_origins = [],
@@ -236,6 +277,7 @@ export class OpenAIComp {
     this.apiKey = apiKey;
     this.use_v1 = use_v1;
     this.temperature = temperature;
+    this.reasoning_effort = typeof reasoning_effort === 'string' ? reasoning_effort.trim() : '';
     this.extra_body = extra_body;
     this.extra_headers = extra_headers;
     // The unencrypted origins the caller confirmed (js/mzta-endpoint-approvals.js):
@@ -345,7 +387,11 @@ export class OpenAIComp {
             // The user-supplied extra data is spread first on purpose: every
             // parameter ThunderAI manages must win over it, so a wrong entry
             // cannot change the model or break the streaming.
+            // reasoning_effort is the one exception, set before it: an extra body
+            // entry wins, so a value the option does not offer (e.g. "max" for
+            // GLM) can still be sent [#1044].
             body: JSON.stringify({
+                ...(this.reasoning_effort !== '' ? { 'reasoning_effort': this.reasoning_effort } : {}),
                 ...parseExtraBody(this.extra_body),
                 model: this.model,
                 messages: messages,
