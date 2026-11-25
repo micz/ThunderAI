@@ -10,7 +10,11 @@
 //  - "Per-provider support" (openai_comp): the usage frame has an empty choices array and is read
 //    before the choices guard; a server that never sends usage gives none;
 //  - "Emitting to the chat window": usage immediately before tokensDone, one id per response,
-//    nothing emitted when the provider reported nothing.
+//    nothing emitted when the provider reported nothing;
+//  - "Chunked content" (#1044): Mistral's delta.content changes shape in one response (an array
+//    with a thinking chunk, then thinking + text, then a plain string): the thinking goes to the
+//    reasoning block, the text to the answer and the history, never "[object Object]", and the
+//    usage is still read; a choice carrying a whole `message` instead of a `delta` is read too.
 // Inputs: fixtures/api/openai_comp.json (DeepSeek and OpenRouter streams, a server without usage),
 // plus deltas built from the field names spec 04 lists. Realm: no browser global.
 
@@ -137,6 +141,58 @@ k.test('utf8-split', 'a multi-byte character split across two chunks arrives who
     const t = startTurn(w, 'utf8');
     await t.done;
     assert.deepEqual(t.posted().filter(m => m.type === 'newToken').map(m => m.payload.token), [text]);
+});
+
+const mistralChunk = (content, extra = {}) => ({ id: 'm', object: 'chat.completion.chunk', created: 1, model: 'mistral-small-2603',
+    choices: [{ index: 0, delta: { role: 'assistant', content }, finish_reason: null }], ...extra });
+const thinking = text => ({ type: 'thinking', thinking: [{ type: 'text', text }] });
+
+k.test('mistral-chunked', 'Mistral reasoning stream: thinking array, transition array, then strings; usage read', async () => {
+    const text = [
+        mistralChunk([thinking('The user asks ')]),
+        mistralChunk([thinking('for a word.')]),
+        mistralChunk([thinking(' Done.'), { type: 'text', text: 'Sure' }]),
+        mistralChunk(': yes.'),
+        { id: 'm', object: 'chat.completion.chunk', created: 1, model: 'mistral-small-2603',
+            choices: [{ index: 0, delta: { content: '' }, finish_reason: 'stop' }],
+            usage: { prompt_tokens: 12, completion_tokens: 40, total_tokens: 52 } },
+    ].map(c => sse(c)).join('') + DONE;
+    net.expect({ method: 'POST', url: CHAT }, () => streamResponse([text]));
+    const t = startTurn(w, 'mistral');
+    await t.done;
+    assert.deepEqual(shape(t.posted()).map(([type, v]) => type === 'usage' ? [type] : [type, v]), [
+        ['newThinkingToken', 'The user asks '],
+        ['newThinkingToken', 'for a word.'],
+        ['newThinkingToken', ' Done.'],
+        ['newToken', 'Sure'],
+        ['newToken', ': yes.'],
+        ['usage'],
+        ['tokensDone', 'The user asks for a word. Done.'],
+    ]);
+    assert.deepEqual(usageTokens(t.posted().find(m => m.type === 'usage').payload), { input: 12, output: 40, total: 52, cached: null, reasoning: null });
+    assert.equal(t.posted().some(m => JSON.stringify(m).includes('[object Object]')), false);
+});
+
+k.test('mistral-history', 'the next turn sends back the answer text only, as a string', async () => {
+    net.expect({ method: 'POST', url: CHAT }, () => streamResponse([sse(mistralChunk('ok')) + DONE]));
+    const t = startTurn(w, 'next');
+    await t.done;
+    const msgs = net.calls[0].json().messages;
+    assert.deepEqual(msgs.at(-3), { role: 'user', content: 'mistral' });
+    assert.deepEqual(msgs.at(-2), { role: 'assistant', content: 'Sure: yes.' });
+});
+
+k.test('whole-message', 'a choice with a whole message (no delta): its reasoning and chunked content are read', async () => {
+    const frame = { id: 'm', object: 'chat.completion', created: 1, model: 'mistral-large-4',
+        choices: [{ index: 0, message: { role: 'assistant', content: [thinking('Hmm.'), { type: 'text', text: '{"spam": false}' }] }, finish_reason: 'stop' }] };
+    net.expect({ method: 'POST', url: CHAT }, () => streamResponse([JSON.stringify(frame) + '\n']));
+    const t = startTurn(w, 'whole');
+    await t.done;
+    assert.deepEqual(shape(t.posted()), [
+        ['newThinkingToken', 'Hmm.'],
+        ['newToken', '{"spam": false}'],
+        ['tokensDone', 'Hmm.'],
+    ]);
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

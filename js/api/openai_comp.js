@@ -84,6 +84,123 @@ export function extractUsage(raw) {
   }
 }
 
+/**
+ * Normalize the `content` of a chat completion message (or of a streamed delta)
+ * into the answer text and the reasoning text [#1044].
+ *
+ * The OpenAI shape is a string, but some servers send an array of typed chunks:
+ * Mistral's reasoning models (with reasoning_effort set, and always for some models)
+ * answer with
+ *   [{type: "thinking", thinking: [{type: "text", text: "..."}]}, {type: "text", text: "..."}]
+ * and, while streaming, change shape in the same response (an array while thinking,
+ * an array with both chunks at the transition, a plain string while answering).
+ * Treating the array as a string printed "[object Object]" in the answer.
+ *
+ * Never throws. A chunk of an unknown type is ignored, logged when `logger` (a
+ * taLogger) has debug on.
+ *
+ * @param {*} content the content value, whatever its shape
+ * @param {object} [logger] a taLogger, for the debug line about an unknown chunk
+ * @returns {{text: string, thinking: string}}
+ */
+export function normalizeChatContent(content, logger = null) {
+  if (typeof content === 'string') return { text: content, thinking: '' };
+  let text = '';
+  let thinking = '';
+  if (!Array.isArray(content)) return { text, thinking };
+  for (const chunk of content) {
+    if (typeof chunk === 'string') {
+      text += chunk;
+    } else if (chunk && chunk.type === 'text') {
+      if (typeof chunk.text === 'string') text += chunk.text;
+    } else if (chunk && chunk.type === 'thinking') {
+      thinking += thinkingChunkText(chunk.thinking);
+    } else if (logger && logger.do_debug) {
+      logger.log("Ignored a content chunk of an unknown type: " + JSON.stringify(chunk?.type));
+    }
+  }
+  return { text, thinking };
+}
+
+// The text of a "thinking" chunk: an array of {type: "text", text} items, or a plain
+// string tolerated as such.
+function thinkingChunkText(value) {
+  if (typeof value === 'string') return value;
+  if (!Array.isArray(value)) return '';
+  let out = '';
+  for (const item of value) {
+    if (typeof item === 'string') out += item;
+    else if (item && item.type === 'text' && typeof item.text === 'string') out += item.text;
+  }
+  return out;
+}
+
+/**
+ * The message an OpenAI-compatible server puts in an error body, or '' when it
+ * has none in a known place [#1044]. Checked in order:
+ *   1. error.message (OpenAI, OpenRouter, DeepSeek...), or error as a plain string;
+ *   2. message (Mistral: {"object": "error", "message": "..."}), which may itself
+ *      hold the detail list;
+ *   3. detail[].msg, joined (the FastAPI validation errors Mistral answers a 422
+ *      with), or detail as a plain string.
+ *
+ * @param {*} parsed the parsed error body
+ * @returns {string}
+ */
+export function findErrorMessage(parsed) {
+  if (parsed === null || typeof parsed !== 'object') return '';
+  const error = parsed.error;
+  if (error && typeof error === 'object' && typeof error.message === 'string' && error.message !== '') return error.message;
+  if (typeof error === 'string' && error !== '') return error;
+  if (typeof parsed.message === 'string' && parsed.message !== '') return parsed.message;
+  if (parsed.message && typeof parsed.message === 'object') {
+    const nested = findErrorMessage(parsed.message);
+    if (nested !== '') return nested;
+  }
+  if (Array.isArray(parsed.detail)) {
+    const msgs = parsed.detail
+      .map(d => (d && typeof d.msg === 'string') ? d.msg : (typeof d === 'string' ? d : ''))
+      .filter(m => m !== '');
+    if (msgs.length > 0) return msgs.join('; ');
+  }
+  if (typeof parsed.detail === 'string' && parsed.detail !== '') return parsed.detail;
+  return '';
+}
+
+/**
+ * The message of an OpenAI-compatible error body: findErrorMessage() of the parsed
+ * body, or the raw body itself when it is not JSON or has no message in a known place.
+ *
+ * @param {string|object} body the raw response body, or an already parsed one
+ * @returns {string} '' only for an empty body
+ */
+export function extractErrorMessage(body) {
+  if (body !== null && typeof body === 'object') {
+    const found = findErrorMessage(body);
+    if (found !== '') return found;
+    try { return JSON.stringify(body); } catch (e) { return String(body); }
+  }
+  if (typeof body !== 'string') return '';
+  try {
+    const found = findErrorMessage(JSON.parse(body));
+    if (found !== '') return found;
+  } catch (e) {
+    // Not JSON: the raw body is the message.
+  }
+  return body;
+}
+
+/**
+ * Whether a parsed SSE frame is an error sent in the middle of a stream, after a
+ * 200 response: {"error": {...}} (OpenAI, OpenRouter, vLLM, LM Studio), or
+ * {"object": "error", ...} (Mistral).
+ */
+export function isStreamErrorFrame(parsed) {
+  if (parsed === null || typeof parsed !== 'object') return false;
+  if (parsed.error !== undefined && parsed.error !== null && parsed.error !== false) return true;
+  return parsed.object === 'error';
+}
+
 
 export class OpenAIComp {
 

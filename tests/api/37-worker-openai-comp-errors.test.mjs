@@ -9,6 +9,10 @@
 //  - "Error contract between js/api/* and workers": the error_text forms, rateLimited (an
 //    insufficient_quota 429, returned at once, is rateLimited; is_exception is not), the same
 //    text posted and thrown;
+//  - "Error messages" (#1044): the message of an HTTP error is found in error.message, message
+//    (Mistral) or detail[].msg; a body with none is shown once, as it is; an error frame sent in
+//    the middle of a 200 stream fails the turn through the error UI (one error, no tokensDone,
+//    the partial answer and the question out of the history);
 //  - "Redirects": a followed redirect ending in an error is posted as an 'endpoint_redirect'
 //    message (host and outcome) and fails the turn without the meaningless HTTP error.
 // Inputs: fixtures/api/openai_comp.json and the OpenAI error bodies compatible servers return
@@ -175,6 +179,46 @@ k.test('stream-cut', 'a connection cut mid-stream: one error, connection interru
     assert.equal(errs[0].payload, INTERRUPTED + ': Error in input stream');
     assert.notEqual(errs[0].rateLimited, true);
     assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
+});
+
+k.test('http-mistral-message', 'a Mistral error body: its top-level message is the detail', async () => {
+    net.expect(CHAT, () => jsonResponse({ object: 'error', message: 'Invalid model: mistral-nope', type: 'invalid_model', param: null, code: '1500' }, { status: 400, statusText: 'Bad Request' }));
+    const t = startTurn(w, 'q');
+    await assert.rejects(t.done);
+    assert.ok(errorOf(t)[0].payload.startsWith(FAILED + ': 400 Bad Request, Detail: Invalid model: mistral-nope {'), errorOf(t)[0].payload);
+});
+
+k.test('http-422-detail', 'a 422 with a detail list: the msg entries joined', async () => {
+    net.expect(CHAT, () => jsonResponse({ detail: [{ type: 'enum', loc: ['body', 'reasoning_effort'], msg: "Input should be 'high' or 'low'" }] }, { status: 422, statusText: 'Unprocessable Entity' }));
+    const t = startTurn(w, 'q');
+    await assert.rejects(t.done);
+    assert.ok(errorOf(t)[0].payload.startsWith(FAILED + ": 422 Unprocessable Entity, Detail: Input should be 'high' or 'low' {"), errorOf(t)[0].payload);
+});
+
+k.test('http-raw-body', 'a body that is not JSON: shown once, as it is', async () => {
+    net.expect(CHAT, () => new Response('upstream rejected the request', { status: 400, statusText: 'Bad Request' }));
+    const t = startTurn(w, 'q');
+    await assert.rejects(t.done);
+    assert.equal(errorOf(t)[0].payload, FAILED + ': 400 Bad Request, Detail: upstream rejected the request');
+});
+
+k.test('stream-error-frame', 'an error frame mid-stream: one error with its message, no tokensDone', async () => {
+    const [c0] = FX.plain_stream_no_usage.chunks;
+    const frame = { error: { message: 'Provider returned error', code: 502 }, choices: [{ index: 0, delta: { content: '' }, finish_reason: 'error' }] };
+    net.expect(CHAT, () => streamResponse([sse(c0) + sse(frame) + DONE]));
+    const t = startTurn(w, 'q');
+    await t.done;
+    const errs = errorOf(t);
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].payload, FAILED + ': Provider returned error');
+    assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
+});
+
+k.test('stream-error-mistral', 'a Mistral {"object": "error"} frame mid-stream: the same', async () => {
+    net.expect(CHAT, () => streamResponse([sse({ object: 'error', message: 'Service tier capacity exceeded', type: 'service_tier_capacity_exceeded' }) + DONE]));
+    const t = startTurn(w, 'q');
+    await t.done;
+    assert.deepEqual(errorOf(t).map(e => e.payload), [FAILED + ': Service tier capacity exceeded']);
 });
 
 /** An HTTP error whose body has started but never ends (until cancelled or errored). */
