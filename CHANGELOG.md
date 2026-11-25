@@ -3,6 +3,7 @@
 
 <h2>Version 5.3.0 - ??/??/2026</h2>
 <ul>
+  <li>Calendar Event: the AI can choose existing Thunderbird categories for the event, and never creates new ones. The prompt asks for them with the new <i>{%calendar_categories%}</i> placeholder, which the default prompt holds; remove it to turn categories off. A calendar prompt saved by an earlier version may need <i>Reset to default</i>. It requires ThunderAI Sparks 3.2.0 or later.</li>
   <li>QNote integration: the new <i>{%qnote_text%}</i> and <i>{%qnote_datetime%}</i> placeholders bring the QNote note of a message into a prompt. Turn on <i>QNote notes</i> in the options and allow ThunderAI in QNote's dialog; the note text is sent to the AI provider only by the prompts that use these placeholders. It needs a QNote version with access from other add-ons [<a href="https://github.com/micz/ThunderAI/issues/980">#980</a>].</li>
   <li>...</li>
 </ul>
