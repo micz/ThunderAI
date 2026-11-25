@@ -2340,6 +2340,51 @@ The two gates are deliberately separate. `reload_pref_init()` is *not* gated on 
 
 Separately, `loadShortcutMenu()` builds into a local array and swaps it in at the end, and `initialize()` deliberately does *not* clear `shortcutMenu`. `preparePopupMenu()` reads `menus.shortcutMenu` **synchronously**, so it never takes the rebuild guard; clearing the array up front left it empty for the whole rebuild, and a shortcut pressed in that window rendered an empty popup. `rootMenu` and `menu_listeners` keep their in-place rebuild on purpose — they are only read by the click listener, whose registration spans the rebuild.
 
+### Encrypted messages (`exclude_encrypted_messages`, [#1047](https://github.com/micz/ThunderAI/issues/1047))
+
+With the option on, the content of an OpenPGP or S/MIME encrypted message never reaches the AI
+provider. Every entry point asks **before** it reads the body, so the decrypted text never enters
+the prompt pipeline. With the option off the helpers return `false` after one preference read and
+read no message: the behavior is unchanged.
+
+**Detection** (`js/mzta-utils.js`), first hit wins:
+
+1. `isMessageEncrypted(id)`: `messages.getFull(id, { decrypt: false })` (Thunderbird 125+, below
+   `strict_min_version` 140). The root's `decryptionStatus` `"skipped"` / `"success"` / `"fail"` means
+   encrypted, `"none"` or missing does not.
+2. The content type of the root or of its first level of parts (the top-level MIME structure):
+   `multipart/encrypted`, `application/(x-)pkcs7-mime`, unless the `content-type` header says
+   `smime-type=signed-data` (opaque-signed, **not** encrypted). Deeper parts are not searched, so an
+   attached `.p7m` or a forwarded encrypted message does not exclude the message carrying it.
+3. Inline PGP: Thunderbird decrypts it in the display, not in the MIME layer, so
+   `listInlineTextParts()` still returns the armored block; a part matching
+   `-----BEGIN PGP MESSAGE-----` at a line start (or after `>`) means encrypted. A plain message
+   quoting such a block is excluded too (a false positive costs one refusal).
+
+`isEncryptedMessageExcluded(id, source)` adds the option and the **fail safe**: a detection that
+throws with the option on excludes the message (logged as an error). `isTabMessageEncryptedExcluded(tab, source)`
+checks what a tab shows: the displayed message (and the first selected one in a `mail` tab), or in a
+`messageCompose` tab the `relatedMessageId` of `getComposeDetails()` (reply, forward, draft,
+template); a new message has none and is not checked. A failure reading the tab excludes.
+
+**Entry points** and what the user sees:
+
+| Where | When the message is excluded |
+|---|---|
+| `act()` in `js/mzta-menus.js` (popup, context menus, shortcut, every regular and special prompt, the clipboard calendar prompt included) | `isTabMessageEncryptedExcluded()` right after the permission guard, before `getMailBody()`: the `sendAlert` with `encrypted_message_excluded`, `{ok:'0'}` |
+| `processEmails()` per-message pipeline (on receive, context-menu Add tags / Spam / Translate) | first thing in `runPipeline()`, before `getFull()`: all the message's features skipped. Automatic runs are silent (debug log naming the message and the features); a manual run shows one `showGenericInfo` at its end (`_noticeEncryptedSkipped()`: `encrypted_message_excluded` for a single message, `encrypted_messages_skipped` with the count otherwise) |
+| `processEmails()` context-menu Summarize | while the selection is collected, before the inline / webchat choice: the encrypted messages are left out, the same notice; nothing left means nothing runs |
+| `_runSummaryJob()` / `_runTranslationJob()` (panel buttons, Refresh, auto on display, and as the last guard of the batch) | `_encryptedJobOutcome()` once the message is known, before `getFull()`: `manual` jobs end with an error panel (`encrypted_message_excluded`), automatic ones only take down the generating panel. **Nothing is stored** (no cached error), so turning the option off makes the message available at once |
+| `_runSpamJob()` (Refresh in the spam panel) | before `getFull()`: an error report built with `spamReport.buildError()` is shown, not saved |
+| `_openSummaryWebchat()` | before `getFull()`: the error in the summary panel, no chat window |
+
+No message is marked as processed: `onNewMailReceived` reports a message once, and the
+on-display triggers re-check cheaply each time, so there is no re-processing loop.
+
+**Limits**: a compose window with no related message (text pasted from an encrypted mail) is not
+detected; nested encrypted parts below the top level are not searched; an armored block that is
+neither at a line start nor after `>` in the inline parts is not seen.
+
 ### Feature permissions ([#962](https://github.com/micz/ThunderAI/issues/962))
 
 Some features call Thunderbird APIs that need an **optional** permission (`manifest.json` `optional_permissions`). Without it the API function is simply not there (`browser.messages.tags.create is not a function`). #962 was a user whose setup wizard turned `add_tags` on without ever requesting the permission, so every tag creation failed with nothing shown. The single source of truth is `FEATURE_PERMISSIONS` in `js/mzta-feature-permissions.js` (no imports, loaded by the background, the menus and the settings pages):

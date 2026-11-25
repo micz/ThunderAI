@@ -292,6 +292,8 @@ export async function getMailSubject(tab){
 //
 // Encryption: the API decrypts by default and omits the parts it cannot decrypt.
 // No distinction is lost - the old walk never read part.decryptionStatus either.
+// With exclude_encrypted_messages on, the callers ask isEncryptedMessageExcluded() first,
+// so an encrypted message never gets here (#1047).
 export async function getMailInlineTextParts(messageId) {
   let text = "";
   let html = "";
@@ -321,6 +323,120 @@ export async function getMailInlineTextParts(messageId) {
     html = doc.body.innerHTML;
   }
   return {text, html};
+}
+
+// --- Encrypted messages (exclude_encrypted_messages, #1047) ---------------------------
+//
+// With the option on, the content of an OpenPGP or S/MIME encrypted message must never
+// reach the AI provider: every entry point asks isEncryptedMessageExcluded() BEFORE it
+// reads the body, so the decrypted text never enters the prompt pipeline.
+//
+// Detection, first hit wins:
+//   1. messages.getFull(id, { decrypt: false }) - the MIME tree WITHOUT decrypting
+//      (Thunderbird 125+, below strict_min_version 140). Its root part carries
+//      decryptionStatus: "skipped" / "success" / "fail" all mean encrypted, "none" (or a
+//      missing property) does not. The tree is never used for the content.
+//   2. The top-level content type, for what decryptionStatus may not report:
+//      multipart/encrypted (OpenPGP/MIME), application/(x-)pkcs7-mime (S/MIME). An S/MIME
+//      part with smime-type=signed-data is a SIGNED-only message and is not encrypted.
+//   3. Inline PGP: Thunderbird decrypts it in the message display, not in the MIME layer,
+//      so the inline text parts still hold the armored block. listInlineTextParts() has
+//      nothing to decrypt on a message that passed 1 and 2, and the parts it returns are
+//      only searched, never kept. A plain message QUOTING an armored block is excluded too:
+//      a false positive costs one refusal, a false negative a leak.
+const ENCRYPTED_DECRYPTION_STATUSES = ['skipped', 'success', 'fail'];
+const INLINE_PGP_ARMOR = /(^|[\s>])-----BEGIN PGP MESSAGE-----/m;
+
+function _isEncryptedMimePart(part) {
+  const contentType = String(part?.contentType ?? '').toLowerCase();
+  if (contentType === 'multipart/encrypted') return true;
+  if (contentType === 'application/pkcs7-mime' || contentType === 'application/x-pkcs7-mime') {
+    // The parameters are only in the raw header (headers keys are lowercase).
+    const header = part.headers?.['content-type'];
+    const headerValue = String(Array.isArray(header) ? header[0] ?? '' : header ?? '');
+    // Opaque-signed S/MIME: not encrypted. Any other smime-type, or none, is treated as
+    // enveloped data (the usual .p7m), privacy first.
+    return !/smime-type\s*=\s*"?signed-data/i.test(headerValue);
+  }
+  return false;
+}
+
+// Whether a message is encrypted. Throws when the message cannot be read: the caller,
+// isEncryptedMessageExcluded(), turns that into "excluded" (fail safe).
+export async function isMessageEncrypted(messageId) {
+  const root = await browser.messages.getFull(messageId, { decrypt: false });
+  if (ENCRYPTED_DECRYPTION_STATUSES.includes(root?.decryptionStatus)) return true;
+  // The root part is the message itself (message/rfc822): its first level of parts is the
+  // top-level MIME structure. Deeper parts are not searched, so an attached .p7m file or a
+  // forwarded encrypted message does not exclude the message that carries it.
+  if (_isEncryptedMimePart(root) || (root?.parts ?? []).some(_isEncryptedMimePart)) return true;
+  const parts = await browser.messages.listInlineTextParts(messageId);
+  return (parts ?? []).some(part => typeof part?.content === 'string' && INLINE_PGP_ARMOR.test(part.content));
+}
+
+// True when exclude_encrypted_messages is on and the message must not be sent to the AI.
+// With the option off it returns false without reading the message, so the behavior is
+// unchanged. A detection that fails with the option on returns true (privacy first).
+// source: who asks, for the log line only.
+export async function isEncryptedMessageExcluded(messageId, source = '') {
+  const prefs = await mztaPrefs.getPrefs(['exclude_encrypted_messages', 'do_debug']);
+  if (!prefs.exclude_encrypted_messages) return false;
+  const logger = new taLogger('mzta-utils', prefs.do_debug);
+  if (messageId === null || messageId === undefined) return false;
+  try {
+    if (await isMessageEncrypted(messageId)) {
+      logger.log('[' + source + '] message ' + messageId + ' is encrypted and exclude_encrypted_messages is on: not sent to the AI provider.');
+      return true;
+    }
+    return false;
+  } catch (e) {
+    logger.error('[' + source + '] could not tell whether message ' + messageId + ' is encrypted, excluding it (exclude_encrypted_messages is on): ' + (e?.message || e));
+    return true;
+  }
+}
+
+// The same check for the message a tab shows, for the actions that read the tab itself
+// (the menus scrape the displayed or composed body):
+// - mail / messageDisplay: the displayed message, and the first selected one, which the
+//   menus use for the placeholders;
+// - messageCompose: the message being replied to, forwarded, or edited as a draft or a
+//   template (relatedMessageId): its decrypted text can be quoted in the body. A new
+//   message, with no related one, is not checked.
+// Any failure with the option on excludes (privacy first).
+export async function isTabMessageEncryptedExcluded(tab, source = '') {
+  const prefs = await mztaPrefs.getPrefs(['exclude_encrypted_messages', 'do_debug']);
+  if (!prefs.exclude_encrypted_messages || !tab) return false;
+  const ids = new Set();
+  try {
+    switch (tab.type) {
+      case 'mail': {
+        const displayed = await browser.messageDisplay.getDisplayedMessage(tab.id);
+        if (displayed?.id !== undefined) ids.add(displayed.id);
+        const selected = await browser.mailTabs.getSelectedMessages(tab.id);
+        if (selected?.messages?.[0]?.id !== undefined) ids.add(selected.messages[0].id);
+        break;
+      }
+      case 'messageDisplay': {
+        const displayed = await browser.messageDisplay.getDisplayedMessage(tab.id);
+        if (displayed?.id !== undefined) ids.add(displayed.id);
+        break;
+      }
+      case 'messageCompose': {
+        const details = await browser.compose.getComposeDetails(tab.id);
+        if (details?.relatedMessageId !== undefined && details?.relatedMessageId !== null) ids.add(details.relatedMessageId);
+        break;
+      }
+      default:
+        break;
+    }
+  } catch (e) {
+    new taLogger('mzta-utils', prefs.do_debug).error('[' + source + '] could not read the message of tab ' + tab.id + ', excluding it (exclude_encrypted_messages is on): ' + (e?.message || e));
+    return true;
+  }
+  for (const id of ids) {
+    if (await isEncryptedMessageExcluded(id, source)) return true;
+  }
+  return false;
 }
 
 // Is this compose window composing in plain text?

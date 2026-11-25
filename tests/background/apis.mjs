@@ -9,11 +9,17 @@
  *  One model = one mail store and one window:
  *
  *    accounts / folders  {id, accountId, name, path, specialUse: [...]}
- *    messages            {id, headerMessageId, folderId, author, subject, date, text, tags, junk}
+ *    messages            {id, headerMessageId, folderId, author, subject, date, text, tags, junk,
+ *                        encryption}
  *                        (the text/plain part only: the HTML path of the body reading needs a
- *                        DOM, and belongs to the compose area)
+ *                        DOM, and belongs to the compose area). encryption (#1047): null, or
+ *                        'pgp-mime' / 'smime' (decrypted on read, "skipped" with decrypt: false),
+ *                        'fail' (cannot be decrypted), 'smime-signed' (opaque-signed, NOT
+ *                        encrypted: decryptionStatus "none"). Inline PGP needs no model: it is a
+ *                        plain message whose text holds the armored block.
  *    tabs                {id, type, windowId, active, displayed: message id | null, reachable,
- *                        isPlainText: the format of a messageCompose tab}
+ *                        isPlainText: the format of a messageCompose tab, relatedMessageId: the
+ *                        message a messageCompose tab replies to / forwards (or null)}
  *    menus               the items created, by id
  *
  *  Every namespace added is STRICT: reading a property it does not model throws ("unmodelled
@@ -143,6 +149,7 @@ export function mailModel(o = {}) {
                 text: msg.text ?? ('Body of <' + hid + '>'),
                 tags: clone(msg.tags ?? []),
                 junk: false,
+                encryption: msg.encryption ?? null,
             };
             if (!folders.has(rec.folderId)) throw new Error('mailModel: no folder ' + rec.folderId);
             messages.set(id, rec);
@@ -195,8 +202,8 @@ export function mailModel(o = {}) {
         },
 
         /** Open a tab. `displayed` is a message id (or null); returns the tab id. */
-        addTab({ id, type = 'mail', windowId = 1, active = false, displayed = null, reachable = true, selected = null, isPlainText = false } = {}) {
-            const tab = { id: id ?? (100 + m.tabs.length), type, windowId, active, displayed, reachable, selected, isPlainText };
+        addTab({ id, type = 'mail', windowId = 1, active = false, displayed = null, reachable = true, selected = null, isPlainText = false, relatedMessageId = null } = {}) {
+            const tab = { id: id ?? (100 + m.tabs.length), type, windowId, active, displayed, reachable, selected, isPlainText, relatedMessageId };
             m.tabs.push(tab);
             return tab.id;
         },
@@ -235,20 +242,52 @@ export function installApis(browser, m) {
             if (!h) throw new Error('Message not found: ' + id);
             return h;
         },
-        async getFull(id) {
-            rec('messages.getFull', [id]);
+        // options: only { decrypt } (Thunderbird 125+). The root's decryptionStatus is given
+        // when the message has an encryption or options are passed, so the full message the
+        // other files see is unchanged.
+        async getFull(id, options) {
+            rec('messages.getFull', options === undefined ? [id] : [id, clone(options)]);
             const r = m.messages.get(id);
             if (!r || m.failGetFull.has(id)) throw new Error('Error getting the full message ' + id);
-            return {
+            const decrypt = options?.decrypt !== false;
+            const text = { contentType: 'text/plain', body: r.text, partName: '1' };
+            // An encrypted part as Thunderbird hands it without decrypting: the container, its
+            // encrypted content omitted.
+            const sealed = r.encryption === 'smime'
+                ? { contentType: 'application/pkcs7-mime', partName: '1', headers: { 'content-type': ['application/pkcs7-mime; smime-type=enveloped-data; name="smime.p7m"'] }, parts: [] }
+                : { contentType: 'multipart/encrypted', partName: '1', headers: { 'content-type': ['multipart/encrypted; protocol="application/pgp-encrypted"'] }, parts: [] };
+            let status = 'none';
+            let top = text;
+            switch (r.encryption) {
+                case 'pgp-mime':
+                case 'smime':
+                    status = decrypt ? 'success' : 'skipped';
+                    top = decrypt ? text : sealed;
+                    break;
+                case 'fail':
+                    status = decrypt ? 'fail' : 'skipped';
+                    top = sealed;
+                    break;
+                case 'smime-signed':
+                    top = { contentType: 'application/pkcs7-mime', partName: '1', headers: { 'content-type': ['application/pkcs7-mime; smime-type=signed-data; name="smime.p7m"'] }, parts: [{ ...text, partName: '1.1' }] };
+                    break;
+                default:
+                    break;
+            }
+            const full = {
                 contentType: 'message/rfc822',
                 headers: { subject: [r.subject], from: [r.author], 'message-id': ['<' + r.headerMessageId + '>'] },
-                parts: [{ contentType: 'text/plain', body: r.text, partName: '1' }],
+                parts: [top],
             };
+            if (r.encryption || options !== undefined) full.decryptionStatus = status;
+            return full;
         },
         async listInlineTextParts(id) {
             rec('messages.listInlineTextParts', [id]);
             const r = m.messages.get(id);
             if (!r) throw new Error('Message not found: ' + id);
+            // Decrypted like the default getFull(); nothing when it cannot be.
+            if (r.encryption === 'fail') return [];
             return [{ contentType: 'text/plain', content: r.text }];
         },
         async query(q) {
@@ -404,7 +443,9 @@ export function installApis(browser, m) {
             rec('compose.getComposeDetails', [tabId]);
             const t = m.tab(tabId);
             if (!t || t.type !== 'messageCompose') throw new Error('Invalid compose tab: ' + tabId);
-            return { isPlainText: t.isPlainText === true };
+            const details = { isPlainText: t.isPlainText === true };
+            if (t.relatedMessageId != null) details.relatedMessageId = t.relatedMessageId;
+            return details;
         },
         async beginReply(messageId, replyType, details) {
             rec('compose.beginReply', [messageId, replyType, details]);

@@ -4942,5 +4942,30 @@
   "placeholder_calendar_categories": {
     "message": "Existing Thunderbird calendar categories (JSON array; [] when Sparks is unavailable)",
     "description": "Name of the calendar_categories placeholder in autocomplete; its value is a JSON array of native calendar category names provided by Sparks."
+  },
+  "prefs_OptionText_exclude_encrypted_messages": {
+    "message": "Exclude encrypted messages",
+    "description": "Options page, advanced section: name of the option that keeps the content of encrypted (OpenPGP or S/MIME) emails from being sent to the AI provider."
+  },
+  "prefs_OptionText_exclude_encrypted_messages_info": {
+    "message": "Never send the content of OpenPGP or S/MIME encrypted messages to the AI provider, neither from the prompts you start nor from the automatic features. Replies, forwards and drafts of an encrypted message are excluded too.",
+    "description": "Options page, advanced section: description of the option that keeps the content of encrypted (OpenPGP or S/MIME) emails from being sent to the AI provider."
+  },
+  "encrypted_message_excluded": {
+    "message": "This message is encrypted. ThunderAI is configured not to send encrypted messages to the AI provider.",
+    "description": "Shown when the user starts an AI action on an encrypted email (or on a reply or forward of one) while the option to exclude encrypted messages is on: the action is not run."
+  },
+  "encrypted_messages_skipped": {
+    "message": "$COUNT$ encrypted messages were skipped: ThunderAI is configured not to send encrypted messages to the AI provider.",
+    "description": "Notice shown after an action started on several selected emails (summarize, translate, add tags, spam filter) when some of them were skipped because they are encrypted and the option to exclude encrypted messages is on, reporting how many were skipped",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "encrypted_messages_source": {
+    "message": "Encrypted messages",
+    "description": "Source label shown as the prefix of the notice displayed when encrypted emails were skipped because the option to exclude encrypted messages is on"
   }
 }

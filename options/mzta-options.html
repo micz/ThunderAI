@@ -398,6 +398,17 @@
                 <option value="sentences">__MSG_prefs_OptionText_diff_granularity_sentences__</option>
               </select>
             </div>
+            <!-- Encrypted messages (#1047): never send OpenPGP / S/MIME encrypted content to the AI provider -->
+            <div class="mzta_adv_row">
+              <div class="mzta_adv_info">
+                <div class="mzta_adv_name">__MSG_prefs_OptionText_exclude_encrypted_messages__</div>
+                <div class="mzta_adv_desc">__MSG_prefs_OptionText_exclude_encrypted_messages_info__</div>
+              </div>
+              <label class="mzta_switch">
+                <input type="checkbox" id="exclude_encrypted_messages" name="exclude_encrypted_messages" class="option-input" />
+                <span class="track"></span>
+              </label>
+            </div>
             <!-- ThunderAI Privacy: the switch shows when a compatible companion answers, or
                  while it is on (so a missing companion can still be switched off); the notice
                  when none answers. Both hidden until updatePrivacyCompanion() runs. -->

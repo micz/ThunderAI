@@ -42,6 +42,7 @@ import {
     checkSparksPresence,
     getMessages,
     getMailInlineTextParts,
+    isEncryptedMessageExcluded,
     extractJsonObject,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
@@ -1839,12 +1840,20 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
                 const errorMsg = browser.i18n.getMessage('summarize_error_no_message_id');
                 return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg, metadata));
             }
+            // The callers (processEmails()) check it before fetching: kept here as the
+            // last line before the body is read.
+            const encrypted = await _encryptedJobOutcome('summary', entry, headerMessageId, message.id, options);
+            if (encrypted) return encrypted;
         } else {
             message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
                 return await _endSummaryJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => summaryStore.saveError(headerMessageId, "Message not found", {}));
             }
             metadata = buildMessageMetadata(message, null);
+            // Before getFull(): with exclude_encrypted_messages on, an encrypted message is
+            // never decrypted for the AI (#1047).
+            const encrypted = await _encryptedJobOutcome('summary', entry, headerMessageId, message.id, options);
+            if (encrypted) return encrypted;
             fullMessage = await browser.messages.getFull(message.id);
             metadata = buildMessageMetadata(message, fullMessage);
         }
@@ -1900,6 +1909,28 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
     } finally {
         if (working) taWorkingStatus.stopWorking();
     }
+}
+
+// exclude_encrypted_messages (#1047) inside a summary / translation job, once the message is
+// known and before its body is read. Returns null when the job may go on, otherwise the job
+// outcome. Nothing is stored either way, so no error is cached for the message and turning
+// the option off makes it available again at once.
+// - manual (a button, Refresh, the context menu): the panel of every tab displaying the
+//   message shows why, through the job's own end (_endSummaryJob() / _endTranslationJob());
+// - automatic (on display, on receive): silent, the generating panel is only taken down and
+//   the skip is logged.
+async function _encryptedJobOutcome(kind, entry, headerMessageId, messageId, options) {
+    if (!(await isEncryptedMessageExcluded(messageId, kind + ' job'))) return null;
+    taLog.log("[ThunderAI] " + (kind === 'summary' ? "Summary" : "Translation") + ": " + headerMessageId + " (id " + messageId + ") is encrypted and exclude_encrypted_messages is on, skipped" + (options.manual ? "." : " silently (automatic run)."));
+    if (options.manual) {
+        const data = { error: true, message: browser.i18n.getMessage('encrypted_message_excluded') };
+        const outcome = kind === 'summary'
+            ? await _endSummaryJob(entry, headerMessageId, data, null)
+            : await _endTranslationJob(entry, headerMessageId, data, null);
+        return { ...outcome, encrypted: true };
+    }
+    await _sendToTabsDisplaying(headerMessageId, { command: kind === 'summary' ? "hideSummaryGenerating" : "hideTranslationGenerating", headerMessageId: headerMessageId });
+    return { status: 'skipped', encrypted: true };
 }
 
 // Translation of one message: same contract as _generateSummaryForMessage() — one job per
@@ -2026,6 +2057,9 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
                 const errorMsg = browser.i18n.getMessage('translate_error_no_message_id');
                 return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg, metadata));
             }
+            // See _runSummaryJob(): the last line before the body is read.
+            const encrypted = await _encryptedJobOutcome('translation', entry, headerMessageId, curr_messageId, options);
+            if (encrypted) return encrypted;
         } else {
             const message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
@@ -2034,6 +2068,9 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             usedMessage = message;
             curr_messageId = message.id;
             metadata = buildMessageMetadata(message, null);
+            // Before getFull(): see _runSummaryJob() (#1047).
+            const encrypted = await _encryptedJobOutcome('translation', entry, headerMessageId, message.id, options);
+            if (encrypted) return encrypted;
             fullMessage = await browser.messages.getFull(message.id);
             metadata = buildMessageMetadata(message, fullMessage);
         }
@@ -2275,6 +2312,15 @@ async function _runSpamJob(entry, headerMessageId, options) {
             // Snapshot the MessageHeader fields first: getFull() can fail, or resolve
             // with empty headers, when a user filter removes the message mid-analysis.
             message_metadata = buildMessageMetadata(message, null);
+            // exclude_encrypted_messages (#1047), before getFull(): the panel says why, and
+            // nothing is stored. The batch passes options.messageData and is checked in
+            // processEmails() before it reads anything.
+            if (await isEncryptedMessageExcluded(message.id, 'spam job')) {
+                taLog.log("[ThunderAI | SpamFilter] " + headerMessageId + " is encrypted and exclude_encrypted_messages is on, not analyzed.");
+                const enc_data = spamReport.buildError(headerMessageId, browser.i18n.getMessage('encrypted_message_excluded'), message_metadata || {});
+                await updateSpamPanel(headerMessageId, "showSpamReport", enc_data);
+                return _spamOutcome(false, enc_data, { encrypted: true });
+            }
             try {
                 curr_fullMessage = await browser.messages.getFull(message.id);
             } catch (err) {
@@ -2459,6 +2505,13 @@ async function _openSummaryWebchat(headerMessageId, tabId, messageId = null) {
         const curr_message = await _resolveMessage(headerMessageId, messageId, tabId);
         if (!curr_message) {
             console.error("[ThunderAI] _openSummaryWebchat: Message not found for headerMessageId:", headerMessageId);
+            return;
+        }
+
+        // exclude_encrypted_messages (#1047): a manual action, so the panel says why.
+        if (await isEncryptedMessageExcluded(curr_message.id, 'summary webchat')) {
+            taLog.log("[ThunderAI] Summary webchat: " + headerMessageId + " is encrypted and exclude_encrypted_messages is on, not opened.");
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: browser.i18n.getMessage('encrypted_message_excluded'), headerMessageId: headerMessageId } });
             return;
         }
 
@@ -3283,6 +3336,22 @@ async function _noticeAddressBookRuleSkipped(notified = null) {
     }
 }
 
+// The notice of a manual action that left out encrypted messages (exclude_encrypted_messages,
+// #1047), through the generic panel of every tab: the single-message wording when the whole
+// selection was one encrypted message, the count otherwise. Never throws.
+async function _noticeEncryptedSkipped(skipped, total) {
+    try {
+        await showGenericInfo(
+            (skipped === 1 && total === 1)
+                ? browser.i18n.getMessage('encrypted_message_excluded')
+                : browser.i18n.getMessage('encrypted_messages_skipped', [String(skipped)]),
+            browser.i18n.getMessage('encrypted_messages_source')
+        );
+    } catch (e) {
+        taLog.error("Could not show the encrypted messages notice: " + e);
+    }
+}
+
 // Spam panel update for every tab displaying the message, not just the active tab of the
 // current window: the analysis may be running for a message open in another window, or in
 // two places at once. _sendToTabsDisplaying() keeps the displayed-message check and the
@@ -3489,6 +3558,10 @@ async function processEmails(args) {
         // by the batch size.
         const batchCap = _concurrencyCap(prefs_aats.batch_max_concurrency, prefs_default.batch_max_concurrency);
         const targets = [];
+        // The messages runPipeline() skipped as encrypted (exclude_encrypted_messages, #1047),
+        // and how many the loop saw, for the notice of a manual run.
+        let encryptedSkipped = 0;
+        let messagesCount = 0;
         // The summary and translation stores are keyed on headerMessageId: one job per id.
         const summarizeTargetIds = new Set();
         const translateTargetIds = new Set();
@@ -3537,6 +3610,7 @@ async function processEmails(args) {
 
             // What this message needs, filled by the gating below.
             const target = { message, spam: false, addTags: false, summarize: false, bySender: false, translate: false };
+            messagesCount++;
 
             // Isolate per-message errors: a single problematic message must not abort the
             // whole batch. The loop only gates and collects targets, and the pipeline catches
@@ -3816,6 +3890,16 @@ async function processEmails(args) {
             // Read by the finally: declared above the try, valid from the start.
             const message = target.message;
             try {
+                // exclude_encrypted_messages (#1047): checked once per message, before any
+                // feature fetches the full message or the body. Nothing is stored or marked:
+                // the automatic runs see each message once (onNewMailReceived), so a skipped
+                // message is not picked up again. A manual run tells the user at its end.
+                if (await isEncryptedMessageExcluded(message.id, 'processEmails')) {
+                    const skipped_features = ['spam', 'addTags', 'summarize', 'translate'].filter(f => target[f]);
+                    taLog.log("[ThunderAI] " + (isAutoMode ? "Automatic" : "Manual") + " processing: " + message.headerMessageId + " (id " + message.id + ") is encrypted and exclude_encrypted_messages is on, skipping " + skipped_features.join(', ') + ".");
+                    encryptedSkipped++;
+                    return;
+                }
                 // The header the later features use: re-read after the spam step.
                 let curr = message;
                 let fullMessage = null;
@@ -3965,6 +4049,10 @@ async function processEmails(args) {
             taLog.log("[ThunderAI] Processing " + targets.length + " message(s), up to " + batchCap + " at a time.");
             await runWithConcurrency(targets, batchCap, runPipeline, batchStopped);
         }
+        // Automatic runs stay silent (logged above); a manual one says how many were skipped.
+        if (!isAutoMode && encryptedSkipped > 0) {
+            await _noticeEncryptedSkipped(encryptedSkipped, messagesCount);
+        }
     }
 
     if (summarize && !taBatchController.isCancelled(batch)) {
@@ -3975,8 +4063,22 @@ async function processEmails(args) {
 
         // Collect messages into array to check count
         const messageArray = [];
+        let encryptedSkippedSummary = 0;
+        let selectedCount = 0;
         for await (let msg of messages) {
+            selectedCount++;
+            // exclude_encrypted_messages (#1047): an encrypted message is left out before
+            // anything is read, for the inline summary and for the webchat prompt alike.
+            if (await isEncryptedMessageExcluded(msg.id, 'summarize')) {
+                taLog.log("[ThunderAI] Summarize: " + msg.headerMessageId + " (id " + msg.id + ") is encrypted and exclude_encrypted_messages is on, left out.");
+                encryptedSkippedSummary++;
+                continue;
+            }
             messageArray.push(msg);
+        }
+        if (encryptedSkippedSummary > 0) {
+            await _noticeEncryptedSkipped(encryptedSkippedSummary, selectedCount);
+            if (messageArray.length === 0) return;
         }
 
         let tabId = sourceTabId;

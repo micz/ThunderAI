@@ -203,6 +203,10 @@ export function getDynamicSettingValue(prefs, prefix, settingName) {
 export const prefs_default = {
     ...global_integration_settings,
     do_debug: false,
+    // Never send the content of OpenPGP / S/MIME encrypted messages to the AI provider,
+    // from the manual actions or the automatic features (#1047). false keeps the behavior
+    // of the versions before it; switch to true here to make the exclusion the default.
+    exclude_encrypted_messages: false,
     chatgpt_win_height: 800,
     chatgpt_win_width: 700,
     chatgpt_win_top: '',

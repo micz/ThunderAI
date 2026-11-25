@@ -49,6 +49,7 @@ import {
     // longer collide (this used to be imported as `getMailBodyFromParts`), but
     // the distinction still matters - see the mail_plain_text_part fetch below.
     getMailInlineTextParts,
+    isTabMessageEncryptedExcluded,
  } from './mzta-utils.js'
 import {
     hasLineStructure,
@@ -284,6 +285,17 @@ export class mzta_Menus {
                     taWorkingStatus.stopWorking();
                     return {ok:'0'};
                 }
+            }
+            // exclude_encrypted_messages (#1047): an encrypted message - or a compose window
+            // replying to, forwarding or editing one - is refused before its body is read,
+            // so its decrypted text never enters the prompt. Every prompt of the menus, the
+            // popup and the shortcut runs through here; the clipboard prompt too, which can
+            // still read the displayed message through its other placeholders.
+            if (tabs.length > 0 && await isTabMessageEncryptedExcluded(tabs[0], 'menu action ' + curr_prompt.id)) {
+                this.logger.log("Menu action [" + curr_prompt.id + "] refused: the message is encrypted and exclude_encrypted_messages is on.");
+                sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('encrypted_message_excluded') });
+                taWorkingStatus.stopWorking();
+                return {ok:'0'};
             }
             // The body is scraped through the content script, so it can only be read
             // from a tab that can receive tab messages. A 3-pane "mail" tab with the

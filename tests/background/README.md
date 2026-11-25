@@ -79,6 +79,7 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `41-storage-flows` | what the background saves and when saving fails: the metadata of summaries and translations (the jobs, incoming mail, the webchat save, a message not found), a result whose save failed still shown with `storage_error` (summary, translation, manual spam check, webchat save), an automatic run only logging it; a generated summary in its mirror key; the `reconcileMessageStorage` command (its counts, its error message) | 01 "Per-Message Data Storage" |
 | `43-auto-setting-changed` | `summarize_auto` / `translate_auto` moved from 3 to 1 while an incoming batch runs one message at a time: the call in flight finishes, nothing else is requested (not the in-flight message's translation, not the queued messages), nothing stored for the queued ones, the manual buttons on open | 01 "Data Flow: Background Summary on Email Receive", "Per-message pipelines" |
 | `44-qnote` | the QNote placeholders on receive (#980): spam filter, add tags and translation get the note of their own message (the spam filter its date too), `''` with no note or with QNote missing, the prompts sent all the same; QNote is only ever asked `getNotes`, never `getStatus` nor `requestAccess`, and once per run: one `getNotes` with every message of the batch (`ext_integration_data.batch`), one try when QNote is missing | 03 "The QNote placeholders", 01 "Per-message pipelines" |
+| `46-exclude-encrypted` | `exclude_encrypted_messages` (#1047): the detection (OpenPGP/MIME, S/MIME enveloped, undecryptable and inline PGP encrypted, plain and S/MIME signed-only not, `getFull()` only with `decrypt: false`, a failed detection excluding, nothing read with the option off), on receive (no prompt, no decrypted read, nothing stored, no notice; the option off processing as before), the context-menu Summarize and Translate (the notice, the plain message still translated), the summary / translation buttons (the reason in the panel, nothing stored), the automatic summary on display (silent), the spam panel's Refresh, `act()` on a displayed message and in a compose window replying to an encrypted message (the alert, no body read) | 01 "Encrypted messages"; 05 `exclude_encrypted_messages` |
 | `45-calendar-categories` | the calendar event action, email and clipboard, through prompt preparation, the scripted worker and the Sparks message: one capability request per extraction, the list in the prompt through the placeholder, a prompt's own words, an empty answer, an older or absent Sparks, a prompt without the placeholder (the shipped text with its categories line removed too) | 02 "Calendar event: native categories" |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/background.mjs` | harness |
 | `99-harness-scope` | the statement splitter and the cut (small cases and the real file), the fake Worker, the strict API models | harness |
@@ -177,14 +178,14 @@ before any module is imported (the `decorate` step of `bgContext()`; `startBackg
 modules, then loads the policy with no policy installed, as the background does):
 
 - a **mail store**: accounts, folders (`f-inbox`, `f-junk`, `f-trash`, `f-sent`, `f-drafts`,
-  `f-templates`, `f-outbox`, `f-archives`, `f-lists`), messages with a text/plain part whose body
+  `f-templates`, `f-outbox`, `f-archives`, `f-lists`), messages (optionally encrypted: `encryption` 'pgp-mime' / 'smime' / 'fail' / 'smime-signed', `getFull()` honoring `{decrypt: false}` and giving the root's `decryptionStatus`) with a text/plain part whose body
   names the message (`Body of <id>`), tags; `messages.get` / `getFull` / `listInlineTextParts` /
   `query` / `continueList` (paged `MessageList`s) / `update` / `move` (a moved message gets a **new
   id**, as in Thunderbird) / `tags.list` / `tags.create`, `folders.query`;
 - **tabs**: `{id, type, windowId, active, displayed, reachable, selected}`; `tabs.query`,
   `tabs.sendMessage` (recorded in `tabSends`; rejects with the #901 `TypeError` on an unreachable
   pane, "Invalid tab ID" on a missing tab), `messageDisplay.getDisplayedMessage`,
-  `compose.getComposeDetails` (a `messageCompose` tab's `isPlainText`) and `compose.beginReply` (a
+  `compose.getComposeDetails` (a `messageCompose` tab's `isPlainText` and `relatedMessageId`) and `compose.beginReply` (a
   loaded reply tab of the model's `replyPlainText` format, recorded in `replies`),
   `mailTabs.getSelectedMessages`, the two action icons, `windows.create` (the chat window opening)
   and `windows.onRemoved` (a test closes a window by calling its listeners), `tabs.executeScript`
