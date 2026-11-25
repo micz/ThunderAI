@@ -970,13 +970,13 @@ export async function injectConnectionUI({
   <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_OptionText_openai_comp_reasoning_effort__</span>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_reasoning_effort__</span>
       </label>
     </td>
     <td>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_reasoning_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_reasoning_effort" class="option-input">
-          <option value="">__MSG_prefs_openai_comp_reasoning_effort_not_set__</option>
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
           <option value="none">__MSG_prefs_level_none__</option>
           <option value="low">__MSG_prefs_level_low__</option>
           <option value="medium">__MSG_prefs_level_medium__</option>
