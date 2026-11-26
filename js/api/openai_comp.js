@@ -84,6 +84,161 @@ export function extractUsage(raw) {
   }
 }
 
+/**
+ * Normalize the `content` of a chat completion message (or of a streamed delta)
+ * into the answer text and the reasoning text [#1044].
+ *
+ * The OpenAI shape is a string, but some servers send an array of typed chunks:
+ * Mistral's reasoning models (with reasoning_effort set, and always for some models)
+ * answer with
+ *   [{type: "thinking", thinking: [{type: "text", text: "..."}]}, {type: "text", text: "..."}]
+ * and, while streaming, change shape in the same response (an array while thinking,
+ * an array with both chunks at the transition, a plain string while answering).
+ * Treating the array as a string printed "[object Object]" in the answer.
+ *
+ * Never throws. A chunk of an unknown type is ignored, logged when `logger` (a
+ * taLogger) has debug on.
+ *
+ * @param {*} content the content value, whatever its shape
+ * @param {object} [logger] a taLogger, for the debug line about an unknown chunk
+ * @returns {{text: string, thinking: string}}
+ */
+export function normalizeChatContent(content, logger = null) {
+  if (typeof content === 'string') return { text: content, thinking: '' };
+  let text = '';
+  let thinking = '';
+  if (!Array.isArray(content)) return { text, thinking };
+  for (const chunk of content) {
+    if (typeof chunk === 'string') {
+      text += chunk;
+    } else if (chunk && chunk.type === 'text') {
+      if (typeof chunk.text === 'string') text += chunk.text;
+    } else if (chunk && chunk.type === 'thinking') {
+      thinking += thinkingChunkText(chunk.thinking);
+    } else if (logger && logger.do_debug) {
+      logger.log("Ignored a content chunk of an unknown type: " + JSON.stringify(chunk?.type));
+    }
+  }
+  return { text, thinking };
+}
+
+// The text of a "thinking" chunk: an array of {type: "text", text} items, or a plain
+// string tolerated as such.
+function thinkingChunkText(value) {
+  if (typeof value === 'string') return value;
+  if (!Array.isArray(value)) return '';
+  let out = '';
+  for (const item of value) {
+    if (typeof item === 'string') out += item;
+    else if (item && item.type === 'text' && typeof item.text === 'string') out += item.text;
+  }
+  return out;
+}
+
+/**
+ * The message an OpenAI-compatible server puts in an error body, or '' when it
+ * has none in a known place [#1044]. Checked in order:
+ *   1. error.message (OpenAI, OpenRouter, DeepSeek...), or error as a plain string;
+ *   2. message (Mistral: {"object": "error", "message": "..."}), which may itself
+ *      hold the detail list;
+ *   3. detail[].msg, joined (the FastAPI validation errors Mistral answers a 422
+ *      with), or detail as a plain string.
+ *
+ * @param {*} parsed the parsed error body
+ * @returns {string}
+ */
+export function findErrorMessage(parsed) {
+  if (parsed === null || typeof parsed !== 'object') return '';
+  const error = parsed.error;
+  if (error && typeof error === 'object' && typeof error.message === 'string' && error.message !== '') return error.message;
+  if (typeof error === 'string' && error !== '') return error;
+  if (typeof parsed.message === 'string' && parsed.message !== '') return parsed.message;
+  if (parsed.message && typeof parsed.message === 'object') {
+    const nested = findErrorMessage(parsed.message);
+    if (nested !== '') return nested;
+  }
+  if (Array.isArray(parsed.detail)) {
+    const msgs = parsed.detail
+      .map(d => (d && typeof d.msg === 'string') ? d.msg : (typeof d === 'string' ? d : ''))
+      .filter(m => m !== '');
+    if (msgs.length > 0) return msgs.join('; ');
+  }
+  if (typeof parsed.detail === 'string' && parsed.detail !== '') return parsed.detail;
+  return '';
+}
+
+/**
+ * The message of an OpenAI-compatible error body: findErrorMessage() of the parsed
+ * body, or the raw body itself when it is not JSON or has no message in a known place.
+ *
+ * @param {string|object} body the raw response body, or an already parsed one
+ * @returns {string} '' only for an empty body
+ */
+export function extractErrorMessage(body) {
+  if (body !== null && typeof body === 'object') {
+    const found = findErrorMessage(body);
+    if (found !== '') return found;
+    try { return JSON.stringify(body); } catch (e) { return String(body); }
+  }
+  if (typeof body !== 'string') return '';
+  try {
+    const found = findErrorMessage(JSON.parse(body));
+    if (found !== '') return found;
+  } catch (e) {
+    // Not JSON: the raw body is the message.
+  }
+  return body;
+}
+
+/**
+ * Whether a parsed SSE frame is an error sent in the middle of a stream, after a
+ * 200 response: {"error": {...}} (OpenAI, OpenRouter, vLLM, LM Studio), or
+ * {"object": "error", ...} (Mistral).
+ */
+export function isStreamErrorFrame(parsed) {
+  if (parsed === null || typeof parsed !== 'object') return false;
+  if (parsed.error !== undefined && parsed.error !== null && parsed.error !== false) return true;
+  return parsed.object === 'error';
+}
+
+// A deprecation date as a timestamp in ms, or null when there is none or it cannot
+// be read. A number is taken as seconds when it is too small to be milliseconds.
+function deprecationTime(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value < 1e12 ? value * 1000 : value;
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const t = Date.parse(value);
+    return Number.isNaN(t) ? null : t;
+  }
+  return null;
+}
+
+/**
+ * The model list of the "Show only chat models" option [#1044]: the models a chat
+ * cannot use are dropped, and the "-latest" aliases come first.
+ *  - a model whose capabilities.completion_chat is false is dropped;
+ *  - a model whose deprecation date (Mistral's `deprecation`) is in the past is dropped;
+ *  - a model without these fields (any other server) stays;
+ *  - the ids ending in "-latest" are moved to the top, the order is kept otherwise.
+ *
+ * @param {Array} models the list fetchModels() returned
+ * @param {number} [now] the current time in ms
+ * @returns {Array} a new array
+ */
+export function filterChatModels(models, now = Date.now()) {
+  if (!Array.isArray(models)) return [];
+  const kept = models.filter(model => {
+    if (model === null || typeof model !== 'object') return false;
+    if (model.capabilities && typeof model.capabilities === 'object' && model.capabilities.completion_chat === false) return false;
+    const deprecated = deprecationTime(model.deprecation);
+    if (deprecated !== null && deprecated <= now) return false;
+    return true;
+  });
+  const isLatest = model => typeof model.id === 'string' && model.id.endsWith('-latest');
+  return [...kept.filter(isLatest), ...kept.filter(model => !isLatest(model))];
+}
+
 
 export class OpenAIComp {
 
@@ -93,6 +248,8 @@ export class OpenAIComp {
   use_v1 = true;
   stream = false;
   temperature = '';
+  // '' (not sent) or the value of the reasoning_effort parameter [#1044].
+  reasoning_effort = '';
   extra_body = '';
   extra_headers = '';
   approved_insecure_origins = [];
@@ -109,6 +266,7 @@ export class OpenAIComp {
     stream = false,
     use_v1 = true,
     temperature = '',
+    reasoning_effort = '',
     extra_body = '',
     extra_headers = '',
     approved_insecure_origins = [],
@@ -119,6 +277,7 @@ export class OpenAIComp {
     this.apiKey = apiKey;
     this.use_v1 = use_v1;
     this.temperature = temperature;
+    this.reasoning_effort = typeof reasoning_effort === 'string' ? reasoning_effort.trim() : '';
     this.extra_body = extra_body;
     this.extra_headers = extra_headers;
     // The unencrypted origins the caller confirmed (js/mzta-endpoint-approvals.js):
@@ -228,7 +387,11 @@ export class OpenAIComp {
             // The user-supplied extra data is spread first on purpose: every
             // parameter ThunderAI manages must win over it, so a wrong entry
             // cannot change the model or break the streaming.
+            // reasoning_effort is the one exception, set before it: an extra body
+            // entry wins, so a value the option does not offer (e.g. "max" for
+            // GLM) can still be sent [#1044].
             body: JSON.stringify({
+                ...(this.reasoning_effort !== '' ? { 'reasoning_effort': this.reasoning_effort } : {}),
                 ...parseExtraBody(this.extra_body),
                 model: this.model,
                 messages: messages,

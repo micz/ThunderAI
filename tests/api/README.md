@@ -60,18 +60,19 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `11-redirects` | "Redirects": redirects followed everywhere; with `onRedirect` (Ollama, OpenAI Comp) the outcome reported, a followed redirect ending in an error failed at once, the one 2 s redirect check after a network failure (not after a timeout or an abort); `fetchDirect()`; `redirect_info` and `is_redirect` on the two classes, none of it on OpenAI, Claude and Gemini |
 | `12-endpoint-guard` | "Custom endpoint policy": the Ollama and OpenAI Comp classes refuse an unusable or unapproved endpoint before `fetch()`; the worker takes `approved_insecure_origins` from its init; "Redirects": the Ollama worker's redirect text and its `endpoint_redirect` message |
 | `13-endpoint-redirects` | "Redirects": the stored redirects of `js/mzta-endpoint-redirects.js` (destination: another server's origin, or the new base on the same server whatever the endpoint; a GET never replacing a failure nor a POST success; write only on change, removal on a direct success or a field change, no credentials) |
+| `14-openai-comp-content` | "OpenAI-Compatible" [#1044]: `normalizeChatContent()` (string, thinking-only, mixed, text-only, unknown chunk, `null`), `findErrorMessage()` / `extractErrorMessage()` (each error shape, the raw-body fallback), `isStreamErrorFrame()`, `filterChatModels()` |
 | `20-anthropic-request` | "Anthropic / Claude": request body construction |
 | `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400 (its clone read within 5 s, a user abort during it), 400 error hints |
 | `22-gemini-request` | "Google Gemini" (the key in `x-goog-api-key`, never in the URL), "Extra body data" (two-level merge), includeThoughts |
 | `23-ollama-request` | "Ollama": think levels, keep_alive, options, Bearer on every endpoint; 300 s timeout |
-| `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", "Extra headers" (models and chat requests), stream_options; 300 s timeout |
+| `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", "Extra headers" (models and chat requests), stream_options, `reasoning_effort` (the extra body wins); 300 s timeout |
 | `25-openai-responses-request` | "OpenAI API": reasoning, text, sampling, limits, pass-through, extra-body gating |
 | `26-client-error-contract` | "Error contract between js/api/* and workers" (the classes); fetchModels through the retry; "`fetchModels()` and `fetchVersion()`" (an HTTP error with its `status` / `statusText`; a `200` with no model list or no Ollama version is an exception; OpenAI Comp's empty list, Ollama's `/api/tags` object) |
 | `27-config-validation` | "Configuration Validation" (with the custom endpoint check, no question asked), "Web Worker Pattern" (module worker per provider) |
 | `30`/`31-worker-anthropic-*` | "Web Worker Pattern", "Thinking output…", "Per-provider support", "Wiring in the workers", "Emitting to the chat window", "Workers and UI", "Error contract…" |
 | `32`/`33-worker-gemini-*` | the same, Gemini (turn 1 replays the capture) |
 | `34`/`35-worker-ollama-*` | the same, Ollama (system prompt once; turn 1 replays the capture) |
-| `36`/`37-worker-openai-comp-*` | the same, OpenAI-compatible (reasoning field priority, no-usage servers) |
+| `36`/`37-worker-openai-comp-*` | the same, OpenAI-compatible (reasoning field priority, no-usage servers, Mistral's chunked content and whole-message frames, the error message shapes, an error frame mid-stream) |
 | `38`/`39-worker-openai-responses-*` | the same, OpenAI Responses (turn 1 replays the capture; reasoning item fallback; store off: the whole history) |
 | `40-worker-openai-responses-store` | "OpenAI API", "Chaining turns (`chatgpt_store`)": store on, previous_response_id |
 | `99-harness-known-issues` | the known-issue shape |

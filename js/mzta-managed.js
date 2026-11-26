@@ -1235,6 +1235,7 @@ const CONNECTION_FIELD_ENUMS = {
     chatgpt_text_format: ['', 'json_object', 'json_schema'],
     chatgpt_truncation: ['', 'auto', 'disabled'],
     chatgpt_service_tier: ['', 'auto', 'default', 'flex', 'priority'],
+    openai_comp_reasoning_effort: ['', 'none', 'low', 'medium', 'high'],
 };
 
 /**

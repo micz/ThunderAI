@@ -9,6 +9,7 @@
 //  - openai_comp extra_headers: '' or a JSON object whose every entry would be sent (spec 04
 //    "Extra headers"): an HTTP token name the browser lets an add-on set, a string value with no
 //    line break; the warning names the header, never its value;
+//  - openai_comp reasoning_effort: one of the options of its select ('', none, low, medium, high);
 //  - ollama keep_alive: '', a whole number of seconds or a Go duration;
 //  - chatgpt max_output_tokens: 0 (not set) or at least 16.
 // And the one documented exception to "never coerced": a boolean ollama_think (its format
@@ -32,6 +33,7 @@ const ACCEPTED = {
     ollama_extra_options: '{"top_k": 20}',
     ollama_keep_alive: '1h30m',
     openai_comp_extra_headers: '{"x-opencode-session": "s1", "api-key": "k"}',
+    openai_comp_reasoning_effort: 'none',
 };
 const REJECTED = {
     anthropic_top_p: '1.5',
@@ -44,6 +46,8 @@ const REJECTED = {
     ollama_extra_options: '[1, 2]',
     ollama_keep_alive: 'forever',
     ollama_think: 'High',
+    // Outside the select of the panel: a policy sends it through the extra body data.
+    openai_comp_reasoning_effort: 'max',
 };
 // Each one fails a different rule of the extra headers.
 const REJECTED_HEADERS = [
