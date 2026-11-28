@@ -626,7 +626,7 @@
         "message": "Paramètres supplémentaires à envoyer à chaque appel d'API, sous forme d'objet JSON. Utile pour les options prises en charge par ce service mais non proposées par ThunderAI, comme la désactivation du mode réflexion : {\"chat_template_kwargs\" : {\"thinking\" : false}} ou {\"top_p\" : 0.9}. Les paramètres gérés par ThunderAI (model, messages, streaming, temperature) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée."
     },
     "prefs_OptionText_openai_comp_extra_headers_info": {
-        "message": "En-têtes HTTP supplémentaires à envoyer avec chaque requête à ce service, sous forme d'objet JSON de valeurs texte, par exemple {\"x-opencode-session\": \"thunderai\"} ou {\"api-key\": \"your-key\"}. Utile pour les services et passerelles qui exigent leurs propres en-têtes. Les en-têtes définis par ThunderAI (Content-Type, et Authorization lorsqu'une clé API est définie) ne peuvent pas être remplacés ici. Un en-tête non valide est ignoré."
+        "message": "En-têtes HTTP supplémentaires à envoyer avec chaque requête à ce service, sous forme d'objet JSON de valeurs texte, par exemple {\"x-opencode-session\" : \"thunderai\"} ou {\"api-key\" : \"your-key\"}. Utile pour les services et passerelles qui exigent leurs propres en-têtes. Les en-têtes définis par ThunderAI (Content-Type, et Authorization lorsqu'une clé API est définie) ne peuvent pas être remplacés ici. Un en-tête non valide est ignoré."
     },
     "prefs_extra_headers_error_name": {
         "message": "« $header_name$ » n'est pas un nom d'en-tête valide : utilisez uniquement des lettres, des chiffres et des caractères comme - ou _.",
@@ -665,7 +665,7 @@
         }
     },
     "prefs_OptionText_openai_comp_reasoning_effort_Info": {
-        "message": "L'effort qu'un modèle de raisonnement consacre à réfléchir avant de répondre, envoyé comme paramètre \"reasoning_effort\". Laissez-le sur Valeur par défaut de l'API pour les services et modèles qui ne le prennent pas en charge, sinon ils risquent de refuser la requête. D'autres valeurs, comme \"max\", peuvent être envoyées via les données supplémentaires du corps, qui ont priorité sur cette option : {\"reasoning_effort\": \"max\"}."
+        "message": "L'effort qu'un modèle de raisonnement consacre à réfléchir avant de répondre, envoyé comme paramètre \"reasoning_effort\". Laissez-le sur Valeur par défaut de l'API pour les services et modèles qui ne le prennent pas en charge, sinon ils risquent de refuser la requête. D'autres valeurs, comme \"max\", peuvent être envoyées via les données supplémentaires du corps, qui ont priorité sur cette option : {\"reasoning_effort\" : \"max\"}."
     },
     "prefs_OptionText_openai_comp_chat_models_only": {
         "message": "Afficher uniquement les modèles de chat"
