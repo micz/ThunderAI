@@ -28,7 +28,8 @@ import {
     prepareCustomDataPHsForExport,
     prepareCustomDataPHsForImport,
     placeholdersUtils,
-    mapPlaceholderToSuggestion
+    mapPlaceholderToSuggestion,
+    withoutDisabledExtPlaceholders
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { attachEditorHighlight, getEditorHighlight, makeTokenStateResolver, PLACEHOLDER_RE } from "../../js/mzta-editor-highlight.js";
@@ -100,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // built-ins-only restriction is semantic, so a token naming a custom data
     // placeholder really is invalid here and should be flagged.
     activePlaceholders = (await getPlaceholders()).filter(p => p.is_default == "1");
-    autocompleteSuggestions = activePlaceholders.map(mapPlaceholderToSuggestion);
+    autocompleteSuggestions = (await withoutDisabledExtPlaceholders(activePlaceholders)).map(mapPlaceholderToSuggestion);
 
     // console.log('>>>>>>>>>>> suggestions: ' + JSON.stringify(suggestions));
 

@@ -8,6 +8,14 @@
   <body>
     <div id="miczBackPrefs"><a href="mzta-options.html">__MSG_backToOptionsText__</a></div>
     <div id="miczRelNotes"><h1>ThunderAI Release Notes</h1>
+      <h2>Version 5.3.0 - ??/??/2026</h2>
+      <ul>
+        <li>Calendar Event: the AI can choose existing Thunderbird categories for the event, and never creates new ones. The prompt asks for them with the new <i>{%calendar_categories%}</i> placeholder, which the default prompt holds; remove it to turn categories off. A calendar prompt saved by an earlier version may need <i>Reset to default</i>. It requires ThunderAI Sparks 3.2.0 or later.</li>
+        <li>QNote integration: the new <i>{%qnote_text%}</i> and <i>{%qnote_datetime%}</i> placeholders bring the QNote note of a message into a prompt. Turn on <i>QNote notes</i> in the options and allow ThunderAI in QNote's dialog; the note text is sent to the AI provider only by the prompts that use these placeholders. It needs a QNote version with access from other add-ons [<a href="https://github.com/micz/ThunderAI/issues/980">#980</a>].</li>
+        <li><i>[OpenAI Comp API]</i> Fixed the answers of Mistral's reasoning models (like <i>mistral-small</i> with a reasoning effort, <i>mistral-large-4</i> or <i>zai-glm</i>), which showed <i>[object Object]</i> or garbled text: the answer is now shown correctly and the reasoning appears in the reasoning block. The error messages are now shown in full [<a href="https://github.com/micz/ThunderAI/issues/1044">#1044</a>].</li>
+        <li><i>[OpenAI Comp API]</i> New advanced options: <i>Reasoning effort</i>, sent as the <i>reasoning_effort</i> parameter (other values can still be sent through the extra body data, which takes precedence), and <i>Show only chat models</i>, which leaves the models not usable for chat and the deprecated ones out of the model list and lists the <i>-latest</i> aliases first. The Mistral service preset turns on <i>Show only chat models</i>, without changing a value you already set [<a href="https://github.com/micz/ThunderAI/issues/1044">#1044</a>].</li>
+        <li>...</li>
+      </ul>
       <h2>Version 5.2.0 - 08/11/2026</h2>
       <ul>
         <li>Added support for the separate ThunderAI Privacy add-on, which masks personal data locally before it is sent to the AI provider. Enable it with the new <i>Use ThunderAI Privacy</i> advanced option. It works with API connections only and requires Thunderbird 153 or later, 64-bit.</li>

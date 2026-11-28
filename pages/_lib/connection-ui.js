@@ -24,7 +24,10 @@ import {
 } from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
-import { OpenAIComp } from '../../js/api/openai_comp.js'
+import {
+    OpenAIComp,
+    filterChatModels
+} from '../../js/api/openai_comp.js'
 import { GoogleGemini } from '../../js/api/google_gemini.js';
 import {
   Anthropic,
@@ -84,7 +87,7 @@ export const varConnectionUI = {
 // these must keep that option selected, unlike every other select which has to show
 // a blank control instead.
 const selects_with_empty_option_suffixes = ['chatgpt_reasoning_summary', 'chatgpt_reasoning_effort', 'ollama_think',
-  'chatgpt_verbosity', 'chatgpt_text_format', 'chatgpt_truncation', 'chatgpt_service_tier'];
+  'chatgpt_verbosity', 'chatgpt_text_format', 'chatgpt_truncation', 'chatgpt_service_tier', 'openai_comp_reasoning_effort'];
 
 export function hasEmptyValueOption(elementId = '') {
   if (elementId === 'connection_type') return true;
@@ -967,6 +970,36 @@ export async function injectConnectionUI({
   <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_reasoning_effort__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_reasoning_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_reasoning_effort" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
+          <option value="none">__MSG_prefs_level_none__</option>
+          <option value="low">__MSG_prefs_level_low__</option>
+          <option value="medium">__MSG_prefs_level_medium__</option>
+          <option value="high">__MSG_prefs_level_high__</option>
+        </select>
+        <br>__MSG_prefs_OptionText_openai_comp_reasoning_effort_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_prefs_OptionText_openai_comp_chat_models_only__</span>
+    </label></td>
+    <td>
+      <label>
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_chat_models_only" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_chat_models_only" class="option-input" />
+        &nbsp;<span>__MSG_prefs_OptionText_openai_comp_chat_models_only_Info__</span>
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
         <span class="opt_title">__MSG_prefs_api_extra_body__</span>
       </label>
     </td>
@@ -1351,6 +1384,7 @@ export async function injectConnectionUI({
       syncTomSelect(openaiCompModelSelect);
       document.getElementById(getPrefixedId('openai_comp_use_v1')).checked = !!config.use_v1;
       document.getElementById(getPrefixedId('openai_comp_chat_name')).value = config.chat_name || '';
+      applyOpenAICompPresetDefaults(config, modelId_prefix);
       // Trigger change events if needed
       document.getElementById(getPrefixedId('openai_comp_host')).dispatchEvent(new Event('change', { bubbles: true }));
       getModelEl('openai_comp_model', modelId_prefix).dispatchEvent(new Event('change', { bubbles: true }));
@@ -1570,7 +1604,11 @@ export async function injectConnectionUI({
       return;
     }
     taLog.log("OpenAIComp models: " + JSON.stringify(data));
-    data.response.forEach(model => {
+    // "Show only chat models" [#1044]: no non-chat or deprecated model, "-latest" aliases
+    // first. Off, the list is the one the server sent.
+    const chatModelsOnly = document.getElementById(getPrefixedId("openai_comp_chat_models_only"))?.checked === true;
+    const models = chatModelsOnly ? filterChatModels(data.response) : data.response;
+    models.forEach(model => {
       if (!Array.from(select_openai_comp_model.options).some(option => option.value === model.id)) {
         const option = document.createElement('option');
         option.value = model.id;
@@ -3225,6 +3263,26 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
 function resetOpenAICompConfigs(modelId_prefix = ''){
   let select_openai_comp_model = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_services_shortcut');
   select_openai_comp_model.value = 'custom';
+}
+
+// The option values a preset suggests (its `defaults`, e.g. "Show only chat models" for
+// Mistral) [#1044]. A preset only fills a field still at its default: a value the user
+// has set is never overwritten, nor is a field the organization's policy locks.
+function applyOpenAICompPresetDefaults(config, modelId_prefix = ''){
+  const defaults = config?.defaults;
+  if (!defaults || typeof defaults !== 'object') return;
+  for (const [key, presetValue] of Object.entries(defaults)) {
+    if (!Object.prototype.hasOwnProperty.call(integration_options_config.openai_comp, key)) continue;
+    const el = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_' + key);
+    if (!el || el.disabled) continue;
+    const defaultValue = integration_options_config.openai_comp[key];
+    const isCheckbox = el.type === 'checkbox';
+    const current = isCheckbox ? el.checked : el.value;
+    if (current !== defaultValue || current === presetValue) continue;
+    if (isCheckbox) el.checked = presetValue === true;
+    else el.value = presetValue;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
 }
 
 function loadOpenAICompConfigs(modelId_prefix = ''){

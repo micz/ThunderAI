@@ -35,6 +35,8 @@ import {
     normalizeDateTimeString,
     appendMessageLinkToDescription,
     normalizeReminderMinutes,
+    getSparksCapabilities,
+    normalizeCalendarCategories,
     normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -446,6 +448,14 @@ export class mzta_Menus {
                 this.logger.log("mail_plain_text_part: " + JSON.stringify(msg_text.plain_part));
             }
 
+            // Calendar categories: Sparks is asked once per extraction, before the prompt is
+            // prepared, and the same answer validates the reply. An older Sparks never answers,
+            // so a second request would mean two more seconds of waiting.
+            if ((curr_prompt.id === 'prompt_get_calendar_event' || curr_prompt.id === 'prompt_get_calendar_event_from_clipboard')
+                && taPromptUtils.calendarCategoriesAsked(curr_prompt.text)) {
+                msg_text.calendar_capabilities = await getSparksCapabilities();
+            }
+
             fullPrompt = await taPromptUtils.preparePrompt({
                 curr_prompt: text_prompt,
                 curr_message: curr_message,
@@ -615,8 +625,10 @@ export class mzta_Menus {
                         *   "description": "Detailed event description including agenda, action items, and relevant notes from the email.",
                         *   "forceAllDay": false,
                         *   "location": "YourLocation",
-                        *   "attendees": ["attendee1@example.com", "attendee2@example.com", "attendee3@example.com"]
-                        *  } 
+                        *   "attendees": ["attendee1@example.com", "attendee2@example.com", "attendee3@example.com"],
+                        *   "categories": ["category1", "category2"]
+                        *  }
+                        *  "categories" only when the prompt holds {%calendar_categories%} (see normalizeCalendarCategories())
                         *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
@@ -656,6 +668,12 @@ export class mzta_Menus {
                         }
                         // Reminder: the checkbox is the single switch (off = field always removed) [#887]
                         normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
+                        // Categories: only when the prompt holds {%calendar_categories%} (see calendarCategoriesAsked()).
+                        if (msg_text.calendar_capabilities) {
+                            normalizeCalendarCategories(calendar_event_data_obj, msg_text.calendar_capabilities, this.logger);
+                        } else {
+                            delete calendar_event_data_obj.categories;
+                        }
                         // Timezone management
                         calendar_event_data_obj.use_timezone = false;
                         if(prefs_at.calendar_enforce_timezone){

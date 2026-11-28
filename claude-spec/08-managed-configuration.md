@@ -246,7 +246,7 @@ Object.keys(prefs_default)
 The rules are applied in one place, `isPolicyExcludedKey(key)` (exported, pure): `buildAllowlist()`
 uses it, and so does the CI report of [Adding a policy-settable preference](#adding-a-policy-settable-preference).
 
-**153 of 163 keys** are policy-settable. The derivation already covers the generated keys:
+**154 of 164 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
@@ -313,7 +313,7 @@ key, with an API key masked) and not applied, exactly like a type mismatch, neve
 
 | Preference | Rule |
 |---|---|
-| per-provider connection key `{integration}_{key}` (from `integration_options_config`) | `connectionFieldProblem(integration, key, …)`, the same rules as a field of [`_special_prompts_connection`](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection): host a URL, model not empty, temperature, thinking budget, numbers; `top_p` empty or 0–1, `top_k` empty or a non-negative integer; `extra_body`, `ollama_extra_options` and `chatgpt_text_format_schema` empty or a JSON object; `ollama_keep_alive` empty, a whole number of seconds or a Go duration (`5m`, `1h30m`); `chatgpt_max_output_tokens` 0 (not set) or ≥ 16, the input's `min`; the fixed selects of the panel (`CONNECTION_FIELD_ENUMS`: `chatgpt_verbosity`, `chatgpt_text_format`, `chatgpt_truncation`, `chatgpt_service_tier`) one of their options; `ollama_think` `''`, `'false'`, `'true'` or any lowercase word (its options depend on the model) |
+| per-provider connection key `{integration}_{key}` (from `integration_options_config`) | `connectionFieldProblem(integration, key, …)`, the same rules as a field of [`_special_prompts_connection`](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection): host a URL, model not empty, temperature, thinking budget, numbers; `top_p` empty or 0–1, `top_k` empty or a non-negative integer; `extra_body`, `ollama_extra_options` and `chatgpt_text_format_schema` empty or a JSON object; `ollama_keep_alive` empty, a whole number of seconds or a Go duration (`5m`, `1h30m`); `chatgpt_max_output_tokens` 0 (not set) or ≥ 16, the input's `min`; the fixed selects of the panel (`CONNECTION_FIELD_ENUMS`: `chatgpt_verbosity`, `chatgpt_text_format`, `chatgpt_truncation`, `chatgpt_service_tier`, `openai_comp_reasoning_effort`) one of their options; `ollama_think` `''`, `'false'`, `'true'` or any lowercase word (its options depend on the model) |
 | `connection_type` | one of `valid_connection_types` (`''`, "no connection yet", is not a value to enforce) |
 | `{prefix}_connection_type` | one of `featureConnectionTypes()`: never `chatgpt_web`, which the feature panels do not offer |
 | `reply_type`, `diff_granularity`, `summarize_display_mode`, `summarize_auto`, `translate_auto` | one of the values its settings select offers (`PREF_ENUMS`) |
@@ -532,7 +532,7 @@ overlays read), the page guard of [The connection panel](08b-managed-connections
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too. So do the "153 of 163" count in [The allowlist](#the-allowlist) and the counts in
+there too. So do the "154 of 164" count in [The allowlist](#the-allowlist) and the counts in
 `tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
 
 ## Adding a restriction
@@ -618,7 +618,7 @@ locks - or offers as an initial value - every allowlisted key that has an `.opti
 policy. A new preference with a control on one of those pages is covered the moment it is
 declared.
 
-`04-allowlist-derivation` also checks the **153 of 163** count in [The allowlist](#the-allowlist).
+`04-allowlist-derivation` also checks the **154 of 164** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the

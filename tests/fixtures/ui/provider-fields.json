@@ -36,6 +36,8 @@
         "openai_comp_use_v1": false,
         "openai_comp_chat_name": "My Server",
         "openai_comp_temperature": "0.3",
+        "openai_comp_reasoning_effort": "high",
+        "openai_comp_chat_models_only": true,
         "openai_comp_extra_body": "{\"top_k\": 5}",
         "openai_comp_extra_headers": "{\"x-opencode-session\": \"fixture-session\"}",
         "google_gemini_api_key": "gemini-fixture-key",

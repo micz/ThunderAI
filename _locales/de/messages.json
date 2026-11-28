@@ -568,6 +568,12 @@
     "placeholder_mail_plain_text_part": {
         "message": "Originaler Klartext-Teil der Mail, ohne jegliche Umwandlung aus dem HTML-Teil (am besten für geschäftliche und automatisierte Mails; kann bei Newslettern leer oder unvollständig sein)"
     },
+    "placeholder_qnote_text": {
+        "message": "Text der QNote-Notiz zur Nachricht (leer, wenn keine vorhanden ist oder der Zugriff auf QNote in den ThunderAI-Einstellungen nicht aktiviert ist)"
+    },
+    "placeholder_qnote_datetime": {
+        "message": "Datum und Uhrzeit der QNote-Notiz zur Nachricht (leer, wenn keine vorhanden ist)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Platzhalter: standardwert verwenden"
     },
@@ -657,6 +663,15 @@
                 "example": "x-session"
             }
         }
+    },
+    "prefs_OptionText_openai_comp_reasoning_effort_Info": {
+        "message": "Wie viel Aufwand ein Reasoning-Modell vor der Antwort ins Nachdenken steckt, gesendet als Parameter \"reasoning_effort\". Belassen Sie es bei Diensten und Modellen, die ihn nicht unterstützen, auf API-Standard, sonst lehnen sie die Anfrage möglicherweise ab. Andere Werte wie \"max\" können über die zusätzlichen Body-Daten gesendet werden, die Vorrang vor dieser Option haben: {\"reasoning_effort\": \"max\"}."
+    },
+    "prefs_OptionText_openai_comp_chat_models_only": {
+        "message": "Nur Chat-Modelle anzeigen"
+    },
+    "prefs_OptionText_openai_comp_chat_models_only_Info": {
+        "message": "Beim Aktualisieren der Modellliste werden Modelle ausgelassen, die der Dienst als nicht für Chats geeignet (etwa Embedding-Modelle) oder als veraltet kennzeichnet, und die \"-latest\"-Aliase werden zuerst aufgeführt. Modelle ohne diese Angaben werden immer aufgeführt."
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "\"v1\"-Kompatibilität beibehalten"
@@ -894,7 +909,7 @@
         "message": "Ein neues Kalenderevent hinzufügen"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Ereignisbeschreibung (eine kurze Zusammenfassung des E-Mail-Kontexts, der Hauptthemen/Agenda, der Aktionspunkte sowie aller Videokonferenz-Links oder Zugangsdaten)\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\n- Ort (falls erwähnt, spezifisches Gebäude, Raum oder online mit Link)\n- Teilnehmer\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nDas sind die Teilnehmer: {%author%}, {%recipients%}, {%cc_list%}. Falls vorhanden, meine Adresse ausschließen: {%account_email_address%}.\nWenn es sich um ein ganztägiges Ereignis handelt, muss endDate ein Tag nach startDate liegen und die Zeit auf \"T000000\" eingestellt sein.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n\"description\": \"Detaillierte Ereignisbeschreibung einschließlich Agenda, Aktionspunkten und relevanter Notizen aus der E-Mail.\",\n \"forceAllDay\": false,\n \"location\": \"Ort oder URL hier\",\n\"attendees\": [\"attendee1@example.com\", \"attendee2@example.com\", \"attendee3@example.com\"]\n}\nHier ist der Text: \"{%mail_text_body_or_selected%}\""
+        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Ereignisbeschreibung (eine kurze Zusammenfassung des E-Mail-Kontexts, der Hauptthemen/Agenda, der Aktionspunkte sowie aller Videokonferenz-Links oder Zugangsdaten)\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\n- Ort (falls erwähnt, spezifisches Gebäude, Raum oder online mit Link)\n- Teilnehmer\n- Kategorien (falls erwähnt)\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nDas sind die Teilnehmer: {%author%}, {%recipients%}, {%cc_list%}. Falls vorhanden, meine Adresse ausschließen: {%account_email_address%}.\nDas sind die verfügbaren Kategorien: {%calendar_categories%}. Wählen Sie nur die aus, die zum Ereignis passen, mit ihrem genauen Namen; falls keine passt, verwenden Sie eine leere Liste.\nWenn es sich um ein ganztägiges Ereignis handelt, muss endDate ein Tag nach startDate liegen und die Zeit auf \"T000000\" eingestellt sein.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n\"description\": \"Detaillierte Ereignisbeschreibung einschließlich Agenda, Aktionspunkten und relevanter Notizen aus der E-Mail.\",\n \"forceAllDay\": false,\n \"location\": \"Ort oder URL hier\",\n\"attendees\": [\"attendee1@example.com\", \"attendee2@example.com\", \"attendee3@example.com\"],\n\"categories\": [\"category1\", \"category2\"]\n}\nHier ist der Text: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Ein neues Kalenderevent aus ausgewähltem Text hinzufügen"
@@ -1259,6 +1274,36 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Um Kalender- und Aufgabenfunktionen zu nutzen, installiere bitte eine aktualisierte Version des ThunderAI Sparks-Add-ons."
+    },
+    "prefs_OptionText_qnote_integration": {
+        "message": "QNote-Notizen"
+    },
+    "prefs_OptionText_qnote_integration_Info": {
+        "message": "Liest die QNote-Notiz einer Nachricht über die Platzhalter {%qnote_text%} und {%qnote_datetime%}. Wenn ein Prompt sie verwendet, wird der Notiztext an den konfigurierten KI-Anbieter gesendet. QNote fragt beim ersten Mal, ob ThunderAI zugelassen werden soll."
+    },
+    "prefs_OptionText_qnote_check_access": {
+        "message": "Zugriff prüfen"
+    },
+    "prefs_qnote_status_not_reachable": {
+        "message": "QNote ist nicht installiert oder nicht erreichbar."
+    },
+    "prefs_qnote_status_unsupported": {
+        "message": "Diese QNote-Version kann ihre Notizen nicht mit anderen Add-ons teilen. Bitte aktualisieren Sie QNote."
+    },
+    "prefs_qnote_status_error": {
+        "message": "QNote hat eine unerwartete Antwort zurückgegeben."
+    },
+    "prefs_qnote_status_not_granted": {
+        "message": "ThunderAI kann die Notizen noch nicht lesen: Klicken Sie auf \"Zugriff prüfen\" und antworten Sie im Dialog von QNote."
+    },
+    "prefs_qnote_status_denied": {
+        "message": "Der Zugriff wurde verweigert. Lassen Sie ThunderAI in den QNote-Einstellungen unter \"Access from other add-ons\" zu und klicken Sie dann auf \"Zugriff prüfen\"."
+    },
+    "prefs_qnote_status_granted": {
+        "message": "Zugriff gewährt: Prompts können die QNote-Platzhalter verwenden."
+    },
+    "prefs_qnote_status_waiting": {
+        "message": "Warte auf Ihre Antwort im Dialog von QNote…"
     },
     "prefs_OptionText_Project_No_temporary_chat_warn": {
         "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, wird der temporäre Chat nicht verwendet."
@@ -4094,6 +4139,9 @@
     },
     "prefs_insecure_origins_remove": {
         "message": "Entfernen"
+    },
+    "placeholder_calendar_categories": {
+        "message": "Vorhandene Thunderbird-Kalenderkategorien (JSON-Array; [] wenn Sparks nicht verfügbar ist)"
     },
     "anthropic_err_hint_temperature": {
         "message": "Das ausgewählte Claude-Modell ($MODEL$) akzeptiert die Einstellung Temperatur nicht. Leeren Sie das Feld Temperatur oder verwenden Sie stattdessen die Einstellung Effort."

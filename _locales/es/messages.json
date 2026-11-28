@@ -185,7 +185,7 @@
         "message": "Permitir el visor de comparación de texto"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "El visor de comparación de texto se puede seleccionar cuando la acción se establece en \"sustituir texto\"."
+        "message": "Disponible cuando la \"Acción\" es \"Sustituir texto\"."
     },
     "customPrompts_form_required_fields": {
         "message": "Campos obligatorios"
@@ -847,6 +847,15 @@
             }
         }
     },
+    "prefs_OptionText_openai_comp_reasoning_effort_Info": {
+        "message": "Cuánto esfuerzo dedica un modelo de razonamiento a pensar antes de responder, enviado como el parámetro \"reasoning_effort\". Déjalo en Predeterminado de la API para los servicios y modelos que no lo admiten, o podrían rechazar la solicitud. Otros valores, como \"max\", se pueden enviar mediante los datos adicionales del cuerpo, que tienen prioridad sobre esta opción: {\"reasoning_effort\": \"max\"}."
+    },
+    "prefs_OptionText_openai_comp_chat_models_only": {
+        "message": "Mostrar solo modelos de chat"
+    },
+    "prefs_OptionText_openai_comp_chat_models_only_Info": {
+        "message": "Al actualizar la lista de modelos, omite los que el servicio marca como no utilizables para chat (como los modelos de embedding) o como obsoletos, y muestra primero los alias \"-latest\". Los modelos sin esta información se muestran siempre."
+    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Mantener la compatibilidad \"v1\""
     },
@@ -1034,10 +1043,10 @@
         "message": "Si está marcado, la etiqueta de etiquetas se establecerá en minúsculas con solo la primera letra en mayúscula."
     },
     "prefs_SurveyLinkText": {
-        "message": "Comparte tus comentarios y ayuda a mejorar ThunderAI!"
+        "message": "¿Estás disfrutando de ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Haz clic aquí, ¡solo toma un minuto!"
+        "message": "Comparte tus comentarios"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Inserte aquí el nombre del modelo que desea usar."
@@ -1097,7 +1106,7 @@
         "message": "Agregar un nuevo evento de calendario"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrae todos los detalles relevantes necesarios para generar un evento de calendario a partir del siguiente texto. La información extraída debe incluir:\n- Título del evento\n- Descripción del evento (un resumen conciso del contexto del correo, los temas clave/orden del día, los elementos de acción y cualquier enlace de videollamada o detalles de acceso)\n- Fecha y hora de inicio (incluyendo zona horaria, si se especifica)\n- Fecha y hora de fin (incluyendo zona horaria, si se especifica)\n- Día completo (si se menciona)\n- Ubicación (si se menciona, edificio específico, sala o en línea con enlace)\n- Asistentes\nAsegúrate de que los datos estén formateados de manera clara y consistente para que puedan usarse directamente en la creación de un evento de calendario.\nSi hay referencias de tiempo relativas, considera que la fecha y hora del correo son \"{%mail_datetime%}\". Calcula la fecha y hora de inicio basándote en esta referencia. Si la fecha y hora de inicio calculadas son anteriores a \"{%current_datetime%}\", recalcula la fecha y hora de inicio usando \"{%current_datetime%}\" como base.\nSi la duración no se especifica, establécela en una hora.\nEstos son los asistentes: {%author%}, {%recipients%}, {%cc_list%}. Si están presentes, excluye mi dirección: {%account_email_address%}.\nSi el evento es de día completo, endDate debe ser un día después de startDate con la hora establecida en \"T000000\".\nSi no puedes obtener uno o más de los datos requeridos, responde con una cadena vacía.\nGenera una respuesta solo en formato JSON. No incluyas texto adicional ni explicaciones; proporciona únicamente el JSON. El formato a usar es:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumen del evento de calendario aquí\",\n\"description\": \"Descripción detallada del evento, incluyendo la agenda, los elementos de acción y las notas relevantes del correo.\",\n\"forceAllDay\": false,\n\"location\": \"Ubicación o URL aquí\",\n\"attendees\": [\"attendee1@example.com\", \"attendee2@example.com\", \"attendee3@example.com\"]\n}\nEste es el texto:\"{%mail_text_body_or_selected%}\""
+        "message": "Extrae todos los detalles relevantes necesarios para generar un evento de calendario a partir del siguiente texto. La información extraída debe incluir:\n- Título del evento\n- Descripción del evento (un resumen conciso del contexto del correo, los temas clave/orden del día, los elementos de acción y cualquier enlace de videollamada o detalles de acceso)\n- Fecha y hora de inicio (incluyendo zona horaria, si se especifica)\n- Fecha y hora de fin (incluyendo zona horaria, si se especifica)\n- Día completo (si se menciona)\n- Ubicación (si se menciona, edificio específico, sala o en línea con enlace)\n- Asistentes\n- Categorías (si se mencionan)\nAsegúrate de que los datos estén formateados de manera clara y consistente para que puedan usarse directamente en la creación de un evento de calendario.\nSi hay referencias de tiempo relativas, considera que la fecha y hora del correo son \"{%mail_datetime%}\". Calcula la fecha y hora de inicio basándote en esta referencia. Si la fecha y hora de inicio calculadas son anteriores a \"{%current_datetime%}\", recalcula la fecha y hora de inicio usando \"{%current_datetime%}\" como base.\nSi la duración no se especifica, establécela en una hora.\nEstos son los asistentes: {%author%}, {%recipients%}, {%cc_list%}. Si están presentes, excluye mi dirección: {%account_email_address%}.\nEstas son las categorías disponibles: {%calendar_categories%}. Elige solo las que se ajusten al evento, usando sus nombres exactos; si ninguna se ajusta, usa una lista vacía.\nSi el evento es de día completo, endDate debe ser un día después de startDate con la hora establecida en \"T000000\".\nSi no puedes obtener uno o más de los datos requeridos, responde con una cadena vacía.\nGenera una respuesta solo en formato JSON. No incluyas texto adicional ni explicaciones; proporciona únicamente el JSON. El formato a usar es:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumen del evento de calendario aquí\",\n\"description\": \"Descripción detallada del evento, incluyendo la agenda, los elementos de acción y las notas relevantes del correo.\",\n\"forceAllDay\": false,\n\"location\": \"Ubicación o URL aquí\",\n\"attendees\": [\"attendee1@example.com\", \"attendee2@example.com\", \"attendee3@example.com\"],\n\"categories\": [\"category1\", \"category2\"]\n}\nEste es el texto:\"{%mail_text_body_or_selected%}\""
     },
     "prompt_get_task": {
         "message": "Agregar una nueva tarea"
@@ -1191,6 +1200,36 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Para usar las funciones de eventos de calendario y tareas, por favor instale una versión actualizada del complemento ThunderAI Sparks."
+    },
+    "prefs_OptionText_qnote_integration": {
+        "message": "Notas de QNote"
+    },
+    "prefs_OptionText_qnote_integration_Info": {
+        "message": "Lee la nota de QNote de un mensaje mediante los marcadores de posición {%qnote_text%} y {%qnote_datetime%}. Cuando un prompt los usa, el texto de la nota se envía al proveedor de IA configurado. QNote te pedirá que autorices a ThunderAI la primera vez."
+    },
+    "prefs_OptionText_qnote_check_access": {
+        "message": "Comprobar acceso"
+    },
+    "prefs_qnote_status_not_reachable": {
+        "message": "QNote no está instalado o no está disponible."
+    },
+    "prefs_qnote_status_unsupported": {
+        "message": "Esta versión de QNote no puede compartir sus notas con otros complementos. Actualiza QNote."
+    },
+    "prefs_qnote_status_error": {
+        "message": "QNote devolvió una respuesta inesperada."
+    },
+    "prefs_qnote_status_not_granted": {
+        "message": "ThunderAI aún no puede leer las notas: pulsa \"Comprobar acceso\" y responde en el diálogo de QNote."
+    },
+    "prefs_qnote_status_denied": {
+        "message": "Acceso denegado. Autoriza a ThunderAI en las opciones de QNote, en \"Access from other add-ons\", y luego pulsa \"Comprobar acceso\"."
+    },
+    "prefs_qnote_status_granted": {
+        "message": "Acceso concedido: los prompts pueden usar los marcadores de posición de QNote."
+    },
+    "prefs_qnote_status_waiting": {
+        "message": "Esperando tu respuesta en el diálogo de QNote…"
     },
     "GetTask_PageTitle": {
         "message": "Administrar configuración de tareas"
@@ -2611,6 +2650,12 @@
     "placeholder_mail_plain_text_part": {
         "message": "Parte original en texto plano del correo, sin ninguna conversión desde la parte HTML (ideal para correo comercial y automático; puede estar vacía o ser un esbozo en los boletines)"
     },
+    "placeholder_qnote_text": {
+        "message": "Texto de la nota de QNote adjunta al mensaje (vacío si no hay ninguna o si el acceso a QNote no está activado en las opciones de ThunderAI)"
+    },
+    "placeholder_qnote_datetime": {
+        "message": "Fecha y hora de la nota de QNote adjunta al mensaje (vacío si no hay ninguna)"
+    },
     "prefs_OptionText_chatgpt_web_load_wait_time": {
         "message": "Tiempo de espera para la carga de la página"
     },
@@ -3329,7 +3374,7 @@
         "message": "¿Quieres estadísticas bonitas sobre tus correos electrónicos?"
     },
     "prefs_THStats_2": {
-        "message": "¡Haz clic aquí! ¡Prueba ThunderStats!"
+        "message": "¡Prueba ThunderStats!"
     },
     "prefs_OptionText_chatgpt_win_pos_text": {
         "message": "Posición de la ventana de chat de IA"
@@ -3440,7 +3485,7 @@
         "message": "Posición en el menú"
     },
     "menu_order_info": {
-        "message": "Arrastra y suelta elementos para reordenarlos. Usa el interruptor para mostrar u ocultar elementos en cada menú."
+        "message": "Arrastra y suelta los elementos para reordenarlos, o arrástralos entre las secciones Visible y Oculto para mostrarlos u ocultarlos en cada menú. Si una instrucción está oculta en todos los menús, permanecerá desactivada hasta que la vuelvas a hacer visible."
     },
     "menu_order_active_items": {
         "message": "Elementos visibles"
@@ -3859,6 +3904,9 @@
     },
     "prefs_insecure_origins_remove": {
         "message": "Eliminar"
+    },
+    "placeholder_calendar_categories": {
+        "message": "Categorías de calendario existentes de Thunderbird (array JSON; [] cuando Sparks no está disponible)"
     },
     "prefs_footer_donate": {
         "message": "Hacer una donación"

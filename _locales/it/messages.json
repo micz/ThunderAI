@@ -765,6 +765,12 @@
     "placeholder_mail_plain_text_part": {
         "message": "Parte in testo semplice originale della mail, senza alcuna conversione della parte HTML (ideale per mail aziendali e automatizzate; può essere vuota o un stub nelle newsletter)"
     },
+    "placeholder_qnote_text": {
+        "message": "Testo della nota QNote allegata al messaggio (vuoto se non c'è o se l'accesso a QNote non è attivato nelle opzioni di ThunderAI)"
+    },
+    "placeholder_qnote_datetime": {
+        "message": "Data e ora della nota QNote allegata al messaggio (vuoto se non c'è)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Segnaposti: usa valore predefinito"
     },
@@ -866,6 +872,15 @@
                 "example": "x-session"
             }
         }
+    },
+    "prefs_OptionText_openai_comp_reasoning_effort_Info": {
+        "message": "Quanto impegno un modello di ragionamento dedica a pensare prima di rispondere, inviato come parametro \"reasoning_effort\". Lascialo su Predefinito per i servizi e i modelli che non lo supportano, altrimenti potrebbero rifiutare la richiesta. Altri valori, come \"max\", possono essere inviati tramite i dati aggiuntivi, che hanno la precedenza su questa opzione: {\"reasoning_effort\": \"max\"}."
+    },
+    "prefs_OptionText_openai_comp_chat_models_only": {
+        "message": "Mostra solo i modelli di chat"
+    },
+    "prefs_OptionText_openai_comp_chat_models_only_Info": {
+        "message": "Quando aggiorni l'elenco dei modelli, escludi quelli che il servizio indica come non utilizzabili per la chat (come i modelli di embedding) o come deprecati, e mostra per primi gli alias \"-latest\". I modelli senza queste informazioni sono sempre elencati."
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Mantieni la compatibilità con \"v1\""
@@ -1103,7 +1118,7 @@
         "message": "Aggiungi un nuovo evento al calendario"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Descrizione dell'evento (un riassunto conciso del contesto dell'email, degli argomenti chiave/agenda, delle azioni da intraprendere e di eventuali link di videochiamata o dettagli di accesso)\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\n- Luogo (se menzionato, edificio specifico, stanza o online con link)\n- I partecipanti\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nQuesti sono i partecipanti: {%author%}, {%recipients%}, {%cc_list%}. Se presente, escludi il mio indirizzo: {%account_email_address%}.\nSe l'evento dura tutto il giorno, endDate deve essere il giorno successivo a startDate con l'orario impostato su \"T000000\".\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"description\": \"Descrizione dettagliata dell'evento, inclusi agenda, azioni da intraprendere e note rilevanti dall'email.\",\n\"forceAllDay\": false,\n\"location\": \"Luogo o URL qui\",\n\"attendees\": [\"attendee1@example.com\", \"attendee2@example.com\", \"attendee3@example.com\"]\n}\nEcco il testo: \"{%mail_text_body_or_selected%}\""
+        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Descrizione dell'evento (un riassunto conciso del contesto dell'email, degli argomenti chiave/agenda, delle azioni da intraprendere e di eventuali link di videochiamata o dettagli di accesso)\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\n- Luogo (se menzionato, edificio specifico, stanza o online con link)\n- I partecipanti\n- Categorie (se menzionate)\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nQuesti sono i partecipanti: {%author%}, {%recipients%}, {%cc_list%}. Se presente, escludi il mio indirizzo: {%account_email_address%}.\nQueste sono le categorie disponibili: {%calendar_categories%}. Scegli solo quelle adatte all'evento, usando i loro nomi esatti; se nessuna è adatta, usa una lista vuota.\nSe l'evento dura tutto il giorno, endDate deve essere il giorno successivo a startDate con l'orario impostato su \"T000000\".\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"description\": \"Descrizione dettagliata dell'evento, inclusi agenda, azioni da intraprendere e note rilevanti dall'email.\",\n\"forceAllDay\": false,\n\"location\": \"Luogo o URL qui\",\n\"attendees\": [\"attendee1@example.com\", \"attendee2@example.com\", \"attendee3@example.com\"],\n\"categories\": [\"category1\", \"category2\"]\n}\nEcco il testo: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Aggiungi un nuovo evento al calendario dal testo selezionato"
@@ -1600,6 +1615,36 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Per utilizzare le funzionalità di eventi del calendario e delle attività, installa una versione aggiornata del componente aggiuntivo ThunderAI Sparks."
+    },
+    "prefs_OptionText_qnote_integration": {
+        "message": "Note di QNote"
+    },
+    "prefs_OptionText_qnote_integration_Info": {
+        "message": "Legge la nota QNote di un messaggio tramite i segnaposto {%qnote_text%} e {%qnote_datetime%}. Quando un prompt li usa, il testo della nota viene inviato al provider di IA configurato. QNote ti chiederà di autorizzare ThunderAI la prima volta."
+    },
+    "prefs_OptionText_qnote_check_access": {
+        "message": "Verifica accesso"
+    },
+    "prefs_qnote_status_not_reachable": {
+        "message": "QNote non è installato o non è raggiungibile."
+    },
+    "prefs_qnote_status_unsupported": {
+        "message": "Questa versione di QNote non può condividere le sue note con altri componenti aggiuntivi. Aggiorna QNote."
+    },
+    "prefs_qnote_status_error": {
+        "message": "QNote ha restituito una risposta inattesa."
+    },
+    "prefs_qnote_status_not_granted": {
+        "message": "ThunderAI non può ancora leggere le note: premi \"Verifica accesso\" e rispondi nella finestra di QNote."
+    },
+    "prefs_qnote_status_denied": {
+        "message": "Accesso negato. Autorizza ThunderAI nelle opzioni di QNote, in \"Access from other add-ons\", quindi premi \"Verifica accesso\"."
+    },
+    "prefs_qnote_status_granted": {
+        "message": "Accesso consentito: i prompt possono usare i segnaposto di QNote."
+    },
+    "prefs_qnote_status_waiting": {
+        "message": "In attesa della tua risposta nella finestra di QNote…"
     },
     "AccountSelector_AutoTags_infoline": {
         "message": "Ogni modifica viene salvata immediatamente."
@@ -3982,6 +4027,9 @@
     },
     "prefs_insecure_origins_remove": {
         "message": "Rimuovi"
+    },
+    "placeholder_calendar_categories": {
+        "message": "Categorie esistenti del calendario di Thunderbird (array JSON; [] quando Sparks non è disponibile)"
     },
     "prefs_footer_donate": {
         "message": "Fai una donazione"

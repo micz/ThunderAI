@@ -790,6 +790,11 @@ The summarize feature uses two distinct prompt pathways:
 - All summary paths (inline, webchat single, webchat multi) use this single method
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
+- The data of the external integrations the per-mail template uses (today the QNote notes) is
+  read once for all the messages: `buildSummaryPrompt(messageDataArray, ext_integration_data)`
+  hands each `preparePrompt()` an `ext_integration_data` whose `batch` (`createExtBatch()`) covers
+  its messages, or the caller's (a `processEmails()` run hands its own on) (see
+  [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders), *Batches*)
 - Language: `taPromptUtils.getSummaryLang(prompt_summarize)` returns `{ chatgpt_lang, force_lang_statement }`.
   - `chatgpt_lang` is passed to every `preparePrompt()` call (main prompt, separator, each email block), as before. With `summarize_force_lang` off it is `getDefaultLang(prompt_summarize)` (normally `''`, since `define_response_lang` is `"0"`), so the prompt is byte-identical to the pre-option one. With the flag on it is `''`, so it can't contradict the forced language.
   - `force_lang_statement` is `prompt_summarize_force_lang + " " + (summarize_lang || default_chatgpt_lang) + "."` when the flag is on, `''` otherwise or when both languages are empty (never `reply_same_lang`). It is appended **once**, at the very end of the whole prompt after the last email, preceded by `\n\n`. Deliberately **not** after each email: `preparePrompt()` joins `chatgpt_lang` to the email body with a single space, so there it reads as part of the email text.
@@ -815,11 +820,16 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
 - Saved per message via `taTranslationStore` / `taStorage` (IndexedDB, with its durable `storage.local` mirror), one per message whatever the language, with the message's subject, sender and date; kept until the scheduled cleanup removes it under the `translate_storage_*` limits, none by default (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 - The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
 
-**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, messageId)`:
+**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, messageId, ext_integration_data)`:
 - `messageId` feeds the body read (`getMailInlineTextParts()`); `fullMessage` supplies the subject
   header. Callers must pass both — `_generateTranslationForMessage()` therefore carries the id
   alongside `fullMessage` on **both** of its branches, and its `options.messageData` now requires
   `message` as well as `fullMessage`.
+- `ext_integration_data` (optional) is the data of the external add-on integrations, handed on to
+  `getPlaceholdersValues()` (see [03 "The QNote placeholders"](03-placeholders.md#the-qnote-placeholders)).
+  This path passes no `curr_message`, so `_runTranslationJob()` passes `{ header_message_id }`, the
+  message the QNote placeholders look up (with the batch of `processEmails()`, when the run hands one
+  on); without it they resolve to `""`.
 - Retrieves the `prompt_translate_this` special prompt text
 - When the text holds `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` (with or without
   the `:N` limit), reads the text body as `buildSummaryPrompt()` does (`htmlBodyToPlainText()` of
@@ -869,3 +879,31 @@ action not forced to `"2"` from a compose window; the ChatGPT web window has the
 ## Custom Prompts
 
 Custom prompts are stored in `browser.storage.local` and managed via `pages/customprompts/`. They follow the same property structure as built-in prompts but are created/edited/deleted by the user through the UI. Custom placeholders can also be referenced in custom prompt text. Their id may not be a shipped one, and a new one may not start with `prompt_` (see "Prompt ids").
+
+## Calendar event: native categories
+
+The prompt asks for them, as it does for attendees; there is no option and nothing is appended by
+code. `calendarCategoriesAsked()` reads the saved template (not the resolved prompt) and is true
+only when it holds `{%calendar_categories%}`. The shipped `prompt_get_calendar_event_full_text` has
+a line giving the list through the placeholder (choose the fitting names exactly, an empty list
+when none fits) and a `"categories"` array in its JSON example, next to `"attendees"`, so the
+settings textarea shows the whole request. Removing the placeholder turns categories off; a saved
+prompt without it (any prompt saved before this feature, which is never rewritten) asks for none
+until the user adds the line or resets the prompt.
+
+Sparks is asked once per extraction. When the template asks for categories, the email and clipboard
+menu actions call `getSparksCapabilities()` before preparing the prompt and keep the answer in
+`msg_text.calendar_capabilities`, which `{%calendar_categories%}` and
+`normalizeCalendarCategories()` reuse. The request is separate from the unchanged version check and
+bounded to two seconds, because an older Sparks never answers an unknown action; the reason is
+logged without any reply content. `normalizeCalendarCategories()` keeps the advertised names that
+match exactly, each once, and keeps an empty list. Anything else, or a Sparks without the
+`categories` field, drops the field and the event opens as before. A template without the placeholder
+gets the field deleted from the answer, and Sparks is not asked. Participant and reminder
+rules are unchanged, the debug logs of the event data are kept, and the native review dialog remains
+mandatory. Sparks reads the catalogue again when it builds the event and applies the calendar's
+category limit.
+
+It needs ThunderAI Sparks 3.2.0 or later (`getCapabilities`). `sparks_min` is unchanged: an older
+Sparks only drops the field. On Thunderbird 159 with a Google calendar over CalDAV, `CATEGORIES`
+survived the save and a later edit on the Google site, for one synthetic event.

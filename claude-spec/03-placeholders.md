@@ -19,6 +19,7 @@ Example in a prompt: `"Summarize this email: {%mail_text_body_or_selected%}"`
 | `is_default` | string | `"1"` = built-in (not editable/deletable), `"0"` = custom |
 | `is_dynamic` | string | `"0"` = fixed value, `"1"` = dynamic (takes a parameter after `:`) |
 | `param_optional` | string | Dynamic placeholders only, absent = `"0"`. `"1"` = the parameter may be left out (`{%mail_text_body%}` and `{%mail_text_body:2000%}` are both valid), so the autocomplete offers the plain token instead of `{%id:%}` |
+| `empty_is_value` | string | Absent = `"0"`. `"1"` = an empty value supplied for the token is used as it is (`''` means "nothing here"), never treated as unresolved: `replacePlaceholders()` does not fall back to `default_value` or the literal token. A token with no value supplied at all still follows the `||` chain. Set on `additional_text`, `qnote_text` and `qnote_datetime` |
 | `enabled` | number | `0` = disabled, `1` = enabled |
 | `text` | string | Content for custom placeholders only |
 
@@ -51,6 +52,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_bod
 | `current_datetime` | Current date and time | 0 | |
 | `account_email_address` | Email address of the current account/identity | 0 | |
 | `tags_current_email` | Tags currently on the email | 0 | |
+| `calendar_categories` | Native Thunderbird calendar category names as a JSON array; `[]` when unavailable | 0 | |
 | `tags_full_list` | All available tags in Thunderbird | 0 | |
 | `thunderai_def_sign` | Default signature name (`default_sign_name` pref) | 0 | |
 | `thunderai_def_lang` | Default response language (`default_chatgpt_lang` pref) | 0 | |
@@ -61,6 +63,8 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_bod
 | `mail_text_body_or_selected` | Plain text body, or selected text if any; `{%mail_text_body_or_selected:N%}` cuts it to N characters | 0 | ✓ |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
 | `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
+| `qnote_text` | Text of the QNote note attached to the email (see *The QNote placeholders*) | 1 | |
+| `qnote_datetime` | Date and time of that note, formatted like `mail_datetime` | 1 | |
 
 The newline contracts below are what the model receives: the API chat window posts the prompt to
 its worker as it comes, line breaks as `\n` and no `<br>` added, both for the prompt the background
@@ -261,9 +265,11 @@ reason the output looks different. When the part is missing the value is the emp
 a `||` chain, so an empty string is indistinguishable from "unresolved": with
 `placeholders_use_default_value` on the token becomes `default_value` (`""`), and with it off the
 literal text `{%mail_plain_text_part%}` survives into the prompt. Not fixed deliberately — that
-chain is shared by all 30 built-ins and widening it would change every one of them, a `junk_score`
-of `0` included, at the same time. `{%empty%}` is the one exception: `replacePlaceholders()` returns
-`''` for it before the chain, so it is never the literal token.
+chain is shared by the built-ins and widening it would change every one of them, a `junk_score`
+of `0` included, at the same time. `{%empty%}` is an exception: `replacePlaceholders()` returns
+`''` for it before the chain, so it is never the literal token. So are, when a value is supplied,
+the placeholders with `empty_is_value: "1"` (`additional_text` and the two QNote placeholders),
+whose `''` is a value (see *The QNote placeholders*).
 
 **Known limitation — documented, not fixed.** The `text/plain` alternative is *not* reliable in
 general: newsletters often ship a stub ("view this message in your browser"), a URL-only body, an
@@ -276,6 +282,136 @@ attachments and forwarded `message/rfc822` parts: those are excluded by
 `listInlineTextParts()` itself, which returns only what `listAttachments()` does not. Before this,
 an attached `.txt` file landed verbatim in the value — see
 [01-architecture.md](01-architecture.md) → *Where the body comes from*.
+
+### The QNote placeholders
+
+`qnote_text` and `qnote_datetime` [#980] carry the note the **QNote** add-on (`qnote@dqdp.net`)
+attached to the message, read through QNote's read-only external API with
+`browser.runtime.sendMessage(QNOTE_ID, ...)`. The client is `js/mzta-qnote.js`; the opt-in is the
+`qnote_integration` preference and its row on the options page (see
+[05-options.md](05-options.md#qnote-integration-row)).
+
+**The API, as `js/mzta-qnote.js` uses it.** Three commands, each reply carrying `apiVersion`:
+
+| Command | Prompts the user? | Reply | Time-out |
+|---|---|---|---|
+| `getStatus` | never | `{ access }`: `"unknown"`, `"pending"`, `"granted"` or `"denied"` | `QNOTE_TIMEOUT_MS` (3 s) |
+| `requestAccess` | QNote's **modal** dialog, only while not decided yet | the same states (`"pending"` while a dialog is already open, or when it fails) | **none**: it resolves when the user answers |
+| `getNotes` (at most 1000 `headerMessageIds`) | never | `{ notes: { [headerMessageId]: { text, ts } or null } }`, `ts` in ms; `{ error: "access-denied" }` unless granted | `QNOTE_TIMEOUT_MS` |
+
+A failure is `{ apiVersion, error }` (`"access-denied"`, `"invalid-request"`, `"unknown-command"`);
+a QNote that is missing, disabled or too old makes `sendMessage` reject. The three functions
+(`getQNoteStatus()`, `requestQNoteAccess()`, `getQNoteNotes(ids)`) **never throw**: they resolve to
+`{ ok: true, ... }` or `{ ok: false, reason }`, `reason` one of `QNOTE_REASONS`:
+
+| `reason` | When |
+|---|---|
+| `not_reachable` | `sendMessage` rejected (not installed, disabled, no API listener) or the time-out expired |
+| `unsupported` | no reply object, or `apiVersion` missing or below `QNOTE_API_VERSION` (1) |
+| `access_not_granted` | `getNotes` answered `error: "access-denied"` |
+| `error` | any other error reply, an unknown access state, a `notes` that is not an object |
+
+`getQNoteNotes()` drops the ids that are not non-empty strings, sends each id once, chunks by
+`QNOTE_MAX_IDS` (1000), and maps **every** requested id to `{ text, ts }` or `null`. Logging goes
+through the `mzta-qnote` logger: `error` replies are warnings, the normal states of a setup (QNote
+missing or old, access not granted) are debug lines only.
+
+**Only the options page may call `requestAccess`**, and only from a user action (the toggle,
+"Check access"). Its dialog is modal: from the background or an automatic path it would pop up at a
+random moment. Resolving the placeholders calls `getNotes` alone, with no `getStatus` before it, and
+`access_not_granted` simply means no note.
+
+**Resolution** (`getPlaceholdersValues()`): `mzta-placeholders.js` names no integration. Its
+`default` arm hands every id of an integration of the registry (`findExtIntegration()`, see
+*The integration registry* below) to the resolver of the call, `createExtPlaceholderResolver()`,
+so the note is read **once per call**, even with both tokens present, and only when one of them is
+in the prompt (the demand-driven `extractPlaceholders()` loop, so a prompt without them never
+reaches QNote). The QNote entry reads it with `getQNoteNoteFor(headerMessageId, prefetched)`, which
+decides:
+
+1. no `headerMessageId`: `null`. The id is `ext_integration_data.header_message_id`, else
+   `curr_message.headerMessageId`. A compose window's ComposeDetails has none, so there is no compose
+   support, on top of `type: 1` keeping them out of the compose autocomplete: QNote only keys notes
+   on existing messages;
+2. the id is in `prefetched` (`ext_integration_data.qnote.notes`): that entry, a `null` included, with no
+   call;
+3. `qnote_integration` off: `null`, with no call;
+4. otherwise `getNotes([id])`: its note, or `null` on any failure.
+
+`qnote_text` is the note's `text`; `qnote_datetime` is `new Date(ts).toString()`, the same format
+`mail_datetime` gets from a `Date`. Both go through `failSafePlaceholders()`.
+
+**`''` is a value here.** No note, integration off, QNote missing, access not granted, a time-out:
+all resolve to `''`. Through the `||` chain that would become the literal `{%qnote_text%}` with
+`placeholders_use_default_value` off, so `replacePlaceholders()` returns the supplied value as it is
+for the placeholders with `empty_is_value: "1"` (`qnote_text`, `qnote_datetime`) **when the replacements hold the
+key**, which `getPlaceholdersValues()` always does for a token in the prompt. A QNote token with no
+value supplied at all still follows the chain.
+
+**Who supplies the id.** Every path that resolves placeholders on a received or selected message
+already passes a MessageHeader as `curr_message` (menus and popup, spam filter, add tags, the
+summary's per-mail template), so they need nothing more. `buildTranslationPrompt()` passes no
+`curr_message`, so it takes an `ext_integration_data` as its third argument and hands it on;
+`_runTranslationJob()` (the job `_generateTranslationForMessage()` starts) passes
+`{ header_message_id }`, with the batch of `processEmails()` when there is one.
+
+**`ext_integration_data`, one argument for every external integration.** `getPlaceholdersValues()`,
+`preparePrompt()` and `buildTranslationPrompt()` take the data of the add-on integrations in one
+object rather than one parameter per integration and per value, so a new integration adds a key,
+not a parameter to every signature on the path:
+
+| Key | Meaning |
+|---|---|
+| `header_message_id` | generic: the message the integrations look up when there is no `curr_message` (default `curr_message.headerMessageId`) |
+| `batch` | generic: `createExtBatch()` of the messages processed together, whose data each integration reads in one go the first time one of them needs it (see *Batches*) |
+| `qnote` | `{ notes }`: QNote notes already read (`{ [headerMessageId]: note or null }`); wins over `batch` |
+
+Missing or `{}` means nothing supplied: each integration reads what it needs itself.
+
+**The integration registry** (`js/mzta-ext-integrations.js`). `EXT_INTEGRATIONS` lists every
+integration: `key` (its key in `ext_integration_data`), `placeholders` (the ids it resolves),
+`enabled()` (whether the user turned it on, `isQNoteEnabled()` for QNote: only then does the
+autocomplete offer its placeholders, see *Placeholder Autocomplete*), `read(headerMessageId, data)` (the message's data, `data` being `ext_integration_data[key]`),
+`value(placeholderId, read)` (a placeholder's value from what `read()` gave, `null` for `''`) and
+`prefetch(headerMessageIds)` (its data for a batch, in the shape of `ext_integration_data[key]`, or
+`null`). Next to it, `findExtIntegration(placeholderId)`, `withoutDisabledExtPlaceholders(placeholders)`
+(the autocomplete's list), `createExtBatch(headerMessageIds)` (see
+*Batches*) and `createExtPlaceholderResolver(headerMessageId, ext_integration_data)`: the resolver of
+one `getPlaceholdersValues()` call, which reads each integration's data at most once, only when asked
+(the data under its key, else the batch's when the message is in it, else its own read), and never
+rejects (a rejected `read()` or a throwing `value()` is `null`, so `''`). The module is a **leaf**: it imports only the integrations'
+own clients (`js/mzta-qnote.js`), never `js/mzta-placeholders.js`, which imports it. That keeps the
+graph `mzta-utils-prompt.js` → `mzta-placeholders.js` → `mzta-ext-integrations.js` →
+`mzta-qnote.js` free of cycles; a test checks the module's imports. A new integration adds its entry
+there, its key to the table above, and its placeholders to `defaultPlaceholders` (still the source of
+the ids, with `empty_is_value: "1"` when `''` is a value).
+
+**Batches.** Messages processed together share one read per integration, through
+`ext_integration_data.batch = createExtBatch(headerMessageIds)` (`js/mzta-ext-integrations.js`):
+
+- `buildSummaryPrompt(messageDataArray, ext_integration_data)` builds one prompt from many messages
+  and creates the batch of its messages, unless the caller hands one on;
+- `processEmails()` creates the batch of its targets (every message of the run, after the gating)
+  and hands it to every feature of every pipeline: the spam filter, add tags, the summary and the
+  translation (`options.extIntegrationData` of `_generateSpamReportForMessage()`,
+  `_generateSummaryForMessage()`, `_generateTranslationForMessage()`; `runAddTagsJob()` reads it
+  directly). A job another caller started, which the run joins, keeps its own data.
+
+The batch is **lazy**: the first time the resolver of a message of the batch needs an
+integration's data that was not supplied under its key, `batch.dataFor(integration)` runs that
+integration's `prefetch()` for **all** the batch's ids, once, and every other message (concurrent
+pipelines wait for the same promise) reads from it. So an integration no prompt of the batch uses is
+never asked (no prompt to scan beforehand: the add tags prompt can differ by account, custom
+placeholders can hide a token), and when one is used the batch costs one call. A message outside the
+batch reads its own data; a rejected `prefetch()` is `null`, and each message then reads its own.
+
+For QNote the `prefetch()` is `prefetchQNoteNotes()`, which reads every note with **one** `getNotes`
+(chunked by 1000) and maps **every** id to its note or `null`, `null` after a failure too: a hanging
+QNote costs one time-out (`QNOTE_TIMEOUT_MS`, 3 s) per batch, not one per message and per feature,
+and a missing one a single try. With the integration off every id is `null` and QNote is not asked,
+so the preference is read once for the batch, not again by each message. The notes are read when the
+first message needs them and reused for the whole run, however long it lasts: a note edited during
+the run is seen by the next run.
 
 ### The address placeholders in the compose window
 
@@ -327,6 +463,7 @@ chain of `replacePlaceholders()` (see *Placeholder Resolution Order*).
 | `mail_headers:<name>` | the value of header `<name>` from `browser.messages.getFull()`, the name matched **case-insensitively**; a multi-valued header joined with `", "`. Header absent: `""` |
 | `mail_full_headers` | every header as `<name>: <value>` (multi-valued joined with `", "`), one per line (`\n`), names as Thunderbird returns them |
 | `tags_full_list` | the names of every Thunderbird tag joined with `", "` — the first element of the `getTagsList()` pair, the caller's when it supplies one, otherwise read by `getPlaceholdersValues()` itself |
+| `calendar_categories` | `JSON.stringify()` of the category names Sparks advertises: `msg_text.calendar_capabilities` when the calendar event action has already asked, else one `getSparksCapabilities()` per resolution; `[]` when Sparks is unavailable or its reply is invalid |
 | `tags_current_email` | the **names** (not the keys) of the tags on the email, looked up by key in the second element of that pair, joined with `", "`. A key not in the list (a tag deleted from Thunderbird) is kept as its raw key (e.g. `$label5`), with a console warning — legible in the prompt, where a silent omission would hide the tag [#911]; an email with no tags, or a ComposeDetails (no `tags` field: the compose window), gives `""`. Never an error: a failure here would fail the whole prompt |
 | `mail_datetime` | `curr_message.date` converted to a string (for a `Date`, its `toString()`) |
 | `current_datetime` | `new Date().toString()` at resolution time |
@@ -382,7 +519,7 @@ prepared, in the chat window. They are the deferred half of `skip_additional_tex
 4. **The late fill** (`api_webchat/controller.js`) replaces each token with its text through
    `replacePlaceholders()`, keyed by the token's inner text (`additional_text:tone`). An answer the
    user **gave** is used as it is, an **empty** one included: it becomes `""`, never the literal
-   token, whatever `placeholders_use_default_value` says (the user saw the field and left it blank).
+   token, whatever `placeholders_use_default_value` says (the user saw the field and left it blank: `additional_text` carries `empty_is_value: "1"`).
    Only a token with no answer at all follows the `||` chain of *Placeholder Resolution Order*.
 
    **The legacy string form.** Before 4.0.0 `api_send_custom_text` carried `custom_text` as a single
@@ -406,7 +543,16 @@ The tokens are shown only when `need_custom_text` is `"1"`: the Custom Prompts e
 `textareaAutocomplete()` in `js/mzta-placeholders-autocomplete.js` provides the `{%…` autocomplete
 dropdown, and is shared by **8 pages**: customprompts, customdataplaceholders, translate, summarize,
 addtags, spamfilter, get-task, get-calendar-event. Suggestions are built from
-`getPlaceholders(true)` mapped through `mapPlaceholderToSuggestion()`.
+`getPlaceholders(true)` passed through `withoutDisabledExtPlaceholders()` and mapped through
+`mapPlaceholderToSuggestion()`.
+
+**External integrations switched off are not suggested.** `withoutDisabledExtPlaceholders()`
+(`js/mzta-ext-integrations.js`, re-exported by `js/mzta-placeholders.js`) drops the placeholders of
+every registry integration whose `enabled()` is not `true` (a rejection counts as off): with
+`qnote_integration` off, `{%qnote_text%}` and `{%qnote_datetime%}` are not offered. Read once when the
+page loads, so turning the option on shows them from the next opening of the page. **Only the
+suggestions**: the highlighting and the validation keep the full `activePlaceholders`, so a token of an
+integration switched off typed by hand, or already in a prompt, is still valid (it resolves to `''`).
 
 **Matching.** Case-insensitive **substring** match on the placeholder **id**, not a prefix match on
 the whole token. Prefix matches are listed first, in `suggestions` order, followed by the substring
@@ -735,7 +881,7 @@ source field on the path in question:
 | Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same plus `tags_full_list` |
 | Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
 | Summarize, header + separator prompts | `js/mzta-utils-prompt.js` → `preparePrompt` | only `curr_prompt`/`chatgpt_lang` — every mail placeholder resolves empty |
-| Translation (popup and context menu included: `prompt_translate_this` never reaches `preparePrompt`) | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject`, and `body_text` read as in Summarize, only when `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` is in the prompt (no selection: the latter is the body) |
+| Translation (popup and context menu included: `prompt_translate_this` never reaches `preparePrompt`) | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject`, `ext_integration_data.header_message_id` (the QNote placeholders), and `body_text` read as in Summarize, only when `{%mail_text_body%}` or `{%mail_text_body_or_selected%}` is in the prompt (no selection: the latter is the body) |
 | `additional_text` late fill | `api_webchat/controller.js` → `replacePlaceholders` | the deferred half of `skip_additional_text: true` |
 
 **The tag lists are the exception: no path leaves them empty.** When the caller supplies no
@@ -768,8 +914,9 @@ Three things bite when adding one:
   *`mail_text_body` vs `mail_plain_text_part`*.
 
 - **An empty string cannot be expressed.** `replacePlaceholders()`' `||` chain treats `''` as
-  unresolved and falls through to `default_value` or the literal token. Only `{%empty%}` is
-  special-cased to `''`; a new placeholder that must be able to resolve to nothing needs the same.
+  unresolved and falls through to `default_value` or the literal token. `{%empty%}` is
+  special-cased to `''`, and `additional_text` and the QNote placeholders carry `empty_is_value: "1"`;
+  a new placeholder that must be able to resolve to nothing needs the same flag.
 - **Escape `\s` as `\\s` in the two template-string regexes.** `hasPlaceholder()` and
   `hasCustomPlaceholder()` build their pattern with `` new RegExp(`{%\\s*${placeholder}…`) ``. The
   doubled backslash is required: in a template string a single `\s` is eaten, leaving the pattern
@@ -778,3 +925,16 @@ Three things bite when adding one:
   `/{%\s*(.*?)\s*%}/` literal and *do* accept spaces. That mismatch let a guard substitute a token
   whose value was never gathered (fixed for all four call sites: the `mail_plain_text_part` fetch
   in `js/mzta-menus.js`, `mail_typed_text` ×2, and `additional_text`).
+
+## Native calendar categories
+
+`{%calendar_categories%}` is a type-0 built-in offered by autocomplete, used by the shipped calendar
+event prompt. In a calendar event prompt its presence is also the switch that asks for categories
+(`calendarCategoriesAsked()`). Its value is
+`JSON.stringify()` of the category names Sparks advertises. The calendar event action asks Sparks
+once per extraction and passes the answer in `msg_text.calendar_capabilities`; elsewhere the
+placeholder calls `getSparksCapabilities()` itself, only when present. Multiple occurrences,
+including spaced forms, share a single read per resolution. Unavailable or invalid capabilities
+become `[]`, even when placeholder default substitution is off. The value is read at send time, not
+stored in a prompt or preference, and no native category is created or renamed. See
+[02-prompts.md](02-prompts.md#calendar-event-native-categories).

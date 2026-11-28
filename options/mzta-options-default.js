@@ -87,6 +87,12 @@ export const integration_options_config = {
         use_v1: true,
         chat_name: 'OpenAI Comp',
         temperature: '',
+        // '' (not sent), or 'none'|'low'|'medium'|'high', sent as reasoning_effort. An
+        // extra_body entry for it wins [#1044].
+        reasoning_effort: '',
+        // Filter the fetched model list: no non-chat or deprecated model, "-latest"
+        // aliases first. Only the "Update list" button reads it [#1044].
+        chat_models_only: false,
         extra_body: '',
         // A JSON object of request headers, sent with every request of the connection.
         extra_headers: ''
@@ -142,7 +148,7 @@ export const integration_content_fields = {
         text: [],
         json: ['extra_body'],
         // Request headers carry no mail content, and may carry a secret.
-        nonContent: ['host', 'model', 'api_key', 'chat_name', 'temperature', 'extra_headers']
+        nonContent: ['host', 'model', 'api_key', 'chat_name', 'temperature', 'reasoning_effort', 'extra_headers']
     },
     google_gemini: {
         text: ['system_instruction'],
@@ -248,6 +254,9 @@ export const prefs_default = {
     // ask it to download the model (once per start of either add-on). Off by default:
     // the model is a large download from Hugging Face, made by every machine.
     ai_processing_model_autodownload: false,
+    // Read the QNote note of a message for the {%qnote_text%} / {%qnote_datetime%} placeholders
+    // (js/mzta-qnote.js, #980). Off by default: the note then reaches the AI provider.
+    qnote_integration: false,
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,

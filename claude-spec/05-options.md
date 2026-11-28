@@ -24,7 +24,7 @@ Stored flat in `prefs_default` with `{provider}_{key}` naming:
 ```
 chatgpt_api_key, chatgpt_model, chatgpt_developer_messages, chatgpt_temperature, chatgpt_store, chatgpt_reasoning_summary, chatgpt_reasoning_effort, chatgpt_extra_body, chatgpt_max_output_tokens, chatgpt_verbosity, chatgpt_text_format, chatgpt_text_format_schema_name, chatgpt_text_format_schema, chatgpt_top_p, chatgpt_truncation, chatgpt_prompt_cache_key, chatgpt_service_tier, chatgpt_safety_identifier, chatgpt_include_encrypted_reasoning
 ollama_host, ollama_api_key, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think, ollama_format_json, ollama_keep_alive, ollama_system_prompt, ollama_extra_options
-openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature, openai_comp_extra_body, openai_comp_extra_headers
+openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature, openai_comp_reasoning_effort, openai_comp_chat_models_only, openai_comp_extra_body, openai_comp_extra_headers
 google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature, google_gemini_max_output_tokens, google_gemini_top_p, google_gemini_top_k, google_gemini_extra_body
 anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature, anthropic_top_p, anthropic_top_k, anthropic_stop_sequences, anthropic_extended_thinking_budget, anthropic_effort
 ```
@@ -278,6 +278,7 @@ ThunderAI Privacy owns model management and diagnostics. See
 | `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
 | `translate_exclude_lang` | `''` | Languages the translation skips: free text, typically comma-separated language codes (`en, fr, it`), stored trimmed as typed (not normalized). **No code reads it**: it only fills `{%thunderai_translate_exclude_lang%}` in `prompt_translate_this`, whose shipped text asks the AI to answer `status: -1` when the email is in one of those languages (or already in the target one), which the banner shows as "skipped" (see [02-prompts.md](02-prompts.md#translate-inline-only-prompt-system)). So the decision is the AI's, after the request: the manual button is still shown, and an automatic translation still makes the call. Empty = no exclusion (the placeholder resolves to `""`). A user prompt without the placeholder ignores it. |
+| `qnote_integration` | `false` | Read the QNote note of a message for the `{%qnote_text%}` / `{%qnote_datetime%}` placeholders [#980] (see [03-placeholders.md](03-placeholders.md#the-qnote-placeholders)). Off: the placeholders resolve to `''` and QNote is never asked. Off by default because, once on, the note text reaches the AI provider of every prompt that uses them. The last row of the Features section, described in "QNote integration row" below. Boolean, so policy-settable with no extra rule; locking it does not touch QNote's own consent, which only the user can give in QNote's dialog. |
 
 #### Permission-gated toggles
 
@@ -301,6 +302,9 @@ deniedMsgKey, errorMsgKey})` in `pages/_lib/permission-toggle.js`, so the pages 
   page's Manage button, the calendar page's `reload_menus`);
 - a key locked by the policy is disabled by `applyManagedUI()`; if its switch still fires
   (re-enabled from the developer tools) the change is put back, with no prompt and no write.
+
+`qnote_integration` is **not** one of them: it needs no Thunderbird permission, only QNote's own
+consent, which QNote asks for itself (see "QNote integration row").
 
 **Why the order matters**: every storage write wakes the background reconciliation, which turns
 off a gated preference whose permissions are missing. Written before the grant, the preference
@@ -1479,6 +1483,79 @@ into `''`. The notice also deliberately **does not** carry the `get_calendar_eve
 though it sits with those rows: the `querySelectorAll('.get_calendar_event_tr')` loop just above
 would otherwise write a `display` to it from the calendar-event toggle state, which is not the rule
 this notice follows.
+
+The QNote row at the end of the section is **not** one of these rows: it is outside this logic
+altogether (see the next section).
+
+### QNote integration row
+
+The last `.feature_row` of the Features section (`#qnote_tr`), **after** the `#no_sparks` notice so
+that notice stays attached to the Sparks rows. It is the switch of `qnote_integration` [#980], with
+the same markup as the other rows (name, description, `mzta_switch` toggle, the input an
+`.option-input` written by `saveOptions()`), but instead of a "Manage ›" button that opens a page it
+has a status line (`#qnote_status`, `role="status"`) and a small "Check access" button
+(`#btnQNoteCheckAccess`, styled `feature_manage`, no `›` since it opens nothing). The description
+(`prefs_OptionText_qnote_integration_Info`) states that the note text is sent to the configured AI
+provider when a prompt uses the placeholders. The code is the "QNote integration row" block of
+`options/mzta-options.js`; the QNote client is `js/mzta-qnote.js` (see
+[03-placeholders.md](03-placeholders.md#the-qnote-placeholders)).
+
+**Visibility.** `#qnote_tr { display: none }` in `options/mzta-options.css`, so the row cannot flash
+before the check. At load, `updateQNote()` asks QNote `getStatus` (`getQNoteStatus()`, which never
+prompts) and `renderQNote()` shows the row (explicit `'flex'`) when QNote answered with its API, **or
+while the switch is on**: with QNote missing (or too old) and the switch on the row stays, with the
+"not reachable" (or "update QNote") status, so the user can switch it off; with the switch off it is
+hidden. A QNote without the API (`unsupported`) counts as missing for this rule. The status line and
+"Check access" are shown only while the switch is on.
+
+**Status line**, from the last QNote answer:
+
+| Answer | Message |
+|---|---|
+| `requestAccess` pending (QNote's dialog open) | `prefs_qnote_status_waiting`, and the button disabled |
+| `not_reachable` | `prefs_qnote_status_not_reachable` |
+| `unsupported` (`apiVersion` missing or below 1) | `prefs_qnote_status_unsupported` |
+| `error` | `prefs_qnote_status_error` |
+| `"unknown"` / `"pending"` | `prefs_qnote_status_not_granted` (press "Check access" and answer QNote's dialog) |
+| `"denied"` | `prefs_qnote_status_denied` (allow ThunderAI in QNote options, "Access from other add-ons", then press "Check access") |
+| `"granted"` | `prefs_qnote_status_granted` |
+
+**Status colour.** `renderQNote()` sets `data-state` on `#qnote_status` (`qnoteStatusState()`):
+`granted` for `"granted"` (green), `not_granted` for `"unknown"` / `"pending"` / `"denied"` (red). It
+is removed while waiting for QNote's dialog, before the first answer, for `not_reachable` /
+`unsupported` / `error`, and with the switch off: those lines keep the neutral description colour.
+The colours are in `mzta-options.css`, with lighter values under `prefers-color-scheme: dark`
+(light `#1f8a5b` / `#b3261e`, dark `#6fd6a0` / `#f2837c`).
+
+**Only a user action calls `requestAccess`**, whose dialog is modal: switching the toggle **on**
+(after `saveOptions()` stored `true`) and "Check access". The page load calls `getStatus` alone. With
+the access already decided, `requestAccess` returns the state without a dialog, so "Check access"
+also works as a refresh (after allowing ThunderAI in QNote's options, for instance). The preference
+stays as the user set it whatever QNote answers: only the status line follows the answer. Switching
+the toggle **off** stores `false` and calls nothing.
+
+**Which answer counts.** `requestAccess` has no time-out (it waits for the user), so "Check access"
+can be pressed again, or the switch turned off and on, while it is pending. Each request takes a
+number from `qnoteRequestSeq`; the answer to a request a newer one replaced is dropped. Switching
+**off** bumps nothing: an open dialog's answer arriving afterwards is still applied (it is QNote's
+current state; the status line stays hidden while off, but the row's visibility follows it), and so
+is the load's `getStatus`. Each applied `requestAccess` answer bumps `qnoteAnswerSeq`, which the
+load's `getStatus` checks, so a `getStatus` answered later never overwrites a newer `requestAccess`
+answer. (Switching off used to bump `qnoteRequestSeq` too, which dropped a `getStatus` still
+pending at that moment and hid a row QNote could use until the page was reloaded.)
+
+**Why it is outside the connection logic.** The placeholders work with every integration, ChatGPT
+Web included, and need no AI connection to be configured, so the row is never greyed out:
+`getFeatureConnState()`, `disable_ApiFeature()` and `updateNoConnectionBanner()` do not know it,
+and `#features_no_connection_note` does not apply to it.
+
+**Why it is not a permission-gated toggle.** It needs no optional Thunderbird permission (a
+cross-extension message needs none), so it is not in `FEATURE_PERMISSIONS`
+(`js/mzta-feature-permissions.js`) and does not go through `bindPermissionToggle()`: the consent it
+needs is QNote's, asked by QNote itself.
+
+**Policy.** A lock disables the switch through `applyManagedUI()` like any `.option-input`. "Check
+access" stays usable while the switch is on, locked or not: it only asks QNote.
 
 ### Mandatory Specific Integration (feature settings pages)
 

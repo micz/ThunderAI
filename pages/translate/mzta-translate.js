@@ -25,7 +25,8 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
-    mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
+    mapPlaceholderToSuggestion, placeholdersUtils,
+    withoutDisabledExtPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
 import {
@@ -98,7 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // suggestions: {%additional_text%} is a real placeholder that this page simply
     // does not offer, so the editor must not flag it as unknown.
     activePlaceholders = await getPlaceholders(true);
-    autocompleteSuggestions = activePlaceholders
+    autocompleteSuggestions = (await withoutDisabledExtPlaceholders(activePlaceholders))
         .filter((p) => p.id !== "additional_text")
         .map(mapPlaceholderToSuggestion);
 

@@ -22,6 +22,9 @@
     chat_name: <AI Name used in the API webchat>
     host: <API endpoint>
     use_v1: <true/false> (keep "v1" path segment)
+    defaults: <optional> { <openai_comp option key>: <value> } suggested for the service,
+              applied by the connection panel only to a field still at its default value,
+              never over a value the user set (see applyOpenAICompPresetDefaults()).
 */
 
 export const openAICompConfigs = [
@@ -52,6 +55,11 @@ export const openAICompConfigs = [
         chat_name: 'Mistral',
         host: 'https://api.mistral.ai',
         use_v1: true,
+        // Mistral's /v1/models lists embedding, OCR, moderation and deprecated models
+        // too, and marks them (capabilities.completion_chat, deprecation) [#1044].
+        defaults: {
+            chat_models_only: true,
+        },
     },
     {
         id: 'openrouter',

@@ -78,6 +78,11 @@ import {
   getUserApprovedInsecureOrigins,
   revokeInsecureOrigin
 } from '../js/mzta-endpoint-approvals.js';
+import {
+  getQNoteStatus,
+  requestQNoteAccess,
+  QNOTE_REASONS
+} from '../js/mzta-qnote.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -472,6 +477,102 @@ function renderPrivacyCompanion(downloadError = null){
   download_btn.disabled = downloading;
 }
 
+// ---- QNote integration row [#980] ------------------------------------------------------
+// Deliberately outside the connection logic (getFeatureConnState(), disable_ApiFeature(),
+// updateNoConnectionBanner()): the QNote placeholders work with every integration, ChatGPT Web
+// included. Not a permission-gated toggle either: it needs no Thunderbird permission, only
+// QNote's own consent, asked through requestAccess (QNote's modal dialog) and ONLY from the two
+// user actions below - never at load, which asks getStatus (it never prompts).
+
+// The last answer of QNote ({ ok, reason } or { ok, access }), null before the first one.
+let qnoteState = null;
+// A requestAccess waiting for the user's answer in QNote's dialog.
+let qnoteWaiting = false;
+// Bumped by every requestAccess: the answer to an older one is ignored (a newer one is coming).
+let qnoteRequestSeq = 0;
+// Bumped each time a requestAccess answer is applied: the load's getStatus, answered after it,
+// is older and must not overwrite it.
+let qnoteAnswerSeq = 0;
+
+function qnoteStatusText(){
+  if (qnoteWaiting) return browser.i18n.getMessage('prefs_qnote_status_waiting');
+  if (!qnoteState) return '';
+  if (!qnoteState.ok) {
+    switch (qnoteState.reason) {
+      case QNOTE_REASONS.UNSUPPORTED: return browser.i18n.getMessage('prefs_qnote_status_unsupported');
+      case QNOTE_REASONS.NOT_REACHABLE: return browser.i18n.getMessage('prefs_qnote_status_not_reachable');
+      default: return browser.i18n.getMessage('prefs_qnote_status_error');
+    }
+  }
+  switch (qnoteState.access) {
+    case 'granted': return browser.i18n.getMessage('prefs_qnote_status_granted');
+    case 'denied': return browser.i18n.getMessage('prefs_qnote_status_denied');
+    default: return browser.i18n.getMessage('prefs_qnote_status_not_granted');   // unknown, pending
+  }
+}
+
+// The colour of the status line (data-state, see mzta-options.css): green once access is granted,
+// red while QNote answers that it is not (denied, unknown, pending). Neutral otherwise: waiting for
+// QNote's dialog, no answer yet, or QNote missing/old/in error.
+function qnoteStatusState(){
+  if (qnoteWaiting || !qnoteState?.ok) return '';
+  return qnoteState.access === 'granted' ? 'granted' : 'not_granted';
+}
+
+// The row shows once QNote answered with its API, or while the switch is on (with QNote gone,
+// switching it off here is the way out). Explicit 'flex' because the CSS hides it by default.
+function renderQNote(){
+  const toggle = document.getElementById('qnote_integration');
+  const usable = qnoteState?.ok === true;
+  document.getElementById('qnote_tr').style.display = (usable || toggle.checked) ? 'flex' : 'none';
+  const status = document.getElementById('qnote_status');
+  status.style.display = toggle.checked ? '' : 'none';
+  status.textContent = toggle.checked ? qnoteStatusText() : '';
+  const state = toggle.checked ? qnoteStatusState() : '';
+  if (state) status.dataset.state = state;
+  else delete status.dataset.state;
+  const btn = document.getElementById('btnQNoteCheckAccess');
+  btn.style.display = toggle.checked ? '' : 'none';
+  btn.disabled = qnoteWaiting;
+}
+
+async function updateQNote(){
+  const answered = qnoteAnswerSeq;
+  const result = await getQNoteStatus();
+  if (answered !== qnoteAnswerSeq) return;   // a requestAccess answer arrived meanwhile: it is newer
+  qnoteState = result;
+  renderQNote();
+}
+
+// From a user action only: switching the toggle on, or "Check access" (which, with the access
+// already decided, just returns the current state, so it works as a refresh too).
+async function askQNoteAccess(){
+  const seq = ++qnoteRequestSeq;
+  qnoteWaiting = true;
+  renderQNote();
+  const result = await requestQNoteAccess();
+  if (seq !== qnoteRequestSeq) return;   // asked again in the meantime: that answer counts
+  // Applied even when the switch was turned off while the dialog was open: it is QNote's
+  // current state, which the row's visibility follows (the status line stays hidden while off).
+  qnoteWaiting = false;
+  qnoteState = result;
+  qnoteAnswerSeq++;
+  renderQNote();
+}
+
+// The preference itself is written by saveOptions() (the switch is an .option-input); whatever
+// QNote answers, it stays as the user set it: only the status line follows the answer.
+function onQNoteToggle(event){
+  if (event.target.checked) {
+    askQNoteAccess();
+  } else {
+    // No sequence bump: neither the load's getStatus nor an open dialog's answer is stale for
+    // being answered after the switch went off (dropping them hid a row QNote can use).
+    qnoteWaiting = false;
+    renderQNote();
+  }
+}
+
 const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
 
 // Setup guide on micz.it behind the "Full guide" link of the provider setup callout.
@@ -820,7 +921,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     setFeatureManageVisibility(get_task_info_btn, event.target.checked);
   });
   setFeatureManageVisibility(get_task_info_btn, get_task_el.checked);
-  
+
+  document.getElementById('qnote_integration').addEventListener('change', onQNoteToggle);
+  document.getElementById('btnQNoteCheckAccess').addEventListener('click', askQNoteAccess);
+  renderQNote();
+  updateQNote();
+
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     openTab('/pages/customprompts/mzta-custom-prompts.html');
   });

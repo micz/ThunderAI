@@ -21,18 +21,22 @@ const BUILT_IN_IDS = [
     'mail_folder_name', 'mail_folder_path', 'mail_headers', 'mail_full_headers', 'selected_text',
     'selected_html', 'additional_text', 'junk_score', 'recipients', 'cc_list', 'author',
     'mail_datetime', 'current_datetime', 'account_email_address', 'tags_current_email',
-    'tags_full_list', 'thunderai_def_sign', 'thunderai_def_lang', 'thunderai_translate_lang',
+    'calendar_categories', 'tags_full_list', 'thunderai_def_sign', 'thunderai_def_lang', 'thunderai_translate_lang',
     'thunderai_translate_exclude_lang', 'empty', 'mail_attachments_info',
     'mail_text_body_or_selected', 'mail_html_body_or_selected', 'mail_plain_text_part',
+    'qnote_text', 'qnote_datetime',
 ];
 // The Dyn column of the same table.
 const DYNAMIC_IDS = ['mail_headers', 'additional_text', 'mail_text_body', 'mail_text_body_or_selected'];
 // Spec 03 "Optional length limit on the body placeholders": the dynamic ones whose parameter may be
 // left out (param_optional "1"), so the autocomplete offers the plain token.
 const PARAM_OPTIONAL_IDS = ['mail_text_body', 'mail_text_body_or_selected'];
+// Spec 03 "Placeholder Properties": the ones whose '' is a value (empty_is_value "1"), never left
+// as the literal token when one is supplied.
+const EMPTY_IS_VALUE_IDS = ['additional_text', 'qnote_text', 'qnote_datetime'];
 // The Type column of the same table: every id not listed here is type 0.
 const TYPE_1 = ['mail_folder_name', 'mail_folder_path', 'mail_headers', 'mail_full_headers', 'junk_score',
-    'mail_datetime', 'mail_attachments_info', 'mail_plain_text_part'];
+    'mail_datetime', 'mail_attachments_info', 'mail_plain_text_part', 'qnote_text', 'qnote_datetime'];
 const TYPE_2 = ['mail_typed_text', 'mail_quoted_text'];
 
 before(async () => {
@@ -69,20 +73,21 @@ k.test('prefix-round-trips', 'add then strip, and strip then add, give back the 
 
 // --- The built-ins ------------------------------------------------------------------------------
 
-k.test('built-ins-in-source-order', 'getPlaceholders(true) lists the 30 built-ins in declaration order, first', async () => {
+k.test('built-ins-in-source-order', 'getPlaceholders(true) lists the 33 built-ins in declaration order, first', async () => {
     const list = await m.getPlaceholders(true);
     assert.deepEqual(list.slice(0, BUILT_IN_IDS.length).map(p => p.id), BUILT_IN_IDS);
 });
 
 k.test('built-ins-properties', 'every built-in has is_default "1", its table type and its Dyn flag', async () => {
     const list = (await m.getPlaceholders(true)).filter(p => BUILT_IN_IDS.includes(p.id));
-    assert.equal(list.length, 30);
+    assert.equal(list.length, 33);
     for (const p of list) {
         assert.equal(p.is_default, '1', p.id);
         const type = TYPE_1.includes(p.id) ? 1 : TYPE_2.includes(p.id) ? 2 : 0;
         assert.equal(Number(p.type), type, p.id + ' type');
         assert.equal(p.is_dynamic, DYNAMIC_IDS.includes(p.id) ? '1' : '0', p.id + ' is_dynamic');
         assert.equal(p.param_optional == 1, PARAM_OPTIONAL_IDS.includes(p.id), p.id + ' param_optional');
+        assert.equal(p.empty_is_value == 1, EMPTY_IS_VALUE_IDS.includes(p.id), p.id + ' empty_is_value');
         assert.equal(typeof p.default_value, 'string', p.id + ' default_value');
     }
 });
@@ -104,7 +109,7 @@ k.test('suggestion-command', 'spec 03 "Placeholder Autocomplete": a dynamic plac
 
 k.test('none-stored', 'with nothing stored there are no custom placeholders', async () => {
     assert.deepEqual(await m.getCustomPlaceholders(), []);
-    assert.equal((await m.getPlaceholders()).length, 30);
+    assert.equal((await m.getPlaceholders()).length, 33);
 });
 
 k.test('set-stores', 'setCustomPlaceholders() stores under _custom_placeholder, prefixed, is_default "0"', async () => {
@@ -129,7 +134,7 @@ k.test('get-reads-back', 'getCustomPlaceholders() reads back what was stored', a
 
 k.test('merged-sorted', 'getPlaceholders() merges built-ins and customs, sorted by id', async () => {
     const ids = (await m.getPlaceholders()).map(p => p.id);
-    assert.equal(ids.length, 32);
+    assert.equal(ids.length, 35);
     assert.deepEqual(ids, [...ids].sort((a, b) => a.localeCompare(b)));
     assert.ok(ids.includes('thunderai_custom_sig') && ids.includes('thunderai_custom_team'));
 });

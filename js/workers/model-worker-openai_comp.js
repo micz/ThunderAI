@@ -22,7 +22,11 @@
 
 import {
     OpenAIComp,
-    extractUsage
+    extractErrorMessage,
+    extractUsage,
+    findErrorMessage,
+    isStreamErrorFrame,
+    normalizeChatContent
 } from '../api/openai_comp.js';
 import {
     createIdleTimer,
@@ -215,12 +219,21 @@ self.onmessage = async function(event) {
                     error_text = i18nStrings.api_error_redirect;
                 }
             }else{
+                // The message in its known places (extractErrorMessage(), #1044), then the
+                // whole JSON body; a body that is not JSON, or has no message, is shown as
+                // it is, once; an empty one (or never arrived) gives way to the statusText.
+                let errorJSON;
                 try{
-                    const errorJSON = JSON.parse(errorBodyText);
-                    errorDetail = JSON.stringify(errorJSON);
-                    error_message = errorJSON.error.message;
+                    errorJSON = JSON.parse(errorBodyText);
                 }catch(e){
-                    error_message = response.statusText;
+                    errorJSON = undefined;
+                }
+                const found = findErrorMessage(errorJSON);
+                if(found !== ''){
+                    error_message = found;
+                    errorDetail = JSON.stringify(errorJSON);
+                }else{
+                    error_message = extractErrorMessage(errorBodyText) || response.statusText;
                 }
                 taLog.log("error_message: " + JSON.stringify(error_message));
                 error_text = i18nStrings["OpenAIComp_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
@@ -302,7 +315,14 @@ self.onmessage = async function(event) {
                     taLog.error("Error parsing lines: " + e);
                 }
     
+                let streamError = null;
                 for (const parsedLine of parsedLines) {
+                    // An error sent after the 200, in the stream itself [#1044]: the turn
+                    // fails with it, shown like an HTTP error, never only logged.
+                    if (isStreamErrorFrame(parsedLine)) {
+                        streamError = extractErrorMessage(parsedLine);
+                        break;
+                    }
                     // Read before the `choices` guard below, not after: the frame that
                     // carries the usage is precisely a frame with an empty choices array,
                     // which that guard skips. Absent on the many servers that ignore
@@ -321,7 +341,9 @@ self.onmessage = async function(event) {
                         if (taLog.do_debug) taLog.warn("No choices found in parsed line: " + JSON.stringify(parsedLine));
                         continue;
                     }
-                    const { delta } = choices[0];
+                    // A server that answers a streamed request with a whole completion sends
+                    // `message` instead of `delta`: read the same fields from it.
+                    const delta = choices[0].delta ?? choices[0].message;
                     if (!delta || typeof delta !== 'object') {
                         continue;
                     }
@@ -331,12 +353,26 @@ self.onmessage = async function(event) {
                         thinkingAccumulator += thinkingToken;
                         postMessage({ type: 'newThinkingToken', payload: { token: thinkingToken } });
                     }
-                    const { content } = delta;
-                    // Update the UI with the new content
-                    if (content) {
-                        assistantResponseAccumulator += content;
-                        postMessage({ type: 'newToken', payload: { token: content } });
+                    // The content is a string, or an array of typed chunks (Mistral's
+                    // reasoning models, #1044): its "thinking" chunks go to the reasoning
+                    // block, its "text" chunks to the answer.
+                    const content = normalizeChatContent(delta.content, taLog);
+                    if (content.thinking) {
+                        thinkingAccumulator += content.thinking;
+                        postMessage({ type: 'newThinkingToken', payload: { token: content.thinking } });
                     }
+                    // Update the UI with the new content
+                    if (content.text) {
+                        assistantResponseAccumulator += content.text;
+                        postMessage({ type: 'newToken', payload: { token: content.text } });
+                    }
+                }
+                if (streamError !== null) {
+                    console.error('[ThunderAI] OpenAI Comp error in the stream: ' + streamError);
+                    reader.cancel().catch(() => {});
+                    abandonTurn();
+                    postMessage({ type: 'error', payload: i18nStrings["OpenAIComp_api_request_failed"] + ": " + streamError });
+                    break;
                 }
             }
         } catch (error) {

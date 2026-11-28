@@ -6,6 +6,8 @@
 //  - while streaming, the request includes stream_options: {include_usage: true} (the usage frame
 //    exists only then);
 //  - OpenAI-compatible chat requests use a 300 s per-attempt timeout (OPENAI_COMP_CHAT_TIMEOUT_MS).
+//  - openai_comp_reasoning_effort is sent as reasoning_effort when set, and is the one managed
+//    parameter an extra body entry overrides (#1044).
 //  - "Extra headers": openai_comp_extra_headers is sent with every request, the models one
 //    (fetchModels) and the chat one (fetchResponse); the headers ThunderAI sets (Content-Type,
 //    Authorization when a key is set) win whatever the case of the extra names, and are never
@@ -102,6 +104,18 @@ k.test('extra-unmanaged-honoured', 'an extra entry for a parameter ThunderAI lea
 
 k.test('extra-invalid', 'an invalid extra body is ignored', async () => {
     assert.deepEqual(await send({ extra_body: '{"a":' }), { model: 'deepseek-chat', messages: MESSAGES, stream: true, stream_options: { include_usage: true } });
+});
+
+k.test('reasoning-effort', 'reasoning_effort sent when set (#1044), not when empty', async () => {
+    assert.equal((await send({ reasoning_effort: 'high' })).reasoning_effort, 'high');
+    assert.equal((await send({ reasoning_effort: 'none' })).reasoning_effort, 'none');
+    assert.equal('reasoning_effort' in await send({ reasoning_effort: '' }), false);
+    assert.equal('reasoning_effort' in await send({}), false);
+});
+
+k.test('reasoning-effort-extra-wins', 'an extra body reasoning_effort wins over the option, so a value it does not offer can be sent', async () => {
+    assert.equal((await send({ reasoning_effort: 'high', extra_body: '{"reasoning_effort": "max"}' })).reasoning_effort, 'max');
+    assert.equal((await send({ reasoning_effort: '', extra_body: '{"reasoning_effort": "max"}' })).reasoning_effort, 'max');
 });
 
 async function sendModels(cfg) {
