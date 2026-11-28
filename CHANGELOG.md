@@ -1,6 +1,10 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
+<h2>Version 5.4.0 - ??/??/2026</h2>
+<ul>
+  <li>...</li>
+</ul>
 <h2>Version 5.3.0 - 28/11/2026</h2>
 <ul>
   <li>Calendar Event: the AI can choose existing Thunderbird categories for the event, and never creates new ones. The prompt asks for them with the new <i>{%calendar_categories%}</i> placeholder, which the default prompt holds; remove it to turn categories off. A calendar prompt saved by an earlier version may need <i>Reset to default</i>. It requires ThunderAI Sparks 3.2.0 or later.</li>
