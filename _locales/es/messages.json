@@ -185,7 +185,7 @@
         "message": "Permitir el visor de comparación de texto"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "El visor de comparación de texto se puede seleccionar cuando la acción se establece en \"sustituir texto\"."
+        "message": "Disponible cuando la \"Acción\" es \"Sustituir texto\"."
     },
     "customPrompts_form_required_fields": {
         "message": "Campos obligatorios"
@@ -1043,10 +1043,10 @@
         "message": "Si está marcado, la etiqueta de etiquetas se establecerá en minúsculas con solo la primera letra en mayúscula."
     },
     "prefs_SurveyLinkText": {
-        "message": "Comparte tus comentarios y ayuda a mejorar ThunderAI!"
+        "message": "¿Estás disfrutando de ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Haz clic aquí, ¡solo toma un minuto!"
+        "message": "Comparte tus comentarios"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Inserte aquí el nombre del modelo que desea usar."
@@ -3374,7 +3374,7 @@
         "message": "¿Quieres estadísticas bonitas sobre tus correos electrónicos?"
     },
     "prefs_THStats_2": {
-        "message": "¡Haz clic aquí! ¡Prueba ThunderStats!"
+        "message": "¡Prueba ThunderStats!"
     },
     "prefs_OptionText_chatgpt_win_pos_text": {
         "message": "Posición de la ventana de chat de IA"
@@ -3485,7 +3485,7 @@
         "message": "Posición en el menú"
     },
     "menu_order_info": {
-        "message": "Arrastra y suelta elementos para reordenarlos. Usa el interruptor para mostrar u ocultar elementos en cada menú."
+        "message": "Arrastra y suelta los elementos para reordenarlos, o arrástralos entre las secciones Visible y Oculto para mostrarlos u ocultarlos en cada menú. Si una instrucción está oculta en todos los menús, permanecerá desactivada hasta que la vuelvas a hacer visible."
     },
     "menu_order_active_items": {
         "message": "Elementos visibles"
