@@ -847,6 +847,15 @@
             }
         }
     },
+    "prefs_OptionText_openai_comp_reasoning_effort_Info": {
+        "message": "Cuánto esfuerzo dedica un modelo de razonamiento a pensar antes de responder, enviado como el parámetro \"reasoning_effort\". Déjalo en Predeterminado de la API para los servicios y modelos que no lo admiten, o podrían rechazar la solicitud. Otros valores, como \"max\", se pueden enviar mediante los datos adicionales del cuerpo, que tienen prioridad sobre esta opción: {\"reasoning_effort\": \"max\"}."
+    },
+    "prefs_OptionText_openai_comp_chat_models_only": {
+        "message": "Mostrar solo modelos de chat"
+    },
+    "prefs_OptionText_openai_comp_chat_models_only_Info": {
+        "message": "Al actualizar la lista de modelos, omite los que el servicio marca como no utilizables para chat (como los modelos de embedding) o como obsoletos, y muestra primero los alias \"-latest\". Los modelos sin esta información se muestran siempre."
+    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Mantener la compatibilidad \"v1\""
     },
@@ -1191,6 +1200,36 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Para usar las funciones de eventos de calendario y tareas, por favor instale una versión actualizada del complemento ThunderAI Sparks."
+    },
+    "prefs_OptionText_qnote_integration": {
+        "message": "Notas de QNote"
+    },
+    "prefs_OptionText_qnote_integration_Info": {
+        "message": "Lee la nota de QNote de un mensaje mediante los marcadores de posición {%qnote_text%} y {%qnote_datetime%}. Cuando un prompt los usa, el texto de la nota se envía al proveedor de IA configurado. QNote te pedirá que autorices a ThunderAI la primera vez."
+    },
+    "prefs_OptionText_qnote_check_access": {
+        "message": "Comprobar acceso"
+    },
+    "prefs_qnote_status_not_reachable": {
+        "message": "QNote no está instalado o no está disponible."
+    },
+    "prefs_qnote_status_unsupported": {
+        "message": "Esta versión de QNote no puede compartir sus notas con otros complementos. Actualiza QNote."
+    },
+    "prefs_qnote_status_error": {
+        "message": "QNote devolvió una respuesta inesperada."
+    },
+    "prefs_qnote_status_not_granted": {
+        "message": "ThunderAI aún no puede leer las notas: pulsa \"Comprobar acceso\" y responde en el diálogo de QNote."
+    },
+    "prefs_qnote_status_denied": {
+        "message": "Acceso denegado. Autoriza a ThunderAI en las opciones de QNote, en \"Access from other add-ons\", y luego pulsa \"Comprobar acceso\"."
+    },
+    "prefs_qnote_status_granted": {
+        "message": "Acceso concedido: los prompts pueden usar los marcadores de posición de QNote."
+    },
+    "prefs_qnote_status_waiting": {
+        "message": "Esperando tu respuesta en el diálogo de QNote…"
     },
     "GetTask_PageTitle": {
         "message": "Administrar configuración de tareas"
@@ -2611,6 +2650,12 @@
     "placeholder_mail_plain_text_part": {
         "message": "Parte original en texto plano del correo, sin ninguna conversión desde la parte HTML (ideal para correo comercial y automático; puede estar vacía o ser un esbozo en los boletines)"
     },
+    "placeholder_qnote_text": {
+        "message": "Texto de la nota de QNote adjunta al mensaje (vacío si no hay ninguna o si el acceso a QNote no está activado en las opciones de ThunderAI)"
+    },
+    "placeholder_qnote_datetime": {
+        "message": "Fecha y hora de la nota de QNote adjunta al mensaje (vacío si no hay ninguna)"
+    },
     "prefs_OptionText_chatgpt_web_load_wait_time": {
         "message": "Tiempo de espera para la carga de la página"
     },
@@ -3859,6 +3904,9 @@
     },
     "prefs_insecure_origins_remove": {
         "message": "Eliminar"
+    },
+    "placeholder_calendar_categories": {
+        "message": "Categorías de calendario existentes de Thunderbird (array JSON; [] cuando Sparks no está disponible)"
     },
     "prefs_footer_donate": {
         "message": "Hacer una donación"

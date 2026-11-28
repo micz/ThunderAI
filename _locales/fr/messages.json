@@ -568,6 +568,12 @@
     "placeholder_mail_plain_text_part": {
         "message": "Partie en texte simple d'origine du courriel, sans aucune conversion depuis la partie HTML (idéale pour les courriels professionnels et automatisés ; peut être vide ou un résumé dans les newsletters)"
     },
+    "placeholder_qnote_text": {
+        "message": "Texte de la note QNote jointe au message (vide s'il n'y en a pas ou si l'accès à QNote n'est pas activé dans les options de ThunderAI)"
+    },
+    "placeholder_qnote_datetime": {
+        "message": "Date et heure de la note QNote jointe au message (vide s'il n'y en a pas)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Espaces réservés : utiliser la valeur par défaut"
     },
@@ -657,6 +663,15 @@
                 "example": "x-session"
             }
         }
+    },
+    "prefs_OptionText_openai_comp_reasoning_effort_Info": {
+        "message": "L'effort qu'un modèle de raisonnement consacre à réfléchir avant de répondre, envoyé comme paramètre \"reasoning_effort\". Laissez-le sur Valeur par défaut de l'API pour les services et modèles qui ne le prennent pas en charge, sinon ils risquent de refuser la requête. D'autres valeurs, comme \"max\", peuvent être envoyées via les données supplémentaires du corps, qui ont priorité sur cette option : {\"reasoning_effort\": \"max\"}."
+    },
+    "prefs_OptionText_openai_comp_chat_models_only": {
+        "message": "Afficher uniquement les modèles de chat"
+    },
+    "prefs_OptionText_openai_comp_chat_models_only_Info": {
+        "message": "Lors de la mise à jour de la liste des modèles, exclut ceux que le service indique comme inutilisables pour le chat (comme les modèles d'embedding) ou comme obsolètes, et affiche en premier les alias \"-latest\". Les modèles sans ces informations sont toujours affichés."
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Conserver la compatibilité \"v1\""
@@ -1256,6 +1271,36 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Pour utiliser les fonctionnalités d’événements de calendrier et de tâches, veuillez installer une version mise à jour de l’extension ThunderAI Sparks."
+    },
+    "prefs_OptionText_qnote_integration": {
+        "message": "Notes QNote"
+    },
+    "prefs_OptionText_qnote_integration_Info": {
+        "message": "Lit la note QNote d'un message via les espaces réservés {%qnote_text%} et {%qnote_datetime%}. Lorsqu'un prompt les utilise, le texte de la note est envoyé au fournisseur d'IA configuré. QNote vous demandera d'autoriser ThunderAI la première fois."
+    },
+    "prefs_OptionText_qnote_check_access": {
+        "message": "Vérifier l'accès"
+    },
+    "prefs_qnote_status_not_reachable": {
+        "message": "QNote n'est pas installé ou n'est pas joignable."
+    },
+    "prefs_qnote_status_unsupported": {
+        "message": "Cette version de QNote ne peut pas partager ses notes avec d'autres modules. Veuillez mettre à jour QNote."
+    },
+    "prefs_qnote_status_error": {
+        "message": "QNote a renvoyé une réponse inattendue."
+    },
+    "prefs_qnote_status_not_granted": {
+        "message": "ThunderAI ne peut pas encore lire les notes : cliquez sur \"Vérifier l'accès\" et répondez dans la boîte de dialogue de QNote."
+    },
+    "prefs_qnote_status_denied": {
+        "message": "Accès refusé. Autorisez ThunderAI dans les options de QNote, sous \"Access from other add-ons\", puis cliquez sur \"Vérifier l'accès\"."
+    },
+    "prefs_qnote_status_granted": {
+        "message": "Accès accordé : les prompts peuvent utiliser les espaces réservés de QNote."
+    },
+    "prefs_qnote_status_waiting": {
+        "message": "En attente de votre réponse dans la boîte de dialogue de QNote…"
     },
     "prefs_OptionText_chatgpt_web_custom_gpt": {
         "message": "GPT personnalisé pour ChatGPT Web"
@@ -4070,6 +4115,9 @@
     },
     "prefs_insecure_origins_remove": {
         "message": "Retirer"
+    },
+    "placeholder_calendar_categories": {
+        "message": "Catégories d'agenda existantes de Thunderbird (tableau JSON ; [] lorsque Sparks n'est pas disponible)"
     },
     "Summarize_auto_senders_title": {
         "message": "Liste des expéditeurs pour le résumé automatique"

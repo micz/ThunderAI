@@ -568,6 +568,12 @@
     "placeholder_mail_plain_text_part": {
         "message": "Originaler Klartext-Teil der Mail, ohne jegliche Umwandlung aus dem HTML-Teil (am besten für geschäftliche und automatisierte Mails; kann bei Newslettern leer oder unvollständig sein)"
     },
+    "placeholder_qnote_text": {
+        "message": "Text der QNote-Notiz zur Nachricht (leer, wenn keine vorhanden ist oder der Zugriff auf QNote in den ThunderAI-Einstellungen nicht aktiviert ist)"
+    },
+    "placeholder_qnote_datetime": {
+        "message": "Datum und Uhrzeit der QNote-Notiz zur Nachricht (leer, wenn keine vorhanden ist)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Platzhalter: standardwert verwenden"
     },
@@ -657,6 +663,15 @@
                 "example": "x-session"
             }
         }
+    },
+    "prefs_OptionText_openai_comp_reasoning_effort_Info": {
+        "message": "Wie viel Aufwand ein Reasoning-Modell vor der Antwort ins Nachdenken steckt, gesendet als Parameter \"reasoning_effort\". Belassen Sie es bei Diensten und Modellen, die ihn nicht unterstützen, auf API-Standard, sonst lehnen sie die Anfrage möglicherweise ab. Andere Werte wie \"max\" können über die zusätzlichen Body-Daten gesendet werden, die Vorrang vor dieser Option haben: {\"reasoning_effort\": \"max\"}."
+    },
+    "prefs_OptionText_openai_comp_chat_models_only": {
+        "message": "Nur Chat-Modelle anzeigen"
+    },
+    "prefs_OptionText_openai_comp_chat_models_only_Info": {
+        "message": "Beim Aktualisieren der Modellliste werden Modelle ausgelassen, die der Dienst als nicht für Chats geeignet (etwa Embedding-Modelle) oder als veraltet kennzeichnet, und die \"-latest\"-Aliase werden zuerst aufgeführt. Modelle ohne diese Angaben werden immer aufgeführt."
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "\"v1\"-Kompatibilität beibehalten"
@@ -1259,6 +1274,36 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Um Kalender- und Aufgabenfunktionen zu nutzen, installiere bitte eine aktualisierte Version des ThunderAI Sparks-Add-ons."
+    },
+    "prefs_OptionText_qnote_integration": {
+        "message": "QNote-Notizen"
+    },
+    "prefs_OptionText_qnote_integration_Info": {
+        "message": "Liest die QNote-Notiz einer Nachricht über die Platzhalter {%qnote_text%} und {%qnote_datetime%}. Wenn ein Prompt sie verwendet, wird der Notiztext an den konfigurierten KI-Anbieter gesendet. QNote fragt beim ersten Mal, ob ThunderAI zugelassen werden soll."
+    },
+    "prefs_OptionText_qnote_check_access": {
+        "message": "Zugriff prüfen"
+    },
+    "prefs_qnote_status_not_reachable": {
+        "message": "QNote ist nicht installiert oder nicht erreichbar."
+    },
+    "prefs_qnote_status_unsupported": {
+        "message": "Diese QNote-Version kann ihre Notizen nicht mit anderen Add-ons teilen. Bitte aktualisieren Sie QNote."
+    },
+    "prefs_qnote_status_error": {
+        "message": "QNote hat eine unerwartete Antwort zurückgegeben."
+    },
+    "prefs_qnote_status_not_granted": {
+        "message": "ThunderAI kann die Notizen noch nicht lesen: Klicken Sie auf \"Zugriff prüfen\" und antworten Sie im Dialog von QNote."
+    },
+    "prefs_qnote_status_denied": {
+        "message": "Der Zugriff wurde verweigert. Lassen Sie ThunderAI in den QNote-Einstellungen unter \"Access from other add-ons\" zu und klicken Sie dann auf \"Zugriff prüfen\"."
+    },
+    "prefs_qnote_status_granted": {
+        "message": "Zugriff gewährt: Prompts können die QNote-Platzhalter verwenden."
+    },
+    "prefs_qnote_status_waiting": {
+        "message": "Warte auf Ihre Antwort im Dialog von QNote…"
     },
     "prefs_OptionText_Project_No_temporary_chat_warn": {
         "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, wird der temporäre Chat nicht verwendet."
@@ -4094,6 +4139,9 @@
     },
     "prefs_insecure_origins_remove": {
         "message": "Entfernen"
+    },
+    "placeholder_calendar_categories": {
+        "message": "Vorhandene Thunderbird-Kalenderkategorien (JSON-Array; [] wenn Sparks nicht verfügbar ist)"
     },
     "anthropic_err_hint_temperature": {
         "message": "Das ausgewählte Claude-Modell ($MODEL$) akzeptiert die Einstellung Temperatur nicht. Leeren Sie das Feld Temperatur oder verwenden Sie stattdessen die Einstellung Effort."

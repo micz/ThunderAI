@@ -1207,6 +1207,12 @@
     "placeholder_mail_plain_text_part": {
         "message": "メールの元のプレーンテキスト部分（HTML部分からの変換なし。ビジネスメールや自動メールに最適。ニュースレターでは空またはスタブの場合があります）"
     },
+    "placeholder_qnote_text": {
+        "message": "メールに添付された QNote メモのテキスト（メモがない場合、または ThunderAI のオプションで QNote へのアクセスが有効になっていない場合は空）"
+    },
+    "placeholder_qnote_datetime": {
+        "message": "メールに添付された QNote メモの日時（メモがない場合は空）"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "プレースホルダー：デフォルト値を使用"
     },
@@ -1355,6 +1361,15 @@
                 "example": "x-session"
             }
         }
+    },
+    "prefs_OptionText_openai_comp_reasoning_effort_Info": {
+        "message": "推論モデルが回答前に考えるためにかける労力で、\"reasoning_effort\" パラメーターとして送信されます。対応していないサービスやモデルでは APIのデフォルト のままにしてください。そうしないとリクエストが拒否される場合があります。\"max\" などの他の値は追加のボディデータで送信でき、こちらがこのオプションより優先されます: {\"reasoning_effort\": \"max\"}。"
+    },
+    "prefs_OptionText_openai_comp_chat_models_only": {
+        "message": "チャットモデルのみ表示"
+    },
+    "prefs_OptionText_openai_comp_chat_models_only_Info": {
+        "message": "モデル一覧を更新する際、サービスがチャットに使用できない（埋め込みモデルなど）または非推奨とマークしているモデルを除外し、\"-latest\" エイリアスを先頭に表示します。この情報がないモデルは常に表示されます。"
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "「v1」互換性を維持する"
@@ -1770,6 +1785,36 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "カレンダーイベントとタスク機能を使用するには、ThunderAI Sparksアドオンの更新版をインストールしてください。"
+    },
+    "prefs_OptionText_qnote_integration": {
+        "message": "QNote メモ"
+    },
+    "prefs_OptionText_qnote_integration_Info": {
+        "message": "{%qnote_text%} と {%qnote_datetime%} プレースホルダーを通じてメッセージの QNote メモを読み取ります。プロンプトがこれらを使用すると、メモのテキストが設定された AI プロバイダーに送信されます。初回は QNote が ThunderAI の許可を求めます。"
+    },
+    "prefs_OptionText_qnote_check_access": {
+        "message": "アクセスを確認"
+    },
+    "prefs_qnote_status_not_reachable": {
+        "message": "QNote がインストールされていないか、応答しません。"
+    },
+    "prefs_qnote_status_unsupported": {
+        "message": "このバージョンの QNote は他のアドオンとメモを共有できません。QNote を更新してください。"
+    },
+    "prefs_qnote_status_error": {
+        "message": "QNote から予期しない応答が返されました。"
+    },
+    "prefs_qnote_status_not_granted": {
+        "message": "ThunderAI はまだメモを読み取れません:「アクセスを確認」を押して、QNote のダイアログで応答してください。"
+    },
+    "prefs_qnote_status_denied": {
+        "message": "アクセスが拒否されました。QNote のオプションの \"Access from other add-ons\" で ThunderAI を許可してから、「アクセスを確認」を押してください。"
+    },
+    "prefs_qnote_status_granted": {
+        "message": "アクセスが許可されました: プロンプトで QNote のプレースホルダーを使用できます。"
+    },
+    "prefs_qnote_status_waiting": {
+        "message": "QNote のダイアログでの応答を待っています…"
     },
     "GetTask_PageTitle": {
         "message": "タスク設定の管理"
@@ -3971,6 +4016,9 @@
     },
     "prefs_insecure_origins_remove": {
         "message": "削除"
+    },
+    "placeholder_calendar_categories": {
+        "message": "既存の Thunderbird カレンダーカテゴリー（JSON 配列。Sparks が利用できない場合は []）"
     },
     "prefs_doc_title": {
         "message": "ドキュメント"

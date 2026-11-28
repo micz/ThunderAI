@@ -765,6 +765,12 @@
     "placeholder_mail_plain_text_part": {
         "message": "Parte in testo semplice originale della mail, senza alcuna conversione della parte HTML (ideale per mail aziendali e automatizzate; può essere vuota o un stub nelle newsletter)"
     },
+    "placeholder_qnote_text": {
+        "message": "Testo della nota QNote allegata al messaggio (vuoto se non c'è o se l'accesso a QNote non è attivato nelle opzioni di ThunderAI)"
+    },
+    "placeholder_qnote_datetime": {
+        "message": "Data e ora della nota QNote allegata al messaggio (vuoto se non c'è)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Segnaposti: usa valore predefinito"
     },
@@ -866,6 +872,15 @@
                 "example": "x-session"
             }
         }
+    },
+    "prefs_OptionText_openai_comp_reasoning_effort_Info": {
+        "message": "Quanto impegno un modello di ragionamento dedica a pensare prima di rispondere, inviato come parametro \"reasoning_effort\". Lascialo su Predefinito per i servizi e i modelli che non lo supportano, altrimenti potrebbero rifiutare la richiesta. Altri valori, come \"max\", possono essere inviati tramite i dati aggiuntivi, che hanno la precedenza su questa opzione: {\"reasoning_effort\": \"max\"}."
+    },
+    "prefs_OptionText_openai_comp_chat_models_only": {
+        "message": "Mostra solo i modelli di chat"
+    },
+    "prefs_OptionText_openai_comp_chat_models_only_Info": {
+        "message": "Quando aggiorni l'elenco dei modelli, escludi quelli che il servizio indica come non utilizzabili per la chat (come i modelli di embedding) o come deprecati, e mostra per primi gli alias \"-latest\". I modelli senza queste informazioni sono sempre elencati."
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Mantieni la compatibilità con \"v1\""
@@ -1600,6 +1615,36 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Per utilizzare le funzionalità di eventi del calendario e delle attività, installa una versione aggiornata del componente aggiuntivo ThunderAI Sparks."
+    },
+    "prefs_OptionText_qnote_integration": {
+        "message": "Note di QNote"
+    },
+    "prefs_OptionText_qnote_integration_Info": {
+        "message": "Legge la nota QNote di un messaggio tramite i segnaposto {%qnote_text%} e {%qnote_datetime%}. Quando un prompt li usa, il testo della nota viene inviato al provider di IA configurato. QNote ti chiederà di autorizzare ThunderAI la prima volta."
+    },
+    "prefs_OptionText_qnote_check_access": {
+        "message": "Verifica accesso"
+    },
+    "prefs_qnote_status_not_reachable": {
+        "message": "QNote non è installato o non è raggiungibile."
+    },
+    "prefs_qnote_status_unsupported": {
+        "message": "Questa versione di QNote non può condividere le sue note con altri componenti aggiuntivi. Aggiorna QNote."
+    },
+    "prefs_qnote_status_error": {
+        "message": "QNote ha restituito una risposta inattesa."
+    },
+    "prefs_qnote_status_not_granted": {
+        "message": "ThunderAI non può ancora leggere le note: premi \"Verifica accesso\" e rispondi nella finestra di QNote."
+    },
+    "prefs_qnote_status_denied": {
+        "message": "Accesso negato. Autorizza ThunderAI nelle opzioni di QNote, in \"Access from other add-ons\", quindi premi \"Verifica accesso\"."
+    },
+    "prefs_qnote_status_granted": {
+        "message": "Accesso consentito: i prompt possono usare i segnaposto di QNote."
+    },
+    "prefs_qnote_status_waiting": {
+        "message": "In attesa della tua risposta nella finestra di QNote…"
     },
     "AccountSelector_AutoTags_infoline": {
         "message": "Ogni modifica viene salvata immediatamente."
@@ -3982,6 +4027,9 @@
     },
     "prefs_insecure_origins_remove": {
         "message": "Rimuovi"
+    },
+    "placeholder_calendar_categories": {
+        "message": "Categorie esistenti del calendario di Thunderbird (array JSON; [] quando Sparks non è disponibile)"
     },
     "prefs_footer_donate": {
         "message": "Fai una donazione"
